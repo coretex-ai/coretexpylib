@@ -39,5 +39,5 @@ jobs:
     - name: Publish package
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
-        user: github
+        user: coretex-ai
         pass: ${{ secrets.MYPI_TOKEN }}
