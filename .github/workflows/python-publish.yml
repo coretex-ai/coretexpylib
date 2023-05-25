@@ -42,4 +42,4 @@ jobs:
         production: true
       with:
         user: __token__
-        pass: ${{ secrets.PYPI_TOKEN }}
+        password: ${{ secrets.PYPI_TOKEN }}
