@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "coretex"
+version = "1.0.0"
+authors = [
+  { name="Duško Mirković", email="dmirkovic@coretex.ai" },
+]
+maintainers = [
+  { name="Duško Mirković", email="dmirkovic@coretex.ai" },
+  { name="Jovica Zarić", email="jzaric@coretex.ai" },
+  { name="Darko Zarić", email="dzaric@coretex.ai" },
+  { name="Bogdan Tintor", email="btintor@coretex.ai" },
+  { name="Alex Maslennikov", email="alex@coretex.ai" },
+  { name="Igor Perić", email="igor@coretex.ai" },
+]
+description = "A package for AI experiment tracking, infrastructure and dataset management using Coretex.ai platform."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+  "requests",
+  "inflection",
+  "pillow",
+  "numpy",
+  "scikit-image",
+  "shapely",
+  "protobuf~=3.19.0",
+  "typed-argument-parser",
+  "termcolor",
+  "typing-extensions",
+  "psutil",
+  "py3nvml",
+]
+
+[project.urls]
+"Homepage" = "https://coretex.ai"
+"Documentation" = "https://docs.coretex.ai/"
+"Python API" = "https://coretexpylib.coretex.ai/"
+"Source" = "https://github.com/coretex-ai/coretexpylib"
+
+[tool.setuptools.package-data]
+"*" = ["py.typed"]

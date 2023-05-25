@@ -1,0 +1,24 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+requests = "*"
+inflection = "*"
+pillow = "*"
+numpy = "*"
+scikit-image = "*"
+shapely = "*"
+protobuf = "3.19.0"
+typed-argument-parser = "*"
+termcolor = "*"
+typing-extensions = "*"
+psutil = "*"
+py3nvml = "*"
+
+[dev-packages]
+mypy = "*"
+
+[requires]
+python_version = "3.8"
