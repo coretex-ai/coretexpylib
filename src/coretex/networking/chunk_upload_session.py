@@ -1,6 +1,6 @@
 #     Copyright (C) 2023  BioMech LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -106,7 +106,7 @@ class ChunkUploadSession:
         if response.hasFailed():
             raise NetworkRequestError(response, f"Failed to upload file chunk with byte range \"{start}-{end}\"")
 
-        logging.getLogger("coretexpylib").info(f">> [Coretex] Uploaded chunk with range \"{start}-{end}\"")
+        logging.getLogger("coretexpylib").debug(f">> [Coretex] Uploaded chunk with range \"{start}-{end}\"")
 
     def run(self) -> str:
         """
@@ -134,7 +134,7 @@ class ChunkUploadSession:
                 except NetworkRequestError, ValueError:
                     print("Failed to upload file")
         """
-        logging.getLogger("coretexpylib").info(f">> [Coretex] Starting upload for \"{self.filePath}\"")
+        logging.getLogger("coretexpylib").debug(f">> [Coretex] Starting upload for \"{self.filePath}\"")
 
         uploadId = self.__start()
 
