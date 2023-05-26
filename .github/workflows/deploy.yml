@@ -35,18 +35,17 @@ jobs:
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
-          git config pull.rebase false
           if [ "${{ github.event.inputs.destination_branch }}" == 'stage' ]; then
             git fetch
             git checkout stage
             git pull
-            git pull origin develop --allow-unrelated-histories
+            git pull origin develop
             git push origin stage
           elif [ "${{ github.event.inputs.destination_branch }}" == 'main' ]; then
             git fetch
             git checkout main
             git pull
-            git pull origin stage --allow-unrelated-histories
+            git pull origin stage
             git push origin main
             echo "::set-output name=run_publish_workflow::true"
           fi
