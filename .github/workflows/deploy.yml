@@ -38,7 +38,8 @@ jobs:
           if [ "${{ github.event.inputs.destination_branch }}" == 'stage' ]; then
             git fetch
             git checkout stage
-            git fetch origin develop:develop --force
+            git pull
+            git pull origin develop
             git push
           elif [ "${{ github.event.inputs.destination_branch }}" == 'main' ]; then
             git fetch
