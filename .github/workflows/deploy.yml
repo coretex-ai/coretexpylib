@@ -6,8 +6,8 @@ on:
       destination_branch:
         description: 'Destination env'
         required: true
-        default: 'stage2'
-        options: ['stage2', 'main']
+        default: 'stage'
+        options: ['stage', 'main']
 
 jobs:
   merge:
@@ -23,7 +23,7 @@ jobs:
 
       - name: Validate destination branch
         run: |
-          if [ "${{ github.event.inputs.destination_branch }}" != 'stage2' ] && [ "${{ github.event.inputs.destination_branch }}" != 'main' ]; then
+          if [ "${{ github.event.inputs.destination_branch }}" != 'stage' ] && [ "${{ github.event.inputs.destination_branch }}" != 'main' ]; then
             echo "::error::Invalid destination branch. Allowed values are 'stage' or 'main'."
             exit 1
           fi
@@ -37,14 +37,10 @@ jobs:
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
-          if [ "${{ github.event.inputs.destination_branch }}" == 'stage2' ]; then
+          if [ "${{ github.event.inputs.destination_branch }}" == 'stage' ]; then
             git fetch
-            git checkout develop
+            git checkout stage
             git pull
-            git log
-            git checkout stage2
-            git pull
-            git log
             git pull --rebase origin develop
             git push
           elif [ "${{ github.event.inputs.destination_branch }}" == 'main' ]; then
