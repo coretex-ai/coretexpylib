@@ -36,10 +36,12 @@ jobs:
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
           if [ "${{ github.event.inputs.destination_branch }}" == 'stage' ]; then
+            git fetch
             git checkout stage
             git merge --no-ff develop
             git push origin stage
           elif [ "${{ github.event.inputs.destination_branch }}" == 'main' ]; then
+            git fetch
             git checkout main
             git merge --no-ff stage
             git push origin main
