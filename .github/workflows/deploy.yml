@@ -39,13 +39,13 @@ jobs:
           if [ "${{ github.event.inputs.destination_branch }}" == 'stage' ]; then
             git fetch
             git checkout stage
-            git pull origin stage
+            git pull
             git pull origin develop --allow-unrelated-histories
             git push origin stage
           elif [ "${{ github.event.inputs.destination_branch }}" == 'main' ]; then
             git fetch
             git checkout main
-            git pull origin main
+            git pull
             git pull origin stage --allow-unrelated-histories
             git push origin main
             echo "::set-output name=run_publish_workflow::true"
