@@ -1,3 +1,6 @@
+
+[![Linter code check](https://github.com/coretex-ai/coretexpylib/actions/workflows/linter-code-check.yml/badge.svg?branch=develop)](https://github.com/coretex-ai/coretexpylib/actions/workflows/linter-code-check.yml)
+
 ![](https://coretex.ai/images/coretex_logo_new.svg)
 
 <h1 style="text-align: center;">Coretex.ai Python library</h1>
