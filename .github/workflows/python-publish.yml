@@ -19,7 +19,6 @@ permissions:
 
 jobs:
   deploy:
-    if: ${{ needs.manual_deploy.outputs.run_publish_workflow == 'true' }}
 
     runs-on: ubuntu-latest
     steps:
