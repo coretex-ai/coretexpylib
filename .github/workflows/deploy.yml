@@ -30,6 +30,8 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
       - name: Merge develop into destination branch
         run: |
