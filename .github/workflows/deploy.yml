@@ -21,6 +21,13 @@ jobs:
             exit 1
           fi
 
+      - name: Validate destination branch
+        run: |
+          if [ "${{ github.event.inputs.destination_branch }}" != 'stage' ] && [ "${{ github.event.inputs.destination_branch }}" != 'main' ]; then
+            echo "::error::Invalid destination branch. Allowed values are 'stage' or 'main'."
+            exit 1
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v2
 
@@ -36,4 +43,5 @@ jobs:
             git checkout main
             git merge --no-ff stage
             git push origin main
+            echo "::set-output name=run_publish_workflow::true"
           fi
