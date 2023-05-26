@@ -36,6 +36,7 @@ jobs:
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
           if [ "${{ github.event.inputs.destination_branch }}" == 'stage' ]; then
+            git fetch
             git switch stage
             git pull --rebase origin develop
             git push
