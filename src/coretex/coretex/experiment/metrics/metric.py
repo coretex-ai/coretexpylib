@@ -1,6 +1,6 @@
 #     Copyright (C) 2023  BioMech LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -15,13 +15,11 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from abc import abstractmethod
-from typing import Dict, Any, List, Tuple, Optional
+from typing import Dict, List, Optional
 from typing_extensions import Self
 
 from .metric_type import MetricType
 from ....codable import Codable, KeyDescriptor
-from ....networking import networkManager, RequestType
 
 
 class Metric(Codable):
@@ -31,6 +29,8 @@ class Metric(Codable):
     xType: str
     yLabel: str
     yType: str
+    xRange: Optional[List[float]]
+    yRange: Optional[List[float]]
 
     @classmethod
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
@@ -40,7 +40,34 @@ class Metric(Codable):
         return descriptors
 
     @classmethod
-    def create(cls, name: str, xLabel: str, xType: MetricType, yLabel: str, yType: MetricType) -> Self:
+    def create(
+        cls,
+        name: str,
+        xLabel: str,
+        xType: MetricType,
+        yLabel: str,
+        yType: MetricType,
+        xRange: Optional[List[float]] = None,
+        yRange: Optional[List[float]] = None
+    ) -> Self:
+
+        """
+            name : str
+                name of Metric
+            xLabel : str
+                label of x axis which will be displayed
+            xType : MetricType
+                type of x axis which will be displayed
+            yLabel : str
+                label of y axis which will be displayed
+            yType : MetricType
+                type of y axis which will be displayed
+            xRange : Optional[List[float]]
+                range in which values will be displayed for x axis
+            yRange : Optional[List[float]]
+                range in which values will be displayed for y axis
+        """
+
         obj = cls()
 
         obj.name = name
@@ -48,29 +75,10 @@ class Metric(Codable):
         obj.xType = xType.name
         obj.yLabel = yLabel
         obj.yType = yType.name
+        obj.xRange = xRange
+        obj.yRange = yRange
 
         return obj
-
-    @classmethod
-    def createMetrics(cls, experimentId: int, values: List[Tuple[str, str, MetricType, str, MetricType]]) -> bool:
-        metrics: List[Metric] = []
-
-        for value in values:
-            metrics.append(cls.create(*value))
-
-        parameters: Dict[str, Any] = {
-            "experiment_id": experimentId,
-            "metrics": [metric.encode() for metric in metrics]
-        }
-
-        endpoint = "model-queue/metrics-meta"
-        response = networkManager.genericJSONRequest(
-            endpoint = endpoint,
-            requestType = RequestType.post,
-            parameters = parameters
-        )
-
-        return not response.hasFailed()
 
     def extract(self) -> Optional[float]:
         return None

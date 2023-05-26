@@ -1,6 +1,6 @@
 #     Copyright (C) 2023  BioMech LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -16,6 +16,5 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from .metric import Metric
-from .metric_factory import getClassForMetric
 from .utils import getNetworkUsage
 from .metric_type import MetricType
