@@ -37,12 +37,13 @@ jobs:
           git config user.email "${{ github.actor }}@users.noreply.github.com"
           if [ "${{ github.event.inputs.destination_branch }}" == 'stage2' ]; then
             git fetch
+            git log origin develop
             git checkout develop
             git pull
-            git log -20
+            git log
             git checkout stage2
             git pull
-            git log -10
+            git log
             git pull --rebase origin develop
             git push
           elif [ "${{ github.event.inputs.destination_branch }}" == 'main' ]; then
