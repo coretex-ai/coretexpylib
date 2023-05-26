@@ -1,0 +1,24 @@
+name: Linter code check
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.8"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip pipenv wheel
+          pipenv install --dev
+      - name: Generate mypy cache
+        run: |
+          pipenv run mypy src/coretex &> /dev/null || echo "Mypy cache created"
+      - name: Analysing the code with mypy
+        run: |
+          yes | pipenv run mypy --install-types
+          pipenv run mypy src/coretex
