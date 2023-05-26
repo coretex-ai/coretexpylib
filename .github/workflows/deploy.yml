@@ -1,0 +1,39 @@
+name: Manual Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      destination_branch:
+        description: 'Destination'
+        required: true
+        default: 'stage'
+        options: ['stage', 'main']
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check if user is allowed to execute the workflow
+        run: |
+          if [[ "${{ github.event_name }}" == 'workflow_dispatch' && ( "${{ github.actor }}" != 'igorperic17' && "${{ github.repository_owner }}" != "${{ github.actor }}" ) ]]; then
+            echo "::error::You are not authorized to execute this workflow."
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Merge develop into destination branch
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          if [ "${{ github.event.inputs.destination_branch }}" == 'stage' ]; then
+            git checkout stage
+            git merge --no-ff develop
+            git push origin stage
+          elif [ "${{ github.event.inputs.destination_branch }}" == 'main' ]; then
+            git checkout main
+            git merge --no-ff stage
+            git push origin main
+          fi
