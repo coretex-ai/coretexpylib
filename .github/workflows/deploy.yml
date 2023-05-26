@@ -33,8 +33,8 @@ jobs:
 
       - name: Merge develop into destination branch
         run: |
-          git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git config user.name "coretex-admin"
+          git config user.email "support@coretex.ai"
           if [ "${{ github.event.inputs.destination_branch }}" == 'stage' ]; then
             git fetch
             git checkout stage
