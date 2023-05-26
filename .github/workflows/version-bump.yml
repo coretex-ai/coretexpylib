@@ -1,0 +1,67 @@
+name: Bump Version
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  bump_version:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools
+      
+      - name: Bump version
+        id: bump
+        run: |
+          # Parse the previous version from the pyproject.toml file
+          previous_version=$(awk -F' = ' '/version =/ {gsub(/"/, "", $2); print $2}' pyproject.toml)
+          
+          # Split the version into major, minor, and patch parts
+          major=$(echo $previous_version | cut -d'.' -f1)
+          minor=$(echo $previous_version | cut -d'.' -f2)
+          patch=$(echo $previous_version | cut -d'.' -f3)
+          
+          # Check if major or minor version parts have been increased
+          if [[ $major == *"+1"* ]] || [[ $minor == *"+1"* ]]; then
+            echo "Major or minor version increased. Skipping version bump."
+            exit 0
+          fi
+          
+          # Increment the patch version
+          patch=$((patch + 1))
+          
+          # Generate the new version string
+          new_version="$major.$minor.$patch"
+          
+          # Update the pyproject.toml file with the new version
+          sed -i "s/version = \".*\"/version = \"$new_version\"/" pyproject.toml
+          
+          # Commit the changes
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add pyproject.toml
+          git commit -m "Bump version to $new_version"
+          
+          # Push the changes back to the repository
+          git push origin develop
+          
+          # Output the new version for future steps
+          echo "::set-output name=version::$new_version"
+      
+      - name: Use the new version
+        run: |
+          # You can use the new version in subsequent steps if needed
+          echo "New version: ${{ steps.bump.outputs.version }}"
