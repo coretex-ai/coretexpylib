@@ -19,6 +19,7 @@ permissions:
 
 jobs:
   deploy:
+    if: ${{ needs.manual_deploy.outputs.success == 'true' }}
 
     runs-on: ubuntu-latest
     steps:
