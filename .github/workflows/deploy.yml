@@ -38,14 +38,12 @@ jobs:
           if [ "${{ github.event.inputs.destination_branch }}" == 'stage' ]; then
             git fetch
             git checkout stage
-            git pull
-            git pull origin develop
-            git push origin stage
+            git fetch origin develop:develop --force
+            git push
           elif [ "${{ github.event.inputs.destination_branch }}" == 'main' ]; then
             git fetch
             git checkout main
-            git pull
-            git pull origin stage
-            git push origin main
+            git fetch origin stage:stage --force
+            git push
             echo "::set-output name=run_publish_workflow::true"
           fi
