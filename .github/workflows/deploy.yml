@@ -39,7 +39,7 @@ jobs:
             git fetch
             git checkout stage
             git pull
-            got log -10
+            git log -10
             git pull --rebase origin develop
             git push
           elif [ "${{ github.event.inputs.destination_branch }}" == 'main' ]; then
