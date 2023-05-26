@@ -52,3 +52,10 @@ jobs:
             git push --force
             echo "::set-output name=run_publish_workflow::true"
           fi
+          
+      - name: Trigger deploy to PyPi repository
+        if: ${{ success() }}
+        uses: actions/trigger-workflow@v2
+        with:
+          workflow: Publish Python Package to MyPi
+          branch: main
