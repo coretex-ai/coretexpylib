@@ -37,6 +37,9 @@ jobs:
           git config user.email "${{ github.actor }}@users.noreply.github.com"
           if [ "${{ github.event.inputs.destination_branch }}" == 'stage2' ]; then
             git fetch
+            git checkout develop
+            git pull
+            git log -20
             git checkout stage2
             git pull
             git log -10
