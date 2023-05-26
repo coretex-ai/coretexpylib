@@ -1,6 +1,6 @@
 #     Copyright (C) 2023  BioMech LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -19,4 +19,4 @@ from .artifact import Artifact
 from .experiment import Experiment
 from .status import ExperimentStatus
 from .executing_experiment import ExecutingExperiment
-from .metrics import MetricType
+from .metrics import Metric, MetricType

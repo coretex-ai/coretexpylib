@@ -1,6 +1,6 @@
 #     Copyright (C) 2023  BioMech LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -21,17 +21,19 @@ from multiprocessing.connection import Connection
 import time
 
 from ..coretex import MetricType
-from ..networking import networkManager
-from ..coretex.experiment.experiment import Experiment
+from ..networking import networkManager, NetworkRequestError
+from ..coretex.experiment import Experiment
+from ..coretex.experiment.metrics.metric_factory import createMetric
 
 
 METRICS = [
-    ("cpu_usage", "time (s)", MetricType.interval, "usage (%)", MetricType.percent),
-    ("ram_usage", "time (s)", MetricType.interval, "usage (%)", MetricType.percent),
-    ("download_speed", "time (s)", MetricType.interval, "bytes", MetricType.bytes),
-    ("upload_speed", "time (s)", MetricType.interval, "bytes", MetricType.bytes),
-    ("disk_read", "time (s)", MetricType.interval, "bytes", MetricType.bytes),
-    ("disk_write", "time (s)", MetricType.interval, "bytes", MetricType.bytes)
+    createMetric("cpu_usage", "time (s)", MetricType.interval, "usage (%)", MetricType.percent, None, [0, 100]),
+    createMetric("ram_usage", "time (s)", MetricType.interval, "usage (%)", MetricType.percent, None, [0, 100]),
+    createMetric("swap_usage", "time (s)", MetricType.interval, "usage (%)", MetricType.percent, None, [0, 100]),
+    createMetric("download_speed", "time (s)", MetricType.interval, "bytes", MetricType.bytes),
+    createMetric("upload_speed", "time (s)", MetricType.interval, "bytes", MetricType.bytes),
+    createMetric("disk_read", "time (s)", MetricType.interval, "bytes", MetricType.bytes),
+    createMetric("disk_write", "time (s)", MetricType.interval, "bytes", MetricType.bytes)
 ]
 
 
@@ -60,8 +62,8 @@ def setupGPUMetrics() -> None:
         py3nvml.nvmlInit()
 
         METRICS.extend([
-            ("gpu_usage", "time (s)", MetricType.interval, "usage (%)", MetricType.percent),
-            ("gpu_temperature", "time (s)", MetricType.interval, "usage (%)", MetricType.percent)
+            createMetric("gpu_usage", "time (s)", MetricType.interval, "usage (%)", MetricType.percent, None, [0, 100]),
+            createMetric("gpu_temperature", "time (s)", MetricType.interval, "usage (%)", MetricType.percent)
         ])
     except:
         pass
@@ -80,10 +82,10 @@ def uploadMetricsWorker(outputStream: Connection, refreshToken: str, experimentI
         sendFailure(outputStream, f"Failed to fetch experiment with id: {experimentId}")
         return
 
-    createdMetrics = experiment.createMetrics(METRICS)
-    if len(createdMetrics) == 0:
-        sendFailure(outputStream, "Failed to create metrics list")
-        return
+    try:
+        experiment.createMetrics(METRICS)
+    except NetworkRequestError:
+        sendFailure(outputStream, "Failed to create metrics")
 
     sendSuccess(outputStream, "Metrics worker succcessfully started")
 

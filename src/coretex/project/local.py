@@ -1,6 +1,6 @@
 #     Copyright (C) 2023  BioMech LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -124,12 +124,13 @@ def processLocal(args: Optional[List[str]] = None) -> Tuple[int, ProjectCallback
         # Dummy Local node ID, hardcoded as it is only a temporary solution,
         # backend will add a new ExperimentType (local) which does not require a specific
         # node to run
-        43,
+        -1,
         parser.name,
         parser.description,
         parameters = [parameter.encode() for parameter in parameters]
     )
 
+    logging.getLogger("coretexpylib").info(f">> [Coretex] Created local experiment with ID \"{experiment.id}\"")
     experiment.updateStatus(ExperimentStatus.preparingToStart)
 
     return experiment.id, LocalProjectCallback(experiment, response.json["refresh_token"])

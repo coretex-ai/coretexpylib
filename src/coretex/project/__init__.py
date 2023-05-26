@@ -1,6 +1,6 @@
 #     Copyright (C) 2023  BioMech LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Callable, Optional, Type, TypeVar, Tuple, List
+from typing import Callable, Optional, Type, TypeVar, List
 from enum import IntEnum
 
 import logging
@@ -23,7 +23,7 @@ import sys
 
 from .remote import processRemote
 from .local import processLocal
-from ..coretex import ExperimentStatus, NetworkDataset, ExecutingExperiment, MetricType
+from ..coretex import ExperimentStatus, NetworkDataset, ExecutingExperiment, Metric
 from ..logging import LogHandler, initializeLogger, LogSeverity
 from ..networking import RequestFailedError
 from ..folder_management import FolderManager
@@ -42,20 +42,21 @@ class ExecutionType(IntEnum):
 def _prepareForExecution(
      experimentId: int,
      datasetType: Optional[Type[DatasetType]] = None,
-     metrics: Optional[List[Tuple[str, str, MetricType, str, MetricType]]] = None
+     metrics: Optional[List[Metric]] = None
 ) -> None:
+
      experiment = ExecutingExperiment.startExecuting(experimentId, datasetType)
 
      logPath = FolderManager.instance().logs / f"{experimentId}.log"
      customLogHandler = LogHandler.instance()
      customLogHandler.currentExperimentId = experimentId
 
-     # if logLevel exists apply it, otherwise default to info
+     # enable/disable verbose mode for experiments
      severity = LogSeverity.info
-     logLevel = experiment.parameters.get("logLevel")
+     verbose = experiment.parameters.get("verbose", False)
 
-     if logLevel is not None:
-          severity = LogSeverity(logLevel)
+     if verbose:
+          severity = LogSeverity.debug
 
      initializeLogger(severity, logPath)
 
@@ -74,9 +75,10 @@ def _prepareForExecution(
 def initializeProject(
      mainFunction: Callable[[ExecutingExperiment], None],
      datasetType: Optional[Type[DatasetType]] = None,
-     metrics: Optional[List[Tuple[str, str, MetricType, str, MetricType]]] = None,
+     metrics: Optional[List[Metric]] = None,
      args: Optional[List[str]] = None
 ) -> None:
+
      """
           Initializes and starts the python project as
           Coretex experiment
@@ -87,8 +89,8 @@ def initializeProject(
                entry point function
           datasetType : Optional[Type[DatasetType]]
                Custom dataset if there is any (Not required)
-          metrics : Optional[List[Tuple[str, str, MetricType, str, MetricType]]]
-               list of metrics that will be created for executing Experiment
+          metrics : Optional[List[Metric]]
+               list of metric objects that will be created for executing Experiment
           args : Optional[List[str]]
                list of command line arguments, if None sys.argv will be used
      """

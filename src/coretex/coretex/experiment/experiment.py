@@ -1,6 +1,6 @@
 #     Copyright (C) 2023  BioMech LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -28,7 +28,7 @@ import zipfile
 
 from .artifact import Artifact
 from .status import ExperimentStatus
-from .metrics import Metric, getClassForMetric, MetricType
+from .metrics import Metric
 from ..space import SpaceTask
 from ...codable import KeyDescriptor
 from ...networking import networkManager, NetworkObject, RequestType, NetworkRequestError
@@ -207,50 +207,51 @@ class Experiment(NetworkObject):
 
             return True
 
-    def createMetrics(self, values: List[Tuple[str, str, MetricType, str, MetricType]]) -> List[Metric]:
+    def createMetrics(self, metrics: List[Metric]) -> None:
         """
             Creates specified metrics for the experiment
 
             Parameters
             ----------
-            values : List[Tuple[str, str, MetricType, str, MetricType]]
-                Metric meta in this format ("name", "x_label", "x_type", "y_label", "y_type")
+            values : List[Metric]]
+                List of Metric meta objects in this format
+                Metric("name", "x_label", "x_type", "y_label", "y_type", "x_range", "y_range")
 
             Returns
             -------
             List[Metric] -> List of Metric objects
+
+            Raises
+            ------
+            NetworkRequestError -> if the request failed
 
             Example
             -------
             >>> from coretex import ExecutingExperiment, MetricType
             \b
             >>> metrics = ExecutingExperiment.current().createMetrics([
-                    ("loss", "epoch", MetricType.int, "value", MetricType.float),
-                    ("accuracy", "epoch", MetricType.int, "value", MetricType.float)
+                    Metric.create("loss", "epoch", MetricType.int, "value", MetricType.float, None, [0, 100]),
+                    Metric.create("accuracy", "epoch", MetricType.int, "value", MetricType.float, None, [0, 100])
                 ])
             >>> if len(metrics) == 0:
                     print("Failed to create metrics")
         """
 
-        if not Metric.createMetrics(self.id, values):
-            logging.getLogger("coretexpylib").info(">> [Coretex] Failed to create metrics!")
-            return []
+        parameters: Dict[str, Any] = {
+            "experiment_id": self.id,
+            "metrics": [metric.encode() for metric in metrics]
+        }
 
-        metrics: List[Metric] = []
-        for name, xLabel, xType, yLabel, yType in values:
-            clazz = getClassForMetric(name)
+        response = networkManager.genericJSONRequest(
+            "model-queue/metrics-meta",
+            RequestType.post,
+            parameters
+        )
 
-            if clazz is not None:
-                metric = clazz.create(name, xLabel, xType, yLabel, yType)
-                metrics.append(metric)
-
-            else:
-                metric = Metric.create(name, xLabel, xType, yLabel, yType)
-                metrics.append(metric)
+        if response.hasFailed():
+            raise NetworkRequestError(response, ">> [Coretex] Failed to create metrics!")
 
         self.metrics.extend(metrics)
-
-        return self.metrics
 
 
     def submitMetrics(self, metricValues: Dict[str, Tuple[float, float]]) -> bool:
@@ -276,20 +277,20 @@ class Experiment(NetworkObject):
 
         metrics = [{
             "timestamp": time.time(),
-            "metric": k,
-            "x": v[0],
-            "y": v[1]} for k, v in metricValues.items()]
+            "metric": key,
+            "x": value[0],
+            "y": value[1]
+        } for key, value in metricValues.items()]
 
         parameters: Dict[str, Any] = {
             "experiment_id": self.id,
             "metrics": metrics
         }
 
-        endpoint =  "model-queue/metrics"
         response = networkManager.genericJSONRequest(
-            endpoint = endpoint,
-            requestType = RequestType.post,
-            parameters = parameters
+            "model-queue/metrics",
+            RequestType.post,
+            parameters
         )
 
         return not response.hasFailed()

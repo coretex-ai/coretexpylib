@@ -1,6 +1,6 @@
 #     Copyright (C) 2023  BioMech LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -23,3 +23,4 @@ from .gpu_temperature import MetricGPUTemperature
 from .gpu_usage import MetricGPUUsage
 from .ram_usage import MetricRAMUsage
 from .upload_speed import MetricUploadSpeed
+from .swap_usage import MetricSwapUsage

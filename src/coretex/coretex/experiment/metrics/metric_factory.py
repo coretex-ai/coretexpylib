@@ -1,6 +1,6 @@
 #     Copyright (C) 2023  BioMech LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -15,9 +15,9 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Type, Optional
+from typing import Type, Optional, List
 
-from .metric import Metric
+from .metric import Metric, MetricType
 from .predefined_metrics import *
 
 
@@ -34,6 +34,9 @@ def getClassForMetric(name: str) -> Optional[Type[Metric]]:
     if name == "ram_usage":
         return MetricRAMUsage
 
+    if name == "swap_usage":
+        return MetricSwapUsage
+
     if name == "gpu_usage":
         return MetricGPUUsage
 
@@ -47,3 +50,20 @@ def getClassForMetric(name: str) -> Optional[Type[Metric]]:
         return MetricDownloadSpeed
 
     return None
+
+
+def createMetric(
+    name: str,
+    xLabel: str,
+    xType: MetricType,
+    yLabel: str,
+    yType: MetricType,
+    xRange: Optional[List[float]] = None,
+    yRange: Optional[List[float]] = None
+) -> Metric:
+
+    metric = getClassForMetric(name)
+    if metric is None:
+        raise ValueError(f"[Coretex] Failed to create {name} metric")
+
+    return metric.create(name, xLabel, xType, yLabel, yType, xRange, yRange)
