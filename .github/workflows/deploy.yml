@@ -56,7 +56,7 @@ jobs:
 
       - name: Trigger deploy to PyPi repository
         if: ${{ success() }}
-        uses: ./.github/workflows/python-publish.yml@main
+        uses: ./.github/workflows/python-publish.yml
         with:
           workflow: Publish Python Package to MyPi
           token: ${{ secrets.GITHUB_TOKEN }}
