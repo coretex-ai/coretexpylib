@@ -11,7 +11,7 @@ on:
         options: ['stage', 'main']
 
 jobs:
-  merge:
+  stage-merge:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,13 +19,6 @@ jobs:
         run: |
           if [[ "${{ github.event_name }}" == 'workflow_dispatch' && ( "${{ github.actor }}" != 'igorperic17' && "${{ github.repository_owner }}" != "${{ github.actor }}" ) ]]; then
             echo "::error::You are not authorized to execute this workflow."
-            exit 1
-          fi
-
-      - name: Validate destination branch
-        run: |
-          if [ "${{ github.event.inputs.destination_branch }}" != 'stage' ] && [ "${{ github.event.inputs.destination_branch }}" != 'main' ]; then
-            echo "::error::Invalid destination branch. Allowed values are 'stage' or 'main'."
             exit 1
           fi
 
@@ -45,18 +38,34 @@ jobs:
           git pull --rebase origin develop
           git push --force
 
-          if [ "${{ github.event.inputs.destination_branch }}" == 'main' ]; then
-            git fetch
-            git checkout main
-            git pull
-            git pull --rebase origin stage
-            git push --force
-            echo "::set-output name=run_publish_workflow::true"
+  prod-merge:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.destination_branch }} == 'main'
+
+    steps:
+      - name: Check if user is allowed to execute the workflow
+        run: |
+          if [[ "${{ github.event_name }}" == 'workflow_dispatch' && ( "${{ github.actor }}" != 'igorperic17' && "${{ github.repository_owner }}" != "${{ github.actor }}" ) ]]; then
+            echo "::error::You are not authorized to execute this workflow."
+            exit 1
           fi
 
-      - name: Trigger deploy to PyPi repository
-        if: ${{ success() }}
-        uses: ./.github/workflows/python-publish.yml
+      - name: Checkout repository
+        uses: actions/checkout@v2
         with:
-          workflow: Publish Python Package to MyPi
-          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Merge develop into destination branch
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+          git fetch
+          git checkout main
+          git pull
+          git pull --rebase origin stage
+          git push --force
+
+  deploy-pypi:
+    if: ${{ github.event.inputs.destination_branch }} == 'main' && ${{ success()}}
+    uses: ./.github/workflows/python-publish.yml
