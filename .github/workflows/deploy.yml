@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       destination_branch:
+        type: choice
         description: 'Destination env'
         required: true
         default: 'stage'
@@ -37,13 +38,13 @@ jobs:
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
-          
+
           git fetch
           git checkout stage
           git pull
           git pull --rebase origin develop
           git push --force
-          
+
           if [ "${{ github.event.inputs.destination_branch }}" == 'main' ]; then
             git fetch
             git checkout main
@@ -52,10 +53,10 @@ jobs:
             git push --force
             echo "::set-output name=run_publish_workflow::true"
           fi
-          
+
       - name: Trigger deploy to PyPi repository
         if: ${{ success() }}
-        uses: actions/trigger-workflow@v2
+        uses: peter-evans/workflow-dispatch@v1
         with:
           workflow: Publish Python Package to MyPi
-          branch: main
+          token: ${{ secrets.GITHUB_TOKEN }}
