@@ -9,10 +9,7 @@
 name: Publish Python Package to MyPi
 
 on:
-  workflow_dispatch:
-    inputs:
-      fromParentWorkflow:
-        description: 'Triggered from manual deploy workflow'
+  workflow_call:
 
 permissions:
   contents: read
