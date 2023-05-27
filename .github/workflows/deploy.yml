@@ -39,6 +39,7 @@ jobs:
           git push --force
 
   prod-merge:
+    needs: stage-merge
     runs-on: ubuntu-latest
     if: ${{ github.event.inputs.destination_branch }} == 'main'
 
@@ -67,5 +68,6 @@ jobs:
           git push --force
 
   deploy-pypi:
+    needs: prod-merge
     if: ${{ github.event.inputs.destination_branch }} == 'main' && ${{ success()}}
     uses: ./.github/workflows/python-publish.yml
