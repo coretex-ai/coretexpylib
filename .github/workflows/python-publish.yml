@@ -10,11 +10,10 @@ name: Publish Python Package to MyPi
 
 on:
   workflow_call:
-    inputs:
+    secrets:
       PYPI_TOKEN:
         description: Publishing token
         required: true
-        type: string
   
 
 permissions:
@@ -39,4 +38,4 @@ jobs:
         uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
         with:
           user: __token__
-          password: ${{ inputs.PYPI_TOKEN }}
+          password: ${{ secrets.PYPI_TOKEN }}
