@@ -17,7 +17,7 @@ jobs:
     steps:
       - name: Check if user is allowed to execute the workflow
         run: |
-          if [[ "${{ github.event_name }}" == 'workflow_dispatch' && ( "${{ github.actor }}" != 'igorperic17' && "${{ github.repository_owner }}" != "${{ github.actor }}" ) ]]; then
+          if [[ "${{ github.event_name }}" == 'workflow_dispatch' && ("${{ github.actor }}" != 'coretex-admin' && "${{ github.actor }}" != 'igorperic17' && "${{ github.repository_owner }}" != "${{ github.actor }}" ) ]]; then
             echo "::error::You are not authorized to execute this workflow."
             exit 1
           fi
