@@ -71,5 +71,5 @@ jobs:
     needs: prod-merge
     if: ${{ (github.event.inputs.destination_branch == 'main') && success() }}
     uses: ./.github/workflows/python-publish.yml
-    with:
+    secrets:
       PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
