@@ -9,10 +9,6 @@ on:
         required: true
         default: 'stage'
         options: ['stage', 'main']
-      workflow_id:
-        type: string
-        description: 'Optional workflow ID'
-        required: false
 
 jobs:
   stage-merge:
