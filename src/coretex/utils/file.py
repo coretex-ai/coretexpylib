@@ -1,6 +1,6 @@
 #     Copyright (C) 2023  BioMech LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Generator, Optional
+from typing import Generator, Optional, Union
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -36,14 +36,14 @@ class InvalidFileExtension(Exception):
     pass
 
 
-def guessMimeType(filePath: str) -> str:
+def guessMimeType(filePath: Union[Path, str]) -> str:
     """
         Tries to guess mime type of the file
 
         Parameters
         ----------
-        filePath : str
-            file to be guessed
+        filePath : Union[Path, str]
+            file whose mime type will be guessed
 
         Returns
         -------
@@ -149,8 +149,8 @@ def walk(path: Path) -> Generator[Path, None, None]:
         subdirectories and subfiles
     """
 
-    for p in Path(path).iterdir(): 
-        if p.is_dir(): 
+    for p in Path(path).iterdir():
+        if p.is_dir():
             yield from walk(p)
             continue
 

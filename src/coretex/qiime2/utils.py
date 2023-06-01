@@ -1,6 +1,6 @@
 #     Copyright (C) 2023  BioMech LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, List
+from typing import List
 from pathlib import Path
 
 import logging
@@ -25,11 +25,7 @@ from ..coretex import Experiment, CustomSample, CustomDataset
 
 
 def createSample(name: str, datasetId: int, path: Path, experiment: Experiment, stepName: str, retryCount: int = 0) -> CustomSample:
-    mimeType: Optional[str] = None
-    if path.suffix in [".qza", ".qzv"]:
-        mimeType = "application/zip"
-
-    sample = CustomSample.createCustomSample(name, datasetId, str(path), mimeType)
+    sample = CustomSample.createCustomSample(name, datasetId, str(path))
     if sample is None:
         if retryCount < 3:
             logging.info(f">> [Workspace] Retry count: {retryCount}")

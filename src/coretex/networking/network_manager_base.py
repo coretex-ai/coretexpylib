@@ -1,6 +1,6 @@
 #     Copyright (C) 2023  BioMech LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -15,8 +15,8 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from typing import Optional, Any, Dict, List
 from pathlib import Path
-from typing import Optional, Any, Dict
 from abc import ABC, abstractmethod
 from importlib.metadata import version as getLibraryVersion
 
@@ -28,6 +28,7 @@ import platform
 from .requests_manager import RequestsManager
 from .request_type import RequestType
 from .network_response import HttpCode, NetworkResponse
+from .file_data import FileData
 
 
 class NetworkManagerBase(ABC):
@@ -247,21 +248,30 @@ class NetworkManagerBase(ABC):
     def genericUpload(
         self,
         endpoint: str,
-        files: Any,
+        files: List[FileData],
         parameters: Optional[Dict[str, Any]] = None,
         retryCount: int = 0
     ) -> NetworkResponse:
+
+        networkResponse = self._requestManager.upload(endpoint, self._requestHeader(), files, parameters)
+
+        if self.shouldRetry(retryCount, networkResponse):
+            return self.genericUpload(endpoint, files, parameters, retryCount + 1)
+
+        return networkResponse
+
+
+    def genericFormData(self, endpoint: str, parameters: Dict[str, Any], retryCount: int = 0) -> NetworkResponse:
         """
-            Uploads files to Cortex.ai
+            Sends a form data request to Cortex.ai
 
             Parameters
             ----------
             endpoint : str
                 API endpoint
-            files : Any
-                files
-            parameters : Optional[dict[str, Any]]
-                request parameters (not required)
+            parameters : dict[str, Any]
+                request parameters - must be ordered to match
+                expected values on Coretex.ai
             retryCount : int
                 number of function calls if request has failed
 
@@ -273,16 +283,13 @@ class NetworkManagerBase(ABC):
             -------
             >>> from coretex import networkManager
             \b
-            >>> localFilePath = "path/to/file/filename.ext"
-            >>> with open(localFilePath, "rb") as file:
-                    files = [
-                        ("file", ("filename.ext", file, "application/zip"))
-                    ]
-            \b
-                    response = networkManager.genericUpload(
-                        endpoint = "dummy/upload",
-                        files = files,
-                    )
+                response = networkManager.genericFormData(
+                    endpoint = "dummy/form-data",
+                    parameters = {
+                        "first": "first_value",
+                        "second": "second_value"
+                    }
+                )
             >>> if response.hasFailed():
                     print("Failed to upload the file")
         """
@@ -290,14 +297,20 @@ class NetworkManagerBase(ABC):
         headers = self._requestHeader()
         del headers['Content-Type']
 
-        if parameters is None:
-            parameters = {}
+        # Map to correct form data parameter format
+        formDataParameters = {
+            key: (None, value)
+            for key, value in parameters.items()
+        }
 
-        networkResponse = self._requestManager.genericRequest(RequestType.post, endpoint, headers, parameters, files)
+        # RequestsManager.genericRequest files parameter can
+        # accept parameters that are not files, this way we can
+        # send form-data requests without actual files
+        networkResponse = self._requestManager.genericRequest(RequestType.post, endpoint, headers, files = formDataParameters)
 
         if self.shouldRetry(retryCount, networkResponse):
             print(">> [Coretex] Retry count: {0}".format(retryCount))
-            return self.genericUpload(endpoint, files, parameters, retryCount + 1)
+            return self.genericFormData(endpoint, parameters, retryCount + 1)
 
         return networkResponse
 

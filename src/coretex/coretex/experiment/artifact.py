@@ -1,6 +1,6 @@
 #     Copyright (C) 2023  BioMech LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -24,7 +24,7 @@ from pathlib import Path
 import os
 
 from ...codable import Codable, KeyDescriptor
-from ...networking import networkManager, RequestType
+from ...networking import networkManager, RequestType, FileData
 from ...folder_management import FolderManager
 from ...utils import guessMimeType
 
@@ -140,7 +140,7 @@ class Artifact(Codable):
                 mimeType = "application/octet-stream"
 
         files = [
-            ("file", ("file", open(localFilePath, "rb"), mimeType))
+            FileData.createFromPath("file", localFilePath, mimeType = mimeType)
         ]
 
         parameters = {

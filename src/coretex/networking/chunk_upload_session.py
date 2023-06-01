@@ -15,15 +15,15 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Union, Optional
+from typing import Union
 from pathlib import Path
 
 import logging
 
+from .network_manager_base import FileData
 from .network_manager import networkManager
 from .network_response import NetworkRequestError
 from .request_type import RequestType
-from ..utils import guessMimeType
 
 
 MAX_CHUNK_SIZE = 128 * 1024 * 1024  # 128 MiB
@@ -54,25 +54,18 @@ class ChunkUploadSession:
             path to the file which will be uploaded
         fileSize : int
             size of the file which will be uploaded
-        mimeType : str
-            mime type of the file - if None is passed, guess will
-            be performed, if guess fails Exception will be raised
     """
 
-    def __init__(self, chunkSize: int, filePath: Union[Path, str], mimeType: Optional[str] = None) -> None:
+    def __init__(self, chunkSize: int, filePath: Union[Path, str]) -> None:
         if chunkSize <= 0 or chunkSize > MAX_CHUNK_SIZE:
             raise ValueError(f">> [Coretex] Invalid \"chunkSize\" value \"{chunkSize}\". Value must be in range 0-{MAX_CHUNK_SIZE}")
 
         if isinstance(filePath, str):
             filePath = Path(filePath)
 
-        if mimeType is None:
-            mimeType = guessMimeType(str(filePath))
-
         self.chunkSize = chunkSize
         self.filePath = filePath
         self.fileSize = filePath.lstat().st_size
-        self.mimeType = mimeType
 
     def __start(self) -> str:
         parameters = {
@@ -92,9 +85,9 @@ class ChunkUploadSession:
 
     def __uploadChunk(self, uploadId: str, start: int, end: int) -> None:
         chunk = _loadChunk(self.filePath, start, self.chunkSize)
-        files = {
-            "file": (self.filePath.name, chunk, self.mimeType)
-        }
+        files = [
+            FileData.createFromBytes("file", chunk, self.filePath.name)
+        ]
 
         parameters = {
             "id": uploadId,

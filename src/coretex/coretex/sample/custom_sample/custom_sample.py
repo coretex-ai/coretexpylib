@@ -1,6 +1,6 @@
 #     Copyright (C) 2023  BioMech LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -23,6 +23,7 @@ from .custom_sample_data import CustomSampleData
 from .local_custom_sample import LocalCustomSample
 from ..network_sample import NetworkSample
 from ....networking import networkManager, ChunkUploadSession, MAX_CHUNK_SIZE
+from ....utils.file import isArchive
 
 
 class CustomSample(NetworkSample[CustomSampleData], LocalCustomSample):
@@ -41,8 +42,7 @@ class CustomSample(NetworkSample[CustomSampleData], LocalCustomSample):
         cls,
         name: str,
         datasetId: int,
-        filePath: Union[Path, str],
-        mimeType: Optional[str] = None
+        filePath: Union[Path, str]
     ) -> Optional[Self]:
         """
             Creates a new custom sample with specified properties\n
@@ -54,10 +54,8 @@ class CustomSample(NetworkSample[CustomSampleData], LocalCustomSample):
                 sample name
             datasetId : int
                 id of dataset to which the sample will be added
-            filePath : str
+            filePath : Union[Path, str]
                 path to the sample
-            mimeType : Optional[str]
-                mime type of the file, if None mime type guessing will be performed
 
             Returns
             -------
@@ -77,18 +75,22 @@ class CustomSample(NetworkSample[CustomSampleData], LocalCustomSample):
                     print("Failed to create custom sample")
         """
 
-        uploadSession = ChunkUploadSession(MAX_CHUNK_SIZE, filePath, mimeType)
+        if isinstance(filePath, str):
+            filePath = Path(filePath)
+
+        if not isArchive(filePath):
+            raise ValueError(">> [Coretex] File must be an archive [.zip, .tar, .tar.gz]")
+
+        uploadSession = ChunkUploadSession(MAX_CHUNK_SIZE, filePath)
         uploadId = uploadSession.run()
 
-        parameters = [
-            ("name",       (None, name)),
-            ("dataset_id", (None, datasetId)),
-            ("file_id",    (None, uploadId))
-        ]
+        parameters = {
+            "name": name,
+            "dataset_id": datasetId,
+            "file_id": uploadId
+        }
 
-        # files parameter can accept parameters that are not files, this way we can
-        # send form-data requests without actual files
-        response = networkManager.genericUpload("session/import", files = parameters)
+        response = networkManager.genericFormData("session/import", parameters)
         if response.hasFailed():
             return None
 

@@ -1,6 +1,6 @@
 #     Copyright (C) 2023  BioMech LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -24,7 +24,7 @@ import os
 from .sample import Sample
 from ..space import SpaceTask
 from ...codable import KeyDescriptor
-from ...networking import NetworkObject, networkManager
+from ...networking import NetworkObject, networkManager, FileData
 from ...folder_management import FolderManager
 from ...utils import guessMimeType
 
@@ -89,7 +89,7 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
                 API endpoint
             parameters : Dict[str, Any]
                 parameters which will be sent as request body
-            filePath : str
+            filePath : Union[Path, str]
                 path to sample
             mimeType : Optional[str]
                 mimeType (not required)
@@ -103,19 +103,15 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
         if isinstance(filePath, str):
             filePath = Path(filePath)
 
-        if mimeType is None:
-            mimeType = guessMimeType(str(filePath))
+        files = [
+            FileData.createFromPath("file", filePath, mimeType = mimeType)
+        ]
 
-        with filePath.open("rb") as sampleFile:
-            files = [
-                ("file", (filePath.stem, sampleFile, mimeType))
-            ]
+        response = networkManager.genericUpload("session/import", files, parameters)
+        if response.hasFailed():
+            return None
 
-            response = networkManager.genericUpload("session/import", files, parameters)
-            if response.hasFailed():
-                return None
-
-            return cls.decode(response.json)
+        return cls.decode(response.json)
 
     def download(self, ignoreCache: bool = False) -> bool:
         """
