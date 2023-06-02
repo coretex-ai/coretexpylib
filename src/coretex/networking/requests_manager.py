@@ -241,9 +241,6 @@ class RequestsManager:
         logging.getLogger("coretexpylib").debug(f"Sending upload request {endpoint}, HEADERS: {headers}, FILES: {files}, PARAMETERS: {parameters}")
 
         try:
-            if retryCount == 0:
-                raise Exception("Force retry")
-
             # ExitStack lets us combine multiple contexts when opening files
             # and if anything failes then the ExitStack will properly close
             # all open file handles
