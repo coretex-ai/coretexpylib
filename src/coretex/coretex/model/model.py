@@ -1,6 +1,6 @@
 #     Copyright (C) 2023  BioMech LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -15,17 +15,17 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Any, Dict
+from typing import Any, Dict, Union
 from typing_extensions import Self
 from datetime import datetime
 from zipfile import ZipFile
+from pathlib import Path
 
 import os
-import shutil
 import json
 import logging
 
-from ...networking import networkManager, NetworkObject
+from ...networking import networkManager, NetworkObject, FileData
 from ...folder_management import FolderManager
 from ...codable import KeyDescriptor
 
@@ -200,18 +200,17 @@ class Model(NetworkObject):
         if response.hasFailed():
             logging.getLogger("coretexpylib").info(">> [Coretex] Failed to download the model")
 
-        zipFile = ZipFile(modelZipDestination)
-        zipFile.extractall(modelFolderDestination)
-        zipFile.close()
+        with ZipFile(modelZipDestination) as zipFile:
+            zipFile.extractall(modelFolderDestination)
 
-    def upload(self, path: str) -> bool:
+    def upload(self, path: Union[Path, str]) -> bool:
         """
-            Uploads the model zip file to Coretex.ai
+            Uploads the provided model folder as zip file to Coretex.ai
 
             Parameters
             ----------
-            path : str
-                Path to the saved model dir
+            path : Union[Path, str]
+                Path to the saved model directory
 
             Returns
             -------
@@ -236,13 +235,22 @@ class Model(NetworkObject):
         if self.isDeleted:
             return False
 
+        if isinstance(path, str):
+            path = Path(path)
+
+        if not path.is_dir():
+            raise ValueError(">> [Coretex] \"path\" must be a directory")
+
         logging.getLogger("coretexpylib").info(">> [Coretex] Uploading model file...")
 
-        shutil.make_archive(path, "zip", path)
+        zipPath = path.with_suffix(".zip")
+        with ZipFile(zipPath, "w") as zipFile:
+            for value in path.iterdir():
+                zipFile.write(value, value.name)
 
-        files = {
-            ("file", open(f"{path}.zip", "rb"))
-        }
+        files = [
+            FileData.createFromPath("file", zipPath)
+        ]
 
         parameters = {
             "id": self.id

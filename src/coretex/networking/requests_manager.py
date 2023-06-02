@@ -1,6 +1,6 @@
 #     Copyright (C) 2023  BioMech LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -15,7 +15,8 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Final, Any, Optional, Dict
+from typing import Final, Any, Optional, Dict, List
+from contextlib import ExitStack
 
 import logging
 
@@ -23,6 +24,7 @@ from requests import Session
 
 from .network_response import NetworkResponse
 from .request_type import RequestType
+from .file_data import FileData
 
 
 class RequestFailedError(RuntimeError):
@@ -77,7 +79,8 @@ class RequestsManager:
             files : Any
                 (not required)
             retryCount : int
-                number of function calls if request has failed
+                number of function calls if request has failed, used
+                for internal retry mechanism
 
             Returns
             -------
@@ -97,9 +100,9 @@ class RequestsManager:
             )
 
             return NetworkResponse(requestsResponse, endpoint)
-        except Exception as ex:
+        except:
             if retryCount < RequestsManager.MAX_RETRY_COUNT:
-                RequestsManager.__logRetry(requestType, endpoint, retryCount, ex)
+                RequestsManager.__logRetry(requestType, endpoint, retryCount)
                 return self.genericRequest(requestType, endpoint, headers, data, files, retryCount = retryCount + 1)
 
             raise RequestFailedError
@@ -126,7 +129,8 @@ class RequestsManager:
             jsonObject : Any
                 (not required)
             retryCount : int
-                number of function calls if request has failed
+                number of function calls if request has failed, used
+                for internal retry mechanism
 
             Returns
             -------
@@ -145,9 +149,9 @@ class RequestsManager:
             )
 
             return NetworkResponse(requestsResponse, endpoint)
-        except Exception as ex:
+        except:
             if retryCount < RequestsManager.MAX_RETRY_COUNT:
-                RequestsManager.__logRetry(RequestType.get, endpoint, retryCount, ex)
+                RequestsManager.__logRetry(RequestType.get, endpoint, retryCount)
                 return self.get(endpoint, headers, data, jsonObject, retryCount = retryCount + 1)
 
             raise RequestFailedError
@@ -174,7 +178,8 @@ class RequestsManager:
             jsonObject : Any
                 (not required)
             retryCount : int
-                number of function calls if request has failed
+                number of function calls if request has failed, used
+                for internal retry mechanism
 
             Returns
             -------
@@ -193,10 +198,67 @@ class RequestsManager:
             )
 
             return NetworkResponse(requestsResponse, endpoint)
-        except Exception as ex:
+        except:
             if retryCount < RequestsManager.MAX_RETRY_COUNT:
-                RequestsManager.__logRetry(RequestType.post, endpoint, retryCount, ex)
+                RequestsManager.__logRetry(RequestType.post, endpoint, retryCount)
                 return self.post(endpoint, headers, data, jsonObject, retryCount = retryCount + 1)
+
+            raise RequestFailedError
+
+    def upload(
+        self,
+        endpoint: str,
+        headers: Dict[str, str],
+        files: List[FileData],
+        parameters: Optional[Dict[str, Any]] = None,
+        retryCount: int = 0
+    ) -> NetworkResponse:
+        """
+            Sends generic HTTP request
+
+            Parameters
+            ----------
+            endpoint : str
+                API endpoint
+            headers : Dict[str, str]
+                request headers
+            files : List[FileData]
+                files which will be uploaded and their metadata
+            parameters : Optional[Dict[str, Any]]
+                request parameters (not required)
+            retryCount : int
+                number of function calls if request has failed, used
+                for internal retry mechanism
+
+            Returns
+            -------
+            NetworkResponse -> NetworkResponse object as response content to request
+        """
+
+        if "Content-Type" in headers:
+            del headers['Content-Type']
+
+        logging.getLogger("coretexpylib").debug(f"Sending upload request {endpoint}, HEADERS: {headers}, FILES: {files}, PARAMETERS: {parameters}")
+
+        try:
+            # ExitStack lets us combine multiple contexts when opening files
+            # and if anything failes then the ExitStack will properly close
+            # all open file handles
+            with ExitStack() as stack:
+                requestsResponse = self.__session.request(
+                    method = RequestType.post.value,
+                    url = self.__url(endpoint),
+                    headers = headers,
+                    data = parameters,
+                    files = [file.prepareForUpload(stack) for file in files]
+                    # timeout = (self.__connectionTimeout, self.__readTimeout)
+                )
+
+            return NetworkResponse(requestsResponse, endpoint)
+        except:
+            if retryCount < RequestsManager.MAX_RETRY_COUNT:
+                RequestsManager.__logRetry(RequestType.post, endpoint, retryCount)
+                return self.upload(endpoint, headers, files, parameters, retryCount + 1)
 
             raise RequestFailedError
 
@@ -204,13 +266,14 @@ class RequestsManager:
         self.__session.auth = (username, password)
 
     @staticmethod
-    def __logRetry(requestType: RequestType, endpoint: str, retryCount: int, exception: Exception) -> None:
+    def __logRetry(requestType: RequestType, endpoint: str, retryCount: int) -> None:
         """
             Logs the information about request retry
         """
 
         logging.getLogger("coretexpylib").debug(
-            f">> [Coretex] Retry {retryCount + 1} for ({requestType.name} -> {endpoint}), exception: {exception.__class__.__name__}"
+            f">> [Coretex] Retry {retryCount + 1} for ({requestType.name} -> {endpoint})",
+            exc_info = True
         )
 
     def reset(self) -> None:

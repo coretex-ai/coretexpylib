@@ -1,6 +1,6 @@
 #     Copyright (C) 2023  BioMech LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .network_manager_base import NetworkManagerBase
+from .network_manager_base import NetworkManagerBase, FileData
 from .network_manager import networkManager
 from .network_object import NetworkObject, DEFAULT_PAGE_SIZE
 from .network_response import NetworkResponse, NetworkRequestError
