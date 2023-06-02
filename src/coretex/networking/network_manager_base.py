@@ -307,7 +307,6 @@ class NetworkManagerBase(ABC):
 
         return networkResponse
 
-
     def genericFormData(self, endpoint: str, parameters: Dict[str, Any], retryCount: int = 0) -> NetworkResponse:
         """
             Sends a form data request to Cortex.ai
