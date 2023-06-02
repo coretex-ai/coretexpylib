@@ -390,8 +390,6 @@ class Experiment(NetworkObject):
 
             Parameters
             ----------
-            datasetId : int
-                id of dataset that is being used for starting custom Experiment
             projectId : int
                 id of project that is being used for starting custom Experiment
             nodeId : Union[int, str]
