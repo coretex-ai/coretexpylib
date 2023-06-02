@@ -201,7 +201,8 @@ class NetworkManagerBase(ABC):
             parameters : Optional[dict[str, Any]]
                 request parameters (not required)
             retryCount : int
-                number of function calls if request has failed
+                number of function calls if request has failed, used
+                for internal retry mechanism
 
             Returns
             -------
@@ -253,6 +254,52 @@ class NetworkManagerBase(ABC):
         retryCount: int = 0
     ) -> NetworkResponse:
 
+        """
+            Sends a multipart form data request to Coretex.ai
+            with files
+
+            Parameters
+            ----------
+            endpoint : str
+                API endpoint
+            files : List[FileData]
+                List of "FileData" objects which describe how
+                should the files be uploaded to Coretex.ai
+            parameters : dict[str, Any]
+                request parameters - must be ordered to match
+                expected values on Coretex.ai
+            retryCount : int
+                number of function calls if request has failed, used
+                for internal retry mechanism
+
+            Returns
+            -------
+            NetworkResponse -> NetworkResponse object containing the full response info
+
+            Example
+            -------
+            >>> from coretex import networkManager, FileData
+            \b
+            >>> with open("path/to/file_2.ext", "rb") as file:
+                    fileBytes = file.read()
+            \b
+            >>> files = [
+                    FileData.createFromPath("file_1", "path/to/file_1.ext"),
+                    FileData.createFromBytes("file_2", fileBytes, fileName = "file_2")
+                ]
+            \b
+            >>> response = networkManager.genericFormData(
+                    endpoint = "dummy/form-data",
+                    files = files,
+                    parameters = {
+                        "first": "first_value",
+                        "second": "second_value"
+                    }
+                )
+            >>> if response.hasFailed():
+                    print("Failed to upload the provided files")
+        """
+
         networkResponse = self._requestManager.upload(endpoint, self._requestHeader(), files, parameters)
 
         if self.shouldRetry(retryCount, networkResponse):
@@ -273,7 +320,8 @@ class NetworkManagerBase(ABC):
                 request parameters - must be ordered to match
                 expected values on Coretex.ai
             retryCount : int
-                number of function calls if request has failed
+                number of function calls if request has failed, used
+                for internal retry mechanism
 
             Returns
             -------
@@ -283,7 +331,7 @@ class NetworkManagerBase(ABC):
             -------
             >>> from coretex import networkManager
             \b
-                response = networkManager.genericFormData(
+            >>> response = networkManager.genericFormData(
                     endpoint = "dummy/form-data",
                     parameters = {
                         "first": "first_value",
@@ -291,7 +339,7 @@ class NetworkManagerBase(ABC):
                     }
                 )
             >>> if response.hasFailed():
-                    print("Failed to upload the file")
+                    print("Failed to execute form data request")
         """
 
         headers = self._requestHeader()
@@ -365,7 +413,8 @@ class NetworkManagerBase(ABC):
             headers : Optional[dict[str, str]]
                 headers (not required)
             retryCount : int
-                number of function calls if request has failed
+                number of function calls if request has failed, used
+                for internal retry mechanism
 
             Returns
             -------

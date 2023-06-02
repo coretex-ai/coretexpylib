@@ -25,6 +25,33 @@ from ..utils import guessMimeType
 
 class FileData:
 
+    """
+        Class which describes file which will be uploaded
+        using NetworkManager.genericUpload function.
+        To upload a file either its "filePath" or "fileBytes"
+        must be set, otherwise it will raise an exception.
+        "filePath" will upload the file from the specified path, while
+        "fileBytes" will upload the file directly from the memory.
+        If both parameters have value "fileBytes" will be used.
+
+        Objects of this class should not be instantiated directly,
+        use either "FileData.createFromPath" or "FileData.createFromBytes"
+        to instantiate the object.
+
+        Properties
+        ----------
+        parameterName : str
+            Name of the form-data parameter
+        fileName : str
+            Name of the file which will be uploaded
+        mimeType : str
+            Mime type of the file which will be uploaded
+        filePath : Optional[str]
+            Path to the file which will be uploaded
+        fileBytes : Optional[bytes]
+            Bytes of the file which will be uploaded
+    """
+
     def __init__(
         self,
         parameterName: str,
@@ -52,8 +79,38 @@ class FileData:
         mimeType: Optional[str] = None
     ) -> Self:
 
+        """
+            Creates "FileData" object from the specified file path. Use
+            this function if you want to upload a file directly from path.
+
+            Parameters
+            ----------
+            parameterName : str
+                Name of the form-data parameter
+            filePath : Union[Path, str]
+                Path to the file which will be uploaded
+            fileName : Optional[str]
+                Name of the file which will be uploaded, if None it will
+                be extracted from the "filePath" parameter
+            mimeType : Optional[str]
+                Mime type of the file which will be uploaded, if None it will
+                be guessed. If it is not possible to guess an exception will be
+                raised. In that case provide the mime type manually.
+
+            Returns
+            -------
+            Self -> on object which describes how a path should be uploaded from path
+
+            Raises
+            ------
+            ValueError -> if "filePath" is not a valid file
+        """
+
         if isinstance(filePath, str):
             filePath = Path(filePath)
+
+        if not filePath.is_file():
+            raise ValueError(">> [Coretex] \"filePath\" is not a valid file")
 
         if fileName is None:
             fileName = filePath.stem
@@ -64,8 +121,40 @@ class FileData:
         return cls(parameterName, fileName, mimeType, filePath = filePath)
 
     @classmethod
-    def createFromBytes(cls, parameterName: str, fileBytes: bytes, fileName: str) -> Self:
-        return cls(parameterName, fileName, "application/octet-stream", fileBytes = fileBytes)
+    def createFromBytes(
+        cls,
+        parameterName: str,
+        fileBytes: bytes,
+        fileName: str,
+        mimeType: Optional[str] = None
+    ) -> Self:
+
+        """
+            Creates "FileData" object from the provided bytes. Use this
+            function if you want to upload a file directly from memory.
+
+            Parameters
+            ----------
+            parameterName : str
+                Name of the form-data parameter
+            fileBytes : bytes
+                Bytes of the file which will be uploaded
+            fileName : str
+                Name of the file which will be uploaded, if None it will
+                be extracted from the "filePath" parameter
+            mimeType : Optional[str]
+                Mime type of the file which will be uploaded, if None it will
+                be set to "application/octet-stream".
+
+            Returns
+            -------
+            Self -> on object which describes how a path should be uploaded from memory
+        """
+
+        if mimeType is None:
+            mimeType = "application/octet-stream"
+
+        return cls(parameterName, fileName, mimeType, fileBytes = fileBytes)
 
     def __getFileData(self, exitStack: ExitStack) -> Any:
         if self.fileBytes is not None:
@@ -77,4 +166,22 @@ class FileData:
         raise ValueError(">> [Coretex] Either \"filePath\" or \"fileData\" have to provided for file upload. \"fileData\" will be used if both are provided")
 
     def prepareForUpload(self, exitStack: ExitStack) -> Tuple[str, Tuple[str, Any, str]]:
-        return (self.parameterName, (self.fileName, self.__getFileData(exitStack), self.mimeType))
+        """
+            Converts the "FileData" object into a format which can be used
+            by the requests library for uploading files.
+
+            Parameters
+            ----------
+            exitStack : ExitStack
+                Context stack which contains the context of files
+                opened by the "FileData" object. Used to join multiple file
+                contexts, so if one raises an exception all the files will
+                properly get closed.
+
+            Returns
+            -------
+            Tuple[str, Tuple[str, Any, str]] -> Format accepted by the requests
+            library for uploading files.
+        """
+
+        return self.parameterName, (self.fileName, self.__getFileData(exitStack), self.mimeType)
