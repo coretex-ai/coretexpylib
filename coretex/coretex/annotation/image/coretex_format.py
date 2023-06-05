@@ -1,6 +1,6 @@
-#     Copyright (C) 2023  BioMech LLC
+#     Copyright (C) 2023  Coretex LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -208,8 +208,8 @@ class CoretexSegmentationInstance(Codable):
 
         # because rotations with image and segmentations doesn't go in same direction
         # one of the rotations has to be inverted so they go in same direction
-        theta = radians(-degrees) 
-        cosang, sinang = cos(theta), sin(theta) 
+        theta = radians(-degrees)
+        cosang, sinang = cos(theta), sin(theta)
 
         for segmentation in self.segmentations:
             rotatedSegmentation: List[float] = []

@@ -1,6 +1,6 @@
-#     Copyright (C) 2023  BioMech LLC
+#     Copyright (C) 2023  Coretex LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -21,7 +21,7 @@ import os
 import xml.etree.ElementTree as ET
 
 from PIL import Image
-from skimage import measure 
+from skimage import measure
 from shapely.geometry import Polygon
 
 import numpy as np
@@ -184,7 +184,7 @@ class InstanceExtractor:
             xmax = max(xmax, currentX)
             ymax = max(ymax, currentY)
 
-        if xmax is not None and xmin is not None and ymin is not None and ymax is not None: 
+        if xmax is not None and xmin is not None and ymin is not None and ymax is not None:
             contourBox = [xmin, ymin, xmax, ymax]
             iou = self.calculateIoU(bbox, contourBox)
 
@@ -259,7 +259,7 @@ class InstanceExtractor:
                 poly = poly.convex_hull
 
             # Ignore if still not a Polygon (could be a line or point)
-            if poly.geom_type == 'Polygon': 
+            if poly.geom_type == 'Polygon':
                 segmentation = np.array(poly.exterior.coords).ravel().tolist()
                 segmentations.append(segmentation)
 

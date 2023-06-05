@@ -1,4 +1,4 @@
-#     Copyright (C) 2023  BioMech LLC
+#     Copyright (C) 2023  Coretex LLC
 
 #     This file is part of Coretex.ai
 

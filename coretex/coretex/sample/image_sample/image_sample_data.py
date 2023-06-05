@@ -8,9 +8,9 @@ from PIL import Image
 import numpy as np
 
 from .image_format import ImageFormat
-#     Copyright (C) 2023  BioMech LLC
+#     Copyright (C) 2023  Coretex LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -61,7 +61,7 @@ class AnnotatedImageSampleData:
 
     """
         Contains image data as well as its annotation\n
-        Annotation is expected to be in Coretex.ai format 
+        Annotation is expected to be in Coretex.ai format
     """
 
     def __init__(self, path: Path) -> None:

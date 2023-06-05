@@ -1,6 +1,6 @@
-#     Copyright (C) 2023  BioMech LLC
+#     Copyright (C) 2023  Coretex LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -95,7 +95,7 @@ class HumanSegmentationConverter(BaseConverter):
                 poly = poly.convex_hull
 
             # Ignore if still not a Polygon (could be a line or point)
-            if poly.geom_type == 'Polygon': 
+            if poly.geom_type == 'Polygon':
                 segmentation = np.array(poly.exterior.coords).ravel().tolist()
                 segmentations.append(segmentation)
 
