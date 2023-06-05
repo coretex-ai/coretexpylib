@@ -1,6 +1,6 @@
 #     Copyright (C) 2023  BioMech LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -161,6 +161,12 @@ class ExperimentParameter(Codable):
                 isinstance(element, self.dataType.listType)
                 for element in self.value
             )
+
+        # Dataset parameter is an integer under the hood, and in python bool is a subclass
+        # of integer. To avoid assinging boolean values to dataset parameters we have to explicitly
+        # check if the value which was passed in for dataset is a bool.
+        if self.dataType == ExperimentParameterType.dataset and isinstance(self.value, bool):
+            return False
 
         return any(isinstance(self.value, dataType) for dataType in self.dataType.types)
 
