@@ -1,6 +1,6 @@
 #     Copyright (C) 2023  BioMech LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -24,7 +24,6 @@ from logging import LogRecord, StreamHandler
 import time
 import sys
 import logging
-import copy
 
 from .log import Log
 from .log_severity import LogSeverity
@@ -110,7 +109,12 @@ class LogHandler(StreamHandler):
     def __init__(self, stream: Any) -> None:
         super().__init__(stream)
 
+        # Locks appending and flushing of the pending logs,
+        # reset will not be locked to avoid waiting on flush
+        # if the request for uploading logs will timeout
+        self.__pendingLogsLock = Lock()
         self.__pendingLogs: List[Log] = []
+
         self.__uploadWorker = _LoggerUploadWorker()
 
         self.currentExperimentId: Optional[int] = None
@@ -125,26 +129,20 @@ class LogHandler(StreamHandler):
         self.__uploadWorker = _LoggerUploadWorker()
         self.__uploadWorker.start()
 
-    def __clearLogs(self, snapshot: List[Log]) -> None:
-        for log in snapshot:
-            try:
-                self.__pendingLogs.remove(log)
-            except ValueError:
-                continue
-
     def emit(self, record: LogRecord) -> None:
         super().emit(record)
 
-        if record.name in IGNORED_LOGGERS:
-            return
+        with self.__pendingLogsLock:
+            if record.name in IGNORED_LOGGERS:
+                return
 
-        if not self.__uploadWorker.is_alive():
-            self.__restartUploadWorker()
+            if not self.__uploadWorker.is_alive():
+                self.__restartUploadWorker()
 
-        severity = LogSeverity.fromStd(record.levelno)
-        log = Log.create(record.message, severity)
+            severity = LogSeverity.fromStd(record.levelno)
+            log = Log.create(record.message, severity)
 
-        self.__pendingLogs.append(log)
+            self.__pendingLogs.append(log)
 
     def flushLogs(self) -> bool:
         """
@@ -155,29 +153,28 @@ class LogHandler(StreamHandler):
             bool -> True if the upload is successful, False otherwise
         """
 
-        if len(self.__pendingLogs) == 0:
-            return True
+        with self.__pendingLogsLock:
+            if len(self.__pendingLogs) == 0:
+                return True
 
-        if self.currentExperimentId is None:
-            self.__pendingLogs.clear()
-            return True
+            if self.currentExperimentId is None:
+                self.__pendingLogs.clear()
+                return True
 
-        snapshot = copy.copy(self.__pendingLogs)
+            response = networkManager.genericJSONRequest(
+                endpoint = "model-queue/add-console-log",
+                requestType = RequestType.post,
+                parameters = {
+                    "model_queue_id": self.currentExperimentId,
+                    "logs": [log.encode() for log in self.__pendingLogs]
+                }
+            )
 
-        response = networkManager.genericJSONRequest(
-            endpoint = "model-queue/add-console-log",
-            requestType = RequestType.post,
-            parameters = {
-                "model_queue_id": self.currentExperimentId,
-                "logs": [log.encode() for log in snapshot]
-            }
-        )
+            # Only clear logs if they were successfully uploaded to coretex
+            if not response.hasFailed():
+                self.__pendingLogs.clear()
 
-        # Only clear logs if they were successfully uploaded to coretex
-        if not response.hasFailed():
-            self.__clearLogs(snapshot)
-
-        return not response.hasFailed()
+            return not response.hasFailed()
 
     def reset(self) -> None:
         """
