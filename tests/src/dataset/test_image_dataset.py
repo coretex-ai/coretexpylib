@@ -1,6 +1,6 @@
 #     Copyright (C) 2023  BioMech LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -27,7 +27,7 @@ from .test_image_dataset_local import TestImageDatasetLocal
 
 class TestImageDataset(TestImageDatasetLocal, BaseNetworkDatasetTest.Base):
 
-    dataset: ImageDataset
+    dataset: ImageDataset  # type: ignore
 
     def setUp(self) -> None:
         super().setUp()

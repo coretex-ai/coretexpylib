@@ -1,6 +1,6 @@
 #     Copyright (C) 2023  BioMech LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -19,13 +19,13 @@ import os
 
 from coretex import NetworkSample
 
-from base_network_test import BaseNetworkTest
 from .base_sample_test import BaseSampleTest
+from ..base_network_test import BaseNetworkTest
 
 
 class BaseNetworkSampleTest:
 
-    class Base(BaseSampleTest.Base, BaseNetworkTest.Base):  # type: ignore
+    class Base(BaseSampleTest.Base, BaseNetworkTest.Base):
 
         sample: NetworkSample
 

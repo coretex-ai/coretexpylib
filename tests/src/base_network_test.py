@@ -1,6 +1,6 @@
 #     Copyright (C) 2023  BioMech LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -28,4 +28,4 @@ class BaseNetworkTest:
         def setUpClass(cls) -> None:
             response = networkManager.authenticate("", "")
             if response.hasFailed():
-                raise RuntimeError
+                raise RuntimeError(f">> [Coretex] Failed to authenticate")

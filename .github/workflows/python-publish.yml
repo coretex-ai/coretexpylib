@@ -14,7 +14,7 @@ on:
       PYPI_TOKEN:
         description: Publishing token
         required: true
-  
+
 
 permissions:
   contents: read

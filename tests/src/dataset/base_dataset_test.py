@@ -1,6 +1,6 @@
 #     Copyright (C) 2023  BioMech LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Type
+from typing import Type, Generic, TypeVar
 
 import unittest
 import time
@@ -23,11 +23,14 @@ import time
 from coretex import Dataset, Sample
 
 
+DatasetType = TypeVar("DatasetType", bound = "Dataset")
+
+
 class BaseDatasetTest:
 
-    class Base(unittest.TestCase):
+    class Base(unittest.TestCase, Generic[DatasetType]):
 
-        dataset: Dataset[Sample]
+        dataset: DatasetType
         sampleType: Type
 
         def test_sampleType(self) -> None:

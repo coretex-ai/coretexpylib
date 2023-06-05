@@ -1,6 +1,6 @@
 #     Copyright (C) 2023  BioMech LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -15,24 +15,27 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from pathlib import Path
-
 import unittest
 
-from coretex import LocalCustomSample, LocalCustomDataset
+from coretex import CustomSample, CustomDataset
 
-from .base_dataset_test import BaseDatasetTest
+from .base_network_dataset_test import BaseNetworkDatasetTest
+from .test_custom_dataset_local import TestCustomDatasetLocal
 
 
-class TestCustomDatasetLocal(BaseDatasetTest.Base):
+class TestCustomDataset(TestCustomDatasetLocal, BaseNetworkDatasetTest.Base):
 
-    dataset: LocalCustomDataset
+    dataset: CustomDataset  # type: ignore
 
     def setUp(self) -> None:
         super().setUp()
 
-        self.dataset = LocalCustomDataset(Path("./tests/resources/local_dataset"))
-        self.sampleType = LocalCustomSample
+        dataset = CustomDataset.fetchById(2424)
+        if dataset is None:
+            raise ValueError
+
+        self.dataset = dataset
+        self.sampleType = CustomSample
 
 
 if __name__ == "__main__":

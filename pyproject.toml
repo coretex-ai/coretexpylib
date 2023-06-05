@@ -45,5 +45,9 @@ dependencies = [
 "Python API" = "https://coretexpylib.coretex.ai/"
 "Source" = "https://github.com/coretex-ai/coretexpylib"
 
+[tool.setuptools.packages.find]
+include = ["coretex*"]
+exclude = ["tests*", "docs_images*", "doxygen-awesome-css*"]
+
 [tool.setuptools.package-data]
 "*" = ["py.typed"]

@@ -17,8 +17,8 @@ jobs:
           pipenv install --dev
       - name: Generate mypy cache
         run: |
-          pipenv run mypy src/coretex &> /dev/null || echo "Mypy cache created"
+          pipenv run mypy coretex &> /dev/null || echo "Mypy cache created"
       - name: Analysing the code with mypy
         run: |
           yes | pipenv run mypy --install-types
-          pipenv run mypy src/coretex
+          pipenv run mypy coretex

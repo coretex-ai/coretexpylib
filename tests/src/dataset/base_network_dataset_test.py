@@ -1,6 +1,6 @@
 #     Copyright (C) 2023  BioMech LLC
 
-#     This file is part of Coretex.ai  
+#     This file is part of Coretex.ai
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU Affero General Public License as
@@ -20,15 +20,15 @@ import shutil
 
 from coretex import NetworkSample, NetworkDataset
 
-from base_network_test import BaseNetworkTest
 from .base_dataset_test import BaseDatasetTest
+from ..base_network_test import BaseNetworkTest
 
 
 class BaseNetworkDatasetTest:
 
-    class Base(BaseDatasetTest.Base, BaseNetworkTest.Base):  # type: ignore
+    class Base(BaseDatasetTest.Base, BaseNetworkTest.Base):
 
-        dataset: NetworkDataset[NetworkSample]
+        dataset: NetworkDataset[NetworkSample]  # type: ignore
 
         def setUp(self) -> None:
             super().setUp()
