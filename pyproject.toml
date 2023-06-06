@@ -1,13 +1,13 @@
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "coretex"
 version = "1.0.4"
 authors = [
   { name="Duško Mirković", email="dmirkovic@coretex.ai" },
   { name="Igor Perić", email="igor@coretex.ai" },
+  { name="Jovica Zarić", email="jzaric@coretex.ai" },
+  { name="Darko Zarić", email="dzaric@coretex.ai" },
+  { name="Bogdan Tintor", email="btintor@coretex.ai" },
+  { name="Alex Maslennikov", email="alex@coretex.ai" },
 ]
 
 description = "A package for AI experiment tracking, infrastructure and dataset management using Coretex.ai platform."
@@ -32,31 +32,6 @@ dependencies = [
   "psutil",
   "py3nvml",
 ]
-
-[maintainers]
-[[maintainers]]
-name = "Igor Perić"
-email = "igor@coretex.ai"
-
-[[maintainers]]
-name = "Duško Mirković"
-email = "dmirkovic@coretex.ai"
-
-[[maintainers]]
-name = "Jovica Zarić"
-email = "jzaric@coretex.ai"
-
-[[maintainers]]
-name = "Darko Zarić"
-email = "dzaric@coretex.ai"
-
-[[maintainers]]
-name = "Bogdan Tintor"
-email = "btintor@coretex.ai"
-
-[[maintainers]]
-name = "Alex Maslennikov"
-email = "alex@coretex.ai"
 
 [project.urls]
 "Homepage" = "https://coretex.ai"
