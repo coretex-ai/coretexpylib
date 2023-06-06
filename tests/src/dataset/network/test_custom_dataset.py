@@ -15,24 +15,25 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from pathlib import Path
-
 import unittest
 
-from coretex import LocalCustomSample, LocalCustomDataset
+from coretex import CustomSample, CustomDataset, SpaceTask
 
-from .base_dataset_test import BaseDatasetTest
+from .base_network_dataset_test import BaseNetworkDatasetTest
+from ...utils import createRemoteEnvironmentFor
 
 
-class TestCustomDatasetLocal(BaseDatasetTest.Base):
+class TestCustomDataset(BaseNetworkDatasetTest.Base[CustomDataset]):
 
-    dataset: LocalCustomDataset  # type: ignore
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
 
-    def setUp(self) -> None:
-        super().setUp()
+        space, dataset = createRemoteEnvironmentFor(SpaceTask.other, CustomDataset)
 
-        self.dataset = LocalCustomDataset(Path("./tests/resources/local_dataset"))
-        self.sampleType = LocalCustomSample
+        cls.space = space
+        cls.dataset = dataset
+        cls.sampleType = CustomSample
 
 
 if __name__ == "__main__":

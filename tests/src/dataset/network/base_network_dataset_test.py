@@ -15,25 +15,33 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from typing import TypeVar, Generic
+
 import os
 import shutil
 
-from coretex import NetworkSample, NetworkDataset
+from coretex import NetworkDataset, Space
 
-from .base_dataset_test import BaseDatasetTest
-from ..base_network_test import BaseNetworkTest
+from ..base_dataset_test import BaseDatasetTest
+from ...base_network_test import BaseNetworkTest
+
+
+DatasetType = TypeVar("DatasetType", bound = NetworkDataset)
 
 
 class BaseNetworkDatasetTest:
 
-    class Base(BaseDatasetTest.Base, BaseNetworkTest.Base):
+    class Base(BaseDatasetTest.Base[DatasetType], BaseNetworkTest.Base, Generic[DatasetType]):
 
-        dataset: NetworkDataset[NetworkSample]  # type: ignore
+        space: Space
 
-        def setUp(self) -> None:
-            super().setUp()
+        @classmethod
+        def tearDownClass(cls) -> None:
+            super().tearDownClass()
 
-            self.sampleType = NetworkSample
+            # TODO: Enable this once delete is working on backend
+            # if not cls.space.delete():
+            #     raise RuntimeError(">> [Coretex] Failed to delete space")
 
         def test_networkDatasetDownload(self) -> None:
             def verify() -> None:

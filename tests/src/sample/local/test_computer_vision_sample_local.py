@@ -15,25 +15,24 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from pathlib import Path
-
 import unittest
 
-from coretex import LocalSample
+from coretex import LocalComputerVisionSample, LocalComputerVisionDataset, SpaceTask
 
-from .base_sample_test import BaseSampleTest
+from ..base_computer_vision_sample_test import BaseComputerVisionSampleTest
+from ...utils import createLocalEnvironmentFor
 
 
-class TestLocalSample(BaseSampleTest.Base):
+class TestComputerVisionSampleLocal(BaseComputerVisionSampleTest.Base):
 
-    sample: LocalSample[None]
+    sample: LocalComputerVisionSample
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.sample = LocalSample(Path("./tests/resources/local_sample.zip"))
+        super().setUpClass()
 
-    # unzip and load tests are located in the base class
-    # we just provide the sample in the setUp method here
+        dataset = createLocalEnvironmentFor(SpaceTask.computerVision, LocalComputerVisionDataset)
+        cls.sample = dataset.samples[0]
 
 
 if __name__ == "__main__":

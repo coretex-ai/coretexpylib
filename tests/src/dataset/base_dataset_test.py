@@ -18,9 +18,10 @@
 from typing import Type, Generic, TypeVar
 
 import unittest
-import time
 
 from coretex import Dataset, Sample
+
+from ..utils import generateUniqueName
 
 
 DatasetType = TypeVar("DatasetType", bound = "Dataset")
@@ -31,7 +32,11 @@ class BaseDatasetTest:
     class Base(unittest.TestCase, Generic[DatasetType]):
 
         dataset: DatasetType
-        sampleType: Type
+        sampleType: Type[Sample]
+
+        @classmethod
+        def setUpClass(cls) -> None:
+            super().setUpClass()
 
         def test_sampleType(self) -> None:
             for sample in self.dataset.samples:
@@ -41,7 +46,7 @@ class BaseDatasetTest:
             self.assertEqual(self.dataset.count, len(self.dataset.samples))
 
         def test_rename(self) -> None:
-            newName = f"PythonUnitTest {time.time()}"
+            newName = generateUniqueName()
             self.dataset.rename(newName)
 
             self.assertEqual(self.dataset.name, newName)

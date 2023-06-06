@@ -16,7 +16,9 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import unittest
+import time
 
+from coretex import Space, SpaceTask
 from coretex.networking import networkManager
 
 
@@ -26,6 +28,8 @@ class BaseNetworkTest:
 
         @classmethod
         def setUpClass(cls) -> None:
-            response = networkManager.authenticate("", "")
+            # Authenticates with credentials stored inside the Coretex configuration
+            # Configuration can be created using Coretex CLI
+            response = networkManager.authenticateWithStoredCredentials()
             if response.hasFailed():
                 raise RuntimeError(f">> [Coretex] Failed to authenticate")

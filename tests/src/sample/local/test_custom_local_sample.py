@@ -15,30 +15,24 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional
-
 import unittest
 
-from coretex import NetworkSample
+from coretex import LocalCustomSample, LocalCustomDataset, SpaceTask
 
-from .base_network_sample_test import BaseNetworkSampleTest
+from ..base_sample_test import BaseSampleTest
+from ...utils import createLocalEnvironmentFor
 
 
-class TestNetworkSample(BaseNetworkSampleTest.Base):
+class TestCustomLocalSample(BaseSampleTest.Base):
 
-    sample: NetworkSample[None]
+    sample: LocalCustomSample
 
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
 
-        sample: Optional[NetworkSample[None]] = NetworkSample.fetchById(55004)
-        if sample is None:
-            raise RuntimeError("Sample not found")
-
-        cls.sample = sample
-
-    # download test is located in the base class
+        dataset = createLocalEnvironmentFor(SpaceTask.other, LocalCustomDataset)
+        cls.sample = dataset.samples[0]
 
 
 if __name__ == "__main__":

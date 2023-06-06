@@ -31,8 +31,12 @@ def getEnvVar(key: str, default: str) -> str:
 
 
 DEFAULT_CONFIG = {
-    "username": None,
-    "password": None,
+    # os.environ used directly here since we don't wanna
+    # set those variables to any value if they don't exist
+    # in the os.environ the same way we do for properties which
+    # call genEnvVar
+    "username": os.environ.get("CTX_USERNAME"),
+    "password": os.environ.get("CTX_PASSWORD"),
     "token": None,
     "refreshToken": None,
     "serverUrl": getEnvVar("CTX_API_URL", "https://devext.biomechservices.com:29007/"),

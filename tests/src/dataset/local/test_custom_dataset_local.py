@@ -17,35 +17,19 @@
 
 import unittest
 
-from coretex import ImageSample
+from coretex import LocalCustomSample, LocalCustomDataset, SpaceTask
 
-from .base_network_sample_test import BaseNetworkSampleTest
-from .test_image_sample_local import TestImageSampleLocal
+from ..base_dataset_test import BaseDatasetTest
+from ...utils import createLocalEnvironmentFor
 
 
-class TestImageSample(TestImageSampleLocal, BaseNetworkSampleTest.Base):
+class TestCustomDatasetLocal(BaseDatasetTest.Base[LocalCustomDataset]):
 
-    sample: ImageSample
+    def setUp(self) -> None:
+        super().setUp()
 
-    @classmethod
-    def setUpClass(cls) -> None:
-        super().setUpClass()
-
-        sample = ImageSample.fetchById(55004)
-        if sample is None:
-            raise RuntimeError("Sample not found")
-
-        cls.sample = sample
-
-    def test_sampleLoad(self) -> None:
-        self.sample.download(ignoreCache = True)
-
-        super().test_sampleLoad()
-
-    def test_saveAnnotation(self) -> None:
-        self.sample.download(ignoreCache = True)
-
-        super().test_saveAnnotation()
+        self.dataset = createLocalEnvironmentFor(SpaceTask.other, LocalCustomDataset)
+        self.sampleType = LocalCustomSample
 
 
 if __name__ == "__main__":

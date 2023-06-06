@@ -15,30 +15,30 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from typing import Union
+
 import unittest
 import os
 import shutil
 
-from coretex import Sample
+from coretex import NetworkSample, LocalSample
 
 
 class BaseSampleTest:
 
     class Base(unittest.TestCase):
 
-        sample: Sample
-
-        def setUp(self) -> None:
-            self.sample = self.__class__.sample
+        sample: Union[NetworkSample, LocalSample]
 
         def tearDown(self) -> None:
+            super().tearDown()
+
             if os.path.exists(self.sample.path):
                 shutil.rmtree(self.sample.path)
+
+            self.assertFalse(os.path.exists(self.sample.path))
 
         def test_sampleUnzip(self) -> None:
-            if os.path.exists(self.sample.path):
-                shutil.rmtree(self.sample.path)
-
             self.sample.unzip()
             self.assertTrue(
                 os.path.exists(self.sample.zipPath),
@@ -55,10 +55,4 @@ class BaseSampleTest:
             self.assertTrue(
                 os.path.exists(self.sample.zipPath),
                 "Sample not extracted properly"
-            )
-
-        def test_sampleLoad(self) -> None:
-            self.assertIsNone(
-                self.sample.load(),
-                "Base sample load did not return None"
             )

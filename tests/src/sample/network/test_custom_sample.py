@@ -17,25 +17,30 @@
 
 import unittest
 
-from coretex import CustomSample, CustomDataset
+from coretex import CustomSample, CustomDataset, SpaceTask
 
-from .base_network_dataset_test import BaseNetworkDatasetTest
-from .test_custom_dataset_local import TestCustomDatasetLocal
+from .base_network_sample_test import BaseNetworkSampleTest
+from ...utils import createRemoteEnvironmentFor, generateUniqueName
 
 
-class TestCustomDataset(TestCustomDatasetLocal, BaseNetworkDatasetTest.Base):
+class TestCustomSample(BaseNetworkSampleTest.Base):
 
-    dataset: CustomDataset  # type: ignore
+    dataset: CustomDataset
+    sample: CustomSample
 
-    def setUp(self) -> None:
-        super().setUp()
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
 
-        dataset = CustomDataset.fetchById(2424)
-        if dataset is None:
-            raise ValueError
+        space, dataset = createRemoteEnvironmentFor(SpaceTask.other, CustomDataset)
 
-        self.dataset = dataset
-        self.sampleType = CustomSample
+        cls.space = space
+        cls.dataset = dataset
+        cls.sample = dataset.samples[0]
+
+    def test_createCustomSample(self) -> None:
+        sample = CustomSample.createCustomSample(generateUniqueName(), self.dataset.id, self.sample.zipPath)
+        self.assertIsNotNone(sample, "Failed to create image segmentation sample")
 
 
 if __name__ == "__main__":
