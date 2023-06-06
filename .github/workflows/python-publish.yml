@@ -6,7 +6,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Publish Python Package to MyPi
+name: Publish Python Package
 
 on:
   workflow_call:
@@ -14,10 +14,6 @@ on:
       PYPI_TOKEN:
         description: Publishing token
         required: true
-  
-
-permissions:
-  contents: read
 
 jobs:
   deploy:
@@ -30,12 +26,12 @@ jobs:
           python-version: '3.8'
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install build
+          python3 -m pip install --upgrade pip
+          pip3 install build
       - name: Build package
         run: |
-          python -m build
-          pip3 install twine
+          python3 -m build
       - name: Publish package
         run: |
-          python -m twine upload dist/* -u __token__ -p ${{ secrets.PYPI_TOKEN }}
+          pip3 install twine
+          python3 -m twine upload dist/* -u __token__ -p ${{ secrets.PYPI_TOKEN }}

@@ -4,24 +4,24 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "coretex"
-version = "1.0.2"
+version = "1.0.3"
 authors = [
   { name="Duško Mirković", email="dmirkovic@coretex.ai" },
 ]
 maintainers = [
+  { name="Igor Perić", email="igor@coretex.ai" },
   { name="Duško Mirković", email="dmirkovic@coretex.ai" },
   { name="Jovica Zarić", email="jzaric@coretex.ai" },
   { name="Darko Zarić", email="dzaric@coretex.ai" },
   { name="Bogdan Tintor", email="btintor@coretex.ai" },
   { name="Alex Maslennikov", email="alex@coretex.ai" },
-  { name="Igor Perić", email="igor@coretex.ai" },
 ]
 description = "A package for AI experiment tracking, infrastructure and dataset management using Coretex.ai platform."
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: GNU Affero 3.0 License",
     "Operating System :: OS Independent",
 ]
 dependencies = [
