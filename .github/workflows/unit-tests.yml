@@ -1,0 +1,41 @@
+name: Unit tests
+
+on:
+  push:
+    branches:
+      - main
+      - stage
+      - develop
+  pull_request:
+    types: [opened, synchronize]
+    branches:
+      - main
+      - stage
+      - develop
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: ${{ github.base_ref }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Environment
+        run:
+          echo ${{ github.base_ref }}
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.8"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip pipenv wheel
+          pipenv install --dev
+      - name: Build wheel
+        run: |
+            pipenv run python -m build
+      - name: Run unit tests
+        env:
+          CTX_USERNAME: ${{ secrets.CTX_USERNAME }}
+          CTX_PASSWORD: ${{ secrets.CTX_PASSWORD }}
+        run: |
+          pipenv run python -m unittest discover tests
