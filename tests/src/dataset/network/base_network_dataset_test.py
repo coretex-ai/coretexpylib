@@ -39,6 +39,16 @@ class BaseNetworkDatasetTest:
         def tearDownClass(cls) -> None:
             super().tearDownClass()
 
+            for sample in cls.dataset.samples:
+                if os.path.exists(sample.path):
+                    shutil.rmtree(sample.path)
+
+                if os.path.exists(sample.zipPath):
+                    os.unlink(sample.zipPath)
+
+            if os.path.exists(cls.dataset.path):
+                shutil.rmtree(cls.dataset.path)
+
             # TODO: Enable this once delete is working on backend
             # if not cls.space.delete():
             #     raise RuntimeError(">> [Coretex] Failed to delete space")
@@ -55,9 +65,6 @@ class BaseNetworkDatasetTest:
                         os.path.exists(sample.zipPath),
                         f"Sample {sample.id} not downloaded"
                     )
-
-            if os.path.exists(self.dataset.path):
-                shutil.rmtree(self.dataset.path)
 
             self.dataset.download()
             verify()

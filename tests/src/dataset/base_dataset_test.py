@@ -15,16 +15,16 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Type, Generic, TypeVar
+from typing import Type, Generic, TypeVar, Union
 
 import unittest
 
-from coretex import Dataset, Sample
+from coretex import NetworkDataset, LocalDataset, Sample
 
 from ..utils import generateUniqueName
 
 
-DatasetType = TypeVar("DatasetType", bound = "Dataset")
+DatasetType = TypeVar("DatasetType", bound = Union[NetworkDataset, LocalDataset])
 
 
 class BaseDatasetTest:
@@ -33,10 +33,6 @@ class BaseDatasetTest:
 
         dataset: DatasetType
         sampleType: Type[Sample]
-
-        @classmethod
-        def setUpClass(cls) -> None:
-            super().setUpClass()
 
         def test_sampleType(self) -> None:
             for sample in self.dataset.samples:

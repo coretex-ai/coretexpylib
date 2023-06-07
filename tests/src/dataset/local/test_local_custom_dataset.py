@@ -15,6 +15,9 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from typing import Generator
+from pathlib import Path
+
 import unittest
 
 from coretex import LocalCustomSample, LocalCustomDataset, SpaceTask
@@ -23,13 +26,29 @@ from ..base_dataset_test import BaseDatasetTest
 from ...utils import createLocalEnvironmentFor
 
 
-class TestCustomDatasetLocal(BaseDatasetTest.Base[LocalCustomDataset]):
+class TestLocalCustomDataset(BaseDatasetTest.Base[LocalCustomDataset]):
 
     def setUp(self) -> None:
         super().setUp()
 
         self.dataset = createLocalEnvironmentFor(SpaceTask.other, LocalCustomDataset)
         self.sampleType = LocalCustomSample
+
+    def test_loadDefault(self) -> None:
+        datasetPath = Path("./tests/resources/other_dataset")
+        dataset = LocalCustomDataset.default(datasetPath)
+
+        self.assertEqual(dataset.count, 2)
+
+    def test_loadCustom(self) -> None:
+        def generator(path: Path) -> Generator[LocalCustomSample, None, None]:
+            for samplePath in path.glob("*.zip"):
+                yield LocalCustomSample(samplePath)
+
+        datasetPath = Path("./tests/resources/other_dataset")
+        dataset = LocalCustomDataset.custom(datasetPath, generator(datasetPath))
+
+        self.assertEqual(dataset.count, 2)
 
 
 if __name__ == "__main__":
