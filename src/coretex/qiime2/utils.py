@@ -20,6 +20,7 @@ from pathlib import Path
 
 import logging
 import gzip
+import csv
 
 from ..coretex import Experiment, CustomSample, CustomDataset
 
@@ -47,11 +48,26 @@ def compressGzip(source: Path, destination: Path) -> None:
     source.unlink()
 
 
+def createManifest(samples: List[CustomSample], outputDir: Path) -> Path:
+    manifestPath = outputDir / "manifest.tsv"
+    with open(manifestPath, "w", newline = "") as manifestFile:
+        csv.writer(manifestFile, delimiter = "\t").writerow(["sample-id", "absolute-filepath"])
+
+    for sample in samples:
+        for fastqPath in Path(sample.path).iterdir():
+            if fastqPath.match("*fastq"):
+                sampleId = fastqPath.name[:-6]
+                with open(manifestPath, "a", newline = "") as manifestFile:
+                    csv.writer(manifestFile, delimiter = "\t").writerow([sampleId, fastqPath])
+
+    return manifestPath
+
+
 def sampleNumber(sample: CustomSample) -> int:
     return int(sample.name.split("-")[0])
 
 
-def isFastqSample(sample: CustomSample) -> bool:
+def isFastqMPSample(sample: CustomSample) -> bool:
     sample.unzip()
 
     for path in sample.load().folderContent:
@@ -63,11 +79,17 @@ def isFastqSample(sample: CustomSample) -> bool:
     return False
 
 
+def isFastqDPSample(sample: CustomSample) -> bool:
+    sample.unzip()
+
+    return any([path.match("*.fastq") for path in sample.load().folderContent])
+
+
 def isDemultiplexedSample(sample: CustomSample) -> bool:
     sample.unzip()
 
     sampleContent = [path.name for path in sample.load().folderContent]
-    return "demux.qza" in sampleContent and "demux-details.qza" in sampleContent
+    return "demux.qza" in sampleContent
 
 
 def isDenoisedSample(sample: CustomSample) -> bool:
@@ -93,8 +115,20 @@ def isPhylogeneticTreeSample(sample: CustomSample) -> bool:
     )
 
 
-def getFastqSamples(dataset: CustomDataset) -> List[CustomSample]:
-    return dataset.getSamples(isFastqSample)
+def isMetadataSample(sample: CustomSample) -> bool:
+    sample.unzip()
+
+    return any([path.match("*.tsv") for path in sample.load().folderContent])
+
+
+def getFastqMPSamples(dataset: CustomDataset) -> List[CustomSample]:
+    # Multiplexed fastq data
+    return dataset.getSamples(isFastqMPSample)
+
+
+def getFastqDPSamples(dataset: CustomDataset) -> List[CustomSample]:
+    # Demultiplexed fastq data
+    return dataset.getSamples(isFastqDPSample)
 
 
 def getDemuxSamples(dataset: CustomDataset) -> List[CustomSample]:
@@ -107,3 +141,7 @@ def getDenoisedSamples(dataset: CustomDataset) -> List[CustomSample]:
 
 def getPhylogeneticTreeSamples(dataset: CustomDataset) -> List[CustomSample]:
     return dataset.getSamples(isPhylogeneticTreeSample)
+
+
+def getMetadataSamples(dataset: CustomDataset) -> CustomSample:
+    return dataset.getSamples(isMetadataSample)
