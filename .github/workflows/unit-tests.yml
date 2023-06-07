@@ -1,4 +1,4 @@
-name: Linter code check
+name: Unit tests
 
 on: [push]
 
@@ -13,7 +13,7 @@ jobs:
           python-version: "3.8"
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip pipenv wheel
+          python -m pip install --upgrade pip pipenv wheel build
           pipenv install --dev
       - name: Build wheel
         run: |
