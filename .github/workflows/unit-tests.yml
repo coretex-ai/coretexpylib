@@ -1,12 +1,22 @@
 name: Unit tests
 
 on:
-  workflow_dispatch:
   push:
+    branches:
+      - main
+      - stage
+      - develop
+  pull_request:
+    types: [synchronize]
+    branches:
+      - main
+      - stage
+      - develop
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: ${{ github.base_ref }}
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
