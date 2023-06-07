@@ -19,6 +19,7 @@ py3nvml = "*"
 
 [dev-packages]
 mypy = "*"
+build = "*"
 
 [requires]
 python_version = "3.8"
