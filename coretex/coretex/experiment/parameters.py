@@ -162,6 +162,12 @@ class ExperimentParameter(Codable):
                 for element in self.value
             )
 
+        # Dataset parameter is an integer under the hood, and in python bool is a subclass
+        # of integer. To avoid assinging boolean values to dataset parameters we have to explicitly
+        # check if the value which was passed in for dataset is a bool.
+        if self.dataType == ExperimentParameterType.dataset and isinstance(self.value, bool):
+            return False
+
         return any(isinstance(self.value, dataType) for dataType in self.dataType.types)
 
     def generateTypeDescription(self) -> str:
