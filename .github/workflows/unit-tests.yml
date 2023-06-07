@@ -36,3 +36,4 @@ jobs:
           CTX_PASSWORD: ${{ secrets.CTX_PASSWORD }}
         run: |
           pipenv run python -m unittest discover tests
+          echo "Done"
