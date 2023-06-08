@@ -28,10 +28,10 @@ def createSample(name: str, datasetId: int, path: Path, experiment: Experiment, 
     sample = CustomSample.createCustomSample(name, datasetId, str(path))
     if sample is None:
         if retryCount < 3:
-            logging.info(f">> [Workspace] Retry count: {retryCount}")
+            logging.info(f">> [Coretex] Retry count: {retryCount}")
             return createSample(name, datasetId, path, experiment, stepName, retryCount + 1)
 
-        raise ValueError(">> [Workspace] Failed to create sample")
+        raise ValueError(">> [Coretex] Failed to create sample")
 
     experiment.createQiimeArtifact(f"{stepName}/{name}", path)
 
@@ -66,7 +66,7 @@ def isFastqMPSample(sample: CustomSample) -> bool:
 def isFastqDPSample(sample: CustomSample) -> bool:
     sample.unzip()
 
-    return any([path.match("*.fastq") for path in sample.load().folderContent])
+    return any([path.suffix == ".fastq" for path in sample.load().folderContent])
 
 
 def isDemultiplexedSample(sample: CustomSample) -> bool:
@@ -102,7 +102,7 @@ def isPhylogeneticTreeSample(sample: CustomSample) -> bool:
 def isMetadataSample(sample: CustomSample) -> bool:
     sample.unzip()
 
-    return any([path.match("*.tsv") for path in sample.load().folderContent])
+    return any([path.suffix == ".tsv" for path in sample.load().folderContent])
 
 
 def getFastqMPSamples(dataset: CustomDataset) -> List[CustomSample]:
@@ -130,6 +130,6 @@ def getPhylogeneticTreeSamples(dataset: CustomDataset) -> List[CustomSample]:
 def getMetadataSample(dataset: CustomDataset) -> CustomSample:
     metadataSample = dataset.getSamples(isMetadataSample)
     if len(metadataSample) != 1:
-        raise ValueError(f">> [Workspace] Dataset must contain exaclty one metadata sample. Found {len(metadataSample)}")
+        raise ValueError(f">> [Coretex] Dataset must contain exaclty one metadata sample. Found {len(metadataSample)}")
 
     return metadataSample[0]
