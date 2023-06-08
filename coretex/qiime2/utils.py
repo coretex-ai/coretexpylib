@@ -28,10 +28,10 @@ def createSample(name: str, datasetId: int, path: Path, experiment: Experiment, 
     sample = CustomSample.createCustomSample(name, datasetId, str(path))
     if sample is None:
         if retryCount < 3:
-            logging.info(f">> [Workspace] Retry count: {retryCount}")
+            logging.info(f">> [Coretex] Retry count: {retryCount}")
             return createSample(name, datasetId, path, experiment, stepName, retryCount + 1)
 
-        raise ValueError(">> [Workspace] Failed to create sample")
+        raise ValueError(">> [Coretex] Failed to create sample")
 
     experiment.createQiimeArtifact(f"{stepName}/{name}", path)
 
@@ -51,7 +51,7 @@ def sampleNumber(sample: CustomSample) -> int:
     return int(sample.name.split("-")[0])
 
 
-def isFastqSample(sample: CustomSample) -> bool:
+def isFastqMPSample(sample: CustomSample) -> bool:
     sample.unzip()
 
     for path in sample.load().folderContent:
@@ -63,11 +63,17 @@ def isFastqSample(sample: CustomSample) -> bool:
     return False
 
 
+def isFastqDPSample(sample: CustomSample) -> bool:
+    sample.unzip()
+
+    return any([path.suffix == ".fastq" for path in sample.load().folderContent])
+
+
 def isDemultiplexedSample(sample: CustomSample) -> bool:
     sample.unzip()
 
     sampleContent = [path.name for path in sample.load().folderContent]
-    return "demux.qza" in sampleContent and "demux-details.qza" in sampleContent
+    return "demux.qza" in sampleContent
 
 
 def isDenoisedSample(sample: CustomSample) -> bool:
@@ -93,8 +99,20 @@ def isPhylogeneticTreeSample(sample: CustomSample) -> bool:
     )
 
 
-def getFastqSamples(dataset: CustomDataset) -> List[CustomSample]:
-    return dataset.getSamples(isFastqSample)
+def isMetadataSample(sample: CustomSample) -> bool:
+    sample.unzip()
+
+    return any([path.suffix == ".tsv" for path in sample.load().folderContent])
+
+
+def getFastqMPSamples(dataset: CustomDataset) -> List[CustomSample]:
+    # Multiplexed fastq data
+    return dataset.getSamples(isFastqMPSample)
+
+
+def getFastqDPSamples(dataset: CustomDataset) -> List[CustomSample]:
+    # Demultiplexed fastq data
+    return dataset.getSamples(isFastqDPSample)
 
 
 def getDemuxSamples(dataset: CustomDataset) -> List[CustomSample]:
@@ -107,3 +125,11 @@ def getDenoisedSamples(dataset: CustomDataset) -> List[CustomSample]:
 
 def getPhylogeneticTreeSamples(dataset: CustomDataset) -> List[CustomSample]:
     return dataset.getSamples(isPhylogeneticTreeSample)
+
+
+def getMetadataSample(dataset: CustomDataset) -> CustomSample:
+    metadataSample = dataset.getSamples(isMetadataSample)
+    if len(metadataSample) != 1:
+        raise ValueError(f">> [Coretex] Dataset must contain exaclty one metadata sample. Found {len(metadataSample)}")
+
+    return metadataSample[0]
