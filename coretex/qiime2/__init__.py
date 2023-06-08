@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import List
+from typing import List, Optional
 from pathlib import Path
 
 import subprocess
@@ -63,13 +63,26 @@ def QiimeCommand(args: List[str]) -> None:
         raise QiimeCommandException
 
 
-def toolsImport(sequenceType: str, inputPath: str, outputPath: str) -> None:
-    QiimeCommand([
+def toolsImport(
+    sequenceType: str,
+    inputPath: str,
+    outputPath: str,
+    inputFormat: Optional[str] = None
+) -> None:
+
+    args = [
         "qiime", "tools", "import",
         "--type", sequenceType,
-        "--input-path", inputPath,
-        "--output-path", outputPath
-    ])
+        "--input-path", str(inputPath),
+        "--output-path", str(outputPath)
+    ]
+
+    if inputFormat is not None:
+        args.extend([
+            "--input-format" , inputFormat
+        ])
+
+    QiimeCommand(args)
 
 
 def demuxEmpSingle(
