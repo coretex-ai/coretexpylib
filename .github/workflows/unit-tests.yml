@@ -7,7 +7,7 @@ on:
       - stage
       - develop
   pull_request:
-    types: [synchronize]
+    types: [opened, reopened, synchronize]
     branches:
       - main
       - stage
@@ -16,9 +16,13 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: ${{ github.base_ref }}
+    environment: ${{ github.base_ref == '' && github.ref_name || github.base_ref }}
     steps:
       - uses: actions/checkout@v3
+      - name: Print branches
+        run: |
+          echo ${{ github.base_ref }}
+          echo ${{ github.ref_name }}
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
@@ -36,4 +40,3 @@ jobs:
           CTX_PASSWORD: ${{ secrets.CTX_PASSWORD }}
         run: |
           pipenv run python -m unittest discover tests
-          echo "Done"
