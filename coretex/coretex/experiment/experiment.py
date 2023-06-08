@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Final, Optional, Any, List, Dict, Union, Tuple
+from typing import Final, Optional, Any, List, Dict, Union, Tuple, TypeVar, Generic, Type
 from typing_extensions import Self
 from threading import Lock
 from zipfile import ZipFile
@@ -29,13 +29,56 @@ import zipfile
 from .artifact import Artifact
 from .status import ExperimentStatus
 from .metrics import Metric
+from .parameters import ExperimentParameter, ExperimentParameterType
+from ..dataset import *
 from ..space import SpaceTask
 from ...codable import KeyDescriptor
 from ...networking import networkManager, NetworkObject, RequestType, NetworkRequestError
 from ...folder_management import FolderManager
 
 
-class Experiment(NetworkObject):
+def getDatasetType(task: SpaceTask, isLocal: bool) -> Type[Dataset]:
+    if task == SpaceTask.other:
+        if isLocal:
+            return LocalCustomDataset
+
+        return CustomDataset
+
+    if task == SpaceTask.imageSegmentation:
+        if isLocal:
+            return LocalImageSegmentationDataset
+
+        return ImageSegmentationDataset
+
+    if task == SpaceTask.computerVision:
+        if isLocal:
+            return LocalComputerVisionDataset
+
+        return ComputerVisionDataset
+
+    logging.getLogger("coretexpylib").debug(f">> [Coretex] SpaceTask ({task}) does not have a dataset type using CustomDataset")
+
+    # Returning CustomDataset in case the task doesn't have it's dataset type
+    if isLocal:
+        return LocalCustomDataset
+
+    return CustomDataset
+
+
+def fetchDataset(datasetType: Type[Dataset], value: Any) -> Optional[Dataset]:
+    if issubclass(datasetType, LocalDataset):
+        return datasetType(value)  # type: ignore
+
+    if issubclass(datasetType, NetworkDataset):
+        return datasetType.fetchById(value)
+
+    return None
+
+
+DatasetType = TypeVar("DatasetType", bound = Dataset)
+x: List = []
+
+class Experiment(NetworkObject, Generic[DatasetType]):
 
     """
         Represents experiment entity from Coretex.ai
@@ -111,6 +154,26 @@ class Experiment(NetworkObject):
 
         return FolderManager.instance().getTempFolder(str(self.id))
 
+    @property
+    def dataset(self) -> DatasetType:
+        """
+            Value of the parameter with name "dataset" assigned to this experiment
+
+            Returns
+            -------
+            Dataset object if there was a parameter with name "dataset" entered when the experiment was started
+
+            Raises
+            ------
+            ValueError -> if there is not parameter with name "dataset"
+        """
+
+        dataset = self.parameters.get("dataset")
+        if dataset is None:
+            raise ValueError(f">> [Coretex] Experiment \"{self.id}\" does not have a parameter named \"dataset\"")
+
+        return dataset  # type: ignore
+
     # Codable overrides
 
     @classmethod
@@ -136,19 +199,36 @@ class Experiment(NetworkObject):
     def _endpoint(cls) -> str:
         return "model-queue"
 
-    def onDecode(self) -> None:
-        super().onDecode()
-
+    def __parseParameters(self) -> None:
         if self.meta["parameters"] is None:
             self.meta["parameters"] = []
 
-        parameters = self.meta["parameters"]
+        if not isinstance(self.meta["parameters"], list):
+            raise ValueError(">> [Coretex] Invalid parameters")
 
-        if not isinstance(parameters, list):
-            raise ValueError
+        parameters = [ExperimentParameter.decode(value) for value in self.meta["parameters"]]
 
-        for p in parameters:
-            self.__parameters[p["name"]] = p["value"]
+        for parameter in parameters:
+            if parameter.dataType == ExperimentParameterType.floatingPoint and isinstance(parameter.value, int):
+                self.parameters[parameter.name] = float(parameter.value)
+
+            if parameter.dataType == ExperimentParameterType.dataset:
+                if parameter.value is None:
+                    self.parameters[parameter.name] = None
+                else:
+                    isLocal = isinstance(parameter.value, str)
+                    datasetType = getDatasetType(self.spaceTask, isLocal)
+
+                    dataset = fetchDataset(datasetType, parameter.value)
+                    if dataset is None:
+                        raise ValueError(f">> [Coretex] Failed to fetch dataset with ID: {parameter.value}")
+
+                    self.parameters[parameter.name] = dataset
+
+    def onDecode(self) -> None:
+        super().onDecode()
+
+        self.__parseParameters()
 
     # Experiment methods
 

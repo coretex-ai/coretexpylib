@@ -92,7 +92,8 @@ class ExperimentParameterType(IntEnum):
 
         if self == ExperimentParameterType.dataset:
             # parameters of type dataset have dataset ID as value
-            return [int]
+            # str is allowed to allow passing local paths to dataset
+            return [int, str]
 
         if self == ExperimentParameterType.imuVectors:
             # parameters of type IMUVectors have dictionary as value
