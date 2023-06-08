@@ -16,7 +16,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: ${{ github.base_ref }}
+    environment: ${{ github.base_ref == '' && github.ref_name || github.base_ref }}
     steps:
       - uses: actions/checkout@v3
       - name: Print branches
