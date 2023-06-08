@@ -20,7 +20,6 @@ from pathlib import Path
 
 import logging
 import gzip
-import csv
 
 from ..coretex import Experiment, CustomSample, CustomDataset
 
@@ -46,21 +45,6 @@ def compressGzip(source: Path, destination: Path) -> None:
         destinationFile.write(source.read_bytes())
 
     source.unlink()
-
-
-def createManifest(samples: List[CustomSample], outputDir: Path) -> Path:
-    manifestPath = outputDir / "manifest.tsv"
-    with open(manifestPath, "w", newline = "") as manifestFile:
-        csv.writer(manifestFile, delimiter = "\t").writerow(["sample-id", "absolute-filepath"])
-
-    for sample in samples:
-        for fastqPath in Path(sample.path).iterdir():
-            if fastqPath.match("*fastq"):
-                sampleId = fastqPath.name[:-6]
-                with open(manifestPath, "a", newline = "") as manifestFile:
-                    csv.writer(manifestFile, delimiter = "\t").writerow([sampleId, fastqPath])
-
-    return manifestPath
 
 
 def sampleNumber(sample: CustomSample) -> int:
@@ -143,5 +127,9 @@ def getPhylogeneticTreeSamples(dataset: CustomDataset) -> List[CustomSample]:
     return dataset.getSamples(isPhylogeneticTreeSample)
 
 
-def getMetadataSamples(dataset: CustomDataset) -> CustomSample:
-    return dataset.getSamples(isMetadataSample)
+def getMetadataSample(dataset: CustomDataset) -> CustomSample:
+    metadataSample = dataset.getSamples(isMetadataSample)
+    if len(metadataSample) != 1:
+        raise ValueError(f">> [Workspace] Dataset must contain exaclty one metadata sample. Found {len(metadataSample)}")
+
+    return metadataSample[0]

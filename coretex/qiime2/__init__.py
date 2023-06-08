@@ -78,9 +78,9 @@ def toolsImport(
     ]
 
     if inputFormat is not None:
-        args.extend[
+        args.extend([
             "--input-format" , inputFormat
-        ]
+        ])
 
     QiimeCommand(args)
 
