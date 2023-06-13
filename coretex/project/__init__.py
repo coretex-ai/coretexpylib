@@ -47,7 +47,7 @@ def _prepareForExecution(
 
      experiment = ExecutingExperiment.startExecuting(experimentId, datasetType)
 
-     logPath = FolderManager.instance().logs / f"{experimentId}.log"
+     logPath = FolderManager.instance().logs / f"experiment_{experimentId}.log"
      customLogHandler = LogHandler.instance()
      customLogHandler.currentExperimentId = experimentId
 
