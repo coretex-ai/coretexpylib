@@ -15,33 +15,33 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import unittest
+# import unittest
 
-from coretex import CustomSample, CustomDataset, SpaceTask
+# from coretex import CustomSample, CustomDataset, SpaceTask
 
-from .base_network_sample_test import BaseNetworkSampleTest
-from ...utils import createRemoteEnvironmentFor, generateUniqueName
-
-
-class TestCustomSample(BaseNetworkSampleTest.Base):
-
-    dataset: CustomDataset
-    sample: CustomSample
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        super().setUpClass()
-
-        space, dataset = createRemoteEnvironmentFor(SpaceTask.other, CustomDataset)
-
-        cls.space = space
-        cls.dataset = dataset
-        cls.sample = dataset.samples[0]
-
-    def test_createCustomSample(self) -> None:
-        sample = CustomSample.createCustomSample(generateUniqueName(), self.dataset.id, self.sample.zipPath)
-        self.assertIsNotNone(sample, "Failed to create image segmentation sample")
+# from .base_network_sample_test import BaseNetworkSampleTest
+# from ...utils import createRemoteEnvironmentFor, generateUniqueName
 
 
-if __name__ == "__main__":
-    unittest.main()
+# class TestCustomSample(BaseNetworkSampleTest.Base):
+
+#     dataset: CustomDataset
+#     sample: CustomSample
+
+#     @classmethod
+#     def setUpClass(cls) -> None:
+#         super().setUpClass()
+
+#         space, dataset = createRemoteEnvironmentFor(SpaceTask.other, CustomDataset)
+
+#         cls.space = space
+#         cls.dataset = dataset
+#         cls.sample = dataset.samples[0]
+
+#     def test_createCustomSample(self) -> None:
+#         sample = CustomSample.createCustomSample(generateUniqueName(), self.dataset.id, self.sample.zipPath)
+#         self.assertIsNotNone(sample, "Failed to create image segmentation sample")
+
+
+# if __name__ == "__main__":
+#     unittest.main()

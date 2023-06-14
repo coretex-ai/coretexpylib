@@ -77,8 +77,9 @@ def uploadMetricsWorker(outputStream: Connection, refreshToken: str, experimentI
         sendFailure(outputStream, "Failed to authenticate with refresh token")
         return
 
-    experiment = Experiment.fetchById(experimentId)
-    if experiment is None:
+    try:
+        experiment: Experiment = Experiment.fetchById(experimentId)
+    except NetworkRequestError:
         sendFailure(outputStream, f"Failed to fetch experiment with id: {experimentId}")
         return
 

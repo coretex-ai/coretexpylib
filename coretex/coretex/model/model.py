@@ -245,8 +245,11 @@ class Model(NetworkObject):
 
         zipPath = path.with_suffix(".zip")
         with ZipFile(zipPath, "w") as zipFile:
-            for value in path.iterdir():
-                zipFile.write(value, value.name)
+            for value in path.rglob("*"):
+                if not value.is_file():
+                    continue
+
+                zipFile.write(value, value.relative_to(path))
 
         files = [
             FileData.createFromPath("file", zipPath)

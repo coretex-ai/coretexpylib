@@ -23,7 +23,7 @@ import sys
 
 from .remote import processRemote
 from .local import processLocal
-from ..coretex import ExperimentStatus, NetworkDataset, ExecutingExperiment, Metric
+from ..coretex import ExperimentStatus, NetworkDataset, Metric, ExperimentBuilder, Experiment
 from ..logging import LogHandler, initializeLogger, LogSeverity
 from ..networking import RequestFailedError
 from ..folder_management import FolderManager
@@ -43,13 +43,13 @@ def _prepareForExecution(
      experimentId: int,
      datasetType: Optional[Type[DatasetType]] = None,
      metrics: Optional[List[Metric]] = None
-) -> None:
+) -> Experiment:
 
-     experiment = ExecutingExperiment.startExecuting(experimentId, datasetType)
+     experiment = ExperimentBuilder(experimentId).setDatasetType(datasetType).build()
 
      logPath = FolderManager.instance().logs / f"experiment_{experimentId}.log"
      customLogHandler = LogHandler.instance()
-     customLogHandler.currentExperimentId = experimentId
+     customLogHandler.currentExperimentId = experiment.id
 
      # enable/disable verbose mode for experiments
      severity = LogSeverity.info
@@ -67,13 +67,13 @@ def _prepareForExecution(
 
      if metrics is not None:
           experiment.createMetrics(metrics)
+          logging.getLogger("coretexpylib").info(">> [Coretex] Metrics successfully created.")
 
-          if len(ExecutingExperiment.current().metrics) > 0:
-               logging.getLogger("coretexpylib").info(">> [Coretex] Metrics successfully created.")
+     return experiment
 
 
 def initializeProject(
-     mainFunction: Callable[[ExecutingExperiment], None],
+     mainFunction: Callable[[Experiment], None],
      datasetType: Optional[Type[DatasetType]] = None,
      metrics: Optional[List[Metric]] = None,
      args: Optional[List[str]] = None
@@ -101,12 +101,12 @@ def initializeProject(
           experimentId, callback = processLocal(args)
 
      try:
-          _prepareForExecution(experimentId, datasetType, metrics)
+          experiment = _prepareForExecution(experimentId, datasetType, metrics)
 
           callback.onStart()
 
           logging.getLogger("coretexpylib").info("Experiment execution started")
-          mainFunction(ExecutingExperiment.current())
+          mainFunction(experiment)
 
           callback.onSuccess()
      except RequestFailedError:

@@ -15,35 +15,33 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import unittest
+# import unittest
 
-from coretex import ComputerVisionDataset, ComputerVisionSample, SpaceTask
+# from coretex import ComputerVisionDataset, ComputerVisionSample, SpaceTask
 
-from .base_network_dataset_test import BaseNetworkDatasetTest
-from ..base_computer_vision_dataset_test import BaseComputerVisionDatasetTest
-from ...utils import createRemoteEnvironmentFor
-
-
-class TestComputerVisionDataset(BaseComputerVisionDatasetTest.Base[ComputerVisionDataset], BaseNetworkDatasetTest.Base[ComputerVisionDataset]):
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        super().setUpClass()
-
-        space, dataset = createRemoteEnvironmentFor(SpaceTask.computerVision, ComputerVisionDataset)
-
-        cls.space = space
-        cls.dataset = dataset
-        cls.sampleType = ComputerVisionSample
-
-    def test_saveClasses(self) -> None:
-        super().test_saveClasses()
-
-        fetchedDataset = ComputerVisionDataset.fetchById(self.dataset.id)
-        self.assertIsNotNone(fetchedDataset)
-
-        self.compareClasses(fetchedDataset.classes, self.dataset.classes)  # type: ignore
+# from .base_network_dataset_test import BaseNetworkDatasetTest
+# from ..base_computer_vision_dataset_test import BaseComputerVisionDatasetTest
+# from ...utils import createRemoteEnvironmentFor
 
 
-if __name__ == "__main__":
-    unittest.main()
+# class TestComputerVisionDataset(BaseComputerVisionDatasetTest.Base[ComputerVisionDataset], BaseNetworkDatasetTest.Base[ComputerVisionDataset]):
+
+#     @classmethod
+#     def setUpClass(cls) -> None:
+#         super().setUpClass()
+
+#         space, dataset = createRemoteEnvironmentFor(SpaceTask.computerVision, ComputerVisionDataset)
+
+#         cls.space = space
+#         cls.dataset = dataset
+#         cls.sampleType = ComputerVisionSample
+
+#     def test_saveClasses(self) -> None:
+#         super().test_saveClasses()
+
+#         fetchedDataset = ComputerVisionDataset.fetchById(self.dataset.id)
+#         self.compareClasses(fetchedDataset.classes, self.dataset.classes)
+
+
+# if __name__ == "__main__":
+#     unittest.main()

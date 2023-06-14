@@ -15,7 +15,8 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import TypeVar, Type, Optional, Dict, List
+from typing import TypeVar, Optional, Dict, List
+from typing_extensions import Self
 
 from .base import BaseImageDataset
 from ..network_dataset import NetworkDataset
@@ -25,7 +26,6 @@ from ....codable import KeyDescriptor, Codable
 from ....networking import networkManager, RequestType
 
 
-DatasetType = TypeVar("DatasetType", bound = "ImageDataset")
 SampleType = TypeVar("SampleType", bound = "ImageSample")
 
 
@@ -57,10 +57,8 @@ class ImageDataset(BaseImageDataset[SampleType], NetworkDataset[SampleType]):  #
         return descriptors
 
     @classmethod
-    def fetchById(cls: Type[DatasetType], objectId: int, queryParameters: Optional[List[str]] = None) -> Optional[DatasetType]:
+    def fetchById(cls, objectId: int, queryParameters: Optional[List[str]] = None) -> Self:
         obj = super().fetchById(objectId, queryParameters)
-        if obj is None:
-            return None
 
         response = networkManager.genericJSONRequest(
             endpoint=f"annotation-class?dataset_id={obj.id}",

@@ -42,7 +42,7 @@ class LocalProjectCallback(ProjectCallback):
 
         logging.getLogger("coretexpylib").info("Heartbeat started")
 
-        heartbeat = Heartbeat()
+        heartbeat = Heartbeat(self._experiment)
         heartbeat.start()
 
     def onSuccess(self) -> None:
@@ -119,7 +119,7 @@ def processLocal(args: Optional[List[str]] = None) -> Tuple[int, ProjectCallback
 
     parameters = ExperimentParameter.readExperimentConfig()
 
-    experiment = Experiment.startCustomExperiment(
+    experiment: Experiment = Experiment.startCustomExperiment(
         parser.projectId,
         # Dummy Local node ID, hardcoded as it is only a temporary solution,
         # backend will add a new ExperimentType (local) which does not require a specific

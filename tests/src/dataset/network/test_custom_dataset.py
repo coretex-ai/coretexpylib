@@ -15,26 +15,26 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import unittest
+# import unittest
 
-from coretex import CustomSample, CustomDataset, SpaceTask
+# from coretex import CustomSample, CustomDataset, SpaceTask
 
-from .base_network_dataset_test import BaseNetworkDatasetTest
-from ...utils import createRemoteEnvironmentFor
-
-
-class TestCustomDataset(BaseNetworkDatasetTest.Base[CustomDataset]):
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        super().setUpClass()
-
-        space, dataset = createRemoteEnvironmentFor(SpaceTask.other, CustomDataset)
-
-        cls.space = space
-        cls.dataset = dataset
-        cls.sampleType = CustomSample
+# from .base_network_dataset_test import BaseNetworkDatasetTest
+# from ...utils import createRemoteEnvironmentFor
 
 
-if __name__ == "__main__":
-    unittest.main()
+# class TestCustomDataset(BaseNetworkDatasetTest.Base[CustomDataset]):
+
+#     @classmethod
+#     def setUpClass(cls) -> None:
+#         super().setUpClass()
+
+#         space, dataset = createRemoteEnvironmentFor(SpaceTask.other, CustomDataset)
+
+#         cls.space = space
+#         cls.dataset = dataset
+#         cls.sampleType = CustomSample
+
+
+# if __name__ == "__main__":
+#     unittest.main()

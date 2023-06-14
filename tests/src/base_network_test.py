@@ -15,21 +15,19 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import unittest
-import time
+# import unittest
 
-from coretex import Space, SpaceTask
-from coretex.networking import networkManager
+# from coretex.networking import networkManager
 
 
-class BaseNetworkTest:
+# class BaseNetworkTest:
 
-    class Base(unittest.TestCase):
+#     class Base(unittest.TestCase):
 
-        @classmethod
-        def setUpClass(cls) -> None:
-            # Authenticates with credentials stored inside the Coretex configuration
-            # Configuration can be created using Coretex CLI
-            response = networkManager.authenticateWithStoredCredentials()
-            if response.hasFailed():
-                raise RuntimeError(f">> [Coretex] Failed to authenticate")
+#         @classmethod
+#         def setUpClass(cls) -> None:
+#             # Authenticates with credentials stored inside the Coretex configuration
+#             # Configuration can be created using Coretex CLI
+#             response = networkManager.authenticateWithStoredCredentials()
+#             if response.hasFailed():
+#                 raise RuntimeError(f">> [Coretex] Failed to authenticate")

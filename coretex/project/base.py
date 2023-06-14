@@ -43,11 +43,7 @@ class ProjectCallback:
 
     @classmethod
     def create(cls, experimentId: int, refreshToken: str) -> Self:
-        experiment = Experiment.fetchById(experimentId)
-        if experiment is None:
-            raise ValueError
-
-        return cls(experiment, refreshToken)
+        return cls(Experiment.fetchById(experimentId), refreshToken)
 
     def onStart(self) -> None:
         self.process.start()
