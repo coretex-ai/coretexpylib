@@ -257,6 +257,6 @@ class NetworkObject(Codable):
 
         response = networkManager.genericJSONRequest(endpoint, RequestType.get)
         if response.hasFailed():
-            raise NetworkRequestError(response, f"Failed to fetch object with ID \"{objectId}\"")
+            raise NetworkRequestError(response, f"Failed to fetch \"{cls.__name__}\" with ID \"{objectId}\"")
 
         return cls.decode(response.json)

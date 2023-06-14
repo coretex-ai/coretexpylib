@@ -88,7 +88,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
         return "dataset"
 
     @classmethod
-    def fetchById(cls, objectId: int, queryParameters: Optional[List[str]] = None) -> Optional[Self]:
+    def fetchById(cls, objectId: int, queryParameters: Optional[List[str]] = None) -> Self:
         if queryParameters is None:
             queryParameters = ["include_sessions=1"]
 

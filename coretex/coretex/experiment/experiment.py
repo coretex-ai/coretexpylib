@@ -29,50 +29,12 @@ import zipfile
 from .artifact import Artifact
 from .status import ExperimentStatus
 from .metrics import Metric
-from .parameters import ExperimentParameter, ExperimentParameterType
+from .parameters import ExperimentParameter, parseParameters
 from ..dataset import *
 from ..space import SpaceTask
 from ...codable import KeyDescriptor
 from ...networking import networkManager, NetworkObject, RequestType, NetworkRequestError
 from ...folder_management import FolderManager
-
-
-def getDatasetType(task: SpaceTask, isLocal: bool) -> Type[Dataset]:
-    if task == SpaceTask.other:
-        if isLocal:
-            return LocalCustomDataset
-
-        return CustomDataset
-
-    if task == SpaceTask.imageSegmentation:
-        if isLocal:
-            return LocalImageSegmentationDataset
-
-        return ImageSegmentationDataset
-
-    if task == SpaceTask.computerVision:
-        if isLocal:
-            return LocalComputerVisionDataset
-
-        return ComputerVisionDataset
-
-    logging.getLogger("coretexpylib").debug(f">> [Coretex] SpaceTask ({task}) does not have a dataset type using CustomDataset")
-
-    # Returning CustomDataset in case the task doesn't have it's dataset type
-    if isLocal:
-        return LocalCustomDataset
-
-    return CustomDataset
-
-
-def fetchDataset(datasetType: Type[Dataset], value: Any) -> Optional[Dataset]:
-    if issubclass(datasetType, LocalDataset):
-        return datasetType(value)  # type: ignore
-
-    if issubclass(datasetType, NetworkDataset):
-        return datasetType.fetchById(value)
-
-    return None
 
 
 DatasetType = TypeVar("DatasetType", bound = Dataset)
@@ -174,8 +136,6 @@ class Experiment(NetworkObject, Generic[DatasetType]):
 
         return dataset  # type: ignore
 
-    # Codable overrides
-
     @classmethod
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
         descriptors = super()._keyDescriptors()
@@ -193,13 +153,13 @@ class Experiment(NetworkObject, Generic[DatasetType]):
 
         return descriptors
 
-    # NetworkObject overrides
-
     @classmethod
     def _endpoint(cls) -> str:
         return "model-queue"
 
-    def __parseParameters(self) -> None:
+    def onDecode(self) -> None:
+        super().onDecode()
+
         if self.meta["parameters"] is None:
             self.meta["parameters"] = []
 
@@ -207,30 +167,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
             raise ValueError(">> [Coretex] Invalid parameters")
 
         parameters = [ExperimentParameter.decode(value) for value in self.meta["parameters"]]
-
-        for parameter in parameters:
-            if parameter.dataType == ExperimentParameterType.floatingPoint and isinstance(parameter.value, int):
-                self.parameters[parameter.name] = float(parameter.value)
-
-            if parameter.dataType == ExperimentParameterType.dataset:
-                if parameter.value is None:
-                    self.parameters[parameter.name] = None
-                else:
-                    isLocal = isinstance(parameter.value, str)
-                    datasetType = getDatasetType(self.spaceTask, isLocal)
-
-                    dataset = fetchDataset(datasetType, parameter.value)
-                    if dataset is None:
-                        raise ValueError(f">> [Coretex] Failed to fetch dataset with ID: {parameter.value}")
-
-                    self.parameters[parameter.name] = dataset
-
-    def onDecode(self) -> None:
-        super().onDecode()
-
-        self.__parseParameters()
-
-    # Experiment methods
+        self.__parameters = parseParameters(parameters, self.spaceTask)
 
     def updateStatus(self, status: ExperimentStatus, message: Optional[str] = None, notifyServer: bool = True) -> bool:
         """
@@ -375,8 +312,20 @@ class Experiment(NetworkObject, Generic[DatasetType]):
 
         return not response.hasFailed()
 
-    def getLastStatusMessage(self) -> Optional[str]:
-        return self.__lastStatusMessage
+    def sendHeartbeat(self) -> bool:
+        """
+            Sends an update status request with the status and the
+            status message of the previous status update
+
+            Returns
+            -------
+            bool -> True if success, False otherwise
+        """
+
+        if self.__lastStatusMessage:
+            return False
+
+        return self.updateStatus(self.status, self.__lastStatusMessage)
 
     def downloadProject(self) -> bool:
         """

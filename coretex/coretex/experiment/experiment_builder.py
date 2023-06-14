@@ -37,9 +37,7 @@ class ExperimentBuilder:
         return self
 
     def build(self) -> Experiment:
-        experiment: Optional[Experiment] = Experiment.fetchById(self.experimentId)
-        if experiment is None:
-            raise Exception(f">> [Coretex] Failed to fetch experiment with ID \"{self.experimentId}\"")
+        experiment: Experiment = Experiment.fetchById(self.experimentId)
 
         if self.__datasetType is not None:
             for key, value in experiment.parameters.items():

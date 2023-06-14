@@ -40,9 +40,7 @@ class TestComputerVisionDataset(BaseComputerVisionDatasetTest.Base[ComputerVisio
         super().test_saveClasses()
 
         fetchedDataset = ComputerVisionDataset.fetchById(self.dataset.id)
-        self.assertIsNotNone(fetchedDataset)
-
-        self.compareClasses(fetchedDataset.classes, self.dataset.classes)  # type: ignore
+        self.compareClasses(fetchedDataset.classes, self.dataset.classes)
 
 
 if __name__ == "__main__":
