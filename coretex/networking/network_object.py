@@ -247,7 +247,7 @@ class NetworkObject(Codable):
 
             Raises
             ------
-            ObjectFetchException -> If the fetching failed
+            NetworkRequestError -> If the request for fetching failed
         """
 
         endpoint = f"{cls._endpoint()}/{objectId}"
