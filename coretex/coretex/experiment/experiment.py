@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Final, Optional, Any, List, Dict, Union, Tuple
+from typing import Final, Optional, Any, List, Dict, Union, Tuple, TypeVar, Generic
 from typing_extensions import Self
 from threading import Lock
 from zipfile import ZipFile
@@ -29,13 +29,17 @@ import zipfile
 from .artifact import Artifact
 from .status import ExperimentStatus
 from .metrics import Metric
+from .parameters import ExperimentParameter, parseParameters
+from ..dataset import *
 from ..space import SpaceTask
 from ...codable import KeyDescriptor
 from ...networking import networkManager, NetworkObject, RequestType, NetworkRequestError
 from ...folder_management import FolderManager
 
 
-class Experiment(NetworkObject):
+DatasetType = TypeVar("DatasetType", bound = Dataset)
+
+class Experiment(NetworkObject, Generic[DatasetType]):
 
     """
         Represents experiment entity from Coretex.ai
@@ -111,7 +115,25 @@ class Experiment(NetworkObject):
 
         return FolderManager.instance().getTempFolder(str(self.id))
 
-    # Codable overrides
+    @property
+    def dataset(self) -> DatasetType:
+        """
+            Value of the parameter with name "dataset" assigned to this experiment
+
+            Returns
+            -------
+            Dataset object if there was a parameter with name "dataset" entered when the experiment was started
+
+            Raises
+            ------
+            ValueError -> if there is not parameter with name "dataset"
+        """
+
+        dataset = self.parameters.get("dataset")
+        if dataset is None:
+            raise ValueError(f">> [Coretex] Experiment \"{self.id}\" does not have a parameter named \"dataset\"")
+
+        return dataset  # type: ignore
 
     @classmethod
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
@@ -130,8 +152,6 @@ class Experiment(NetworkObject):
 
         return descriptors
 
-    # NetworkObject overrides
-
     @classmethod
     def _endpoint(cls) -> str:
         return "model-queue"
@@ -142,15 +162,11 @@ class Experiment(NetworkObject):
         if self.meta["parameters"] is None:
             self.meta["parameters"] = []
 
-        parameters = self.meta["parameters"]
+        if not isinstance(self.meta["parameters"], list):
+            raise ValueError(">> [Coretex] Invalid parameters")
 
-        if not isinstance(parameters, list):
-            raise ValueError
-
-        for p in parameters:
-            self.__parameters[p["name"]] = p["value"]
-
-    # Experiment methods
+        parameters = [ExperimentParameter.decode(value) for value in self.meta["parameters"]]
+        self.__parameters = parseParameters(parameters, self.spaceTask)
 
     def updateStatus(self, status: ExperimentStatus, message: Optional[str] = None, notifyServer: bool = True) -> bool:
         """
@@ -295,8 +311,20 @@ class Experiment(NetworkObject):
 
         return not response.hasFailed()
 
-    def getLastStatusMessage(self) -> Optional[str]:
-        return self.__lastStatusMessage
+    def sendHeartbeat(self) -> bool:
+        """
+            Sends an update status request with the status and the
+            status message of the previous status update
+
+            Returns
+            -------
+            bool -> True if success, False otherwise
+        """
+
+        if self.__lastStatusMessage:
+            return False
+
+        return self.updateStatus(self.status, self.__lastStatusMessage)
 
     def downloadProject(self) -> bool:
         """

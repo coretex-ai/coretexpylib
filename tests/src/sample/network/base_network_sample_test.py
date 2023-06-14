@@ -15,72 +15,71 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import os
-import shutil
+# import os
 
-from coretex import Space, NetworkSample, NetworkDataset
+# from coretex import Space, NetworkSample, NetworkDataset
 
-from ..base_sample_test import BaseSampleTest
-from ...base_network_test import BaseNetworkTest
+# from ..base_sample_test import BaseSampleTest
+# from ...base_network_test import BaseNetworkTest
 
 
-class BaseNetworkSampleTest:
+# class BaseNetworkSampleTest:
 
-    class Base(BaseSampleTest.Base, BaseNetworkTest.Base):
+#     class Base(BaseSampleTest.Base, BaseNetworkTest.Base):
 
-        space: Space
-        dataset: NetworkDataset
-        sample: NetworkSample
+#         space: Space
+#         dataset: NetworkDataset
+#         sample: NetworkSample
 
-        @classmethod
-        def tearDownClass(cls) -> None:
-            super().tearDownClass()
+#         @classmethod
+#         def tearDownClass(cls) -> None:
+#             super().tearDownClass()
 
-            # TODO: Enable this once delete is working on backend
-            # if not cls.space.delete():
-            #     raise RuntimeError(">> [Coretex] Failed to delete space")
+#             # TODO: Enable this once delete is working on backend
+#             # if not cls.space.delete():
+#             #     raise RuntimeError(">> [Coretex] Failed to delete space")
 
-        def setUp(self) -> None:
-            super().setUp()
+#         def setUp(self) -> None:
+#             super().setUp()
 
-            result = self.sample.download(ignoreCache = True)
-            self.assertIsNotNone(result, "Failed to download sample")
+#             result = self.sample.download(ignoreCache = True)
+#             self.assertIsNotNone(result, "Failed to download sample")
 
-        def tearDown(self) -> None:
-            super().tearDown()
+#         def tearDown(self) -> None:
+#             super().tearDown()
 
-            if os.path.exists(self.sample.zipPath):
-                os.unlink(self.sample.zipPath)
+#             if os.path.exists(self.sample.zipPath):
+#                 os.unlink(self.sample.zipPath)
 
-            self.assertFalse(os.path.exists(self.sample.zipPath), "Failed to cleanup sample")
+#             self.assertFalse(os.path.exists(self.sample.zipPath), "Failed to cleanup sample")
 
-        def test_networkSampleDownload(self) -> None:
-            self.assertTrue(
-                self.sample.download(),
-                "Failed to download sample"
-            )
+#         def test_networkSampleDownload(self) -> None:
+#             self.assertTrue(
+#                 self.sample.download(),
+#                 "Failed to download sample"
+#             )
 
-            self.assertTrue(
-                os.path.exists(self.sample.zipPath),
-                "Sample not properly downloaded"
-            )
+#             self.assertTrue(
+#                 os.path.exists(self.sample.zipPath),
+#                 "Sample not properly downloaded"
+#             )
 
-            self.assertTrue(
-                self.sample.download(ignoreCache = True),
-                "Failed to download sample"
-            )
+#             self.assertTrue(
+#                 self.sample.download(ignoreCache = True),
+#                 "Failed to download sample"
+#             )
 
-            self.assertTrue(
-                os.path.exists(self.sample.zipPath),
-                "Sample not properly downloaded"
-            )
+#             self.assertTrue(
+#                 os.path.exists(self.sample.zipPath),
+#                 "Sample not properly downloaded"
+#             )
 
-            self.assertTrue(
-                self.sample.download(),
-                "Failed to download sample"
-            )
+#             self.assertTrue(
+#                 self.sample.download(),
+#                 "Failed to download sample"
+#             )
 
-            self.assertTrue(
-                os.path.exists(self.sample.zipPath),
-                "Sample not properly downloaded"
-            )
+#             self.assertTrue(
+#                 os.path.exists(self.sample.zipPath),
+#                 "Sample not properly downloaded"
+#             )

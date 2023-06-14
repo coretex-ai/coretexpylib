@@ -15,36 +15,36 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import unittest
+# import unittest
 
-from coretex import ComputerVisionSample, ComputerVisionDataset, SpaceTask
+# from coretex import ComputerVisionSample, ComputerVisionDataset, SpaceTask
 
-from .base_network_sample_test import BaseNetworkSampleTest
-from ..base_computer_vision_sample_test import BaseComputerVisionSampleTest
-from ...utils import createRemoteEnvironmentFor
-
-
-class TestImageSample(BaseComputerVisionSampleTest.Base, BaseNetworkSampleTest.Base):
-
-    dataset: ComputerVisionDataset
-    sample: ComputerVisionSample
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        super().setUpClass()
-
-        space, dataset = createRemoteEnvironmentFor(SpaceTask.computerVision, ComputerVisionDataset)
-
-        cls.space = space
-        cls.dataset = dataset
-        cls.sample = dataset.samples[0]
-
-    def test_createComputerVisionSample(self) -> None:
-        self.sample.unzip()
-
-        sample = ComputerVisionSample.createComputerVisionSample(self.dataset.id, self.sample.imagePath)
-        self.assertIsNotNone(sample, "Failed to create computer vision sample")
+# from .base_network_sample_test import BaseNetworkSampleTest
+# from ..base_computer_vision_sample_test import BaseComputerVisionSampleTest
+# from ...utils import createRemoteEnvironmentFor
 
 
-if __name__ == "__main__":
-    unittest.main()
+# class TestImageSample(BaseComputerVisionSampleTest.Base, BaseNetworkSampleTest.Base):
+
+#     dataset: ComputerVisionDataset
+#     sample: ComputerVisionSample
+
+#     @classmethod
+#     def setUpClass(cls) -> None:
+#         super().setUpClass()
+
+#         space, dataset = createRemoteEnvironmentFor(SpaceTask.computerVision, ComputerVisionDataset)
+
+#         cls.space = space
+#         cls.dataset = dataset
+#         cls.sample = dataset.samples[0]
+
+#     def test_createComputerVisionSample(self) -> None:
+#         self.sample.unzip()
+
+#         sample = ComputerVisionSample.createComputerVisionSample(self.dataset.id, self.sample.imagePath)
+#         self.assertIsNotNone(sample, "Failed to create computer vision sample")
+
+
+# if __name__ == "__main__":
+#     unittest.main()

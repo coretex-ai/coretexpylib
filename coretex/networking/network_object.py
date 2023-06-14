@@ -22,6 +22,7 @@ import inflection
 
 from .request_type import RequestType
 from .network_manager import networkManager
+from .network_response import NetworkRequestError
 from ..codable import Codable
 
 
@@ -115,8 +116,9 @@ class NetworkObject(Codable):
             return True
 
         # Fetch from server otherwise
-        obj = self.__class__.fetchById(self.id)
-        if obj is None:
+        try:
+            obj = self.__class__.fetchById(self.id)
+        except NetworkRequestError:
             return False
 
         for key, value in obj.__dict__.items():
@@ -228,7 +230,7 @@ class NetworkObject(Codable):
         return objects
 
     @classmethod
-    def fetchById(cls, objectId: int, queryParameters: Optional[List[str]] = None) -> Optional[Self]:
+    def fetchById(cls, objectId: int, queryParameters: Optional[List[str]] = None) -> Self:
         """
             Fetches a single entity with the matching id
 
@@ -242,6 +244,10 @@ class NetworkObject(Codable):
             Returns
             -------
             Optional[Self] -> fetched object if request was successful, None otherwise
+
+            Raises
+            ------
+            NetworkRequestError -> If the request for fetching failed
         """
 
         endpoint = f"{cls._endpoint()}/{objectId}"
@@ -251,6 +257,6 @@ class NetworkObject(Codable):
 
         response = networkManager.genericJSONRequest(endpoint, RequestType.get)
         if response.hasFailed():
-            return None
+            raise NetworkRequestError(response, f"Failed to fetch \"{cls.__name__}\" with ID \"{objectId}\"")
 
         return cls.decode(response.json)

@@ -15,62 +15,62 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import TypeVar, Generic
+# from typing import TypeVar, Generic
 
-import os
-import shutil
+# import os
+# import shutil
 
-from coretex import NetworkDataset, Space
+# from coretex import NetworkDataset, Space
 
-from ..base_dataset_test import BaseDatasetTest
-from ...base_network_test import BaseNetworkTest
-
-
-DatasetType = TypeVar("DatasetType", bound = NetworkDataset)
+# from ..base_dataset_test import BaseDatasetTest
+# from ...base_network_test import BaseNetworkTest
 
 
-class BaseNetworkDatasetTest:
+# DatasetType = TypeVar("DatasetType", bound = NetworkDataset)
 
-    class Base(BaseDatasetTest.Base[DatasetType], BaseNetworkTest.Base, Generic[DatasetType]):
 
-        space: Space
+# class BaseNetworkDatasetTest:
 
-        @classmethod
-        def tearDownClass(cls) -> None:
-            super().tearDownClass()
+#     class Base(BaseDatasetTest.Base[DatasetType], BaseNetworkTest.Base, Generic[DatasetType]):
 
-            for sample in cls.dataset.samples:
-                if os.path.exists(sample.path):
-                    shutil.rmtree(sample.path)
+#         space: Space
 
-                if os.path.exists(sample.zipPath):
-                    os.unlink(sample.zipPath)
+#         @classmethod
+#         def tearDownClass(cls) -> None:
+#             super().tearDownClass()
 
-            if os.path.exists(cls.dataset.path):
-                shutil.rmtree(cls.dataset.path)
+#             for sample in cls.dataset.samples:
+#                 if os.path.exists(sample.path):
+#                     shutil.rmtree(sample.path)
 
-            # TODO: Enable this once delete is working on backend
-            # if not cls.space.delete():
-            #     raise RuntimeError(">> [Coretex] Failed to delete space")
+#                 if os.path.exists(sample.zipPath):
+#                     os.unlink(sample.zipPath)
 
-        def test_networkDatasetDownload(self) -> None:
-            def verify() -> None:
-                self.assertTrue(
-                    os.path.exists(self.dataset.path),
-                    "Dataset not downloaded"
-                )
+#             if os.path.exists(cls.dataset.path):
+#                 shutil.rmtree(cls.dataset.path)
 
-                for sample in self.dataset.samples:
-                    self.assertTrue(
-                        os.path.exists(sample.zipPath),
-                        f"Sample {sample.id} not downloaded"
-                    )
+#             # TODO: Enable this once delete is working on backend
+#             # if not cls.space.delete():
+#             #     raise RuntimeError(">> [Coretex] Failed to delete space")
 
-            self.dataset.download()
-            verify()
+#         def test_networkDatasetDownload(self) -> None:
+#             def verify() -> None:
+#                 self.assertTrue(
+#                     os.path.exists(self.dataset.path),
+#                     "Dataset not downloaded"
+#                 )
 
-            self.dataset.download(ignoreCache = True)
-            verify()
+#                 for sample in self.dataset.samples:
+#                     self.assertTrue(
+#                         os.path.exists(sample.zipPath),
+#                         f"Sample {sample.id} not downloaded"
+#                     )
 
-            self.dataset.download()
-            verify()
+#             self.dataset.download()
+#             verify()
+
+#             self.dataset.download(ignoreCache = True)
+#             verify()
+
+#             self.dataset.download()
+#             verify()

@@ -22,6 +22,8 @@ from enum import IntEnum
 
 import json
 
+from .utils import getDatasetType, fetchDataset
+from ..space import SpaceTask
 from ...codable import Codable
 
 
@@ -92,7 +94,8 @@ class ExperimentParameterType(IntEnum):
 
         if self == ExperimentParameterType.dataset:
             # parameters of type dataset have dataset ID as value
-            return [int]
+            # str is allowed to allow passing local paths to dataset
+            return [int, str]
 
         if self == ExperimentParameterType.imuVectors:
             # parameters of type IMUVectors have dictionary as value
@@ -199,3 +202,27 @@ class ExperimentParameter(Codable):
                 parameters.append(parameter)
 
         return parameters
+
+
+def parseParameters(parameters: List[ExperimentParameter], task: SpaceTask) -> Dict[str, Any]:
+    values: Dict[str, Any] = {}
+
+    for parameter in parameters:
+        if parameter.dataType == ExperimentParameterType.floatingPoint and isinstance(parameter.value, int):
+            values[parameter.name] = float(parameter.value)
+        elif parameter.dataType == ExperimentParameterType.dataset:
+            if parameter.value is None:
+                values[parameter.name] = None
+            else:
+                isLocal = isinstance(parameter.value, str)
+                datasetType = getDatasetType(task, isLocal)
+
+                dataset = fetchDataset(datasetType, parameter.value)
+                if dataset is None:
+                    raise ValueError(f">> [Coretex] Failed to fetch dataset with ID: {parameter.value}")
+
+                values[parameter.name] = dataset
+        else:
+            values[parameter.name] = parameter.value
+
+    return values

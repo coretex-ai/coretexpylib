@@ -34,8 +34,9 @@ jobs:
         run: |
             pipenv run python -m build
       - name: Run unit tests
-        env:
-          CTX_USERNAME: ${{ secrets.CTX_USERNAME }}
-          CTX_PASSWORD: ${{ secrets.CTX_PASSWORD }}
+        # Re-enable when we implement secure workflow with secrets
+        # env:
+          # CTX_USERNAME: ${{ secrets.CTX_USERNAME }}
+          # CTX_PASSWORD: ${{ secrets.CTX_PASSWORD }}
         run: |
           pipenv run python -m unittest discover tests
