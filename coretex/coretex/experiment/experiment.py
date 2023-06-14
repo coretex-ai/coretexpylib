@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Final, Optional, Any, List, Dict, Union, Tuple, TypeVar, Generic, Type
+from typing import Final, Optional, Any, List, Dict, Union, Tuple, TypeVar, Generic
 from typing_extensions import Self
 from threading import Lock
 from zipfile import ZipFile
@@ -38,7 +38,6 @@ from ...folder_management import FolderManager
 
 
 DatasetType = TypeVar("DatasetType", bound = Dataset)
-x: List = []
 
 class Experiment(NetworkObject, Generic[DatasetType]):
 
