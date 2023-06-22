@@ -395,7 +395,6 @@ class NetworkManagerBase(ABC):
         endpoint: str,
         requestType: RequestType,
         parameters: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
         retryCount: int = 0
     ) -> NetworkResponse:
         """
@@ -434,17 +433,14 @@ class NetworkManagerBase(ABC):
                     print("Failed to add the object")
         """
 
-        if headers is None:
-            headers = self._requestHeader()
-
         if parameters is None:
             parameters = {}
 
-        networkResponse = self._requestManager.genericRequest(requestType, endpoint, headers, json.dumps(parameters))
+        networkResponse = self._requestManager.genericRequest(requestType, endpoint, self._requestHeader(), json.dumps(parameters))
 
         if self.shouldRetry(retryCount, networkResponse):
             print(">> [Coretex] Retry count: {0}".format(retryCount))
-            return self.genericJSONRequest(endpoint, requestType, parameters, headers, retryCount + 1)
+            return self.genericJSONRequest(endpoint, requestType, parameters, retryCount + 1)
 
         return networkResponse
 
