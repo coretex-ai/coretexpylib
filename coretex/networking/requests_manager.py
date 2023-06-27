@@ -211,7 +211,7 @@ class RequestsManager:
         endpoint: str,
         destinationPath: Path,
         headers: Dict[str, str],
-        parameters: Dict[str, Any] = None
+        parameters: Dict[str, Any]
     ) -> NetworkResponse:
 
         with self.__session.get(
