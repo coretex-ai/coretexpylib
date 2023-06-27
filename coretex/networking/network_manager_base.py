@@ -225,26 +225,18 @@ class NetworkManagerBase(ABC):
         if parameters is None:
             parameters = {}
 
-        response = self._requestManager.get(endpoint, headers, jsonObject = parameters)
+        networkResponse = self._requestManager.streamingDownload(
+            endpoint,
+            Path(destination),
+            headers,
+            parameters
+        )
 
-        if self.shouldRetry(retryCount, response):
+        if self.shouldRetry(retryCount, networkResponse):
             print(">> [Coretex] Retry count: {0}".format(retryCount))
             return self.genericDownload(endpoint, destination, parameters, retryCount + 1)
 
-        if response.raw.ok:
-            destinationPath = Path(destination)
-            if destinationPath.is_dir():
-                raise RuntimeError(">> [Coretex] Destination is a directory not a file")
-
-            if destinationPath.exists():
-                destinationPath.unlink(missing_ok = True)
-
-            destinationPath.parent.mkdir(parents = True, exist_ok = True)
-
-            with open(destination, "wb") as downloadedFile:
-                downloadedFile.write(response.raw.content)
-
-        return response
+        return networkResponse
 
     def genericUpload(
         self,

@@ -17,6 +17,7 @@
 
 from typing import Final, Any, Optional, Dict, List
 from contextlib import ExitStack
+from pathlib import Path
 
 import logging
 
@@ -204,6 +205,35 @@ class RequestsManager:
                 return self.post(endpoint, headers, data, jsonObject, retryCount = retryCount + 1)
 
             raise RequestFailedError
+
+    def streamingDownload(
+        self,
+        endpoint: str,
+        destinationPath: Path,
+        headers: Dict[str, str],
+        parameters: Dict[str, Any] = None
+    ) -> NetworkResponse:
+
+        with self.__session.get(
+            self.__url(endpoint),
+            stream = True,
+            headers = headers,
+            json = parameters
+        ) as response:
+
+            if destinationPath.is_dir():
+                raise RuntimeError(">> [Coretex] Destination is a directory not a file")
+
+            if destinationPath.exists():
+                destinationPath.unlink(missing_ok = True)
+
+            destinationPath.parent.mkdir(parents = True, exist_ok = True)
+
+            with destinationPath.open("wb") as downloadedFile:
+                for chunk in response.iter_content(chunk_size = 8192):
+                    downloadedFile.write(chunk)
+
+            return NetworkResponse(response, endpoint)
 
     def upload(
         self,
