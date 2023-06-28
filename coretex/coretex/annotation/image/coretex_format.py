@@ -29,11 +29,11 @@ from .classes_format import ImageDatasetClasses
 from ....codable import Codable, KeyDescriptor
 
 
-SegmentationType = List[float]
+SegmentationType = List[int]
 
 
-def toPoly(segmentation: List[float]) -> List[Tuple[float, float]]:
-    points: List[Tuple[float, float]] = []
+def toPoly(segmentation: List[int]) -> List[Tuple[int, int]]:
+    points: List[Tuple[int, int]] = []
 
     for index in range(0, len(segmentation) - 1, 2):
         points.append((segmentation[index], segmentation[index + 1]))
@@ -145,42 +145,42 @@ class CoretexSegmentationInstance(Codable):
 
         return binaryMask
 
-    def centroid(self) -> Tuple[float, float]:
+    def centroid(self) -> Tuple[int, int]:
         """
             Calculates centroid of segmentations
 
             Returns
             -------
-            Tuple[float, float] -> x, y coordinates of centroid
+            Tuple[int, int] -> x, y coordinates of centroid
         """
 
         flattenedSegmentations = [element for sublist in self.segmentations for element in sublist]
 
         listCX = [value for index, value in enumerate(flattenedSegmentations) if index % 2 == 0]
-        centerX = fsum(listCX) / len(listCX)
+        centerX = int(sum(listCX) / len(listCX))
 
         listCY = [value for index, value in enumerate(flattenedSegmentations) if index % 2 != 0]
-        centerY = fsum(listCY) / len(listCY)
+        centerY = int(sum(listCY) / len(listCY))
 
         return centerX, centerY
 
-    def centerSegmentations(self, newCentroid: Tuple[float, float]) -> None:
+    def centerSegmentations(self, newCentroid: Tuple[int, int]) -> None:
         """
             Centers segmentations to the specified center point
 
             Parameters
             ----------
-            newCentroid : Tuple[float, float]
+            newCentroid : Tuple[int, int]
                 x, y coordinates of centroid
             """
 
         newCenterX, newCenterY = newCentroid
         oldCenterX, oldCenterY = self.centroid()
 
-        modifiedSegmentations: List[List[float]] = []
+        modifiedSegmentations: List[List[int]] = []
 
         for segmentation in self.segmentations:
-            modifiedSegmentation: List[float] = []
+            modifiedSegmentation: List[int] = []
 
             for i in range(0, len(segmentation), 2):
                 x = segmentation[i] + (newCenterX - oldCenterX)
@@ -203,7 +203,7 @@ class CoretexSegmentationInstance(Codable):
                 degree of rotation
         """
 
-        rotatedSegmentations: List[List[float]] = []
+        rotatedSegmentations: List[List[int]] = []
         centerX, centerY = self.centroid()
 
         # because rotations with image and segmentations doesn't go in same direction
@@ -212,14 +212,14 @@ class CoretexSegmentationInstance(Codable):
         cosang, sinang = cos(theta), sin(theta)
 
         for segmentation in self.segmentations:
-            rotatedSegmentation: List[float] = []
+            rotatedSegmentation: List[int] = []
 
             for i in range(0, len(segmentation), 2):
                 x = segmentation[i] - centerX
                 y = segmentation[i + 1] - centerY
 
-                newX = (x * cosang - y * sinang) + centerX
-                newY = (x * sinang + y * cosang) + centerY
+                newX = int(x * cosang - y * sinang) + centerX
+                newY = int(x * sinang + y * cosang) + centerY
 
                 rotatedSegmentation.append(newX)
                 rotatedSegmentation.append(newY)
@@ -238,17 +238,17 @@ class CoretexImageAnnotation(Codable):
         ----------
         name : str
             name of annotation class
-        width : float
+        width : int
             width of annotation
-        height : float
+        height : int
             height of annotation
         instances : List[CoretexSegmentationInstance]
             list of SegmentationInstance objects
     """
 
     name: str
-    width: float
-    height: float
+    width: int
+    height: int
     instances: List[CoretexSegmentationInstance]
 
     @classmethod
@@ -262,8 +262,8 @@ class CoretexImageAnnotation(Codable):
     def create(
         cls,
         name: str,
-        width: float,
-        height: float,
+        width: int,
+        height: int,
         instances: List[CoretexSegmentationInstance]
     ) -> Self:
         """
@@ -273,9 +273,9 @@ class CoretexImageAnnotation(Codable):
             ----------
             name : str
                 name of annotation class
-            width : float
+            width : int
                 width of annotation
-            height : float
+            height : int
                 height of annotation
             instances : List[CoretexSegmentationInstance]
                 list of SegmentationInstance objects
