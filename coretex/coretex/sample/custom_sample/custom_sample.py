@@ -21,9 +21,8 @@ from pathlib import Path
 
 from .custom_sample_data import CustomSampleData
 from .local_custom_sample import LocalCustomSample
+from ..utils import chunkSampleImport
 from ..network_sample import NetworkSample
-from ....networking import networkManager, ChunkUploadSession, MAX_CHUNK_SIZE
-from ....utils.file import isArchive
 
 
 class CustomSample(NetworkSample[CustomSampleData], LocalCustomSample):
@@ -75,23 +74,5 @@ class CustomSample(NetworkSample[CustomSampleData], LocalCustomSample):
                     print("Failed to create custom sample")
         """
 
-        if isinstance(filePath, str):
-            filePath = Path(filePath)
-
-        if not isArchive(filePath):
-            raise ValueError(">> [Coretex] File must be an archive [.zip, .tar, .tar.gz]")
-
-        uploadSession = ChunkUploadSession(MAX_CHUNK_SIZE, filePath)
-        uploadId = uploadSession.run()
-
-        parameters = {
-            "name": name,
-            "dataset_id": datasetId,
-            "file_id": uploadId
-        }
-
-        response = networkManager.genericFormData("session/import", parameters)
-        if response.hasFailed():
-            return None
-
+        response = chunkSampleImport(name, datasetId, filePath)
         return cls.decode(response.json)
