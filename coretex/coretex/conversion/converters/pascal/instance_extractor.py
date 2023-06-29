@@ -31,7 +31,7 @@ from ....annotation import CoretexSegmentationInstance, BBox
 from ....dataset import ImageDataset
 
 
-ContourPoints = List[List[float]]
+ContourPoints = List[List[int]]
 SegmentationPolygon = List[ContourPoints]
 
 

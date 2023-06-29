@@ -38,6 +38,16 @@ def toFloat(rootEl: ET.Element, firstEl: str, secondEl: str) -> Tuple[Optional[f
     return (float(firstVal), float(secondVal))
 
 
+def toInt(rootEl: ET.Element, firstEl: str, secondEl: str) -> Tuple[Optional[int], Optional[int]]:
+    firstVal = getTag(rootEl, firstEl)
+    secondVal = getTag(rootEl, secondEl)
+
+    if firstVal is None or secondVal is None:
+        return (None, None)
+
+    return (int(firstVal), int(secondVal))
+
+
 def getBoxes(bndbox: ET.Element) -> Optional[Dict[str, float]]:
     xmin, ymin = toFloat(bndbox, "xmin", "ymin")
     xmax, ymax = toFloat(bndbox, "xmax", "ymax")
