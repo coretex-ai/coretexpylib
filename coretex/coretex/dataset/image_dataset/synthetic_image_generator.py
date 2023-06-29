@@ -136,8 +136,8 @@ def composeImage(
 
         background.paste(resizedImage, (x, y), resizedImage)
 
-        centerX = x + int(resizedImage.width / 2)
-        centerY = y + int(resizedImage.height / 2)
+        centerX = x + resizedImage.width // 2
+        centerY = y + resizedImage.height // 2
 
         centroids.append((centerX, centerY))
 

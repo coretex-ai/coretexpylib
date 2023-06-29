@@ -157,10 +157,10 @@ class CoretexSegmentationInstance(Codable):
         flattenedSegmentations = [element for sublist in self.segmentations for element in sublist]
 
         listCX = [value for index, value in enumerate(flattenedSegmentations) if index % 2 == 0]
-        centerX = int(sum(listCX) / len(listCX))
+        centerX = sum(listCX) // len(listCX)
 
         listCY = [value for index, value in enumerate(flattenedSegmentations) if index % 2 != 0]
-        centerY = int(sum(listCY) / len(listCY))
+        centerY = sum(listCY) // len(listCY)
 
         return centerX, centerY
 
