@@ -28,17 +28,17 @@ class BBox(Codable):
 
         Properties
         ----------
-        minX : float
+        minX : int
             top left x coordinate
-        minY : float
+        minY : int
             top left y coordinate
-        width : float
+        width : int
             width of the bounding box
-        height : float
+        height : int
             height of the bounding box
     """
 
-    def __init__(self, minX: float = 0, minY: float = 0, width: float = 0, height: float = 0) -> None:
+    def __init__(self, minX: int = 0, minY: int = 0, width: int = 0, height: int = 0) -> None:
         self.minX: Final = minX
         self.minY: Final = minY
 
@@ -46,31 +46,31 @@ class BBox(Codable):
         self.height: Final = height
 
     @property
-    def maxX(self) -> float:
+    def maxX(self) -> int:
         """
             Returns
             -------
-            float -> bottom right x coordinate
+            int -> bottom right x coordinate
         """
 
         return self.minX + self.width
 
     @property
-    def maxY(self) -> float:
+    def maxY(self) -> int:
         """
             Returns
             -------
-            float -> bottom right y coordinate
+            int -> bottom right y coordinate
         """
 
         return self.minY + self.height
 
     @property
-    def polygon(self) -> List[float]:
+    def polygon(self) -> List[int]:
         """
             Returns
             -------
-            List[float] -> Bounding box represented as a polygon (x, y) values
+            List[int] -> Bounding box represented as a polygon (x, y) values
         """
 
         return [
@@ -91,20 +91,20 @@ class BBox(Codable):
         return descriptors
 
     @classmethod
-    def create(cls, minX: float, minY: float, maxX: float, maxY: float) -> Self:
+    def create(cls, minX: int, minY: int, maxX: int, maxY: int) -> Self:
         """
             Utility constructor which has maxX and maxY as parameters instead
             of width and height
 
             Parameters
             ----------
-            minX : float
+            minX : int
                 top left x coordinate
-            minY : float
+            minY : int
                 top left y coordinate
-            maxX : float
+            maxX : int
                 bottom right x coordinate
-            maxY : float
+            maxY : int
                 bottom right y coordinate
 
             Returns
@@ -115,7 +115,7 @@ class BBox(Codable):
         return cls(minX, minY, maxX - minX, maxY - minY)
 
     @classmethod
-    def fromPoly(cls, polygon: List[float]) -> Self:
+    def fromPoly(cls, polygon: List[int]) -> Self:
         """
             Creates bounding box from a polygon, by finding
             the minimum x and y coordinates and calculating
@@ -123,7 +123,7 @@ class BBox(Codable):
 
             Parameters
             ----------
-            polygon : List[float]
+            polygon : List[int]
                 list of x, y points - length must be even
 
             Returns
@@ -140,8 +140,8 @@ class BBox(Codable):
             "minX: 0, minY: 0, width: 4, height: 3"
         """
 
-        x: List[float] = []
-        y: List[float] = []
+        x: List[int] = []
+        y: List[int] = []
 
         for index, value in enumerate(polygon):
             if index % 2 == 0:
