@@ -21,7 +21,7 @@ import os
 import glob
 import xml.etree.ElementTree as ET
 
-from .shared import getTag, toFloat
+from .shared import getTag, toInt
 from .instance_extractor import InstanceExtractor
 from ...base_converter import BaseConverter
 from .....coretex import CoretexImageAnnotation
@@ -84,7 +84,7 @@ class PascalSegConverter(BaseConverter):
         if size is None:
             return
 
-        width, height = toFloat(size, "width", "height")
+        width, height = toInt(size, "width", "height")
         if width is None or height is None:
             return
 

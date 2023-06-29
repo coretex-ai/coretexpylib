@@ -108,9 +108,9 @@ def composeImage(
     backgroundImage: np.ndarray,
     angle: int,
     scale: float
-) -> Tuple[PILImage, List[Tuple[float, float]]]:
+) -> Tuple[PILImage, List[Tuple[int, int]]]:
 
-    centroids: List[Tuple[float, float]] = []
+    centroids: List[Tuple[int, int]] = []
     locations: List[Tuple[int, int, int, int]] = []
 
     background = Image.fromarray(backgroundImage)
@@ -136,8 +136,8 @@ def composeImage(
 
         background.paste(resizedImage, (x, y), resizedImage)
 
-        centerX = x + resizedImage.width / 2
-        centerY = y + resizedImage.height / 2
+        centerX = x + int(resizedImage.width / 2)
+        centerY = y + int(resizedImage.height / 2)
 
         centroids.append((centerX, centerY))
 

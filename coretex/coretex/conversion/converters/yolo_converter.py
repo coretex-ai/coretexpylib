@@ -67,10 +67,10 @@ class YoloConverter(BaseConverter):
         wYolo = float(rawInstance[3])
         hYolo = float(rawInstance[4])
 
-        boxWidth = wYolo * width
-        boxHeight = hYolo * height
-        xMin = float(xYolo * width - (boxWidth / 2))
-        yMin = float(yYolo * height - (boxHeight / 2))
+        boxWidth = int(wYolo * width)
+        boxHeight = int(hYolo * height)
+        xMin = int(xYolo * width - (boxWidth / 2))
+        yMin = int(yYolo * height - (boxHeight / 2))
 
         return BBox(xMin, yMin, boxWidth, boxHeight)
 

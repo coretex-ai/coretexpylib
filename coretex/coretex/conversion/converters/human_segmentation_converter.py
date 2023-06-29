@@ -65,7 +65,7 @@ class HumanSegmentationConverter(BaseConverter):
     def _extractLabels(self) -> Set[str]:
         return set(["background", "human"])
 
-    def __extractPolygons(self, annotationPath: str, imageWidth: int, imageHeight: int) -> List[List[float]]:
+    def __extractPolygons(self, annotationPath: str, imageWidth: int, imageHeight: int) -> List[List[int]]:
         maskImage = Image.open(annotationPath)
         if maskImage is None:
             return []
@@ -81,7 +81,7 @@ class HumanSegmentationConverter(BaseConverter):
 
         contours = skimage.measure.find_contours(subMaskArray, 0.5)
 
-        segmentations: List[List[float]] = []
+        segmentations: List[List[int]] = []
         for contour in contours:
             for i in range(len(contour)):
                 row, col = contour[i]

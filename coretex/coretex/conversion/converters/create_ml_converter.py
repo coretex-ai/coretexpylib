@@ -53,10 +53,10 @@ class CreateMLConverter(BaseConverter):
 
         return labels
 
-    def __extractBBox(self, bbox: Dict[str, float]) -> BBox:
+    def __extractBBox(self, bbox: Dict[str, int]) -> BBox:
         return BBox(
-            bbox["x"] - bbox["width"] / 2,
-            bbox["y"] - bbox["height"] / 2,
+            bbox["x"] - int(bbox["width"] / 2),
+            bbox["y"] - int(bbox["height"] / 2),
             bbox["width"],
             bbox["height"]
         )
