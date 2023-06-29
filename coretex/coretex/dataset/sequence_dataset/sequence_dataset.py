@@ -15,13 +15,24 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .custom_sample import LocalCustomSample, CustomSample
-from .image_sample import AnnotatedImageSampleData, LocalImageSample, ImageSample
-from .image_segmentation_sample import LocalImageSegmentationSample, ImageSegmentationSample
-from .computer_vision_sample import LocalComputerVisionSample, ComputerVisionSample
-from .any_local_sample import AnyLocalSample
-from .sample import Sample
-from .local_sample import LocalSample
-from .network_sample import NetworkSample
-from .sequence_sample import LocalSequenceSample, SequenceSample
-from .utils import chunkSampleImport
+from typing import Dict
+
+from .base import BaseSequenceDataset
+from ..network_dataset import NetworkDataset
+from ...sample import SequenceSample
+from ....codable import KeyDescriptor
+
+
+class SequenceDataset(BaseSequenceDataset, NetworkDataset[SequenceSample]):
+
+    """
+        Sequence Dataset class which is used for Datasets whose
+        samples contain sequence data (.fasta, .fastq)
+    """
+
+    @classmethod
+    def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
+        descriptors = super()._keyDescriptors()
+        descriptors["samples"] = KeyDescriptor("sessions", SequenceSample, list)
+
+        return descriptors

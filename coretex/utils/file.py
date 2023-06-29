@@ -134,6 +134,30 @@ def gzipDecompress(source: Path, destination: Path) -> None:
         shutil.copyfileobj(gzipFile, destinationFile)
 
 
+def archive(source: Path, destination: Path) -> None:
+    """
+        Archives and compresses the provided file or directory
+        using ZipFile module
+
+        Parameters
+        ----------
+        source : Path
+            file to be archived and compressed
+        destination : Path
+            location to which the zip file will be stored
+    """
+
+    with ZipFile(destination, "w", zipfile.ZIP_DEFLATED) as destinationFile:
+        if source.is_file():
+            destinationFile.write(source, source.name)
+        else:
+            for path in source.rglob("*"):
+                if not path.is_file():
+                    continue
+
+                destinationFile.write(path, path.relative_to(source))
+
+
 def walk(path: Path) -> Generator[Path, None, None]:
     """
         os.walk implementation for pathlib.Path
