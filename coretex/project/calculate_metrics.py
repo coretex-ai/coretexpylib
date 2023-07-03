@@ -90,7 +90,17 @@ def uploadMetricsWorker(outputStream: Connection, refreshToken: str, experimentI
 
     sendSuccess(outputStream, "Metrics worker succcessfully started")
 
-    while True:
+    while outputStream.writable and not outputStream.closed:
+        try:
+            # If parent process gets killed with SIGKILL there
+            # is no guarantee that the child process will get
+            # closed so we ping the parent process to check if
+            # the pipe is available or not
+            outputStream.send(None)
+        except BrokenPipeError:
+            outputStream.close()
+            break
+
         startTime = time.time()
         metricValues: Dict[str, Tuple[float, float]] = {}
 

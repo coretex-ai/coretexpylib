@@ -38,7 +38,8 @@ class ProjectCallback:
 
         self.process = multiprocessing.Process(
             target = uploadMetricsWorker,
-            args = (self.__outputStream, refreshToken, self._experiment.id)
+            args = (self.__outputStream, refreshToken, self._experiment.id),
+            daemon = True
         )
 
     @classmethod
@@ -71,7 +72,9 @@ class ProjectCallback:
 
     def onCleanUp(self) -> None:
         logging.getLogger("coretexpylib").info("Experiment execution finished")
+
         self.process.kill()
+        self.process.join()
 
         try:
             from py3nvml import py3nvml
