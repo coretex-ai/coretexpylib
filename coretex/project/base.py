@@ -26,7 +26,7 @@ from ..coretex import Experiment
 from ..folder_management import FolderManager
 from ..logging import LogHandler
 
-from .calculate_metrics import uploadMetricsWorker
+from .experiment_worker import experimentWorker
 
 
 class ProjectCallback:
@@ -36,8 +36,9 @@ class ProjectCallback:
 
         self.__outputStream, self.__inputStream = multiprocessing.Pipe()
 
-        self.process = multiprocessing.Process(
-            target = uploadMetricsWorker,
+        self.workerProcess = multiprocessing.Process(
+            name = f"Experiment {experiment.id} worker process",
+            target = experimentWorker,
             args = (self.__outputStream, refreshToken, self._experiment.id),
             daemon = True
         )
@@ -47,7 +48,7 @@ class ProjectCallback:
         return cls(Experiment.fetchById(experimentId), refreshToken)
 
     def onStart(self) -> None:
-        self.process.start()
+        self.workerProcess.start()
 
         result = self.__inputStream.recv()
         if result["code"] != 0:
@@ -73,8 +74,8 @@ class ProjectCallback:
     def onCleanUp(self) -> None:
         logging.getLogger("coretexpylib").info("Experiment execution finished")
 
-        self.process.kill()
-        self.process.join()
+        self.workerProcess.kill()
+        self.workerProcess.join()
 
         try:
             from py3nvml import py3nvml
