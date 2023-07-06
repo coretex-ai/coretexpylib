@@ -69,7 +69,39 @@ def setupGPUMetrics() -> None:
         pass
 
 
-def uploadMetricsWorker(outputStream: Connection, refreshToken: str, experimentId: int) -> None:
+def _isAlive(output: Connection) -> bool:
+    try:
+        # If parent process gets killed with SIGKILL there
+        # is no guarantee that the child process will get
+        # closed so we ping the parent process to check if
+        # the pipe is available or not
+        output.send(None)
+    except BrokenPipeError:
+        output.close()
+        return False
+
+    return output.writable and not output.closed
+
+
+def _heartbeat(experiment: Experiment) -> None:
+    # Update status without parameters is considered experiment hearbeat
+    experiment.updateStatus()
+
+
+def _uploadMetrics(experiment: Experiment) -> None:
+    x = time.time()
+    metricValues: Dict[str, Tuple[float, float]] = {}
+
+    for metric in experiment.metrics:
+        metricValue = metric.extract()
+
+        if metricValue is not None:
+            metricValues[metric.name] = x, metricValue
+
+    experiment.submitMetrics(metricValues)
+
+
+def experimentWorker(outputStream: Connection, refreshToken: str, experimentId: int) -> None:
     setupGPUMetrics()
 
     response = networkManager.authenticateWithRefreshToken(refreshToken)
@@ -80,7 +112,7 @@ def uploadMetricsWorker(outputStream: Connection, refreshToken: str, experimentI
     try:
         experiment: Experiment = Experiment.fetchById(experimentId)
     except NetworkRequestError:
-        sendFailure(outputStream, f"Failed to fetch experiment with id: {experimentId}")
+        sendFailure(outputStream, f"Failed to fetch experiment with id \"{experimentId}\"")
         return
 
     try:
@@ -88,27 +120,10 @@ def uploadMetricsWorker(outputStream: Connection, refreshToken: str, experimentI
     except NetworkRequestError:
         sendFailure(outputStream, "Failed to create metrics")
 
-    sendSuccess(outputStream, "Metrics worker succcessfully started")
+    sendSuccess(outputStream, "Experiment worker succcessfully started")
 
-    while outputStream.writable and not outputStream.closed:
-        try:
-            # If parent process gets killed with SIGKILL there
-            # is no guarantee that the child process will get
-            # closed so we ping the parent process to check if
-            # the pipe is available or not
-            outputStream.send(None)
-        except BrokenPipeError:
-            outputStream.close()
-            break
+    while _isAlive(outputStream):
+        _heartbeat(experiment)
+        _uploadMetrics(experiment)
 
-        startTime = time.time()
-        metricValues: Dict[str, Tuple[float, float]] = {}
-
-        for metric in experiment.metrics:
-            metricValue = metric.extract()
-
-            if metricValue is not None:
-                metricValues[metric.name] = startTime, metricValue
-
-        experiment.submitMetrics(metricValues)
         time.sleep(5)  # delay between sending generic metrics
