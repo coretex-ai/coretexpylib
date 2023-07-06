@@ -64,7 +64,7 @@ class FolderManager:
         return cls.__instance
 
     def __init__(self) -> None:
-        self.__root: Final = Path(os.environ["CTX_STORAGE_PATH"]).expanduser()
+        self._root: Final = Path(os.environ["CTX_STORAGE_PATH"]).expanduser()
 
         # These paths are str paths for backwards compatibility
         self.samplesFolder: Final = str(self.__createFolder("samples"))
@@ -175,7 +175,7 @@ class FolderManager:
         self.__clearDirectory(self.__artifactsFolder)
 
     def __createFolder(self, name: str) -> Path:
-        path = self.__root / name
+        path = self._root / name
 
         if not path.exists():
             path.mkdir(parents = True, exist_ok = True)
