@@ -113,7 +113,7 @@ def processLocal(args: Optional[List[str]] = None) -> Tuple[int, ProjectCallback
 
     parameters = ExperimentParameter.readExperimentConfig()
 
-    experiment: Experiment = Experiment.startCustomExperiment(
+    experiment: Experiment = Experiment.run(
         parser.projectId,
         # Dummy Local node ID, hardcoded as it is only a temporary solution,
         # backend will add a new ExperimentType (local) which does not require a specific

@@ -390,7 +390,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         #         logging.getLogger("coretexpylib").warning(f">> [Coretex] Failed to upload {localFilePath} to {remoteFilePath}")
 
     @classmethod
-    def startCustomExperiment(
+    def run(
         cls,
         projectId: int,
         nodeId: Union[int, str],
@@ -438,7 +438,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
                 ]
             \b
             >>> try:
-                    experiment = Experiment.startCustomExperiment(
+                    experiment = Experiment.run(
                         projectId = 1023,
                         nodeId = 23,
                         name = "Dummy Custom Experiment
@@ -457,17 +457,13 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         if parameters is None:
             parameters = []
 
-        response = networkManager.genericJSONRequest(
-            f"{cls._endpoint()}/custom",
-            RequestType.post,
-            parameters={
-                "sub_project_id": projectId,
-                "service_id": nodeId,
-                "name": name,
-                "description": description,
-                "parameters": parameters
-            }
-        )
+        response = networkManager.genericJSONRequest("run", RequestType.post, {
+            "sub_project_id": projectId,
+            "service_id": nodeId,
+            "name": name,
+            "description": description,
+            "parameters": parameters
+        })
 
         if response.hasFailed():
             raise NetworkRequestError(response, "Failed to create experiment")
