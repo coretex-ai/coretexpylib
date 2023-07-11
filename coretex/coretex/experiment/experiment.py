@@ -72,8 +72,6 @@ class Experiment(NetworkObject, Generic[DatasetType]):
             if True chached env will be used, otherwise new environment will be created
     """
 
-    __statusUpdateLock: Final = Lock()
-
     name: str
     description: str
     meta: Dict[str, Any]
@@ -91,8 +89,6 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         super(Experiment, self).__init__()
 
         self.metrics = []
-
-        self.__lastStatusMessage: Optional[str] = None
         self.__parameters: Dict[str, Any] = {}
 
     @property
@@ -147,7 +143,6 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         descriptors["projectName"] = KeyDescriptor("sub_project_name")
 
         # private properties of the object should not be encoded
-        descriptors["__lastStatusMessage"] = KeyDescriptor(isEncodable = False)
         descriptors["__parameters"] = KeyDescriptor(isEncodable = False)
 
         return descriptors
@@ -168,7 +163,13 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         parameters = [ExperimentParameter.decode(value) for value in self.meta["parameters"]]
         self.__parameters = parseParameters(parameters, self.spaceTask)
 
-    def updateStatus(self, status: ExperimentStatus, message: Optional[str] = None, notifyServer: bool = True) -> bool:
+    def updateStatus(
+        self,
+        status: Optional[ExperimentStatus] = None,
+        message: Optional[str] = None,
+        notifyServer: bool = True
+    ) -> bool:
+
         """
             Updates Experiment status, if message parameter is None
             default message value will be used\n
@@ -176,10 +177,11 @@ class Experiment(NetworkObject, Generic[DatasetType]):
 
             Parameters
             ----------
-            status : ExperimentStatus
-                ExperimentStatus type
+            status : Optional[ExperimentStatus]
+                Status to which the experiment will be updated to
             message : Optional[str]
-                Descriptive message for experiment status
+                Descriptive message for experiment status, it is diplayed
+                when the status is hovered on the Coretex Web App
             notifyServer : bool
                 if True update request will be sent to Coretex.ai
 
@@ -193,35 +195,33 @@ class Experiment(NetworkObject, Generic[DatasetType]):
             True
         """
 
-        with Experiment.__statusUpdateLock:
-            if message is None:
+        if status is not None:
+            self.status = status
+
+        if notifyServer:
+            if status is not None and message is None:
                 message = status.defaultMessage
 
-            assert(len(message) > 10)  # Some information needs to be sent to Coretex.ai
-            self.status = status
-            self.__lastStatusMessage = message
-
             parameters: Dict[str, Any] = {
-                "id": self.id,
-                "status": status.value,
-                "status_message": message
+                "id": self.id
             }
 
-            if notifyServer:
-                # TODO: Should API rename this too?
-                endpoint = "model-queue/job-status-update"
-                response = networkManager.genericJSONRequest(
-                    endpoint = endpoint,
-                    requestType = RequestType.post,
-                    parameters = parameters
-                )
+            if status is not None:
+                parameters["status"] = status
 
-                if response.hasFailed():
-                    logging.getLogger("coretexpylib").error(">> [Coretex] Error while updating experiment status")
+            if message is not None:
+                parameters["message"] = message
 
-                return not response.hasFailed()
+            # TODO: Should API rename this too?
+            endpoint = "model-queue/job-status-update"
+            response = networkManager.genericJSONRequest(endpoint, RequestType.post, parameters)
 
-            return True
+            if response.hasFailed():
+                logging.getLogger("coretexpylib").error(">> [Coretex] Error while updating experiment status")
+
+            return not response.hasFailed()
+
+        return True
 
     def createMetrics(self, metrics: List[Metric]) -> None:
         """
@@ -311,21 +311,6 @@ class Experiment(NetworkObject, Generic[DatasetType]):
 
         return not response.hasFailed()
 
-    def sendHeartbeat(self) -> bool:
-        """
-            Sends an update status request with the status and the
-            status message of the previous status update
-
-            Returns
-            -------
-            bool -> True if success, False otherwise
-        """
-
-        if self.__lastStatusMessage:
-            return False
-
-        return self.updateStatus(self.status, self.__lastStatusMessage)
-
     def downloadProject(self) -> bool:
         """
             Downloads project snapshot linked to the experiment
@@ -405,7 +390,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         #         logging.getLogger("coretexpylib").warning(f">> [Coretex] Failed to upload {localFilePath} to {remoteFilePath}")
 
     @classmethod
-    def startCustomExperiment(
+    def run(
         cls,
         projectId: int,
         nodeId: Union[int, str],
@@ -453,7 +438,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
                 ]
             \b
             >>> try:
-                    experiment = Experiment.startCustomExperiment(
+                    experiment = Experiment.run(
                         projectId = 1023,
                         nodeId = 23,
                         name = "Dummy Custom Experiment
@@ -472,17 +457,13 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         if parameters is None:
             parameters = []
 
-        response = networkManager.genericJSONRequest(
-            f"{cls._endpoint()}/custom",
-            RequestType.post,
-            parameters={
-                "sub_project_id": projectId,
-                "service_id": nodeId,
-                "name": name,
-                "description": description,
-                "parameters": parameters
-            }
-        )
+        response = networkManager.genericJSONRequest("run", RequestType.post, {
+            "sub_project_id": projectId,
+            "service_id": nodeId,
+            "name": name,
+            "description": description,
+            "parameters": parameters
+        })
 
         if response.hasFailed():
             raise NetworkRequestError(response, "Failed to create experiment")

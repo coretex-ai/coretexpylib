@@ -62,7 +62,7 @@ class LabelMeConverter(BaseConverter):
             logging.getLogger("coretexpylib").info(f">> [Coretex] Class: ({label}) is not a part of dataset")
             return None
 
-        points: List[float] = np.array(shape["points"]).flatten().tolist()
+        points: List[int] = np.array(shape["points"]).flatten().tolist()
         bbox = BBox.fromPoly(points)
 
         return CoretexSegmentationInstance.create(coretexClass.classIds[0], bbox, [points])

@@ -23,3 +23,4 @@ from .dataset import Dataset
 from .local_dataset import LocalDataset
 from .network_dataset import NetworkDataset
 from .utils import downloadDataset
+from .sequence_dataset import SequenceDataset, LocalSequenceDataset

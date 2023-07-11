@@ -22,7 +22,7 @@ import logging
 import glob
 import xml.etree.ElementTree as ET
 
-from .pascal.shared import getTag, getBoxes, toFloat
+from .pascal.shared import getTag, getBoxes, toInt
 from ..base_converter import BaseConverter
 from ...annotation import CoretexImageAnnotation, CoretexSegmentationInstance, BBox
 
@@ -91,7 +91,7 @@ class VOCConverter(BaseConverter):
         if size is None:
             return
 
-        width, height = toFloat(size, "width", "height")
+        width, height = toInt(size, "width", "height")
         if width is None or height is None:
             return
 

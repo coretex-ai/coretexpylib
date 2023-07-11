@@ -25,7 +25,6 @@ from tap import Tap
 
 import psutil
 
-from .heartbeat import Heartbeat
 from .base import ProjectCallback
 from ..coretex import Experiment, ExperimentStatus
 from ..folder_management import FolderManager
@@ -39,11 +38,6 @@ class LocalProjectCallback(ProjectCallback):
         super().onStart()
 
         FolderManager.instance().clearTempFiles()
-
-        logging.getLogger("coretexpylib").info("Heartbeat started")
-
-        heartbeat = Heartbeat(self._experiment)
-        heartbeat.start()
 
     def onSuccess(self) -> None:
         super().onSuccess()
@@ -119,7 +113,7 @@ def processLocal(args: Optional[List[str]] = None) -> Tuple[int, ProjectCallback
 
     parameters = ExperimentParameter.readExperimentConfig()
 
-    experiment: Experiment = Experiment.startCustomExperiment(
+    experiment: Experiment = Experiment.run(
         parser.projectId,
         # Dummy Local node ID, hardcoded as it is only a temporary solution,
         # backend will add a new ExperimentType (local) which does not require a specific
