@@ -300,7 +300,7 @@ class NetworkManagerBase(ABC):
 
         if self.shouldRetry(retryCount, networkResponse):
             print(">> [Coretex] Retry count: {0}".format(retryCount))
-            return self.sampleDownload(endpoint, destination, parameters, retryCount + 1)
+            return self.sampleDownload(endpoint, destination, ignoreCache, parameters, retryCount + 1)
 
         return networkResponse
 
