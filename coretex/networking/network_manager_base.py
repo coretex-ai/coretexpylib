@@ -225,16 +225,82 @@ class NetworkManagerBase(ABC):
         if parameters is None:
             parameters = {}
 
+        response = self._requestManager.get(endpoint, headers, jsonObject = parameters)
+
+        if self.shouldRetry(retryCount, response):
+            print(">> [Coretex] Retry count: {0}".format(retryCount))
+            return self.genericDownload(endpoint, destination, parameters, retryCount + 1)
+
+        if response.raw.ok:
+            destinationPath = Path(destination)
+            if destinationPath.is_dir():
+                raise RuntimeError(">> [Coretex] Destination is a directory not a file")
+
+            if destinationPath.exists():
+                destinationPath.unlink(missing_ok = True)
+
+            destinationPath.parent.mkdir(parents = True, exist_ok = True)
+
+            with open(destination, "wb") as downloadedFile:
+                downloadedFile.write(response.raw.content)
+
+        return response
+
+    def sampleDownload(
+        self,
+        endpoint: str,
+        destination: str,
+        ignoreCache: bool,
+        parameters: Optional[Dict[str, Any]] = None,
+        retryCount: int = 0
+    ) -> NetworkResponse:
+        """
+            Downloads file to the given destination
+
+            Parameters
+            ----------
+            endpoint : str
+                API endpoint
+            destination : str
+                path to save file
+            parameters : Optional[dict[str, Any]]
+                request parameters (not required)
+            retryCount : int
+                number of function calls if request has failed, used
+                for internal retry mechanism
+
+            Returns
+            -------
+            NetworkResponse as response content to request
+
+            Example
+            -------
+            >>> from coretex import networkManager
+            \b
+            >>> response = networkManager.genericDownload(
+                    endpoint = "dummyObject/download",
+                    destination = "path/to/destination/folder"
+                )
+            >>> if response.hasFailed():
+                    print("Failed to download the file")
+        """
+
+        headers = self._requestHeader()
+
+        if parameters is None:
+            parameters = {}
+
         networkResponse = self._requestManager.streamingDownload(
             endpoint,
             Path(destination),
+            ignoreCache,
             headers,
             parameters
         )
 
         if self.shouldRetry(retryCount, networkResponse):
             print(">> [Coretex] Retry count: {0}".format(retryCount))
-            return self.genericDownload(endpoint, destination, parameters, retryCount + 1)
+            return self.sampleDownload(endpoint, destination, parameters, retryCount + 1)
 
         return networkResponse
 

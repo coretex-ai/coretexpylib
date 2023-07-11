@@ -210,6 +210,7 @@ class RequestsManager:
         self,
         endpoint: str,
         destinationPath: Path,
+        ignoreCache: bool,
         headers: Dict[str, str],
         parameters: Dict[str, Any]
     ) -> NetworkResponse:
@@ -225,6 +226,9 @@ class RequestsManager:
                 raise RuntimeError(">> [Coretex] Destination is a directory not a file")
 
             if destinationPath.exists():
+                if int(response.headers["Content-Length"]) == destinationPath.stat().st_size and not ignoreCache:
+                    return NetworkResponse(response, endpoint)
+
                 destinationPath.unlink(missing_ok = True)
 
             destinationPath.parent.mkdir(parents = True, exist_ok = True)
