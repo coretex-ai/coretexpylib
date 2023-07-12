@@ -26,7 +26,6 @@ import psutil
 
 from ..coretex import MetricType, Experiment
 from ..networking import networkManager, NetworkRequestError
-from ..logging import LogSeverity
 from ..folder_management import FolderManager
 from ..coretex.experiment.metrics.metric_factory import createMetric
 
