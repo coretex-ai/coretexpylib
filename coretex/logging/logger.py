@@ -18,13 +18,12 @@
 from __future__ import annotations
 
 from typing import Optional, Any, List
-from threading import Lock, Thread, RLock
+from threading import Lock, Thread
 from logging import LogRecord, StreamHandler
 
 import time
 import sys
 import logging
-import os
 
 from .log import Log
 from .log_severity import LogSeverity
@@ -108,9 +107,6 @@ class LogHandler(StreamHandler):
         return cls.__instance
 
     def __init__(self, stream: Any) -> None:
-        # https://bugs.python.org/issue6721
-        self.__processLocks: dict[int, RLock] = {}
-
         super().__init__(stream)
 
         # Locks appending and flushing of the pending logs,
@@ -132,15 +128,6 @@ class LogHandler(StreamHandler):
 
         self.__uploadWorker = _LoggerUploadWorker()
         self.__uploadWorker.start()
-
-    def createLock(self) -> None:
-        self.__processLocks[os.getpid()] = RLock()
-
-    def acquire(self) -> None:
-        self.__processLocks[os.getpid()].acquire()
-
-    def release(self) -> None:
-        self.__processLocks[os.getpid()].release()
 
     def emit(self, record: LogRecord) -> None:
         super().emit(record)

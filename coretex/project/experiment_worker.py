@@ -26,7 +26,7 @@ import psutil
 
 from ..coretex import MetricType, Experiment
 from ..networking import networkManager, NetworkRequestError
-from ..logging import initializeLogger, LogSeverity
+from ..logging import LogSeverity
 from ..folder_management import FolderManager
 from ..coretex.experiment.metrics.metric_factory import createMetric
 
@@ -108,9 +108,28 @@ def _uploadMetrics(experiment: Experiment) -> None:
     experiment.submitMetrics(metricValues)
 
 
-def experimentWorker(output: Connection, refreshToken: str, experimentId: int) -> None:
+def _initializeLogger(experimentId: int) -> None:
+    formatter = logging.Formatter(
+        fmt = "%(asctime)s %(levelname)s: %(message)s",
+        datefmt= "%Y-%m-%d %H:%M:%S",
+        style = "%",
+    )
+
     workerLogPath = FolderManager.instance().logs / f"experiment_worker_{experimentId}.log"
-    initializeLogger(LogSeverity.debug, workerLogPath)
+    fileHandler = logging.FileHandler(workerLogPath)
+
+    fileHandler.setLevel(logging.DEBUG)
+    fileHandler.setFormatter(formatter)
+
+    logging.basicConfig(
+        level = logging.NOTSET,
+        force = True,
+        handlers = [fileHandler]
+    )
+
+
+def experimentWorker(output: Connection, refreshToken: str, experimentId: int) -> None:
+    _initializeLogger(experimentId)
 
     currentProcess = psutil.Process(os.getpid())
 
