@@ -35,6 +35,9 @@ def command(args: List[str], ignoreOutput: bool = False) -> None:
     )
 
     while process.poll() is None:
+        if process.stdout is None or process.stderr is None:
+            continue
+
         stdout = process.stdout.readline()
         stderr = process.stderr.readline()
 
@@ -96,6 +99,9 @@ def extractData(samtoolsPath: Path, file: Path) -> Tuple[List[int], List[int], L
         cwd = Path(__file__).parent,
         stdout = subprocess.PIPE
     )
+
+    if process.stdout is None:
+        raise RuntimeError(">> [Coretex] Output is none for samtools view command. Could not extract data")
 
     for line in process.stdout:
         fields = line.decode("UTF-8").strip().split("\t")
