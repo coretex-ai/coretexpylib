@@ -21,7 +21,7 @@ from pathlib import Path
 import logging
 import gzip
 
-from ..coretex import Experiment, CustomSample, CustomDataset
+from ...coretex import Experiment, CustomSample, CustomDataset
 
 
 def createSample(name: str, datasetId: int, path: Path, experiment: Experiment, stepName: str, retryCount: int = 0) -> CustomSample:
