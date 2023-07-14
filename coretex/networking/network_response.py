@@ -57,7 +57,7 @@ class NetworkResponse:
 
         try:
             self.json = response.json()
-        except (ValueError, RuntimeError) as e:
+        except (ValueError, RuntimeError):
             self.json = {}
 
         if not response.ok:

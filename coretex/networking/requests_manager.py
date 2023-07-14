@@ -214,6 +214,26 @@ class RequestsManager:
         headers: Dict[str, str],
         parameters: Dict[str, Any]
     ) -> NetworkResponse:
+        """
+            Downloads a file from endpoint to destinationPath in chunks of 8192 bytes
+
+            Parameters
+            ----------
+            endpoint : str
+                API endpoint
+            destination : str
+                path to save file
+            ignoreCache : bool
+                whether to overwrite local cache
+            headers : Any
+                headers for get
+            parameters : int
+                json for get
+
+            Returns
+            -------
+            NetworkResponse -> NetworkResponse object as response content to request
+        """
 
         with self.__session.get(
             self.__url(endpoint),
@@ -222,6 +242,8 @@ class RequestsManager:
             json = parameters
         ) as response:
 
+            response.raise_for_status()
+
             if destinationPath.is_dir():
                 raise RuntimeError(">> [Coretex] Destination is a directory not a file")
 
@@ -229,9 +251,7 @@ class RequestsManager:
                 if int(response.headers["Content-Length"]) == destinationPath.stat().st_size and not ignoreCache:
                     return NetworkResponse(response, endpoint)
 
-                destinationPath.unlink(missing_ok = True)
-
-            destinationPath.parent.mkdir(parents = True, exist_ok = True)
+                destinationPath.unlink()
 
             with destinationPath.open("wb") as downloadedFile:
                 for chunk in response.iter_content(chunk_size = 8192):

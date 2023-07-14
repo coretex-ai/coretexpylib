@@ -255,7 +255,7 @@ class NetworkManagerBase(ABC):
         retryCount: int = 0
     ) -> NetworkResponse:
         """
-            Downloads file to the given destination
+            Downloads file to the given destination by chunks
 
             Parameters
             ----------
@@ -263,6 +263,8 @@ class NetworkManagerBase(ABC):
                 API endpoint
             destination : str
                 path to save file
+            ignoreCache : bool
+                whether to overwrite local cache
             parameters : Optional[dict[str, Any]]
                 request parameters (not required)
             retryCount : int
@@ -277,7 +279,7 @@ class NetworkManagerBase(ABC):
             -------
             >>> from coretex import networkManager
             \b
-            >>> response = networkManager.genericDownload(
+            >>> response = networkManager.sampleDownload(
                     endpoint = "dummyObject/download",
                     destination = "path/to/destination/folder"
                 )
