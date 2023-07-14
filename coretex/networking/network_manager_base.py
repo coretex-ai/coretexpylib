@@ -294,7 +294,7 @@ class NetworkManagerBase(ABC):
 
         networkResponse = self._requestManager.streamingDownload(
             endpoint,
-            Path(destination),
+            destination,
             ignoreCache,
             headers,
             parameters

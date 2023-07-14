@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Final, Any, Optional, Dict, List
+from typing import Final, Any, Optional, Dict, List, Union
 from contextlib import ExitStack
 from pathlib import Path
 
@@ -209,7 +209,7 @@ class RequestsManager:
     def streamingDownload(
         self,
         endpoint: str,
-        destinationPath: Path,
+        destinationPath: Union[str, Path],
         ignoreCache: bool,
         headers: Dict[str, str],
         parameters: Dict[str, Any]
@@ -243,6 +243,9 @@ class RequestsManager:
         ) as response:
 
             response.raise_for_status()
+
+            if isinstance(destinationPath, str):
+                destinationPath = Path(destinationPath)
 
             if destinationPath.is_dir():
                 raise RuntimeError(">> [Coretex] Destination is a directory not a file")
