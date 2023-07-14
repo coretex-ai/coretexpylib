@@ -57,7 +57,8 @@ class NetworkResponse:
 
         try:
             self.json = response.json()
-        except ValueError:
+        except (ValueError, RuntimeError):
+            # RuntimeError is present here to avoid the content_consumed error
             self.json = {}
 
         if not response.ok:

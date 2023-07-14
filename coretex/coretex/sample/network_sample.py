@@ -122,12 +122,10 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
             bool -> False if response is failed, True otherwise
         """
 
-        if os.path.exists(self.zipPath) and not ignoreCache:
-            return True
-
-        response = networkManager.genericDownload(
+        response = networkManager.sampleDownload(
             endpoint = f"{self.__class__._endpoint()}/export?id={self.id}",
-            destination = self.zipPath
+            destination = self.zipPath,
+            ignoreCache = ignoreCache
         )
 
         return not response.hasFailed()

@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, Any, Dict, List
+from typing import Optional, Any, Dict, List, Union
 from pathlib import Path
 from abc import ABC, abstractmethod
 from importlib.metadata import version as getLibraryVersion
@@ -245,6 +245,66 @@ class NetworkManagerBase(ABC):
                 downloadedFile.write(response.raw.content)
 
         return response
+
+    def sampleDownload(
+        self,
+        endpoint: str,
+        destination: Union[str, Path],
+        ignoreCache: bool,
+        parameters: Optional[Dict[str, Any]] = None,
+        retryCount: int = 0
+    ) -> NetworkResponse:
+        """
+            Downloads file to the given destination by chunks
+
+            Parameters
+            ----------
+            endpoint : str
+                API endpoint
+            destination : Union[str, Path]
+                path to save file
+            ignoreCache : bool
+                whether to overwrite local cache
+            parameters : Optional[dict[str, Any]]
+                request parameters (not required)
+            retryCount : int
+                number of function calls if request has failed, used
+                for internal retry mechanism
+
+            Returns
+            -------
+            NetworkResponse as response content to request
+
+            Example
+            -------
+            >>> from coretex import networkManager
+            \b
+            >>> response = networkManager.sampleDownload(
+                    endpoint = "dummyObject/download",
+                    destination = "path/to/destination/folder"
+                )
+            >>> if response.hasFailed():
+                    print("Failed to download the file")
+        """
+
+        headers = self._requestHeader()
+
+        if parameters is None:
+            parameters = {}
+
+        networkResponse = self._requestManager.streamingDownload(
+            endpoint,
+            destination,
+            ignoreCache,
+            headers,
+            parameters
+        )
+
+        if self.shouldRetry(retryCount, networkResponse):
+            print(">> [Coretex] Retry count: {0}".format(retryCount))
+            return self.sampleDownload(endpoint, destination, ignoreCache, parameters, retryCount + 1)
+
+        return networkResponse
 
     def genericUpload(
         self,
