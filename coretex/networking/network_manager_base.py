@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, Any, Dict, List
+from typing import Optional, Any, Dict, List, Union
 from pathlib import Path
 from abc import ABC, abstractmethod
 from importlib.metadata import version as getLibraryVersion
@@ -249,7 +249,7 @@ class NetworkManagerBase(ABC):
     def sampleDownload(
         self,
         endpoint: str,
-        destination: str,
+        destination: Union[str, Path],
         ignoreCache: bool,
         parameters: Optional[Dict[str, Any]] = None,
         retryCount: int = 0
@@ -261,7 +261,7 @@ class NetworkManagerBase(ABC):
             ----------
             endpoint : str
                 API endpoint
-            destination : str
+            destination : Union[str, Path]
                 path to save file
             ignoreCache : bool
                 whether to overwrite local cache

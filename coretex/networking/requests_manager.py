@@ -221,7 +221,7 @@ class RequestsManager:
             ----------
             endpoint : str
                 API endpoint
-            destination : str
+            destination : Union[str, Path]
                 path to save file
             ignoreCache : bool
                 whether to overwrite local cache
