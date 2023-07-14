@@ -21,24 +21,14 @@ from pathlib import Path
 import subprocess
 import logging
 
+from ..utils import logProcessOutput
+
 
 class QiimeCommandException(Exception):
     pass
 
 
-def logProcessOutput(output: bytes, severity: int) -> None:
-    decoded = output.decode("UTF-8")
-
-    for line in decoded.split("\n"):
-        # skip empty lines
-        if line.strip() == "":
-            continue
-
-        # ignoring type for now, has to be fixed in coretexpylib
-        logging.getLogger("coretexpylib").log(severity, line)
-
-
-def QiimeCommand(args: List[str]) -> None:
+def command(args: List[str]) -> None:
     process = subprocess.Popen(
         args,
         shell = False,
@@ -82,7 +72,7 @@ def toolsImport(
             "--input-format" , inputFormat
         ])
 
-    QiimeCommand(args)
+    command(args)
 
 
 def demuxEmpSingle(
@@ -93,7 +83,7 @@ def demuxEmpSingle(
     errorCorretctionDetailsPath: str
 ) -> None:
 
-    QiimeCommand([
+    command([
         "qiime", "demux", "emp-single",
         "--i-seqs", sequencesPath,
         "--m-barcodes-file", barcodesPath,
@@ -105,7 +95,7 @@ def demuxEmpSingle(
 
 
 def demuxSummarize(dataPath: str, visualizationPath: str) -> None:
-    QiimeCommand([
+    command([
         "qiime", "demux", "summarize",
         "--i-data", dataPath,
         "--o-visualization", visualizationPath
@@ -121,7 +111,7 @@ def dada2DenoiseSingle(
     denoisingStatsPath: str
 ) -> None:
 
-    QiimeCommand([
+    command([
         "qiime", "dada2", "denoise-single",
         "--i-demultiplexed-seqs", inputPath,
         "--p-trim-left", str(trimLeft),
@@ -133,7 +123,7 @@ def dada2DenoiseSingle(
 
 
 def metadataTabulate(inputFile: str, visualizationPath: str) -> None:
-    QiimeCommand([
+    command([
         "qiime", "metadata", "tabulate",
         "--m-input-file", inputFile,
         "--o-visualization", visualizationPath
@@ -141,7 +131,7 @@ def metadataTabulate(inputFile: str, visualizationPath: str) -> None:
 
 
 def featureTableSummarize(inputPath: str, visualizationPath: str, metadataPath: str) -> None:
-    QiimeCommand([
+    command([
         "qiime", "feature-table", "summarize",
         "--i-table", inputPath,
         "--o-visualization", visualizationPath,
@@ -150,7 +140,7 @@ def featureTableSummarize(inputPath: str, visualizationPath: str, metadataPath: 
 
 
 def featureTableTabulateSeqs(inputPath: str, visualizationPath: str) -> None:
-    QiimeCommand([
+    command([
         "qiime", "feature-table", "tabulate-seqs",
         "--i-data", inputPath,
         "--o-visualization", visualizationPath
@@ -165,7 +155,7 @@ def phylogenyAlignToTreeMafftFasttree(
     rootedTreePath: str
 ) -> None:
 
-    QiimeCommand([
+    command([
         "qiime", "phylogeny", "align-to-tree-mafft-fasttree",
         "--i-sequences", sequencesPath,
         "--o-alignment", aligmentPath,
@@ -183,7 +173,7 @@ def diversityCoreMetricsPhylogenetic(
     outputDir: str
 ) -> None:
 
-    QiimeCommand([
+    command([
         "qiime", "diversity", "core-metrics-phylogenetic",
         "--i-phylogeny", phlogenyPath,
         "--i-table", tablePath,
@@ -199,7 +189,7 @@ def diversityAlphaGroupSignificance(
     visualizationPath: str
 ) -> None:
 
-    QiimeCommand([
+    command([
         "qiime", "diversity", "alpha-group-significance",
         "--i-alpha-diversity", alphaDiversityPath,
         "--m-metadata-file", metadataPath,
@@ -215,7 +205,7 @@ def diversityBetaGroupSignificance(
     pairwise: bool
 ) -> None:
 
-    QiimeCommand([
+    command([
         "qiime", "diversity", "beta-group-significance",
         "--i-distance-matrix", distanceMatrixPath,
         "--m-metadata-file", metadataPath,
@@ -232,7 +222,7 @@ def emperorPlot(
     visualizationPath: str
 ) -> None:
 
-    QiimeCommand([
+    command([
         "qiime", "emperor", "plot",
         "--i-pcoa", pcoaPath,
         "--m-metadata-file", metadataPath,
@@ -249,7 +239,7 @@ def diversityAlphaRarefaction(
     visualizationPath: str
 ) -> None:
 
-    QiimeCommand([
+    command([
         "qiime", "diversity", "alpha-rarefaction",
         "--i-table", tablePath,
         "--i-phylogeny", phylogenyPath,
@@ -265,7 +255,7 @@ def featureClassifierClassifySklearn(
     classificationPath: str
 ) -> None:
 
-    QiimeCommand([
+    command([
         "qiime", "feature-classifier", "classify-sklearn",
         "--i-classifier", classifierPath,
         "--i-reads", readsPath,
@@ -280,7 +270,7 @@ def taxaBarplot(
     visualizationPath: str
 ) -> None:
 
-    QiimeCommand([
+    command([
         "qiime", "taxa", "barplot",
         "--i-table", tablePath,
         "--i-taxonomy", taxonomyPath,
@@ -296,7 +286,7 @@ def featureTableFilterSamples(
     filteredTablePath: str
 ) -> None:
 
-    QiimeCommand([
+    command([
         "qiime", "feature-table", "filter-samples",
         "--i-table", tablePath,
         "--m-metadata-file", metadataPath,
@@ -306,7 +296,7 @@ def featureTableFilterSamples(
 
 
 def compositionAddPseudocount(tablePath: str, compositionTablePath: str) -> None:
-    QiimeCommand([
+    command([
         "qiime", "composition", "add-pseudocount",
         "--i-table", tablePath,
         "--o-composition-table", compositionTablePath
@@ -320,7 +310,7 @@ def compositionAncom(
     visualizationPath: str
 ) -> None:
 
-    QiimeCommand([
+    command([
         "qiime", "composition", "ancom",
         "--i-table", tablePath,
         "--m-metadata-file", metadataPath,
@@ -336,7 +326,7 @@ def taxaCollapse(
     collapsedTablePath: str
 ) -> None:
 
-    QiimeCommand([
+    command([
         "qiime", "taxa", "collapse",
         "--i-table", tablePath,
         "--i-taxonomy", taxonomyPath,
