@@ -15,12 +15,8 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from __future__ import annotations
-
 from typing import Any, Type, List, Dict
 from enum import IntEnum
-
-import json
 
 from .utils import getDatasetType, fetchDataset
 from ..space import SpaceTask
@@ -38,9 +34,11 @@ class ExperimentParameterType(IntEnum):
     floatList     = 7
     strList       = 8
     imuVectors    = 9
+    enum          = 10
+    enumList      = 11
 
     @staticmethod
-    def fromStringValue(stringValue: str) -> ExperimentParameterType:
+    def fromStringValue(stringValue: str) -> 'ExperimentParameterType':
         for value in ExperimentParameterType:
             if value.stringValue == stringValue:
                 return value
@@ -76,6 +74,12 @@ class ExperimentParameterType(IntEnum):
         if self == ExperimentParameterType.imuVectors:
             return "IMUVectors"
 
+        if self == ExperimentParameterType.enum:
+            return "enum"
+
+        if self == ExperimentParameterType.enumList:
+            return "list[enum]"
+
         raise ValueError(f">> [Coretex] Unsupported type: {self}")
 
     @property
@@ -101,6 +105,12 @@ class ExperimentParameterType(IntEnum):
             # parameters of type IMUVectors have dictionary as value
             return [dict]
 
+        if self == ExperimentParameterType.enum:
+            return [dict]
+
+        if self == ExperimentParameterType.enumList:
+            return [dict]
+
         raise ValueError(f">> [Coretex] Unsupported type: {self}")
 
     @property
@@ -108,7 +118,8 @@ class ExperimentParameterType(IntEnum):
         return self in [
             ExperimentParameterType.intList,
             ExperimentParameterType.floatList,
-            ExperimentParameterType.strList
+            ExperimentParameterType.strList,
+            ExperimentParameterType.enumList
         ]
 
     @property
@@ -126,6 +137,97 @@ class ExperimentParameterType(IntEnum):
             return str
 
         raise ValueError(f">> [Coretex] Unsupported type: {self}")
+
+
+class ParameterError(Exception):
+
+    def __init__(self, message: str) -> None:
+        super().__init__(f">> [Coretex] {message}")
+
+    @staticmethod
+    def type(parameter: 'ExperimentParameter') -> 'ParameterError':
+        expected = parameter.dataType.stringValue
+        received = parameter.generateTypeDescription()
+
+        return ParameterError(f"Parameter \"{parameter.name}\" has invalid type. Expected \"{expected}\", got \"{received}\"")
+
+
+def _validateGeneric(parameter: 'ExperimentParameter') -> None:
+    if parameter.required and parameter.value is None:
+        raise ParameterError.type(parameter)
+
+    if not parameter.required and parameter.value is None:
+        return
+
+    if parameter.dataType.isList:
+        if not isinstance(parameter.value, list):
+            raise ParameterError.type(parameter)
+
+        if not all(isinstance(element, parameter.dataType.listType) for element in parameter.value):
+            raise ParameterError.type(parameter)
+    else:
+        # Dataset parameter is an integer under the hood, and in python bool is a subclass
+        # of integer. To avoid assinging boolean values to dataset parameters we have to explicitly
+        # check if the value which was passed in for dataset is a bool.
+        if parameter.dataType == ExperimentParameterType.dataset and isinstance(parameter.value, bool):
+            raise ParameterError.type(parameter)
+
+        if not any(isinstance(parameter.value, dataType) for dataType in parameter.dataType.types):
+            raise ParameterError.type(parameter)
+
+
+def _validateEnumValue(parameter: 'ExperimentParameter') -> None:
+    value = parameter.value
+
+    # Enum parameter must be a dict
+    if not isinstance(value, dict):
+        raise ParameterError.type(parameter)
+
+    # Enum parameter must contain 2 key-value pairs: selected and options
+    if len(value) != 2 or "options" not in value or "selected" not in value:
+        keys = ", ".join(value.keys())
+        raise ParameterError(f"Enum parameter \"{parameter.name}\" must contain only \"selected\" and \"options\" properties, but it contains \"{keys}\"")
+
+    options = value.get("options")
+
+    # options must be an object of type list
+    if not isinstance(options, list):
+        raise ParameterError(f"Enum parameter \"{parameter.name}.options\" has invalid type. Expected \"list[str]\", got \"{type(options).__name__}\"")
+
+    # all elements of options list must be strings
+    if not all(isinstance(element, str) for element in options):
+        elementTypes = ", ".join({type(element).__name__ for element in options})
+        raise ParameterError(f"Elements of enum parameter \"{parameter.name}.options\" have invalid type. Expected \"list[str]\" got \"list[{elementTypes}]\"")
+
+    # options elements must not be empty strings
+    if not all(element != "" for element in options):
+        raise ParameterError(f"Elements of enum parameter \"{parameter.name}.options\" must be non-empty strings.")
+
+    selected = value.get("selected")
+
+    if selected is None and parameter.required:
+        raise ParameterError(f"Enum parameter \"{parameter.name}.selected\" has invalid type. Expected \"int\", got \"{type(selected).__name__}\"")
+
+    if selected is None and not parameter.required:
+        return
+
+    if parameter.dataType.isList:
+        if not isinstance(selected, list):
+            raise ParameterError(f"Enum list parameter \"{parameter.name}.selected\" has invalid type. Expected \"list[int]\", got \"{type(selected).__name__}\"")
+
+        if not all(isinstance(element, int) for element in selected):
+            elementTypes = ", ".join({type(element).__name__ for element in selected})
+            raise ParameterError(f"Enum list parameter \"{parameter.name}.selected\" has invalid type. Expected \"list[int]\", got \"list[{elementTypes}]\"")
+
+        invalidIndxCount = len([element for element in selected if element >= len(options) or element < 0])
+        if invalidIndxCount > 0:
+            raise ParameterError(f"Enum list parameter \"{parameter.name}.selected\" has out of range values")
+    else:
+        if not isinstance(selected, int):
+            raise ParameterError(f"Enum parameter \"{parameter.name}.selected\" has invalid type. Expected \"int\", got \"{type(selected).__name__}\"")
+
+        if selected >= len(options) or selected < 0:
+            raise ParameterError(f"Enum parameter \"{parameter.name}.selected\" has out of range value")
 
 
 class ExperimentParameter(Codable):
@@ -152,26 +254,16 @@ class ExperimentParameter(Codable):
 
         return super()._decodeValue(key, value)
 
-    def isValid(self) -> bool:
-        if not self.required and self.value is None:
-            return True
+    def onDecode(self) -> None:
+        super().onDecode()
 
-        if self.dataType.isList:
-            if not isinstance(self.value, list):
-                return False
+        self.__validate()
 
-            return all(
-                isinstance(element, self.dataType.listType)
-                for element in self.value
-            )
-
-        # Dataset parameter is an integer under the hood, and in python bool is a subclass
-        # of integer. To avoid assinging boolean values to dataset parameters we have to explicitly
-        # check if the value which was passed in for dataset is a bool.
-        if self.dataType == ExperimentParameterType.dataset and isinstance(self.value, bool):
-            return False
-
-        return any(isinstance(self.value, dataType) for dataType in self.dataType.types)
+    def __validate(self) -> None:
+        if self.dataType == ExperimentParameterType.enum or self.dataType == ExperimentParameterType.enumList:
+            _validateEnumValue(self)
+        else:
+            _validateGeneric(self)
 
     def generateTypeDescription(self) -> str:
         if not self.dataType.isList or self.value is None:
@@ -179,29 +271,6 @@ class ExperimentParameter(Codable):
 
         elementTypes = ", ".join({type(value).__name__ for value in self.value})
         return f"list[{elementTypes}]"
-
-    @staticmethod
-    def readExperimentConfig() -> List[ExperimentParameter]:
-        parameters: List[ExperimentParameter] = []
-
-        with open("./experiment.config", "rb") as configFile:
-            configContent: Dict[str, Any] = json.load(configFile)
-            parametersJson = configContent["parameters"]
-
-            if not isinstance(parametersJson, list):
-                raise ValueError(">> [Coretex] Invalid experiment.config file. Property 'parameters' must be an array")
-
-            for parameterJson in parametersJson:
-                parameter = ExperimentParameter.decode(parameterJson)
-                if not parameter.isValid():
-                    expected = parameter.dataType.stringValue
-                    received = parameter.generateTypeDescription()
-
-                    raise ValueError(f">> [Coretex] Parameter \"{parameter.name}\" has invalid type. Expected \"{expected}\", got \"{received}\"")
-
-                parameters.append(parameter)
-
-        return parameters
 
 
 def parseParameters(parameters: List[ExperimentParameter], task: SpaceTask) -> Dict[str, Any]:
@@ -222,6 +291,8 @@ def parseParameters(parameters: List[ExperimentParameter], task: SpaceTask) -> D
                     raise ValueError(f">> [Coretex] Failed to fetch dataset with ID: {parameter.value}")
 
                 values[parameter.name] = dataset
+        elif parameter.dataType == ExperimentParameterType.enum:
+            values[parameter.name] = parameter.value["options"][parameter.value["selected"]]
         else:
             values[parameter.name] = parameter.value
 

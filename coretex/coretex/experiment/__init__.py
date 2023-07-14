@@ -20,3 +20,4 @@ from .experiment import Experiment
 from .status import ExperimentStatus
 from .experiment_builder import ExperimentBuilder
 from .metrics import Metric, MetricType
+from .parameters import ExperimentParameter, ExperimentParameterType

@@ -15,21 +15,21 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Tuple, Optional, List
+from typing import Tuple, Optional, List, Dict, Any
 from getpass import getpass
 
 import logging
 import os
+import json
 
 from tap import Tap
 
 import psutil
 
 from .base import ProjectCallback
-from ..coretex import Experiment, ExperimentStatus
+from ..coretex import Experiment, ExperimentStatus, ExperimentParameter
 from ..folder_management import FolderManager
 from ..networking import networkManager
-from ..coretex.experiment.parameters import ExperimentParameter
 
 
 class LocalProjectCallback(ProjectCallback):
@@ -88,6 +88,23 @@ class LocalArgumentParser(Tap):
         self.add_argument("--description", nargs = "?", type = str, default = None)
 
 
+def _readExperimentConfig() -> List['ExperimentParameter']:
+    parameters: List[ExperimentParameter] = []
+
+    with open("./experiment.config", "rb") as configFile:
+        configContent: Dict[str, Any] = json.load(configFile)
+        parametersJson = configContent["parameters"]
+
+        if not isinstance(parametersJson, list):
+            raise ValueError(">> [Coretex] Invalid experiment.config file. Property 'parameters' must be an array")
+
+        for parameterJson in parametersJson:
+            parameter = ExperimentParameter.decode(parameterJson)
+            parameters.append(parameter)
+
+    return parameters
+
+
 def processLocal(args: Optional[List[str]] = None) -> Tuple[int, ProjectCallback]:
     parser, unknown = LocalArgumentParser().parse_known_args(args)
 
@@ -111,8 +128,6 @@ def processLocal(args: Optional[List[str]] = None) -> Tuple[int, ProjectCallback
     if not os.path.exists("experiment.config"):
         raise FileNotFoundError(">> [Coretex] \"experiment.config\" file not found")
 
-    parameters = ExperimentParameter.readExperimentConfig()
-
     experiment: Experiment = Experiment.run(
         parser.projectId,
         # Dummy Local node ID, hardcoded as it is only a temporary solution,
@@ -121,7 +136,7 @@ def processLocal(args: Optional[List[str]] = None) -> Tuple[int, ProjectCallback
         -1,
         parser.name,
         parser.description,
-        parameters = [parameter.encode() for parameter in parameters]
+        parameters = [parameter.encode() for parameter in _readExperimentConfig()]
     )
 
     logging.getLogger("coretexpylib").info(f">> [Coretex] Created local experiment with ID \"{experiment.id}\"")
