@@ -15,7 +15,11 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from typing import List
+from pathlib import Path
+
 import logging
+import subprocess
 
 
 def logProcessOutput(output: bytes, severity: int) -> None:
@@ -28,3 +32,36 @@ def logProcessOutput(output: bytes, severity: int) -> None:
 
         # ignoring type for now, has to be fixed in coretexpylib
         logging.getLogger("coretexpylib").log(severity, line)
+
+
+class CommandException(Exception):
+    pass
+
+
+def command(args: List[str], ignoreOutput: bool = False) -> None:
+    process = subprocess.Popen(
+        args,
+        shell = False,
+        cwd = Path(__file__).parent,
+        stdout = subprocess.PIPE,
+        stderr = subprocess.PIPE
+    )
+
+    while process.poll() is None:
+        if process.stdout is None or process.stderr is None:
+            continue
+
+        stdout = process.stdout.readline()
+        stderr = process.stderr.readline()
+
+        if len(stdout) > 0 and not ignoreOutput:
+            logProcessOutput(stdout, logging.INFO)
+
+        if len(stderr) > 0 and not ignoreOutput:
+            if process.returncode == 0:
+                logProcessOutput(stderr, logging.INFO)
+            else:
+                logProcessOutput(stderr, logging.CRITICAL)
+
+    if process.returncode != 0:
+        raise CommandException(f">> [Coretex] Falied to execute command. Returncode: {process.returncode}")

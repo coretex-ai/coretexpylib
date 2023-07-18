@@ -15,42 +15,14 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import List, Optional
-from pathlib import Path
+from typing import Optional
 
-import subprocess
-import logging
+from .utils import compressGzip, createSample, getDemuxSamples, getDenoisedSamples, \
+    getFastqDPSamples, getFastqMPSamples, getMetadataSample, getPhylogeneticTreeSamples, \
+    isDemultiplexedSample, isDenoisedSample, isFastqDPSample, isFastqMPSample, \
+    isMetadataSample, isPhylogeneticTreeSample, sampleNumber
 
-from ..utils import logProcessOutput
-
-
-class QiimeCommandException(Exception):
-    pass
-
-
-def command(args: List[str]) -> None:
-    process = subprocess.Popen(
-        args,
-        shell = False,
-        cwd = Path(__file__).parent,
-        stdout = subprocess.PIPE,
-        stderr = subprocess.PIPE
-    )
-
-    stdout, stderr = process.communicate()
-
-    if len(stdout) > 0:
-        logProcessOutput(stdout, logging.INFO)
-
-    if len(stderr) > 0:
-        severity = logging.CRITICAL
-        if process.returncode == 0:
-            severity = logging.WARNING
-
-        logProcessOutput(stderr, severity)
-
-    if process.returncode != 0:
-        raise QiimeCommandException
+from ..utils import command
 
 
 def toolsImport(
