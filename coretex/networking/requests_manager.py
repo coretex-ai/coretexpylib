@@ -15,8 +15,9 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Final, Any, Optional, Dict, List
+from typing import Final, Any, Optional, Dict, List, Union
 from contextlib import ExitStack
+from pathlib import Path
 
 import logging
 
@@ -204,6 +205,62 @@ class RequestsManager:
                 return self.post(endpoint, headers, data, jsonObject, retryCount = retryCount + 1)
 
             raise RequestFailedError
+
+    def streamingDownload(
+        self,
+        endpoint: str,
+        destinationPath: Union[str, Path],
+        ignoreCache: bool,
+        headers: Dict[str, str],
+        parameters: Dict[str, Any]
+    ) -> NetworkResponse:
+        """
+            Downloads a file from endpoint to destinationPath in chunks of 8192 bytes
+
+            Parameters
+            ----------
+            endpoint : str
+                API endpoint
+            destination : Union[str, Path]
+                path to save file
+            ignoreCache : bool
+                whether to overwrite local cache
+            headers : Any
+                headers for get
+            parameters : int
+                json for get
+
+            Returns
+            -------
+            NetworkResponse -> NetworkResponse object as response content to request
+        """
+
+        with self.__session.get(
+            self.__url(endpoint),
+            stream = True,
+            headers = headers,
+            json = parameters
+        ) as response:
+
+            response.raise_for_status()
+
+            if isinstance(destinationPath, str):
+                destinationPath = Path(destinationPath)
+
+            if destinationPath.is_dir():
+                raise RuntimeError(">> [Coretex] Destination is a directory not a file")
+
+            if destinationPath.exists():
+                if int(response.headers["Content-Length"]) == destinationPath.stat().st_size and not ignoreCache:
+                    return NetworkResponse(response, endpoint)
+
+                destinationPath.unlink()
+
+            with destinationPath.open("wb") as downloadedFile:
+                for chunk in response.iter_content(chunk_size = 8192):
+                    downloadedFile.write(chunk)
+
+            return NetworkResponse(response, endpoint)
 
     def upload(
         self,
