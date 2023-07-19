@@ -19,8 +19,9 @@ from typing import List, Tuple
 from pathlib import Path
 
 import subprocess
+import logging
 
-from ..utils import command
+from ..utils import command, logProcessOutput, CommandException
 from ...coretex import CustomDataset
 
 
@@ -169,17 +170,32 @@ def extractData(samtoolsPath: Path, file: Path) -> Tuple[List[int], List[int], L
         args,
         shell = False,
         cwd = Path(__file__).parent,
-        stdout = subprocess.PIPE
+        stdout = subprocess.PIPE,
+        stderr = subprocess.PIPE
     )
 
-    if process.stdout is None:
-        raise RuntimeError(">> [Coretex] Output is none for samtools view command. Could not extract data")
+    while process.poll() is None:
+        if process.stdout is None:
+            continue
 
-    for line in process.stdout:
-        fields = line.decode("UTF-8").strip().split("\t")
-        scores.append(int(fields[4]))
-        positions.append(int(fields[3]))
-        sequenceLengths.append(len(fields[9]))
+        stdout = process.stdout.readlines()
+
+        for line in stdout:
+            if len(line) > 0:
+                fields = line.decode("UTF-8").strip().split("\t")
+                scores.append(int(fields[4]))
+                positions.append(int(fields[3]))
+                sequenceLengths.append(len(fields[9]))
+
+    for stderr in process.stderr:
+        if len(stderr) > 0:
+            if process.returncode == 0:
+                logProcessOutput(stderr, logging.WARNING)
+            else:
+                logProcessOutput(stderr, logging.CRITICAL)
+
+    if process.returncode != 0:
+        raise CommandException(f">> [Coretex] Falied to execute command. Returncode: {process.returncode}")
 
     return scores, positions, sequenceLengths
 

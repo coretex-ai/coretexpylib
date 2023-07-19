@@ -38,10 +38,10 @@ class CommandException(Exception):
     pass
 
 
-def command(args: List[str], ignoreOutput: bool = False) -> None:
+def command(args: List[str], ignoreOutput: bool = False, shell: bool = False) -> None:
     process = subprocess.Popen(
         args,
-        shell = False,
+        shell = shell,
         cwd = Path(__file__).parent,
         stdout = subprocess.PIPE,
         stderr = subprocess.PIPE
