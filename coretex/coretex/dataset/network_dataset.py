@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, Type, TypeVar, Generic, List, Dict, Any
+from typing import Optional, TypeVar, Generic, List, Dict, Any
 from typing_extensions import Self
 from datetime import datetime
 from pathlib import Path
@@ -24,10 +24,10 @@ import os
 
 from .dataset import Dataset
 from ..sample import NetworkSample
+from ... import folder_manager
 from ...codable import KeyDescriptor
 from ...networking import NetworkObject, DEFAULT_PAGE_SIZE
 from ...threading import MultithreadedDataProcessor
-from ...folder_management import FolderManager
 
 
 SampleType = TypeVar("SampleType", bound = "NetworkSample")
@@ -68,7 +68,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
             Path -> path of dataset
         """
 
-        return FolderManager.instance().datasetsFolder / str(self.id)
+        return folder_manager.datasetsFolder / str(self.id)
 
     # Codable overrides
 

@@ -27,8 +27,8 @@ from tap import Tap
 import psutil
 
 from .base import ProjectCallback
+from .. import folder_manager
 from ..coretex import Experiment, ExperimentStatus, ExperimentParameter
-from ..folder_management import FolderManager
 from ..networking import networkManager
 
 
@@ -37,7 +37,7 @@ class LocalProjectCallback(ProjectCallback):
     def onStart(self) -> None:
         super().onStart()
 
-        FolderManager.instance().clearTempFiles()
+        folder_manager.clearTempFiles()
 
     def onSuccess(self) -> None:
         super().onSuccess()

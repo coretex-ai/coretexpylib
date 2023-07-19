@@ -16,6 +16,7 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import TypeVar
+from pathlib import Path
 
 from .local_sample import LocalSample
 
@@ -30,21 +31,21 @@ class AnyLocalSample(LocalSample[SampleDataType]):
     """
 
     @property
-    def path(self) -> str:
+    def path(self) -> Path:
         """
             Returns
             -------
-            str -> path for any local sample
+            Path -> path for any local sample
         """
 
-        return str(self._path)
+        return self._path
 
     @property
-    def zipPath(self) -> str:
+    def zipPath(self) -> Path:
         """
             Returns
             -------
-            str -> zip path for any local sample
+            Path -> zip path for any local sample
         """
 
-        return str(self._path)
+        return self._path

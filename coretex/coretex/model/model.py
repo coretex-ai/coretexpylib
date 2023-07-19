@@ -21,12 +21,11 @@ from datetime import datetime
 from zipfile import ZipFile
 from pathlib import Path
 
-import os
 import json
 import logging
 
+from ... import folder_manager
 from ...networking import networkManager, NetworkObject, FileData
-from ...folder_management import FolderManager
 from ...codable import KeyDescriptor
 
 
@@ -73,6 +72,10 @@ class Model(NetworkObject):
     accuracy: float
     experimentId: int
     meta: Dict[str, Any]
+
+    @property
+    def path(self) -> Path:
+        return folder_manager.modelsFolder / str(self.id)
 
     @classmethod
     def modelDescriptorFileName(cls) -> str:
@@ -137,46 +140,56 @@ class Model(NetworkObject):
         return model
 
     @classmethod
-    def saveModelDescriptor(cls, path: str, contents: Dict[str, Any]) -> None:
+    def saveModelDescriptor(cls, path: Union[Path, str], contents: Dict[str, Any]) -> None:
         """
-        Saves a model descriptor - a JSON file that provides a description of a
-        machine learning model. It includes information such as the model's
-        architecture, input and output shapes, labels, description and etc.
+            Saves a model descriptor - a JSON file that provides a description of a
+            machine learning model. It includes information such as the model's
+            architecture, input and output shapes, labels, description and etc.
 
-        Example
-        -------
-        >>> from coretex import ExecutingExperiment, Model
-        >>> model = Model.createModel(experiment.name, experiment.id, accuracy, {})
-        >>> model.saveModelDescriptor(modelPath, {
-                "project_task": experiment.spaceTask,
-                "labels": labels,
-                "modelName": model.name,
-                "description": experiment.description,
+            Parameters
+            ----------
+            path : Union[Path, str]
+                path to where the model descriptor will be saved
+            contents : Dict[str, Any]
+                key-value pairs which will be stored as json
 
-                "input_description":
-                    Input shape is [x, y]
+            Example
+            -------
+            >>> from coretex import ExecutingExperiment, Model
+            >>> model = Model.createModel(experiment.name, experiment.id, accuracy, {})
+            >>> model.saveModelDescriptor(modelPath, {
+                    "project_task": experiment.spaceTask,
+                    "labels": labels,
+                    "modelName": model.name,
+                    "description": experiment.description,
 
-                    x is actually number of samples in dataset\n
-                    y represents number of unique taxons for selected level in dataset,
+                    "input_description":
+                        Input shape is [x, y]
 
-                "input_shape": [x, y],
+                        x is actually number of samples in dataset\n
+                        y represents number of unique taxons for selected level in dataset,
 
-                "output_description":
-                    Output shape - [x, z]
+                    "input_shape": [x, y],
 
-                    x is actually number of samples in dataset\n
-                    z represents that output 2d array (table) is going to have only 1 column (1 prediction for each sample in dataset),
+                    "output_description":
+                        Output shape - [x, z]
 
-                "output_shape": [x, z]
-            })
+                        x is actually number of samples in dataset\n
+                        z represents that output 2d array (table) is going to have only 1 column (1 prediction for each sample in dataset),
+
+                    "output_shape": [x, z]
+                })
         """
 
-        modelDescriptorPath = os.path.join(path, cls.modelDescriptorFileName())
+        if isinstance(path, str):
+            path = Path(path)
+
+        modelDescriptorPath = path / cls.modelDescriptorFileName()
 
         with open(modelDescriptorPath, "w", encoding = "utf-8") as file:
             json.dump(contents, file, ensure_ascii = False, indent = 4)
 
-    def download(self) -> None:
+    def download(self, ignoreCache: bool = False) -> None:
         """
             Downloads and extracts the model zip file from Coretex.ai
         """
@@ -184,24 +197,17 @@ class Model(NetworkObject):
         if self.isDeleted or not self.isTrained:
             return
 
-        modelZipDestination = os.path.join(FolderManager.instance().modelsFolder, f"{self.id}.zip")
-
-        modelFolderDestination = os.path.join(FolderManager.instance().modelsFolder, f"{self.id}")
-        if os.path.exists(modelFolderDestination):
+        if self.path.exists() and not ignoreCache:
             return
 
-        os.mkdir(modelFolderDestination)
-
-        response = networkManager.genericDownload(
-            endpoint=f"model/download?id={self.id}",
-            destination=modelZipDestination
-        )
+        modelZip = folder_manager.modelsFolder / f"{self.id}.zip"
+        response = networkManager.genericDownload(f"model/download?id={self.id}", modelZip)
 
         if response.hasFailed():
             logging.getLogger("coretexpylib").info(">> [Coretex] Failed to download the model")
 
-        with ZipFile(modelZipDestination) as zipFile:
-            zipFile.extractall(modelFolderDestination)
+        with ZipFile(modelZip) as zipFile:
+            zipFile.extractall(self.path)
 
     def upload(self, path: Union[Path, str]) -> bool:
         """

@@ -23,10 +23,10 @@ import sys
 
 from .remote import processRemote
 from .local import processLocal
+from .. import folder_manager
 from ..coretex import ExperimentStatus, NetworkDataset, Metric, ExperimentBuilder, Experiment
 from ..logging import LogHandler, initializeLogger, LogSeverity
 from ..networking import RequestFailedError
-from ..folder_management import FolderManager
 
 
 DatasetType = TypeVar("DatasetType", bound = "NetworkDataset")
@@ -47,7 +47,7 @@ def _prepareForExecution(
 
      experiment = ExperimentBuilder(experimentId).setDatasetType(datasetType).build()
 
-     logPath = FolderManager.instance().logs / f"experiment_{experimentId}.log"
+     logPath = folder_manager.logs / f"experiment_{experimentId}.log"
      customLogHandler = LogHandler.instance()
      customLogHandler.currentExperimentId = experiment.id
 

@@ -20,7 +20,6 @@ from abc import ABC, abstractmethod
 from zipfile import BadZipFile, ZipFile
 from pathlib import Path
 
-import os
 import shutil
 
 
@@ -39,12 +38,12 @@ class Sample(ABC, Generic[SampleDataType]):
 
     @property
     @abstractmethod
-    def path(self) -> str:
+    def path(self) -> Path:
         pass
 
     @property
     @abstractmethod
-    def zipPath(self) -> str:
+    def zipPath(self) -> Path:
         pass
 
     @abstractmethod
@@ -61,7 +60,7 @@ class Sample(ABC, Generic[SampleDataType]):
         pass
 
     def __unzipSample(self) -> None:
-        if os.path.exists(self.path):
+        if self.path.exists():
             shutil.rmtree(self.path)
 
         with ZipFile(self.zipPath) as zipFile:
@@ -78,14 +77,14 @@ class Sample(ABC, Generic[SampleDataType]):
                 sample is previously unzipped
         """
 
-        if os.path.exists(self.path) and not ignoreCache:
+        if self.path.exists() and not ignoreCache:
             return
 
         try:
             self.__unzipSample()
         except BadZipFile:
             # Delete invalid zip file
-            os.unlink(self.zipPath)
+            self.zipPath.unlink()
 
             # Re-download
             self.download()

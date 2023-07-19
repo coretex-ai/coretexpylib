@@ -19,14 +19,11 @@ from typing import Any, TypeVar, Optional, Generic, Dict, Union
 from typing_extensions import Self
 from pathlib import Path
 
-import os
-
 from .sample import Sample
 from ..space import SpaceTask
+from ... import folder_manager
 from ...codable import KeyDescriptor
 from ...networking import NetworkObject, networkManager, FileData
-from ...folder_management import FolderManager
-from ...utils import guessMimeType
 
 
 SampleDataType = TypeVar("SampleDataType")
@@ -43,24 +40,24 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
     spaceTask: SpaceTask
 
     @property
-    def path(self) -> str:
+    def path(self) -> Path:
         """
             Returns
             -------
-            str -> path for network sample
+            Path -> path for network sample
         """
 
-        return os.path.join(FolderManager.instance().samplesFolder, str(self.id))
+        return folder_manager.samplesFolder / str(self.id)
 
     @property
-    def zipPath(self) -> str:
+    def zipPath(self) -> Path:
         """
             Returns
             -------
-            str -> zip path for network sample
+            Path -> zip path for network sample
         """
 
-        return f"{self.path}.zip"
+        return self.path.with_suffix(".zip")
 
     @classmethod
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:

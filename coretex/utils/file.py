@@ -173,7 +173,7 @@ def walk(path: Path) -> Generator[Path, None, None]:
         subdirectories and subfiles
     """
 
-    for p in Path(path).iterdir():
+    for p in path.iterdir():
         if p.is_dir():
             yield from walk(p)
             continue
