@@ -174,11 +174,10 @@ def walk(path: Path) -> Generator[Path, None, None]:
     """
 
     for p in path.iterdir():
+        yield p.resolve()
+
         if p.is_dir():
             yield from walk(p)
-            continue
-
-        yield p.resolve()
 
 
 def recursiveUnzip(entryPoint: Path, destination: Optional[Path] = None, remove: bool = False) -> None:
