@@ -187,12 +187,13 @@ def extractData(samtoolsPath: Path, file: Path) -> Tuple[List[int], List[int], L
                 positions.append(int(fields[3]))
                 sequenceLengths.append(len(fields[9]))
 
-    for stderr in process.stderr:
-        if len(stderr) > 0:
-            if process.returncode == 0:
-                logProcessOutput(stderr, logging.WARNING)
-            else:
-                logProcessOutput(stderr, logging.CRITICAL)
+    if process.stderr is not None:
+        for stderr in process.stderr:
+            if len(stderr) > 0:
+                if process.returncode == 0:
+                    logProcessOutput(stderr, logging.WARNING)
+                else:
+                    logProcessOutput(stderr, logging.CRITICAL)
 
     if process.returncode != 0:
         raise CommandException(f">> [Coretex] Falied to execute command. Returncode: {process.returncode}")
