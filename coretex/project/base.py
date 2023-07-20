@@ -57,14 +57,21 @@ class ProjectCallback:
         logging.getLogger("coretexpylib").info(result["message"])
 
     def onSuccess(self) -> None:
-        pass
+        logging.getLogger("coretexpylib").info("Experiment finished successfully")
+
+        LogHandler.instance().flushLogs()
+        LogHandler.instance().reset()
 
     def onKeyboardInterrupt(self) -> None:
         pass
 
     def onException(self, exception: BaseException) -> None:
+        logging.getLogger("coretexpylib").critical("Experiment failed to finish due to an error")
         logging.getLogger("coretexpylib").debug(exception, exc_info = True)
         logging.getLogger("coretexpylib").critical(str(exception))
+
+        LogHandler.instance().flushLogs()
+        LogHandler.instance().reset()
 
     def onNetworkConnectionLost(self) -> None:
         folder_manager.clearTempFiles()
@@ -72,8 +79,6 @@ class ProjectCallback:
         sys.exit(1)
 
     def onCleanUp(self) -> None:
-        logging.getLogger("coretexpylib").info("Experiment execution finished")
-
         self.workerProcess.kill()
         self.workerProcess.join()
 
@@ -82,8 +87,5 @@ class ProjectCallback:
             py3nvml.nvmlShutdown()
         except:
             pass
-
-        LogHandler.instance().flushLogs()
-        LogHandler.instance().reset()
 
         folder_manager.clearTempFiles()

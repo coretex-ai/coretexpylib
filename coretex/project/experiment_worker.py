@@ -153,7 +153,7 @@ def experimentWorker(output: Connection, refreshToken: str, experimentId: int) -
     sendSuccess(output, "Experiment worker succcessfully started")
 
     while (parent := currentProcess.parent()) is not None:
-        logging.getLogger("coretexpylib").debug(f">> [Coretex] Worker process id {currentProcess.pid}, parent process id {parent.pid}...")
+        logging.getLogger("coretexpylib").debug(f">> [Coretex] Worker process id {currentProcess.pid}, parent process id {parent.pid}")
 
         # If parent process ID is set to 1 then that means that the parent process has terminated
         # the process (this is only true for Unix-based systems), but since we run the Node

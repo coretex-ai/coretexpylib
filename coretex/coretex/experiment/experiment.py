@@ -474,4 +474,4 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         if response.hasFailed():
             raise NetworkRequestError(response, "Failed to create experiment")
 
-        return cls.fetchById(response.json[0])
+        return cls.fetchById(response.json["experiment_ids"][0])
