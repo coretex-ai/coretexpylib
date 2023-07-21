@@ -35,7 +35,8 @@ from ..networking import networkManager, RequestType, RequestFailedError
 # so request will never be done and it will enter infinite loop
 IGNORED_LOGGERS = [
     "urllib3.connectionpool",
-    "coretexnode"
+    "coretexnode",
+    "werkzeug"
 ]
 MAX_WAIT_TIME_BEFORE_UPDATE = 5
 
