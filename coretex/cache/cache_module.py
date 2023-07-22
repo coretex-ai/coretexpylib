@@ -29,7 +29,7 @@ import zipfile
 
 import requests
 
-from ..folder_management import FolderManager
+from .. import folder_manager
 
 
 IGNORED_FILE_TYPES = [".pt"]
@@ -49,34 +49,30 @@ def __hashedKey(key: str) -> str:
 
 
 def __zip(zipPath: Path, filePath: Path, fileName: str) -> None:
-    baseName, fileExtension = os.path.splitext(filePath)
-
-    if fileExtension in IGNORED_FILE_TYPES or not zipfile.is_zipfile(filePath):
-        with ZipFile(zipPath, mode = "w") as archive:
+    if filePath.suffix in IGNORED_FILE_TYPES or not zipfile.is_zipfile(filePath):
+        with ZipFile(zipPath, mode = "w", compression = zipfile.ZIP_DEFLATED) as archive:
             archive.write(filePath, fileName)
 
         filePath.unlink(missing_ok = True)
     else:
-        filePath.rename(FolderManager.instance().cache / filePath.name)
+        filePath.rename(folder_manager.cache / filePath.name)
 
 
 def __downloadFromUrl(url: str, fileName: str) -> Tuple[Path, str]:
-    tempPath = FolderManager.instance().temp
     hashUrl = __hashedKey(url)
-    fileName, fileExtension = os.path.splitext(fileName)
 
     with requests.get(url, stream = True) as r:
         r.raise_for_status()
 
-        resultPath = os.path.join(tempPath, hashUrl)
-        fileName = f"{hashUrl}{fileExtension}"
-        resultPath = os.path.join(tempPath, fileName)
+        _, extension = os.path.splitext(fileName)
+        fileName = f"{hashUrl}{extension}"
 
-        with open(resultPath, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=8192):
+        resultPath = folder_manager.temp / fileName
+        with resultPath.open("wb") as f:
+            for chunk in r.iter_content(chunk_size = 8192):
                 f.write(chunk)
 
-    return Path(resultPath), fileName
+        return resultPath, fileName
 
 
 def storeObject(key: str, object: Any, override: bool = False) -> None:
@@ -105,10 +101,10 @@ def storeObject(key: str, object: Any, override: bool = False) -> None:
     """
 
     hashedKey = __hashedKey(key)
-    zipPath = (FolderManager.instance().cache / hashedKey).with_suffix(".zip")
+    zipPath = (folder_manager.cache / hashedKey).with_suffix(".zip")
 
     pickleName = f"{hashedKey}.pickle"
-    picklePath = FolderManager.instance().cache / pickleName
+    picklePath = folder_manager.cache / pickleName
 
     if override:
         zipPath.unlink(missing_ok = True)
@@ -148,7 +144,7 @@ def storeFile(key: str, filePath: str, override: bool = False) -> None:
         >>> cache.storeFile("dummyFile", filePath)
     """
     hashedKey = __hashedKey(key)
-    cachePath = FolderManager.instance().cache / hashedKey
+    cachePath = folder_manager.cache / hashedKey
 
     cacheZipPath = cachePath.with_suffix(".zip")
 
@@ -194,7 +190,7 @@ def storeUrl(url: str, fileName: str, override: bool = False) -> None:
     """
 
     hashedKey = __hashedKey(url)
-    cacheZipPath = (FolderManager.instance().cache / hashedKey).with_suffix(".zip")
+    cacheZipPath = (folder_manager.cache / hashedKey).with_suffix(".zip")
 
     if override:
         cacheZipPath.unlink(missing_ok = True)
@@ -239,14 +235,14 @@ def load(key: str) -> Any:
     """
 
     hashedKey = __hashedKey(key)
-    cacheZipPath = (FolderManager.instance().cache / hashedKey).with_suffix(".zip")
-    picklePath = (FolderManager.instance().cache / hashedKey).with_suffix(".pickle")
+    cacheZipPath = (folder_manager.cache / hashedKey).with_suffix(".zip")
+    picklePath = (folder_manager.cache / hashedKey).with_suffix(".pickle")
 
     if not cacheZipPath.exists():
         raise CacheException(">> [Coretex] Cache with given key doesn't exist.")
 
     with ZipFile(cacheZipPath, "r") as zipFile:
-        zipFile.extractall(FolderManager.instance().cache)
+        zipFile.extractall(folder_manager.cache)
 
         logging.getLogger("coretexpylib").info(">> [Coretex] Cache with given key exists, loading cache...")
 
@@ -283,7 +279,7 @@ def getPath(key: str) -> Path:
     """
 
     hashedKey = __hashedKey(key)
-    cacheZipPath = (FolderManager.instance().cache / hashedKey).with_suffix(".zip")
+    cacheZipPath = (folder_manager.cache / hashedKey).with_suffix(".zip")
 
     if not cacheZipPath.exists():
         raise CacheException(">> [Coretex] Cache with given key doesn't exist.")
@@ -314,7 +310,7 @@ def exists(key: str) -> bool:
     """
 
     hashedKey = __hashedKey(key)
-    cacheZipPath = (FolderManager.instance().cache / hashedKey).with_suffix(".zip")
+    cacheZipPath = (folder_manager.cache / hashedKey).with_suffix(".zip")
 
     return cacheZipPath.exists()
 
@@ -339,7 +335,7 @@ def remove(key: str) -> None:
     """
 
     hashedKey = __hashedKey(key)
-    cacheZipPath = (FolderManager.instance().cache / hashedKey).with_suffix(".zip")
+    cacheZipPath = (folder_manager.cache / hashedKey).with_suffix(".zip")
 
     if not cacheZipPath.exists():
         raise CacheException(">> [Coretex] Cache with given key doesn't exist.")
@@ -359,4 +355,4 @@ def clear() -> None:
         >>> cache.clear()
     """
 
-    shutil.rmtree(FolderManager.instance().cache)
+    shutil.rmtree(folder_manager.cache)

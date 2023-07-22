@@ -24,9 +24,9 @@ import logging
 
 import psutil
 
+from .. import folder_manager
 from ..coretex import MetricType, Experiment
 from ..networking import networkManager, NetworkRequestError
-from ..folder_management import FolderManager
 from ..coretex.experiment.metrics.metric_factory import createMetric
 
 
@@ -114,7 +114,7 @@ def _initializeLogger(experimentId: int) -> None:
         style = "%",
     )
 
-    workerLogPath = FolderManager.instance().logs / f"experiment_worker_{experimentId}.log"
+    workerLogPath = folder_manager.logs / f"experiment_worker_{experimentId}.log"
     fileHandler = logging.FileHandler(workerLogPath)
 
     fileHandler.setLevel(logging.DEBUG)

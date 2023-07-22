@@ -185,7 +185,7 @@ class NetworkManagerBase(ABC):
     def genericDownload(
         self,
         endpoint: str,
-        destination: str,
+        destination: Union[Path, str],
         parameters: Optional[Dict[str, Any]] = None,
         retryCount: int = 0
     ) -> NetworkResponse:
@@ -196,7 +196,7 @@ class NetworkManagerBase(ABC):
             ----------
             endpoint : str
                 API endpoint
-            destination : str
+            destination : Union[Path, str]
                 path to save file
             parameters : Optional[dict[str, Any]]
                 request parameters (not required)
@@ -220,6 +220,12 @@ class NetworkManagerBase(ABC):
                     print("Failed to download the file")
         """
 
+        if isinstance(destination, str):
+            destination = Path(destination)
+
+        if destination.is_dir():
+            raise RuntimeError(">> [Coretex] Destination is a directory not a file")
+
         headers = self._requestHeader()
 
         if parameters is None:
@@ -232,16 +238,12 @@ class NetworkManagerBase(ABC):
             return self.genericDownload(endpoint, destination, parameters, retryCount + 1)
 
         if response.raw.ok:
-            destinationPath = Path(destination)
-            if destinationPath.is_dir():
-                raise RuntimeError(">> [Coretex] Destination is a directory not a file")
+            if destination.exists():
+                destination.unlink(missing_ok = True)
 
-            if destinationPath.exists():
-                destinationPath.unlink(missing_ok = True)
+            destination.parent.mkdir(parents = True, exist_ok = True)
 
-            destinationPath.parent.mkdir(parents = True, exist_ok = True)
-
-            with open(destination, "wb") as downloadedFile:
+            with destination.open("wb") as downloadedFile:
                 downloadedFile.write(response.raw.content)
 
         return response

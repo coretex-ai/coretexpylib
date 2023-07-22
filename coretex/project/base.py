@@ -22,8 +22,8 @@ import sys
 import logging
 import multiprocessing
 
+from .. import folder_manager
 from ..coretex import Experiment
-from ..folder_management import FolderManager
 from ..logging import LogHandler
 
 from .experiment_worker import experimentWorker
@@ -74,7 +74,7 @@ class ProjectCallback:
         LogHandler.instance().reset()
 
     def onNetworkConnectionLost(self) -> None:
-        FolderManager.instance().clearTempFiles()
+        folder_manager.clearTempFiles()
 
         sys.exit(1)
 
@@ -88,4 +88,4 @@ class ProjectCallback:
         except:
             pass
 
-        FolderManager.instance().clearTempFiles()
+        folder_manager.clearTempFiles()

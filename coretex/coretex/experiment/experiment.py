@@ -15,9 +15,8 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Final, Optional, Any, List, Dict, Union, Tuple, TypeVar, Generic
+from typing import Optional, Any, List, Dict, Union, Tuple, TypeVar, Generic
 from typing_extensions import Self
-from threading import Lock
 from zipfile import ZipFile
 from pathlib import Path
 
@@ -32,9 +31,9 @@ from .metrics import Metric
 from .parameters import ExperimentParameter, parseParameters
 from ..dataset import *
 from ..space import SpaceTask
+from ... import folder_manager
 from ...codable import KeyDescriptor
 from ...networking import networkManager, NetworkObject, RequestType, NetworkRequestError
-from ...folder_management import FolderManager
 
 
 DatasetType = TypeVar("DatasetType", bound = Dataset)
@@ -102,14 +101,14 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         return self.__parameters
 
     @property
-    def projectPath(self) -> str:
+    def projectPath(self) -> Path:
         """
             Returns
             -------
-            str -> Path for Experiment
+            Path -> Path for Experiment
         """
 
-        return FolderManager.instance().getTempFolder(str(self.id))
+        return folder_manager.temp / str(self.id)
 
     @property
     def dataset(self) -> DatasetType:
@@ -338,13 +337,19 @@ class Experiment(NetworkObject, Generic[DatasetType]):
 
         return not response.hasFailed()
 
-    def createArtifact(self, localFilePath: str, remoteFilePath: str, mimeType: Optional[str] = None) -> Optional[Artifact]:
+    def createArtifact(
+        self,
+        localFilePath: Union[Path, str],
+        remoteFilePath: str,
+        mimeType: Optional[str] = None
+    ) -> Optional[Artifact]:
+
         """
             Creates Artifact for the current Experiment on Coretex.ai
 
             Parameters
             ----------
-            localFilePath : str
+            localFilePath : Union[Path, str]
                 local path of Artifact file
             remoteFilePath : str
                 path of Artifact file on Coretex
@@ -398,6 +403,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         description: Optional[str] = None,
         parameters: Optional[List[Dict[str, Any]]] = None
     ) -> Self:
+
         """
             Starts an Experiment on Coretex.ai with the provided parameters
 

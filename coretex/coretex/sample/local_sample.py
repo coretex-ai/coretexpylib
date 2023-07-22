@@ -48,24 +48,24 @@ class LocalSample(Generic[SampleDataType], Sample[SampleDataType]):
         self._path: Final = path
 
     @property
-    def path(self) -> str:
+    def path(self) -> Path:
         """
             Returns
             -------
-            str -> path for local sample
+            Path -> path for local sample
         """
 
-        return str(self._path.parent / self._path.stem)
+        return self._path.parent / self._path.stem
 
     @property
-    def zipPath(self) -> str:
+    def zipPath(self) -> Path:
         """
             Returns
             -------
-            str -> zip path for local sample
+            Path -> zip path for local sample
         """
 
-        return str(self._path)
+        return self._path
 
     def download(self, ignoreCache: bool = False) -> bool:
         logging.getLogger("coretexpylib").warning(">> [Coretex] Local sample cannot be downloaded")

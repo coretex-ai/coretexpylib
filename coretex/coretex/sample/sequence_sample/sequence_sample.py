@@ -24,8 +24,8 @@ import logging
 from .local_sequence_sample import LocalSequenceSample
 from ..utils import chunkSampleImport
 from ..network_sample import NetworkSample
+from .... import folder_manager
 from ....utils import file as file_utils
-from ....folder_management import FolderManager
 
 
 class SequenceSample(NetworkSample, LocalSequenceSample):
@@ -88,7 +88,7 @@ class SequenceSample(NetworkSample, LocalSequenceSample):
 
             logging.getLogger("coretexpylib").info(f">> [Coretex] Provided path \"{path}\" is not an archive, zipping...")
 
-            archivePath = Path(FolderManager.instance().temp) / f"{path.stem}.zip"
+            archivePath = folder_manager.temp / f"{path.stem}.zip"
             file_utils.archive(path, archivePath)
 
             isTemp = True

@@ -17,11 +17,11 @@
 
 from datetime import datetime
 
-from .folder_management import FolderManager
+from . import folder_manager
 from .logging import LogSeverity, initializeLogger
 from .utils import DATE_FORMAT
 
 
 def _initializeDefaultLogger() -> None:
-    logPath = FolderManager.instance().logs / f"coretexpylib_{datetime.now().strftime(DATE_FORMAT)}.log"
+    logPath = folder_manager.logs / f"coretexpylib_{datetime.now().strftime(DATE_FORMAT)}.log"
     initializeLogger(LogSeverity.info, logPath)

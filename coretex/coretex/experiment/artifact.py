@@ -15,17 +15,14 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from __future__ import annotations
-
+from typing import Optional, Dict, List, Union
+from typing_extensions import Self
 from enum import IntEnum
-from typing import Optional, Dict, List
 from pathlib import Path
 
-import os
-
+from ... import folder_manager
 from ...codable import Codable, KeyDescriptor
 from ...networking import networkManager, RequestType, FileData
-from ...folder_management import FolderManager
 from ...utils import guessMimeType
 
 
@@ -37,25 +34,6 @@ class ArtifactType(IntEnum):
 
     directory = 1
     file      = 2
-
-    @staticmethod
-    def typeForPath(path: str) -> ArtifactType:
-        """
-            Retrieve ArtifactType based on provided path
-
-            Parameters
-            ----------
-            path : str
-                path to Artifact
-        """
-
-        if os.path.isdir(path):
-            return ArtifactType.directory
-
-        if os.path.isfile(path):
-            return ArtifactType.file
-
-        raise RuntimeError(">> [Coretex] Unreachable")
 
 
 class Artifact(Codable):
@@ -97,7 +75,7 @@ class Artifact(Codable):
             Path -> local path to Artifact
         """
 
-        return FolderManager.instance().getArtifactsFolder(self.experimentId) / self.remoteFilePath
+        return folder_manager.getArtifactsFolder(self.experimentId) / self.remoteFilePath
 
     @property
     def isDirectory(self) -> bool:
@@ -131,7 +109,14 @@ class Artifact(Codable):
         return descriptors
 
     @classmethod
-    def create(cls, experimentId: int, localFilePath: str, remoteFilePath: str, mimeType: Optional[str] = None) -> Optional[Artifact]:
+    def create(
+        cls,
+        experimentId: int,
+        localFilePath: Union[Path, str],
+        remoteFilePath: str,
+        mimeType: Optional[str] = None
+    ) -> Optional[Self]:
+
         if mimeType is None:
             # If guessing fails, fallback to binary type
             try:
@@ -152,7 +137,7 @@ class Artifact(Codable):
         if response.hasFailed():
             return None
 
-        artifact = Artifact.decode(response.json)
+        artifact = cls.decode(response.json)
         artifact.experimentId = experimentId
 
         return artifact
@@ -166,17 +151,13 @@ class Artifact(Codable):
             bool -> False if response has failed, True otherwise
         """
 
-        artifactsFolder = FolderManager.instance().getArtifactsFolder(self.experimentId)
-        if not artifactsFolder.exists():
-            artifactsFolder.mkdir(parents = True, exist_ok = True)
-
         return not networkManager.genericDownload(
             f"artifact/download-file?path={self.remoteFilePath}&model_queue_id={self.experimentId}",
             str(self.localFilePath)
         ).hasFailed()
 
     @classmethod
-    def fetchAll(cls, experimentId: int, path: Optional[str] = None, recursive: bool = False) -> List[Artifact]:
+    def fetchAll(cls, experimentId: int, path: Optional[str] = None, recursive: bool = False) -> List[Self]:
         """
             Fetch all Artifacts from Coretex.ai for the specified experiment
 
@@ -206,7 +187,7 @@ class Artifact(Codable):
         if response.hasFailed():
             return []
 
-        artifacts = [Artifact.decode(element) for element in response.json]
+        artifacts = [cls.decode(element) for element in response.json]
 
         for artifact in artifacts:
             artifact.experimentId = experimentId

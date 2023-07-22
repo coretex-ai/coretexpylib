@@ -32,7 +32,7 @@ import numpy as np
 from .base import BaseImageDataset
 from ...sample import ImageSample, AnnotatedImageSampleData
 from ...annotation import CoretexSegmentationInstance, CoretexImageAnnotation, BBox
-from ....folder_management import FolderManager
+from .... import folder_manager
 
 
 ANNOTATION_NAME = "annotations.json"
@@ -41,15 +41,14 @@ ANNOTATION_NAME = "annotations.json"
 class AugmentedImageSample(ImageSample):
 
     @property
-    def path(self) -> str:
+    def path(self) -> Path:
         """
             Returns
             -------
-            str -> path to new augmented samples directory
+            Path -> path to new augmented samples directory
         """
 
-        tempPath = Path(FolderManager.instance().getTempFolder("temp-augmented-ds"))
-        return str(tempPath / str(self.id))
+        return folder_manager.temp / "temp-augmented-ds" / str(self.id)
 
     @classmethod
     def createFromSample(cls, sample: ImageSample) -> Self:
@@ -242,7 +241,7 @@ def augmentDataset(
             scaling factor
     """
 
-    tempPath = Path(FolderManager.instance().createTempFolder("temp-augmented-ds"))
+    tempPath = folder_manager.createTempFolder("temp-augmented-ds")
     augmentedSamples: List[AugmentedImageSample] = []
 
     for i, background in enumerate(backgroundDataset.samples):
