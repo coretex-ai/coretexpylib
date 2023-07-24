@@ -56,6 +56,8 @@ class NetworkResponse:
         self.headers: Final = response.headers
 
         if ignoreContent:
+            # response.json() will start downloading the sample for streamingDownload() if the
+            # object has not been downloaded already, which happens when a local cache exists
             self.json = {}
         else:
             try:
