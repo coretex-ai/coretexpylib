@@ -51,15 +51,18 @@ class NetworkResponse:
 
     """
 
-    def __init__(self, response: Response, endpoint: str):
+    def __init__(self, response: Response, endpoint: str, ignoreContent: bool = False):
         self.raw: Final = response
         self.headers: Final = response.headers
 
-        try:
-            self.json = response.json()
-        except (ValueError, RuntimeError):
-            # RuntimeError is present here to avoid the content_consumed error
+        if ignoreContent:
             self.json = {}
+        else:
+            try:
+                self.json = response.json()
+            except (ValueError, RuntimeError):
+                # RuntimeError is present here to avoid the content_consumed error
+                self.json = {}
 
         if not response.ok:
             logging.getLogger("coretexpylib").debug(f">> [Coretex] Request failed: (Endpoint: {endpoint}, Code: {response.status_code}, Message: {response.text})")

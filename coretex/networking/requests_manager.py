@@ -252,7 +252,7 @@ class RequestsManager:
 
             if destinationPath.exists():
                 if int(response.headers["Content-Length"]) == destinationPath.stat().st_size and not ignoreCache:
-                    return NetworkResponse(response, endpoint)
+                    return NetworkResponse(response, endpoint, True)
 
                 destinationPath.unlink()
 
