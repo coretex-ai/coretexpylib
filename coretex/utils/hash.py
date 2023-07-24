@@ -2,7 +2,7 @@ import base64
 import hashlib
 
 
-maxNameLength = 50
+MAX_NAME_LENGTH = 50
 
 
 def md5(object: bytes) -> bytes:
@@ -10,7 +10,11 @@ def md5(object: bytes) -> bytes:
 
 
 def hashCacheName(name: str, suffix: str) -> str:
-    suffixHash = base64.b64encode(md5(suffix.encode()))
+    if MAX_NAME_LENGTH - len(name) < 8:
+        raise ValueError(">> [Coretex] Failed to cache dataset. Dataset name too long")
+
+    suffixByteHash = hashlib.md5(suffix.encode()).digest()
+    suffixHash = base64.b64encode(suffixByteHash)
     cacheName = name + "_" + suffixHash.decode("ascii")
 
-    return cacheName[:maxNameLength] if len(cacheName) > maxNameLength else cacheName
+    return cacheName[:MAX_NAME_LENGTH] if len(cacheName) > MAX_NAME_LENGTH else cacheName
