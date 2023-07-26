@@ -212,7 +212,8 @@ class RequestsManager:
         destinationPath: Union[str, Path],
         ignoreCache: bool,
         headers: Dict[str, str],
-        parameters: Dict[str, Any]
+        parameters: Dict[str, Any],
+        retryCount: int = 0
     ) -> NetworkResponse:
         """
             Downloads a file from endpoint to destinationPath in chunks of 8192 bytes
@@ -235,32 +236,46 @@ class RequestsManager:
             NetworkResponse -> NetworkResponse object as response content to request
         """
 
-        with self.__session.get(
-            self.__url(endpoint),
-            stream = True,
-            headers = headers,
-            json = parameters
-        ) as response:
+        try:
+            with self.__session.get(
+                self.__url(endpoint),
+                stream = True,
+                headers = headers,
+                json = parameters
+            ) as response:
 
-            response.raise_for_status()
+                response.raise_for_status()
 
-            if isinstance(destinationPath, str):
-                destinationPath = Path(destinationPath)
+                if isinstance(destinationPath, str):
+                    destinationPath = Path(destinationPath)
 
-            if destinationPath.is_dir():
-                raise RuntimeError(">> [Coretex] Destination is a directory not a file")
+                if destinationPath.is_dir():
+                    raise RuntimeError(">> [Coretex] Destination is a directory not a file")
 
-            if destinationPath.exists():
-                if int(response.headers["Content-Length"]) == destinationPath.stat().st_size and not ignoreCache:
-                    return NetworkResponse(response, endpoint, True)
+                if destinationPath.exists():
+                    if int(response.headers["Content-Length"]) == destinationPath.stat().st_size and not ignoreCache:
+                        return NetworkResponse(response, endpoint, ignoreContent = True)
 
-                destinationPath.unlink()
+                    destinationPath.unlink()
 
-            with destinationPath.open("wb") as downloadedFile:
-                for chunk in response.iter_content(chunk_size = 8192):
-                    downloadedFile.write(chunk)
+                with destinationPath.open("wb") as downloadedFile:
+                    for chunk in response.iter_content(chunk_size = 8192):
+                        downloadedFile.write(chunk)
 
-            return NetworkResponse(response, endpoint)
+                return NetworkResponse(response, endpoint)
+        except:
+            if retryCount < RequestsManager.MAX_RETRY_COUNT:
+                RequestsManager.__logRetry(RequestType.get, endpoint, retryCount)
+                return self.streamingDownload(
+                    endpoint,
+                    destinationPath,
+                    ignoreCache,
+                    headers,
+                    parameters,
+                    retryCount = retryCount + 1
+                )
+
+            raise RequestFailedError
 
     def upload(
         self,
