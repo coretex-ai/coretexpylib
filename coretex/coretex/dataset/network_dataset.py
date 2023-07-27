@@ -164,7 +164,6 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
             \b
             >>> dummyDataset = NetworkDataset.fetchById(1023)
             >>> dummyDataset.download()
-            >> [Coretex] Downloading dataset: [==>...........................] - 10%
         """
 
         self.path.mkdir(exist_ok = True)
@@ -172,16 +171,16 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
         def sampleDownloader(sample: SampleType) -> None:
             downloadSuccess = sample.download(ignoreCache)
             if not downloadSuccess:
-                return
+                raise RuntimeError(f">> [Coretex] Failed to download sample \"{sample.name}\"")
 
-            symlinkPath = self.path / f"{sample.id}.zip"
-            if not symlinkPath.exists():
-                os.symlink(sample.zipPath, symlinkPath)
+            sampleHardLinkPath = self.path / sample.zipPath.name
+            if not sampleHardLinkPath.exists():
+                os.link(sample.zipPath, sampleHardLinkPath)
 
         processor = MultithreadedDataProcessor(
             self.samples,
             sampleDownloader,
-            title = "Downloading dataset"
+            title = f"Downloading dataset \"{self.name}\"..."
         )
 
         processor.process()
