@@ -19,6 +19,8 @@ from typing import Any, TypeVar, Optional, Generic, Dict, Union
 from typing_extensions import Self
 from pathlib import Path
 
+import os
+
 from .sample import Sample
 from ..space import SpaceTask
 from ... import folder_manager
@@ -124,6 +126,16 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
             destination = self.zipPath,
             ignoreCache = ignoreCache
         )
+
+        # If sample was downloaded succesfully relink it to datasets to which it is linked
+        if not response.hasFailed():
+            for datasetPath in folder_manager.datasetsFolder.iterdir():
+                sampleHardLinkPath = datasetPath / self.zipPath.name
+                if not sampleHardLinkPath.exists():
+                    continue
+
+                sampleHardLinkPath.unlink()
+                os.link(self.zipPath, sampleHardLinkPath)
 
         return not response.hasFailed()
 

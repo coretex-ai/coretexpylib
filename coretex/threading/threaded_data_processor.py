@@ -18,7 +18,7 @@
 from typing import Any, Callable, Final, Optional, List
 from concurrent.futures import ThreadPoolExecutor, Future
 
-from ..utils import ConsoleProgressBar
+import logging
 
 
 class MultithreadedDataProcessor:
@@ -69,7 +69,7 @@ class MultithreadedDataProcessor:
         self.__data: Final = data
         self.__singleElementProcessor: Final = singleElementProcessor
         self.__threadCount: Final = threadCount
-        self.__progressBar: Final = ConsoleProgressBar(len(data), "" if title is None else title)
+        self.__title = title
 
     def process(self) -> None:
         """
@@ -80,15 +80,15 @@ class MultithreadedDataProcessor:
             Any unhandled exception which happened during the processing
         """
 
+        if self.__title is not None:
+            logging.getLogger("coretexpylib").info(f">> [Coretex] {self.__title}")
+
         futures: List[Future] = []
 
         with ThreadPoolExecutor(max_workers = self.__threadCount) as pool:
             for element in self.__data:
                 future = pool.submit(self.__singleElementProcessor, element)
-                future.add_done_callback(lambda _: self.__progressBar.update())
                 futures.append(future)
-
-        self.__progressBar.finish()
 
         for future in futures:
             exception = future.exception()
