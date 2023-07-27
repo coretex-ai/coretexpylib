@@ -23,6 +23,7 @@ import logging
 
 from ..utils import command, logProcessOutput, CommandException
 from ...coretex import CustomDataset
+from ...logging import LogSeverity
 
 
 def indexCommand(bwaPath: Path, sequencePath: Path, prefix: Path) -> None:
@@ -191,9 +192,9 @@ def extractData(samtoolsPath: Path, file: Path) -> Tuple[List[int], List[int], L
         for stderr in process.stderr:
             if len(stderr) > 0:
                 if process.returncode == 0:
-                    logProcessOutput(stderr, logging.WARNING)
+                    logProcessOutput(stderr, LogSeverity.warning)
                 else:
-                    logProcessOutput(stderr, logging.CRITICAL)
+                    logProcessOutput(stderr, LogSeverity.fatal)
 
     if process.returncode != 0:
         raise CommandException(f">> [Coretex] Falied to execute command. Returncode: {process.returncode}")

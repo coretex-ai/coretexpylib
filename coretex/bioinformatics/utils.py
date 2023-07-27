@@ -15,14 +15,16 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import List
+from typing import List, Optional
 from pathlib import Path
 
 import logging
 import subprocess
 
+from ..logging import LogSeverity
 
-def logProcessOutput(output: bytes, severity: int) -> None:
+
+def logProcessOutput(output: bytes, severity: LogSeverity) -> None:
     decoded = output.decode("UTF-8")
 
     for line in decoded.split("\n"):
@@ -31,7 +33,7 @@ def logProcessOutput(output: bytes, severity: int) -> None:
             continue
 
         # ignoring type for now, has to be fixed in coretexpylib
-        logging.getLogger("coretexpylib").log(severity, line)
+        logging.getLogger("coretexpylib").log(severity.stdSeverity, line)
 
 
 class CommandException(Exception):
@@ -43,25 +45,32 @@ def command(args: List[str], ignoreOutput: bool = False, shell: bool = False) ->
         args,
         shell = shell,
         cwd = Path(__file__).parent,
-        stdout = subprocess.PIPE,
-        stderr = subprocess.PIPE
+        stdout = None if ignoreOutput else subprocess.PIPE,
+        stderr = None if ignoreOutput else subprocess.PIPE
     )
 
-    while process.poll() is None:
-        if process.stdout is None or process.stderr is None:
-            continue
+    returnCode: Optional[int] = None
 
-        stdout = process.stdout.readline()
-        stderr = process.stderr.readline()
+    if ignoreOutput:
+        returnCode = process.wait()
+    else:
+        stdout = process.stdout
+        if stdout is None:
+            commandArgs = " ".join(args)
+            raise ValueError(f">> [Coretex] Something went wrong while trying to execute \"{commandArgs}\"")
 
-        if len(stdout) > 0 and not ignoreOutput:
-            logProcessOutput(stdout, logging.INFO)
+        while (returnCode := process.poll()) is None:
+            lines = stdout.readlines()
+            logProcessOutput(b"".join(lines), LogSeverity.info)
 
-        if len(stderr) > 0 and not ignoreOutput:
-            if process.returncode == 0:
-                logProcessOutput(stderr, logging.INFO)
-            else:
-                logProcessOutput(stderr, logging.CRITICAL)
+        stderr = process.stderr
+        if stderr is None:
+            commandArgs = " ".join(args)
+            raise ValueError(f">> [Coretex] Something went wrong while trying to execute \"{commandArgs}\"")
 
-    if process.returncode != 0:
-        raise CommandException(f">> [Coretex] Falied to execute command. Returncode: {process.returncode}")
+        lines = stderr.readlines()
+        logProcessOutput(b"".join(lines), LogSeverity.warning if returnCode == 0 else LogSeverity.fatal)
+
+    if returnCode != 0:
+        commandArgs = " ".join(args)
+        raise CommandException(f">> [Coretex] Falied to execute command \"{commandArgs}\". Exit code \"{returnCode}\"")
