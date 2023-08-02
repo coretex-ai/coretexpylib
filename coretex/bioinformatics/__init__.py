@@ -15,4 +15,35 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .utils import CommandException
+from typing import Optional
+
+from .utils import CommandException, command
+
+
+def cutadaptTrim(
+    forewardFile: str,
+    forewardOutput: str,
+    forewardAdapter: str,
+    reverseFile: Optional[str] = None,
+    reverseOutput: Optional[str] = None,
+    reverseAdapter: Optional[str] = None
+) -> None:
+
+    args: list[str] = [
+        "cutadapt",
+        "-o", forewardOutput,
+        "-g", forewardAdapter,
+    ]
+
+    if reverseOutput is not None and reverseAdapter is not None:
+        args.extend([
+            "-p", reverseOutput,
+            "-G", reverseAdapter
+        ])
+
+    if reverseFile is not None:
+        args.append(reverseFile)
+
+    args.append(forewardFile)
+
+    command(args)
