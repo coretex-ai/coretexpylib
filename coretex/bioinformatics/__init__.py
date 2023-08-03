@@ -21,18 +21,39 @@ from .utils import CommandException, command
 
 
 def cutadaptTrim(
-    forewardFile: str,
-    forewardOutput: str,
-    forewardAdapter: str,
+    forwardFile: str,
+    forwardOutput: str,
+    forwardAdapter: str,
     reverseFile: Optional[str] = None,
     reverseOutput: Optional[str] = None,
     reverseAdapter: Optional[str] = None
 ) -> None:
+    """
+        Used to trim adapter sequences from sigle-end and paired-end sequencing reads
+
+        Parameters
+        ----------
+        forwardFile : str
+            Path to the file holding forward sequences
+        forwardOutput : str
+            Path to the output file for forward sequences
+        forwardAdapter : str
+            The adapter sequence for the forward reads
+        reverseFile : Optional[str]
+            Path to the file holding reverse sequences (pass for paired-end reads,
+             otherwise only forward is required for single-end)
+        reverseOutput : Optional[str]
+            Path to the output file for reverse sequences (pass for paired-end reads,
+             otherwise only forward is required for single-end)
+        reverseAdapter : Optional[str]
+            The adapter sequence for the reverse reads (pass for paired-end reads,
+             otherwise only forward is required for single-end)
+    """
 
     args: list[str] = [
         "cutadapt",
-        "-o", forewardOutput,
-        "-g", forewardAdapter,
+        "-o", forwardOutput,
+        "-g", forwardAdapter,
     ]
 
     if reverseOutput is not None and reverseAdapter is not None:
@@ -44,6 +65,6 @@ def cutadaptTrim(
     if reverseFile is not None:
         args.append(reverseFile)
 
-    args.append(forewardFile)
+    args.append(forwardFile)
 
     command(args)

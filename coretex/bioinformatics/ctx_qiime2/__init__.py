@@ -94,6 +94,28 @@ def dada2DenoiseSingle(
     ])
 
 
+def dada2DenoisePaired(
+    inputPath: str,
+    trimLeft: int,
+    truncLen: int,
+    representativeSequencesPath: str,
+    tablePath: str,
+    denoisingStatsPath: str
+) -> None:
+
+    command([
+        "qiime", "dada2", "denoise-paired",
+        "--i-demultiplexed-seqs", inputPath,
+        "--p-trim-left-f", str(trimLeft),
+        "--p-trunc-len-f", str(truncLen),
+        "--p-trim-left-r", str(trimLeft),
+        "--p-trunc-len-r", str(truncLen),
+        "--o-representative-sequences", representativeSequencesPath,
+        "--o-table", tablePath,
+        "--o-denoising-stats", denoisingStatsPath
+    ])
+
+
 def metadataTabulate(inputFile: str, visualizationPath: str) -> None:
     command([
         "qiime", "metadata", "tabulate",
