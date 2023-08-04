@@ -51,20 +51,32 @@ def cutadaptTrim(
              otherwise only forward is required for single-end)
     """
 
+    if isinstance(forwardFile, Path):
+        forwardFile = str(forwardFile)
+
+    if isinstance(forwardOutput, Path):
+        forwardOutput = str(forwardOutput)
+
+    if isinstance(reverseFile, Path):
+        reverseFile = str(reverseFile)
+
+    if isinstance(reverseOutput, Path):
+        reverseOutput = str(reverseOutput)
+
     args: list[str] = [
         "cutadapt",
-        "-o", str(forwardOutput),
+        "-o", forwardOutput,
         "-g", forwardAdapter,
     ]
 
     if reverseOutput is not None and reverseAdapter is not None:
         args.extend([
-            "-p", str(reverseOutput),
+            "-p", reverseOutput,
             "-G", reverseAdapter
         ])
 
-    args.append(str(forwardFile))
+    args.append(forwardFile)
     if reverseFile is not None:
-        args.append(str(reverseFile))
+        args.append(reverseFile)
 
     command(args)

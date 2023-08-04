@@ -144,16 +144,28 @@ def dada2DenoisePaired(
             Output path to the statistics of the denoising
     """
 
+    if isinstance(inputPath, Path):
+        inputPath = str(inputPath)
+
+    if isinstance(representativeSequencesPath, Path):
+        representativeSequencesPath = str(representativeSequencesPath)
+
+    if isinstance(tablePath, Path):
+        tablePath = str(tablePath)
+
+    if isinstance(denoisingStatsPath, Path):
+        denoisingStatsPath = str(denoisingStatsPath)
+
     command([
         "qiime", "dada2", "denoise-paired",
-        "--i-demultiplexed-seqs", str(inputPath),
+        "--i-demultiplexed-seqs", inputPath,
         "--p-trim-left-f", str(trimLeftF),
         "--p-trim-left-r", str(trimLeftR),
         "--p-trunc-len-f", str(truncLenF),
         "--p-trunc-len-r", str(truncLenR),
-        "--o-representative-sequences", str(representativeSequencesPath),
-        "--o-table", str(tablePath),
-        "--o-denoising-stats", str(denoisingStatsPath)
+        "--o-representative-sequences", representativeSequencesPath,
+        "--o-table", tablePath,
+        "--o-denoising-stats", denoisingStatsPath
     ])
 
 
