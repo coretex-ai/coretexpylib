@@ -15,7 +15,8 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional
+from typing import Optional, Union
+from pathlib import Path
 
 from .utils import compressGzip, createSample, getDemuxSamples, getDenoisedSamples, \
     getFastqDPSamples, getFastqMPSamples, getMetadataSample, getPhylogeneticTreeSamples, \
@@ -95,24 +96,64 @@ def dada2DenoiseSingle(
 
 
 def dada2DenoisePaired(
-    inputPath: str,
-    trimLeft: int,
-    truncLen: int,
-    representativeSequencesPath: str,
-    tablePath: str,
-    denoisingStatsPath: str
+    inputPath: Union[str, Path],
+    trimLeftF: int,
+    trimLeftR: int,
+    truncLenF: int,
+    truncLenR: int,
+    representativeSequencesPath: Union[str, Path],
+    tablePath: Union[str, Path],
+    denoisingStatsPath: Union[str, Path]
 ) -> None:
+    """
+        Wrapper for QIIME's DADA2 denoise-paired, which performs denoising on the input paired-end reads.
+
+        Parameters
+        ----------
+        inputPath : Union[str, Path]
+            Path to the paired-end demultiplexed sequences to be denoised
+        trimLeftF : int
+            Position at which forward read sequences should be trimmed due to low quality.
+            This trims the 5' end of the input sequences, which will be the bases that were
+            sequenced in the first cycles
+        trimLeftR : int
+            Position at which reverse read sequences should be trimmed due to low quality.
+            This trims the 5' end of the input sequences, which will be the bases that were
+            sequenced in the first cycles
+        truncLenF : int
+            Position at which forward read sequences should be truncated due to decrease in quality.
+            This truncates the 3' end of the input sequences, which will be the bases that
+            were sequenced in the last cycles. Reads that are shorter than this value will be discarded.
+            After this parameter is applied there must still be at least a 20 nucleotide overlap
+            between the forward and reverse reads. If 0 is provided, no truncation or length
+            filtering will be performed
+        truncLenR : int
+            Position at which reverse read sequences should be truncated due to decrease in quality.
+            This truncates the 3' end of the input sequences, which will be the bases that
+            were sequenced in the last cycles. Reads that are shorter than this value will be discarded.
+            After this parameter is applied there must still be at least a 20 nucleotide overlap
+            between the forward and reverse reads. If 0 is provided, no truncation or length
+            filtering will be performed
+        representativeSequencesPath : Union[str, Path]
+            Output path to the resulting feature sequences. Each feature in the feature table will
+            be represented by exactly one sequence, and these sequences will be the
+            joined paired-end sequences
+        tablePath : Union[str, Path]
+            Output path to the resulting feature table
+        denoisingStatsPath : Union[str, Path]
+            Output path to the statistics of the denoising
+    """
 
     command([
         "qiime", "dada2", "denoise-paired",
-        "--i-demultiplexed-seqs", inputPath,
-        "--p-trim-left-f", str(trimLeft),
-        "--p-trunc-len-f", str(truncLen),
-        "--p-trim-left-r", str(trimLeft),
-        "--p-trunc-len-r", str(truncLen),
-        "--o-representative-sequences", representativeSequencesPath,
-        "--o-table", tablePath,
-        "--o-denoising-stats", denoisingStatsPath
+        "--i-demultiplexed-seqs", str(inputPath),
+        "--p-trim-left-f", str(trimLeftF),
+        "--p-trim-left-r", str(trimLeftR),
+        "--p-trunc-len-f", str(truncLenF),
+        "--p-trunc-len-r", str(truncLenR),
+        "--o-representative-sequences", str(representativeSequencesPath),
+        "--o-table", str(tablePath),
+        "--o-denoising-stats", str(denoisingStatsPath)
     ])
 
 
