@@ -19,6 +19,7 @@ from typing import Optional, Union
 from pathlib import Path
 
 from .utils import CommandException, command
+from ..coretex import CustomDataset
 
 
 def cutadaptTrim(
@@ -80,3 +81,13 @@ def cutadaptTrim(
         args.append(reverseFile)
 
     command(args)
+
+
+def isPairedEnd(dataset: CustomDataset) -> bool:
+    for sample in dataset.samples:
+        sample.unzip()
+
+        if sample.name.startswith("_metadata"):
+            continue
+
+        return sum([path.suffix == ".fastq" for path in sample.path.iterdir()]) == 2
