@@ -90,4 +90,7 @@ def isPairedEnd(dataset: CustomDataset) -> bool:
         if sample.name.startswith("_metadata"):
             continue
 
-        return sum([path.suffix == ".fastq" for path in sample.path.iterdir()]) == 2
+        if len(list(sample.path.glob("*.fastq"))) != 2:
+            return False
+
+    return True
