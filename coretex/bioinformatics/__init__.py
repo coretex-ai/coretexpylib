@@ -84,13 +84,27 @@ def cutadaptTrim(
 
 
 def isPairedEnd(dataset: CustomDataset) -> bool:
+    """
+        Check to see if the dataset has paired-end sequences, i.e. two fastq files
+        per sample (excluding the metadata file)
+
+        Parameters
+        ----------
+        dataset : CustomDataset
+            Coretex dataset that will be checked for paired-end sequences
+
+        Returns
+        -------
+        bool -> True if paired-end, False otherwise
+    """
+
     for sample in dataset.samples:
         sample.unzip()
 
         if sample.name.startswith("_metadata"):
             continue
 
-        if len(list(sample.path.glob("*.fastq"))) != 2:
+        if len(list(sample.path.glob("*.fastq*"))) != 2:
             return False
 
     return True
