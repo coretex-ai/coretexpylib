@@ -17,23 +17,25 @@
 
 from typing import Optional, Any, List, Dict, Union, Tuple, TypeVar, Generic
 from typing_extensions import Self
-from zipfile import ZipFile
+from zipfile import ZipFile, ZIP_DEFLATED
 from pathlib import Path
 
 import os
 import time
 import logging
 import zipfile
+import json
 
 from .artifact import Artifact
 from .status import ExperimentStatus
 from .metrics import Metric
 from .parameters import ExperimentParameter, parseParameters
+from .execution_type import ExecutionType
 from ..dataset import *
 from ..space import SpaceTask
 from ... import folder_manager
 from ...codable import KeyDescriptor
-from ...networking import networkManager, NetworkObject, RequestType, NetworkRequestError
+from ...networking import networkManager, NetworkObject, RequestType, NetworkRequestError, FileData
 
 
 DatasetType = TypeVar("DatasetType", bound = Dataset)
@@ -468,7 +470,57 @@ class Experiment(NetworkObject, Generic[DatasetType]):
             "service_id": nodeId,
             "name": name,
             "description": description,
+            "execution_type": ExecutionType.remote.value,
             "parameters": parameters
+        })
+
+        if response.hasFailed():
+            raise NetworkRequestError(response, "Failed to create experiment")
+
+        return cls.fetchById(response.json["experiment_ids"][0])
+
+    @classmethod
+    def runLocal(
+        cls,
+        spaceId: int,
+        name: Optional[str],
+        description: Optional[str] = None,
+        parameters: Optional[List[Dict[str, Any]]] = None
+    ) -> Self:
+
+        if parameters is None:
+            parameters = []
+
+        # Create snapshot
+        snapshotPath = folder_manager.temp / "snapshot.zip"
+        with ZipFile(snapshotPath, "w", ZIP_DEFLATED) as snapshotArchive:
+            optionalFiles = [
+                Path("./main.py"),
+                Path("./main.r"),
+                Path("./main.R"),
+                Path("./environment.yml"),
+                Path("./environment-osx.yml")
+            ]
+
+            for optionalFile in optionalFiles:
+                if not optionalFile.exists():
+                    continue
+
+                snapshotArchive.write(optionalFile, optionalFile.name)
+
+            snapshotArchive.write("requirements.txt")
+            snapshotArchive.write("experiment.config")
+
+        files = [
+            FileData.createFromPath("file", snapshotPath)
+        ]
+
+        response = networkManager.genericUpload("run", files, {
+            "project_id": spaceId,
+            "name": name,
+            "description": description,
+            "execution_type": ExecutionType.local.value,
+            "parameters": json.dumps(parameters)
         })
 
         if response.hasFailed():

@@ -75,7 +75,7 @@ class LocalArgumentParser(Tap):
     username: Optional[str]
     password: Optional[str]
 
-    projectId: int
+    spaceId: int
     name: Optional[str]
     description: Optional[str]
 
@@ -83,7 +83,7 @@ class LocalArgumentParser(Tap):
         self.add_argument("--username", nargs = "?", type = str, default = None)
         self.add_argument("--password", nargs = "?", type = str, default = None)
 
-        self.add_argument("--projectId", type = int)
+        self.add_argument("--spaceId", type = int)
         self.add_argument("--name", nargs = "?", type = str, default = None)
         self.add_argument("--description", nargs = "?", type = str, default = None)
 
@@ -128,15 +128,11 @@ def processLocal(args: Optional[List[str]] = None) -> Tuple[int, ProjectCallback
     if not os.path.exists("experiment.config"):
         raise FileNotFoundError(">> [Coretex] \"experiment.config\" file not found")
 
-    experiment: Experiment = Experiment.run(
-        parser.projectId,
-        # Dummy Local node ID, hardcoded as it is only a temporary solution,
-        # backend will add a new ExperimentType (local) which does not require a specific
-        # node to run
-        -1,
+    experiment: Experiment = Experiment.runLocal(
+        parser.spaceId,
         parser.name,
         parser.description,
-        parameters = [parameter.encode() for parameter in _readExperimentConfig()]
+        [parameter.encode() for parameter in _readExperimentConfig()]
     )
 
     logging.getLogger("coretexpylib").info(f">> [Coretex] Created local experiment with ID \"{experiment.id}\"")
