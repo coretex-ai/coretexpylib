@@ -15,17 +15,19 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional
+from typing import Optional, Union
+from pathlib import Path
 
 from .utils import CommandException, command
+from ..coretex import CustomDataset
 
 
 def cutadaptTrim(
-    forwardFile: str,
-    forwardOutput: str,
+    forwardFile: Union[str, Path],
+    forwardOutput: Union[str, Path],
     forwardAdapter: str,
-    reverseFile: Optional[str] = None,
-    reverseOutput: Optional[str] = None,
+    reverseFile: Optional[Union[str, Path]] = None,
+    reverseOutput: Optional[Union[str, Path]] = None,
     reverseAdapter: Optional[str] = None
 ) -> None:
     """
@@ -50,6 +52,18 @@ def cutadaptTrim(
              otherwise only forward is required for single-end)
     """
 
+    if isinstance(forwardFile, Path):
+        forwardFile = str(forwardFile)
+
+    if isinstance(forwardOutput, Path):
+        forwardOutput = str(forwardOutput)
+
+    if isinstance(reverseFile, Path):
+        reverseFile = str(reverseFile)
+
+    if isinstance(reverseOutput, Path):
+        reverseOutput = str(reverseOutput)
+
     args: list[str] = [
         "cutadapt",
         "-o", forwardOutput,
@@ -62,9 +76,35 @@ def cutadaptTrim(
             "-G", reverseAdapter
         ])
 
+    args.append(forwardFile)
     if reverseFile is not None:
         args.append(reverseFile)
 
-    args.append(forwardFile)
-
     command(args)
+
+
+def isPairedEnd(dataset: CustomDataset) -> bool:
+    """
+        Check to see if the dataset has paired-end sequences, i.e. two fastq files
+        per sample (excluding the metadata file)
+
+        Parameters
+        ----------
+        dataset : CustomDataset
+            Coretex dataset that will be checked for paired-end sequences
+
+        Returns
+        -------
+        bool -> True if paired-end, False otherwise
+    """
+
+    for sample in dataset.samples:
+        sample.unzip()
+
+        if sample.name.startswith("_metadata"):
+            continue
+
+        if len(list(sample.path.glob("*.fastq*"))) != 2:
+            return False
+
+    return True
