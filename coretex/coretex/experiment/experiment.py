@@ -407,16 +407,17 @@ class Experiment(NetworkObject, Generic[DatasetType]):
     ) -> Self:
 
         """
-            Starts an Experiment on Coretex.ai with the provided parameters
+            Schedules an Experiment for execution on the specified
+            Node on Coretex.ai
 
             Parameters
             ----------
             projectId : int
-                id of project that is being used for starting custom Experiment
+                id of project that is being used for starting Experiment
             nodeId : Union[int, str]
-                id of node that is being used for starting custom Experiment
+                id of node that is being used for starting Experiment
             name : Optional[str]
-                name of Experiment
+                name of Experiment (not required)
             description : Optional[str]
                 Experiment description (not required)
             parameters : Optional[List[Dict[str, Any]]]
@@ -487,6 +488,31 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         description: Optional[str] = None,
         parameters: Optional[List[Dict[str, Any]]] = None
     ) -> Self:
+
+        """
+            Creates Experiment on Coretex.ai with the provided parameters,
+            which will be run on the same machine which created it immidiately
+            after running the entry point file of the Job
+
+            Parameters
+            ----------
+            spaceId : int
+                id of space that is being used for starting Experiment
+            name : Optional[str]
+                name of Experiment (not required)
+            description : Optional[str]
+                Experiment description (not required)
+            parameters : Optional[List[Dict[str, Any]]]
+                list of parameters (not required)
+
+            Returns
+            -------
+            Self -> Experiment object
+
+            Raises
+            ------
+            NetworkRequestError -> if the request failed
+        """
 
         if parameters is None:
             parameters = []
