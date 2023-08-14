@@ -60,3 +60,15 @@ class SequenceDataset(BaseSequenceDataset, NetworkDataset[SequenceSample]):
             sample for sample in self.samples
             if sample.id != self.metadata.id
         ]
+
+    def isPairedEnd(self) -> bool:
+        pairedEndSamples = [sample.isPairedEnd() for sample in self.samples]
+
+        if all(pairedEndSamples):
+            return True
+
+        if not any(pairedEndSamples):
+            return False
+
+        raise ValueError(">> [Coretex] Dataset contains a mix of paired-end and single-end sequences. It should contain either one or the other")
+
