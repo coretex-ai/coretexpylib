@@ -11,7 +11,11 @@ on:
         options: ['stage', 'main']
 
 jobs:
+  version-bump:
+    uses: ./.github/workflows/version-bump.yml
+
   stage-merge:
+    needs: version-bump
     runs-on: ubuntu-latest
 
     steps:
