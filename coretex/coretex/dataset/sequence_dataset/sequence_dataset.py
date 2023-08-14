@@ -31,6 +31,7 @@ class SequenceDataset(BaseSequenceDataset, NetworkDataset[SequenceSample]):
     """
 
     metadata: CustomSample
+    pairedEnd: bool
 
     @classmethod
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
@@ -40,10 +41,20 @@ class SequenceDataset(BaseSequenceDataset, NetworkDataset[SequenceSample]):
         return descriptors
 
     def onDecode(self) -> None:
+        pairedEndSamples: list[bool] = []
         for sample in self.samples:
             if sample.name.startswith("_metadata"):
                 self.metadata = CustomSample.decode(sample.encode())
-                break
+                continue
+
+            pairedEndSamples.append(sample.isPairedEnd())
+
+        if all(pairedEndSamples):
+            self.pairedEnd = True
+        elif all([not sample for sample in pairedEndSamples]):
+            self.pairedEnd = False
+        else:
+            raise ValueError(">> [Coretex] Dataset contains a mix of paired-end and single-end sequences. It should contain either one or the other")
 
         self.samples = [
             sample for sample in self.samples
