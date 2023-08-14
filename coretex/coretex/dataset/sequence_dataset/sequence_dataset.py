@@ -51,7 +51,7 @@ class SequenceDataset(BaseSequenceDataset, NetworkDataset[SequenceSample]):
 
         if all(pairedEndSamples):
             self.pairedEnd = True
-        elif all([not sample for sample in pairedEndSamples]):
+        elif not any(pairedEndSamples):
             self.pairedEnd = False
         else:
             raise ValueError(">> [Coretex] Dataset contains a mix of paired-end and single-end sequences. It should contain either one or the other")

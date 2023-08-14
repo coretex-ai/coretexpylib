@@ -69,7 +69,7 @@ class LocalSequenceSample(LocalSample):
             ------
             FileNotFoundError -> if no .fasta, .fastq, .fq, or .fq files are found inside the sample
         """
-        return getSequenceFile(Path(self.path), self.supportedExtensions())
+        return getSequenceFile(self.path, self.supportedExtensions())
 
     @property
     def forwardPath(self) -> Path:
@@ -84,7 +84,7 @@ class LocalSequenceSample(LocalSample):
             ------
             FileNotFoundError -> if no .fasta, .fastq, .fq, or .fq files are found inside the sample
         """
-        return getForwardSequenceFile(Path(self.path), self.supportedExtensions())
+        return getForwardSequenceFile(self.path, self.supportedExtensions())
 
     @property
     def reversePath(self) -> Path:
@@ -99,13 +99,11 @@ class LocalSequenceSample(LocalSample):
             ------
             FileNotFoundError -> if no .fasta, .fastq, .fq, or .fq files are found inside the sample
         """
-        return getReverseSequenceFile(Path(self.path), self.supportedExtensions())
+        return getReverseSequenceFile(self.path, self.supportedExtensions())
 
     def __unzipSingleEnd(self, ignoreCache: bool = False) -> None:
-        super().unzip(ignoreCache)
-
         try:
-            compressedSequencePath = getSequenceFile(Path(self.path), [".gz"])
+            compressedSequencePath = getSequenceFile(self.path, [".gz"])
             decompressedSequencePath = compressedSequencePath.parent / compressedSequencePath.stem
 
             if decompressedSequencePath.exists() and not ignoreCache:
@@ -116,11 +114,9 @@ class LocalSequenceSample(LocalSample):
             pass
 
     def __unzipPairedEnd(self, ignoreCache: bool = False) -> None:
-        super().unzip(ignoreCache)
-
         try:
-            compressedForwardPath = getForwardSequenceFile(Path(self.path), [".gz"])
-            compressedReversePath = getReverseSequenceFile(Path(self.path), [".gz"])
+            compressedForwardPath = getForwardSequenceFile(self.path, [".gz"])
+            compressedReversePath = getReverseSequenceFile(self.path, [".gz"])
 
             for compressedSequencePath in [compressedForwardPath, compressedReversePath]:
                 decompressedSequencePath = compressedSequencePath.parent / compressedSequencePath.stem
@@ -133,7 +129,11 @@ class LocalSequenceSample(LocalSample):
             pass
 
     def unzip(self, ignoreCache: bool = False) -> None:
-        self.__unzipPairedEnd(ignoreCache) if self.isPairedEnd() else self.__unzipSingleEnd(ignoreCache)
+        super().unzip(ignoreCache)
+        if self.isPairedEnd():
+            self.__unzipPairedEnd(ignoreCache)
+        else:
+            self.__unzipSingleEnd(ignoreCache)
 
     def isPairedEnd(self) -> bool:
         """
@@ -152,17 +152,19 @@ class LocalSequenceSample(LocalSample):
 
         extensions = self.supportedExtensions()
         for extension in extensions:
-            listOfPaths = list(self.path.glob(f"*{extension}"))
+            paths = list(self.path.glob(f"*{extension}"))
 
-            if len(listOfPaths) == 0:
+            if len(paths) == 0:
                 continue
 
-            if len(listOfPaths) == 1:
+            if len(paths) == 1:
                 return False
 
-            if len(listOfPaths) == 2:
-                for path in listOfPaths:
-                    if "_R1_" not in path.name and "_R2_" not in path.name:
-                        raise FileNotFoundError(f">> [Coretex] Sample \"{self.name}\" has two files with extensions \"{extensions}\", but they do not contain \"_R1_\" and \"_R2_\" in their names marking them as paired-end reads")
+            if len(paths) != 2:
+                forwardPresent = any(["_R1_" in path.name for path in paths])
+                reversePresent = any(["_R2_" in path.name for path in paths])
+
+                if forwardPresent and reversePresent:
+                    return True
 
         raise FileNotFoundError(f">> [Coretex] Invalid sequence sample \"{self.name}\". Could not determine sequencing type")
