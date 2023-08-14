@@ -30,6 +30,22 @@ def getSequenceFile(directoryPath: Path, extensions: List[str]) -> Path:
     raise FileNotFoundError(f">> [Coretex] {directoryPath} has no files with extensions \"{extensions}\"")
 
 
+def getForwardSequenceFile(directoryPath: Path, extensions: List[str]) -> Path:
+    for path in directoryPath.iterdir():
+        if "_R1_" in path.name and path.suffix in extensions:
+            return path
+
+    raise FileNotFoundError(f">> [Coretex] {directoryPath} has no files with \"_R1_\" in name and extensions \"{extensions}\"")
+
+
+def getReverseSequenceFile(directoryPath: Path, extensions: List[str]) -> Path:
+    for path in directoryPath.iterdir():
+        if "_R2_" in path.name and path.suffix in extensions:
+            return path
+
+    raise FileNotFoundError(f">> [Coretex] {directoryPath} has no files with \"_R2_\" in name and extensions \"{extensions}\"")
+
+
 class LocalSequenceSample(LocalSample):
 
     """
@@ -55,7 +71,37 @@ class LocalSequenceSample(LocalSample):
         """
         return getSequenceFile(Path(self.path), self.supportedExtensions())
 
-    def unzip(self, ignoreCache: bool = False) -> None:
+    @property
+    def forwardPath(self) -> Path:
+        """
+            Returns the path of the .fasta or .fastq forward sequence file
+            contained inside the sample. "_R1_" must be present in the filename
+            otherwise it will not be recongnized. If the sample contains gzip compressed
+            sequences, you will have to call Sample.unzip method first otherwise
+            calling Sample.sequencePath will raise an exception
+
+            Raises
+            ------
+            FileNotFoundError -> if no .fasta, .fastq, .fq, or .fq files are found inside the sample
+        """
+        return getForwardSequenceFile(Path(self.path), self.supportedExtensions())
+
+    @property
+    def reversePath(self) -> Path:
+        """
+            Returns the path of the .fasta or .fastq sequence file
+            contained inside the sample. "_R2_" must be present in the filename
+            otherwise it will not be recongnized. If the sample contains gzip compressed
+            sequences, you will have to call Sample.unzip method first otherwise
+            calling Sample.sequencePath will raise an exception
+
+            Raises
+            ------
+            FileNotFoundError -> if no .fasta, .fastq, .fq, or .fq files are found inside the sample
+        """
+        return getReverseSequenceFile(Path(self.path), self.supportedExtensions())
+
+    def __unzipSingleEnd(self, ignoreCache: bool = False) -> None:
         super().unzip(ignoreCache)
 
         try:
@@ -68,3 +114,55 @@ class LocalSequenceSample(LocalSample):
             file_utils.gzipDecompress(compressedSequencePath, decompressedSequencePath)
         except FileNotFoundError:
             pass
+
+    def __unzipPairedEnd(self, ignoreCache: bool = False) -> None:
+        super().unzip(ignoreCache)
+
+        try:
+            compressedForwardPath = getForwardSequenceFile(Path(self.path), [".gz"])
+            compressedReversePath = getReverseSequenceFile(Path(self.path), [".gz"])
+
+            for compressedSequencePath in [compressedForwardPath, compressedReversePath]:
+                decompressedSequencePath = compressedSequencePath.parent / compressedSequencePath.stem
+
+                if decompressedSequencePath.exists() and not ignoreCache:
+                    return
+
+                file_utils.gzipDecompress(compressedSequencePath, decompressedSequencePath)
+        except FileNotFoundError:
+            pass
+
+    def unzip(self, ignoreCache: bool = False) -> None:
+        self.__unzipPairedEnd(ignoreCache) if self.isPairedEnd() else self.__unzipSingleEnd(ignoreCache)
+
+    def isPairedEnd(self) -> bool:
+        """
+            This function returns True if the sample holds paired-end reads and
+            False if it holds single end. Files for paired-end reads must contain
+            "_R1_" and "_R2_" in their names, otherwise an exception will be raised
+            If the sample contains gzip compressed sequences, you will have to call
+            Sample.unzip method first otherwise calling Sample.isPairedEnd will
+            raise an exception
+
+            Raises
+            ------
+            FileNotFoundError -> if no files meeting the requirements for either single-end
+            or paired-end sequencing reads
+        """
+
+        extensions = self.supportedExtensions()
+        for extension in extensions:
+            listOfPaths = list(self.path.glob(f"*{extension}"))
+
+            if len(listOfPaths) == 0:
+                continue
+
+            if len(listOfPaths) == 1:
+                return False
+
+            if len(listOfPaths) == 2:
+                for path in listOfPaths:
+                    if "_R1_" not in path.name and "_R2_" not in path.name:
+                        raise FileNotFoundError(f">> [Coretex] Sample \"{self.name}\" has two files with extensions \"{extensions}\", but they do not contain \"_R1_\" and \"_R2_\" in their names marking them as paired-end reads")
+
+        raise FileNotFoundError(f">> [Coretex] Invalid sequence sample \"{self.name}\". Could not determine sequencing type")
