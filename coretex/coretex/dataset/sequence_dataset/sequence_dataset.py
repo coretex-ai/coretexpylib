@@ -19,7 +19,7 @@ from typing import Dict
 
 from .base import BaseSequenceDataset
 from ..network_dataset import NetworkDataset
-from ...sample import SequenceSample
+from ...sample import SequenceSample, CustomSample
 from ....codable import KeyDescriptor
 
 
@@ -30,9 +30,22 @@ class SequenceDataset(BaseSequenceDataset, NetworkDataset[SequenceSample]):
         samples contain sequence data (.fasta, .fastq)
     """
 
+    metadata: CustomSample
+
     @classmethod
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
         descriptors = super()._keyDescriptors()
         descriptors["samples"] = KeyDescriptor("sessions", SequenceSample, list)
 
         return descriptors
+
+    def onDecode(self) -> None:
+        for sample in self.samples:
+            if sample.name.startswith("_metadata"):
+                self.metadata = CustomSample.decode(sample.encode())
+                break
+
+        self.samples = [
+            sample for sample in self.samples
+            if sample.id != self.metadata.id
+        ]
