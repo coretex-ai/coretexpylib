@@ -52,6 +52,7 @@ class SequenceDataset(BaseSequenceDataset, NetworkDataset[SequenceSample]):
 
     def download(self, ignoreCache: bool = False) -> None:
         super().download(ignoreCache)
+
         self.metadata.download(ignoreCache)
 
     def isPairedEnd(self) -> bool:

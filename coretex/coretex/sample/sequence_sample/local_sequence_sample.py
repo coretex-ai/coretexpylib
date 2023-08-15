@@ -109,7 +109,6 @@ class LocalSequenceSample(LocalSample):
                 decompressedSequencePath = compressedSequencePath.parent / compressedSequencePath.stem
 
                 file_utils.gzipDecompress(compressedSequencePath, decompressedSequencePath)
-                compressedSequencePath.unlink()
 
     def isPairedEnd(self) -> bool:
         """
@@ -126,24 +125,25 @@ class LocalSequenceSample(LocalSample):
                 or paired-end sequencing reads
         """
 
-        with ZipFile(self.zipPath, "r") as zipfile:
-            pathsInZip = zipfile.namelist()
+        with ZipFile(self.zipPath, "r") as archive:
+            sampleContent = archive.namelist()
 
         for extension in self.supportedExtensions():
-            paths: list[Path] = []
-            for path in pathsInZip:
-                if path.endswith(extension) or path.endswith(f"{extension}.gz"):
-                    paths.append(Path(path))
+            fileNames: list[str] = []
 
-            if len(paths) == 0:
+            for fileName in sampleContent:
+                if fileName.endswith(extension) or fileName.endswith(f"{extension}.gz"):
+                    fileNames.append(fileName)
+
+            if len(fileNames) == 0:
                 continue
 
-            if len(paths) == 1:
+            if len(fileNames) == 1:
                 return False
 
-            if len(paths) == 2:
-                forwardPresent = any(["_R1_" in path.name for path in paths])
-                reversePresent = any(["_R2_" in path.name for path in paths])
+            if len(fileNames) == 2:
+                forwardPresent = any(["_R1_" in fileName for fileName in fileNames])
+                reversePresent = any(["_R2_" in fileName for fileName in fileNames])
 
                 if forwardPresent and reversePresent:
                     return True
