@@ -101,25 +101,13 @@ class LocalSequenceSample(LocalSample):
         """
         return getReverseSequenceFile(self.path, self.supportedExtensions())
 
-    def __unzipSingleEnd(self, ignoreCache: bool = False) -> None:
+    def unzip(self, ignoreCache: bool = False) -> None:
+        super().unzip(ignoreCache)
         try:
-            compressedSequencePath = getSequenceFile(self.path, [".gz"])
-            decompressedSequencePath = compressedSequencePath.parent / compressedSequencePath.stem
-
-            if decompressedSequencePath.exists() and not ignoreCache:
-                return
-
-            file_utils.gzipDecompress(compressedSequencePath, decompressedSequencePath)
-        except FileNotFoundError:
-            pass
-
-    def __unzipPairedEnd(self, ignoreCache: bool = False) -> None:
-        try:
-            compressedForwardPath = getForwardSequenceFile(self.path, [".gz"])
-            compressedReversePath = getReverseSequenceFile(self.path, [".gz"])
-
-            for compressedSequencePath in [compressedForwardPath, compressedReversePath]:
+            for compressedSequencePath in self.path.iterdir():
                 decompressedSequencePath = compressedSequencePath.parent / compressedSequencePath.stem
+                if compressedSequencePath.suffix != ".gz" or decompressedSequencePath.suffix not in self.supportedExtensions():
+                    continue
 
                 if decompressedSequencePath.exists() and not ignoreCache:
                     return
@@ -127,13 +115,6 @@ class LocalSequenceSample(LocalSample):
                 file_utils.gzipDecompress(compressedSequencePath, decompressedSequencePath)
         except FileNotFoundError:
             pass
-
-    def unzip(self, ignoreCache: bool = False) -> None:
-        super().unzip(ignoreCache)
-        if self.isPairedEnd():
-            self.__unzipPairedEnd(ignoreCache)
-        else:
-            self.__unzipSingleEnd(ignoreCache)
 
     def isPairedEnd(self) -> bool:
         """
@@ -160,7 +141,7 @@ class LocalSequenceSample(LocalSample):
             if len(paths) == 1:
                 return False
 
-            if len(paths) != 2:
+            if len(paths) == 2:
                 forwardPresent = any(["_R1_" in path.name for path in paths])
                 reversePresent = any(["_R2_" in path.name for path in paths])
 
