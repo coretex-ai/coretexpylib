@@ -17,6 +17,7 @@
 
 from typing import List
 from pathlib import Path
+from zipfile import ZipFile
 
 from ..local_sample import LocalSample
 from ....utils import file as file_utils
@@ -103,24 +104,18 @@ class LocalSequenceSample(LocalSample):
 
     def unzip(self, ignoreCache: bool = False) -> None:
         super().unzip(ignoreCache)
-        try:
-            for compressedSequencePath in self.path.iterdir():
+        for extension in self.supportedExtensions():
+            for compressedSequencePath in self.path.glob(f"*{extension}.gz"):
                 decompressedSequencePath = compressedSequencePath.parent / compressedSequencePath.stem
-                if compressedSequencePath.suffix != ".gz" or decompressedSequencePath.suffix not in self.supportedExtensions():
-                    continue
-
-                if decompressedSequencePath.exists() and not ignoreCache:
-                    return
 
                 file_utils.gzipDecompress(compressedSequencePath, decompressedSequencePath)
-        except FileNotFoundError:
-            pass
+                compressedSequencePath.unlink()
 
     def isPairedEnd(self) -> bool:
         """
             This function returns True if the sample holds paired-end reads and
             False if it holds single end. Files for paired-end reads must contain
-            "_R1_" and "_R2_" in their names, otherwise an exception will be raised
+            "_R1_" and "_R2_" in their names, otherwise an exception will be raised.
             If the sample contains gzip compressed sequences, you will have to call
             Sample.unzip method first otherwise calling Sample.isPairedEnd will
             raise an exception
@@ -128,12 +123,17 @@ class LocalSequenceSample(LocalSample):
             Raises
             ------
             FileNotFoundError -> if no files meeting the requirements for either single-end
-            or paired-end sequencing reads
+                or paired-end sequencing reads
         """
 
-        extensions = self.supportedExtensions()
-        for extension in extensions:
-            paths = list(self.path.glob(f"*{extension}"))
+        with ZipFile(self.zipPath, "r") as zipfile:
+            pathsInZip = zipfile.namelist()
+
+        for extension in self.supportedExtensions():
+            paths: list[Path] = []
+            for path in pathsInZip:
+                if path.endswith(extension) or path.endswith(f"{extension}.gz"):
+                    paths.append(Path(path))
 
             if len(paths) == 0:
                 continue

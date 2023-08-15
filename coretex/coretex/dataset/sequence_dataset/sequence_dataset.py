@@ -50,7 +50,26 @@ class SequenceDataset(BaseSequenceDataset, NetworkDataset[SequenceSample]):
             if sample.id != self.metadata.id
         ]
 
+    def download(self, ignoreCache: bool = False) -> None:
+        super().download(ignoreCache)
+        self.metadata.download(ignoreCache)
+
     def isPairedEnd(self) -> bool:
+        """
+            This function returns True if the dataset holds paired-end reads and
+            False if it holds single end. Files for paired-end reads must contain
+            "_R1_" and "_R2_" in their names, otherwise an exception will be raised.
+            If the sample contains gzip compressed sequences, you will have to call
+            Sample.unzip method first otherwise calling Sample.isPairedEnd will
+            raise an exception
+
+            Raises
+            ------
+            FileNotFoundError -> if no files meeting the requirements for either single-end
+                or paired-end sequencing reads
+            ValueError -> if dataset has a combination of single-end and paired-end samples
+        """
+
         pairedEndSamples = [sample.isPairedEnd() for sample in self.samples]
 
         if all(pairedEndSamples):
