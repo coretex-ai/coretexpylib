@@ -76,15 +76,57 @@ def demuxSummarize(dataPath: str, visualizationPath: str) -> None:
 
 
 def dada2DenoiseSingle(
-    inputPath: str,
+    inputPath: Union[str, Path],
     trimLeft: int,
     truncLen: int,
-    representativeSequencesPath: str,
-    tablePath: str,
-    denoisingStatsPath: str
+    representativeSequencesPath: Union[str, Path],
+    tablePath: Union[str, Path],
+    denoisingStatsPath: Union[str, Path],
+    multithreading: bool = True
 ) -> None:
+    """
+        Wrapper for QIIME's DADA2 denoise-single, which performs denoising on the input paired-end reads.
 
-    command([
+        Parameters
+        ----------
+        inputPath : Union[str, Path]
+            Path to the paired-end demultiplexed sequences to be denoised
+        trimLeft : int
+            Position at which read sequences should be trimmed due to low quality.
+            This trims the 5' end of the input sequences, which will be the bases that were
+            sequenced in the first cycles
+        truncLen : int
+            Position at which read sequences should be truncated due to decrease in quality.
+            This truncates the 3' end of the input sequences, which will be the bases that
+            were sequenced in the last cycles. Reads that are shorter than this value will be discarded.
+            After this parameter is applied there must still be at least a 20 nucleotide overlap
+            between the forward and reverse reads. If 0 is provided, no truncation or length
+            filtering will be performed
+        representativeSequencesPath : Union[str, Path]
+            Output path to the resulting feature sequences. Each feature in the feature table will
+            be represented by exactly one sequence, and these sequences will be the
+            joined paired-end sequences
+        tablePath : Union[str, Path]
+            Output path to the resulting feature table
+        denoisingStatsPath : Union[str, Path]
+            Output path to the statistics of the denoising
+        multithreading : bool
+            Whether to use multithreading
+    """
+
+    if isinstance(inputPath, Path):
+        inputPath = str(inputPath)
+
+    if isinstance(representativeSequencesPath, Path):
+        representativeSequencesPath = str(representativeSequencesPath)
+
+    if isinstance(tablePath, Path):
+        tablePath = str(tablePath)
+
+    if isinstance(denoisingStatsPath, Path):
+        denoisingStatsPath = str(denoisingStatsPath)
+
+    args = [
         "qiime", "dada2", "denoise-single",
         "--i-demultiplexed-seqs", inputPath,
         "--p-trim-left", str(trimLeft),
@@ -92,7 +134,12 @@ def dada2DenoiseSingle(
         "--o-representative-sequences", representativeSequencesPath,
         "--o-table", tablePath,
         "--o-denoising-stats", denoisingStatsPath
-    ])
+    ]
+
+    if multithreading:
+        args.extend(["--p-n-threads", "0"])
+
+    command(args)
 
 
 def dada2DenoisePaired(
@@ -103,7 +150,8 @@ def dada2DenoisePaired(
     truncLenR: int,
     representativeSequencesPath: Union[str, Path],
     tablePath: Union[str, Path],
-    denoisingStatsPath: Union[str, Path]
+    denoisingStatsPath: Union[str, Path],
+    multithreading: bool = True
 ) -> None:
     """
         Wrapper for QIIME's DADA2 denoise-paired, which performs denoising on the input paired-end reads.
@@ -142,6 +190,8 @@ def dada2DenoisePaired(
             Output path to the resulting feature table
         denoisingStatsPath : Union[str, Path]
             Output path to the statistics of the denoising
+        multithreading : bool
+            Whether to use multithreading
     """
 
     if isinstance(inputPath, Path):
@@ -156,7 +206,7 @@ def dada2DenoisePaired(
     if isinstance(denoisingStatsPath, Path):
         denoisingStatsPath = str(denoisingStatsPath)
 
-    command([
+    args = [
         "qiime", "dada2", "denoise-paired",
         "--i-demultiplexed-seqs", inputPath,
         "--p-trim-left-f", str(trimLeftF),
@@ -166,7 +216,12 @@ def dada2DenoisePaired(
         "--o-representative-sequences", representativeSequencesPath,
         "--o-table", tablePath,
         "--o-denoising-stats", denoisingStatsPath
-    ])
+    ]
+
+    if multithreading:
+        args.extend(["--p-n-threads", "0"])
+
+    command(args)
 
 
 def metadataTabulate(inputFile: str, visualizationPath: str) -> None:
@@ -199,17 +254,23 @@ def phylogenyAlignToTreeMafftFasttree(
     aligmentPath: str,
     maskedAligmentPath: str,
     unrootedTreePath: str,
-    rootedTreePath: str
+    rootedTreePath: str,
+    multithreading: bool = True
 ) -> None:
 
-    command([
+    args = [
         "qiime", "phylogeny", "align-to-tree-mafft-fasttree",
         "--i-sequences", sequencesPath,
         "--o-alignment", aligmentPath,
         "--o-masked-alignment", maskedAligmentPath,
         "--o-tree", unrootedTreePath,
         "--o-rooted-tree", rootedTreePath
-    ])
+    ]
+
+    if multithreading:
+        args.extend(["--p-n-threads", "auto"])
+
+    command(args)
 
 
 def diversityCoreMetricsPhylogenetic(
@@ -217,17 +278,23 @@ def diversityCoreMetricsPhylogenetic(
     tablePath: str,
     samplingDepth: int,
     metadataPath: str,
-    outputDir: str
+    outputDir: str,
+    multithreading: bool = True
 ) -> None:
 
-    command([
+    args = [
         "qiime", "diversity", "core-metrics-phylogenetic",
         "--i-phylogeny", phlogenyPath,
         "--i-table", tablePath,
         "--p-sampling-depth", str(samplingDepth),
         "--m-metadata-file", metadataPath,
         "--output-dir", outputDir
-    ])
+    ]
+
+    if multithreading:
+        args.extend(["--p-n-jobs-or-threads", "auto"])
+
+    command(args)
 
 
 def diversityAlphaGroupSignificance(
@@ -299,15 +366,21 @@ def diversityAlphaRarefaction(
 def featureClassifierClassifySklearn(
     classifierPath: str,
     readsPath: str,
-    classificationPath: str
+    classificationPath: str,
+    multithreading: bool = True
 ) -> None:
 
-    command([
+    args = [
         "qiime", "feature-classifier", "classify-sklearn",
         "--i-classifier", classifierPath,
         "--i-reads", readsPath,
         "--o-classification", classificationPath
-    ])
+    ]
+
+    if multithreading:
+        args.extend(["--p-n-jobsv", "-1"])
+
+    command(args)
 
 
 def taxaBarplot(
