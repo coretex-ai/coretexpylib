@@ -378,7 +378,7 @@ def featureClassifierClassifySklearn(
     ]
 
     if multithreading:
-        args.extend(["--p-n-jobsv", "-1"])
+        args.extend(["--p-n-jobs", "-1"])
 
     command(args)
 
