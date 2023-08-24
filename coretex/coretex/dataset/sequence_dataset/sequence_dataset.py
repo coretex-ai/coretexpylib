@@ -19,7 +19,7 @@ from typing import Dict
 
 from .base import BaseSequenceDataset
 from ..network_dataset import NetworkDataset
-from ...sample import SequenceSample
+from ...sample import SequenceSample, CustomSample
 from ....codable import KeyDescriptor
 
 
@@ -30,9 +30,54 @@ class SequenceDataset(BaseSequenceDataset, NetworkDataset[SequenceSample]):
         samples contain sequence data (.fasta, .fastq)
     """
 
+    metadata: CustomSample
+
     @classmethod
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
         descriptors = super()._keyDescriptors()
         descriptors["samples"] = KeyDescriptor("sessions", SequenceSample, list)
 
         return descriptors
+
+    def onDecode(self) -> None:
+        for sample in self.samples:
+            if sample.name.startswith("_metadata"):
+                self.metadata = CustomSample.decode(sample.encode())
+                continue
+
+        self.samples = [
+            sample for sample in self.samples
+            if sample.id != self.metadata.id
+        ]
+
+    def download(self, ignoreCache: bool = False) -> None:
+        super().download(ignoreCache)
+
+        self.metadata.download(ignoreCache)
+
+    def isPairedEnd(self) -> bool:
+        """
+            This function returns True if the dataset holds paired-end reads and
+            False if it holds single end. Files for paired-end reads must contain
+            "_R1_" and "_R2_" in their names, otherwise an exception will be raised.
+            If the sample contains gzip compressed sequences, you will have to call
+            Sample.unzip method first otherwise calling Sample.isPairedEnd will
+            raise an exception
+
+            Raises
+            ------
+            FileNotFoundError -> if no files meeting the requirements for either single-end
+                or paired-end sequencing reads
+            ValueError -> if dataset has a combination of single-end and paired-end samples
+        """
+
+        pairedEndSamples = [sample.isPairedEnd() for sample in self.samples]
+
+        if all(pairedEndSamples):
+            return True
+
+        if not any(pairedEndSamples):
+            return False
+
+        raise ValueError(">> [Coretex] Dataset contains a mix of paired-end and single-end sequences. It should contain either one or the other")
+
