@@ -41,11 +41,6 @@ DEFAULT_CONFIG = {
     "refreshToken": None,
     "serverUrl": getEnvVar("CTX_API_URL", "https://devext.biomechservices.com:29007/"),
     "storagePath": getEnvVar("CTX_STORAGE_PATH", "~/.coretex"),
-
-    # Configuration related to Coretex.ai Node
-    "nodeName": getEnvVar("CTX_NODE_NAME", ""),
-    "organizationID": getEnvVar("CTX_ORGANIZATION_ID", ""),
-    "image": None
 }
 
 
@@ -88,5 +83,3 @@ def _syncConfigWithEnv() -> None:
 
     os.environ["CTX_API_URL"] = config["serverUrl"]
     os.environ["CTX_STORAGE_PATH"] = config["storagePath"]
-    os.environ["CTX_NODE_NAME"] = config["nodeName"]
-    os.environ["CTX_ORGANIZATION_ID"] = config["organizationID"]

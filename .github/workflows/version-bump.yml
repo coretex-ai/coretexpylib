@@ -5,6 +5,7 @@ on:
 
 jobs:
   version_bump:
+    if: github.event.inputs.destination_branch == 'main'
     runs-on: ubuntu-latest
     
     steps:
