@@ -38,13 +38,14 @@ def createSample(name: str, datasetId: int, path: Path, experiment: Experiment, 
     return sample
 
 
-def compressGzip(source: Path, destination: Path) -> None:
+def compressGzip(source: Path, destination: Path, deleteSource: bool = False) -> None:
     logging.info(f"{source} -> {destination}")
 
     with gzip.open(destination, "w") as destinationFile:
         destinationFile.write(source.read_bytes())
 
-    source.unlink()
+    if deleteSource:
+        source.unlink()
 
 
 def sampleNumber(sample: CustomSample) -> int:
@@ -54,19 +55,20 @@ def sampleNumber(sample: CustomSample) -> int:
 def isFastqMPSample(sample: CustomSample) -> bool:
     sample.unzip()
 
-    for path in sample.load().folderContent:
-        if path.name != "sequences":
-            continue
-
-        return (path / "sequences.fastq").exists() and (path / "barcodes.fastq").exists()
-
-    return False
+    return (sample.path / "forward.fastq").exists() and (sample.path / "barcodes.fastq").exists()
 
 
 def isFastqDPSample(sample: CustomSample) -> bool:
     sample.unzip()
 
     return any([path.suffix == ".fastq" for path in sample.load().folderContent])
+
+
+def isImportedSample(sample: CustomSample) -> bool:
+    sample.unzip()
+
+    sampleContent = [path.name for path in sample.load().folderContent]
+    return "multiplexed-sequences.qza" in sampleContent
 
 
 def isDemultiplexedSample(sample: CustomSample) -> bool:
@@ -99,12 +101,6 @@ def isPhylogeneticTreeSample(sample: CustomSample) -> bool:
     )
 
 
-def isMetadataSample(sample: CustomSample) -> bool:
-    sample.unzip()
-
-    return any([path.suffix == ".tsv" for path in sample.load().folderContent])
-
-
 def getFastqMPSamples(dataset: CustomDataset) -> List[CustomSample]:
     # Multiplexed fastq data
     return dataset.getSamples(isFastqMPSample)
@@ -113,6 +109,10 @@ def getFastqMPSamples(dataset: CustomDataset) -> List[CustomSample]:
 def getFastqDPSamples(dataset: CustomDataset) -> List[CustomSample]:
     # Demultiplexed fastq data
     return dataset.getSamples(isFastqDPSample)
+
+
+def getImportedSamples(dataset: CustomDataset) -> List[CustomSample]:
+    return dataset.getSamples(isImportedSample)
 
 
 def getDemuxSamples(dataset: CustomDataset) -> List[CustomSample]:
@@ -127,9 +127,9 @@ def getPhylogeneticTreeSamples(dataset: CustomDataset) -> List[CustomSample]:
     return dataset.getSamples(isPhylogeneticTreeSample)
 
 
-def getMetadataSample(dataset: CustomDataset) -> CustomSample:
-    metadataSample = dataset.getSamples(isMetadataSample)
-    if len(metadataSample) != 1:
-        raise ValueError(f">> [Coretex] Dataset must contain exaclty one metadata sample. Found {len(metadataSample)}")
+def getMetadata(sample: CustomSample) -> Path:
+    metadataPathList = list(sample.path.glob("*.tsv"))
+    if len(metadataPathList) != 1:
+        raise RuntimeError(f">> [Coretex] Metadata sample must contain one .tsv file. Found {len(metadataPathList)}")
 
-    return metadataSample[0]
+    return metadataPathList[0]
