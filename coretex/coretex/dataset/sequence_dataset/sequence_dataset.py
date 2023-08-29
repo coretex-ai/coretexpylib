@@ -40,11 +40,11 @@ class SequenceDataset(BaseSequenceDataset, NetworkDataset[SequenceSample]):
         return descriptors
 
     def onDecode(self) -> None:
-        for sample in self.samples:
-            if sample.name.startswith("_metadata"):
-                self.metadata = CustomSample.decode(sample.encode())
-                continue
+        metadataSample = self.getSample("_metadata")
+        if metadataSample is None:
+            raise FileNotFoundError(">> [Coretex] _metadata sample could not be found in the dataset")
 
+        self.metadata = CustomSample.decode(metadataSample.encode())
         self.samples = [
             sample for sample in self.samples
             if sample.id != self.metadata.id
