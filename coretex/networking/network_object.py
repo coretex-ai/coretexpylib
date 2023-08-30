@@ -230,6 +230,29 @@ class NetworkObject(Codable):
         return objects
 
     @classmethod
+    def fetchOne(cls, queryParameters: Optional[List[str]] = None) -> Self:
+        """
+            Fetches one entity from Coretex backend which matches
+            the given predicate
+
+            Parameters
+            ----------
+            queryParameters : Optional[List[str]]
+                query parameters (predicate) which will be appended to URL (Not required)
+
+            Returns
+            -------
+            Self -> fetched entity
+        """
+
+        result = cls.fetchAll(queryParameters, pageSize = 1)
+        print(len(result))
+        if len(result) == 0:
+            raise ValueError(f"Failed to fetch \"{cls.__name__}\" with parameters \"{queryParameters}\"")
+
+        return result[0]
+
+    @classmethod
     def fetchById(cls, objectId: int, queryParameters: Optional[List[str]] = None) -> Self:
         """
             Fetches a single entity with the matching id

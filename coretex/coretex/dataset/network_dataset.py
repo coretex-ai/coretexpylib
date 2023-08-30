@@ -21,6 +21,8 @@ from datetime import datetime
 from pathlib import Path
 
 import os
+import hashlib
+import base64
 
 from .dataset import Dataset
 from ..sample import NetworkSample
@@ -31,6 +33,7 @@ from ...threading import MultithreadedDataProcessor
 
 
 SampleType = TypeVar("SampleType", bound = "NetworkSample")
+MAX_DATASET_NAME_LENGTH = 50
 
 
 class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
@@ -147,6 +150,25 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
             "sessions": sampleIds,
             "meta": meta
         })
+
+    @classmethod
+    def generateCachedName(cls, name: str, dependencies: List[str]) -> str:
+        if MAX_DATASET_NAME_LENGTH - len(name) < 8:
+            raise ValueError(f"Dataset name \"{name}\" is too long. Max allowed size is \"{MAX_DATASET_NAME_LENGTH}\".")
+
+        hash = hashlib.md5()
+        hash.update("-".join(sorted(dependencies)).encode())
+        suffix = base64.b64encode(hash.digest()).decode("ascii").replace("+", "0")
+
+        name = f"{name} - {suffix}"
+        if len(name) > MAX_DATASET_NAME_LENGTH:
+            name = name[:MAX_DATASET_NAME_LENGTH]
+
+        return name
+
+    @classmethod
+    def createCachedDataset(cls, name: str, spaceId: int, dependencies: List[str]) -> Optional[Self]:
+        return cls.createDataset(cls.generateCachedName(name, dependencies), spaceId)
 
     def download(self, ignoreCache: bool = False) -> None:
         """
