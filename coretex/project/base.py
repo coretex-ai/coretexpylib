@@ -17,16 +17,19 @@
 
 from typing import Final
 from typing_extensions import Self
+from datetime import datetime
 
 import sys
 import logging
 import multiprocessing
+import faulthandler
+import signal
 
+from .experiment_worker import experimentWorker
 from .. import folder_manager
 from ..coretex import Experiment
 from ..logging import LogHandler
-
-from .experiment_worker import experimentWorker
+from ..utils import DATE_FORMAT
 
 
 class ProjectCallback:
@@ -55,6 +58,16 @@ class ProjectCallback:
             raise RuntimeError(result["message"])
 
         logging.getLogger("coretexpylib").info(result["message"])
+
+        # Call "kill -30 experiment_process_id" to dump current stack trace of the experiment into the file
+        # 30 == signal.SIGUSR1
+        # Only works on *nix systems
+        faultHandlerPath = folder_manager.logs / f"experiment_stacktrace_{self._experiment.id}_{datetime.now().strftime(DATE_FORMAT)}.log"
+        faulthandler.register(
+            signal.SIGUSR1,
+            file = faultHandlerPath.open("w"),
+            all_threads = True
+        )
 
     def onSuccess(self) -> None:
         logging.getLogger("coretexpylib").info("Experiment finished successfully")
