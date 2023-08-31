@@ -17,11 +17,14 @@
 
 from typing import List
 from pathlib import Path
+from zipfile import ZipFile
 
 import logging
+import shutil
 import gzip
 
 from ...coretex import Experiment, CustomSample, CustomDataset
+from ... import folder_manager
 
 
 def createSample(name: str, datasetId: int, path: Path, experiment: Experiment, stepName: str, retryCount: int = 0) -> CustomSample:
@@ -55,7 +58,7 @@ def sampleNumber(sample: CustomSample) -> int:
 def isFastqMPSample(sample: CustomSample) -> bool:
     sample.unzip()
 
-    return (sample.path / "forward.fastq").exists() and (sample.path / "barcodes.fastq").exists()
+    return sample.joinPath("forward.fastq").exists() and sample.joinPath("barcodes.fastq").exists()
 
 
 def isFastqDPSample(sample: CustomSample) -> bool:
@@ -133,3 +136,25 @@ def getMetadata(sample: CustomSample) -> Path:
         raise RuntimeError(f">> [Coretex] Metadata sample must contain one .tsv file. Found {len(metadataPathList)}")
 
     return metadataPathList[0]
+
+
+def isPairedEnd(sample: CustomSample) -> bool:
+    # In order to determine whether we are dealing with paired-end
+    # sequences, this function unzips the qiime artifact and
+    # reads the metadata, looking for the second (type) row, which will have
+    # "PairedEnd" somewhere if it's paired-end
+
+    sampleTemp = folder_manager.createTempFolder("qzaSample")
+    qzaPath = list(sample.path.iterdir())[0]
+
+    with ZipFile(qzaPath, "r") as qzaFile:
+        qzaFile.extractall(sampleTemp)
+
+    metadataPath = list(sampleTemp.rglob("*metadata.yaml"))[0]
+
+    with metadataPath.open("r") as metadata:
+        pairedEnd = "PairedEnd" in metadata.readlines()[1]
+
+    shutil.rmtree(sampleTemp)
+
+    return pairedEnd

@@ -21,7 +21,7 @@ from pathlib import Path
 from .utils import compressGzip, createSample, getDemuxSamples, getDenoisedSamples, \
     getFastqDPSamples, getFastqMPSamples, getImportedSamples, getMetadata, getPhylogeneticTreeSamples, \
     isDemultiplexedSample, isDenoisedSample, isFastqDPSample, isFastqMPSample, \
-    isImportedSample, isPhylogeneticTreeSample, sampleNumber
+    isImportedSample, isPhylogeneticTreeSample, sampleNumber, isPairedEnd
 
 from ..utils import command
 
