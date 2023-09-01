@@ -24,8 +24,8 @@ from .logger import LogHandler, LogSeverity
 
 def initializeLogger(severity: LogSeverity, logPath: Path) -> None:
     consoleFormatter = logging.Formatter(
-        fmt = "{levelname}: {message}",
-        style = "{",
+        fmt = "%(asctime)s %(levelname)s: %(message)s",
+        style = "%",
     )
     consoleHandler = LogHandler.instance()
     consoleHandler.setLevel(severity.stdSeverity)
