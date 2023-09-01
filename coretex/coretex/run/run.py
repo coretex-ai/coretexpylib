@@ -27,9 +27,9 @@ import zipfile
 import json
 
 from .artifact import Artifact
-from .status import ExperimentStatus
+from .status import RunStatus
 from .metrics import Metric
-from .parameters import ExperimentParameter, parseParameters
+from .parameters import RunParameter, parseParameters
 from .execution_type import ExecutionType
 from ..dataset import *
 from ..space import SpaceTask
@@ -40,35 +40,35 @@ from ...networking import networkManager, NetworkObject, RequestType, NetworkReq
 
 DatasetType = TypeVar("DatasetType", bound = Dataset)
 
-class Experiment(NetworkObject, Generic[DatasetType]):
+class Run(NetworkObject, Generic[DatasetType]):
 
     """
-        Represents experiment entity from Coretex.ai
+        Represents run entity from Coretex.ai
 
         Properties
         ----------
         datasetId : int
             id of dataset
         name : str
-            name of Experiment
+            name of Run
         description : str
-            description of Experiment
+            description of Run
         meta : Dict[str, Any]
-            meta data of Experiment
-        status : ExperimentStatus
-            status of Experiment
+            meta data of Run
+        status : RunStatus
+            status of Run
         spaceId : int
             id of Coretex Space
         spaceName : str
             name of Coretex Space
         spaceTask : SpaceTask
             appropriate space task
-        projectId : int
-            id of project
-        projectName : str
-            name of project
+        jobId : int
+            id of job
+        jobName : str
+            name of job
         createdById : str
-            id of created experiment
+            id of created run
         useCachedEnv : bool
             if True chached env will be used, otherwise new environment will be created
     """
@@ -76,18 +76,18 @@ class Experiment(NetworkObject, Generic[DatasetType]):
     name: str
     description: str
     meta: Dict[str, Any]
-    status: ExperimentStatus
+    status: RunStatus
     spaceId: int
     spaceName: str
     spaceTask: SpaceTask
-    projectId: int
-    projectName: str
+    jobId: int
+    jobName: str
     createdById: str
     useCachedEnv: bool
     metrics: List[Metric]
 
     def __init__(self) -> None:
-        super(Experiment, self).__init__()
+        super(Run, self).__init__()
 
         self.metrics = []
         self.__parameters: Dict[str, Any] = {}
@@ -97,17 +97,17 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         """
             Returns
             -------
-            Dict[str, Any] -> Parameters for Experiment
+            Dict[str, Any] -> Parameters for Run
         """
 
         return self.__parameters
 
     @property
-    def projectPath(self) -> Path:
+    def jobPath(self) -> Path:
         """
             Returns
             -------
-            Path -> Path for Experiment
+            Path -> Path for Run
         """
 
         return folder_manager.temp / str(self.id)
@@ -115,11 +115,11 @@ class Experiment(NetworkObject, Generic[DatasetType]):
     @property
     def dataset(self) -> DatasetType:
         """
-            Value of the parameter with name "dataset" assigned to this experiment
+            Value of the parameter with name "dataset" assigned to this run
 
             Returns
             -------
-            Dataset object if there was a parameter with name "dataset" entered when the experiment was started
+            Dataset object if there was a parameter with name "dataset" entered when the run was started
 
             Raises
             ------
@@ -128,7 +128,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
 
         dataset = self.parameters.get("dataset")
         if dataset is None:
-            raise ValueError(f">> [Coretex] Experiment \"{self.id}\" does not have a parameter named \"dataset\"")
+            raise ValueError(f">> [Coretex] Run \"{self.id}\" does not have a parameter named \"dataset\"")
 
         return dataset  # type: ignore
 
@@ -136,7 +136,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
         descriptors = super()._keyDescriptors()
 
-        descriptors["status"] = KeyDescriptor("status", ExperimentStatus)
+        descriptors["status"] = KeyDescriptor("status", RunStatus)
         descriptors["spaceId"] = KeyDescriptor("project_id")
         descriptors["spaceName"] = KeyDescriptor("project_name")
         descriptors["spaceTask"] = KeyDescriptor("project_task", SpaceTask)
@@ -161,37 +161,37 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         if not isinstance(self.meta["parameters"], list):
             raise ValueError(">> [Coretex] Invalid parameters")
 
-        parameters = [ExperimentParameter.decode(value) for value in self.meta["parameters"]]
+        parameters = [RunParameter.decode(value) for value in self.meta["parameters"]]
         self.__parameters = parseParameters(parameters, self.spaceTask)
 
     def updateStatus(
         self,
-        status: Optional[ExperimentStatus] = None,
+        status: Optional[RunStatus] = None,
         message: Optional[str] = None,
         notifyServer: bool = True
     ) -> bool:
 
         """
-            Updates Experiment status, if message parameter is None
+            Updates Run status, if message parameter is None
             default message value will be used\n
-            Some Experiment statuses do not have default message
+            Some Run statuses do not have default message
 
             Parameters
             ----------
-            status : Optional[ExperimentStatus]
-                Status to which the experiment will be updated to
+            status : Optional[RunStatus]
+                Status to which the run will be updated to
             message : Optional[str]
-                Descriptive message for experiment status, it is diplayed
+                Descriptive message for run status, it is diplayed
                 when the status is hovered on the Coretex Web App
             notifyServer : bool
                 if True update request will be sent to Coretex.ai
 
             Example
             -------
-            >>> from coretex import ExecutingExperiment, ExperimentStatus
+            >>> from coretex import ExecutingRun, RunStatus
             \b
-            >>> ExecutingExperiment.current().updateStatus(
-                    ExperimentStatus.completedWithSuccess
+            >>> ExecutingRun.current().updateStatus(
+                    RunStatus.completedWithSuccess
                 )
             True
         """
@@ -218,7 +218,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
             response = networkManager.genericJSONRequest(endpoint, RequestType.post, parameters)
 
             if response.hasFailed():
-                logging.getLogger("coretexpylib").error(">> [Coretex] Error while updating experiment status")
+                logging.getLogger("coretexpylib").error(">> [Coretex] Error while updating run status")
 
             return not response.hasFailed()
 
@@ -226,7 +226,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
 
     def createMetrics(self, metrics: List[Metric]) -> None:
         """
-            Creates specified metrics for the experiment
+            Creates specified metrics for the run
 
             Parameters
             ----------
@@ -244,9 +244,9 @@ class Experiment(NetworkObject, Generic[DatasetType]):
 
             Example
             -------
-            >>> from coretex import ExecutingExperiment, MetricType
+            >>> from coretex import ExecutingRun, MetricType
             \b
-            >>> metrics = ExecutingExperiment.current().createMetrics([
+            >>> metrics = ExecutingRun.current().createMetrics([
                     Metric.create("loss", "epoch", MetricType.int, "value", MetricType.float, None, [0, 100]),
                     Metric.create("accuracy", "epoch", MetricType.int, "value", MetricType.float, None, [0, 100])
                 ])
@@ -282,9 +282,9 @@ class Experiment(NetworkObject, Generic[DatasetType]):
 
             Example
             -------
-            >>> from coretex import ExecutingExperiment
+            >>> from coretex import ExecutingRun
             \b
-            >>> result = ExecutingExperiment.current().submitMetrics({
+            >>> result = ExecutingRun.current().submitMetrics({
                     "loss": (epoch, logs["loss"]),
                     "accuracy": (epoch, logs["accuracy"]),
                 })
@@ -312,16 +312,16 @@ class Experiment(NetworkObject, Generic[DatasetType]):
 
         return not response.hasFailed()
 
-    def downloadProject(self) -> bool:
+    def downloadJob(self) -> bool:
         """
-            Downloads project snapshot linked to the experiment
+            Downloads job snapshot linked to the run
 
             Returns
             -------
-            bool -> True if project downloaded successfully, False if project download has failed
+            bool -> True if job downloaded successfully, False if job download has failed
         """
 
-        zipFilePath = f"{self.projectPath}.zip"
+        zipFilePath = f"{self.jobPath}.zip"
 
         response = networkManager.genericDownload(
             endpoint=f"workspace/download?model_queue_id={self.id}",
@@ -329,13 +329,13 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         )
 
         with ZipFile(zipFilePath) as zipFile:
-            zipFile.extractall(self.projectPath)
+            zipFile.extractall(self.jobPath)
 
         # remove zip file after extract
         os.unlink(zipFilePath)
 
         if response.hasFailed():
-            logging.getLogger("coretexpylib").info(">> [Coretex] Project download has failed")
+            logging.getLogger("coretexpylib").info(">> [Coretex] Job download has failed")
 
         return not response.hasFailed()
 
@@ -347,7 +347,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
     ) -> Optional[Artifact]:
 
         """
-            Creates Artifact for the current Experiment on Coretex.ai
+            Creates Artifact for the current run on Coretex.ai
 
             Parameters
             ----------
@@ -399,7 +399,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
     @classmethod
     def run(
         cls,
-        projectId: int,
+        jobId: int,
         nodeId: Union[int, str],
         name: Optional[str],
         description: Optional[str] = None,
@@ -407,25 +407,25 @@ class Experiment(NetworkObject, Generic[DatasetType]):
     ) -> Self:
 
         """
-            Schedules an Experiment for execution on the specified
+            Schedules an run for execution on the specified
             Node on Coretex.ai
 
             Parameters
             ----------
-            projectId : int
-                id of project that is being used for starting Experiment
+            jobId : int
+                id of job that is being used for starting run
             nodeId : Union[int, str]
-                id of node that is being used for starting Experiment
+                id of node that is being used for starting run
             name : Optional[str]
-                name of Experiment (not required)
+                name of run (not required)
             description : Optional[str]
-                Experiment description (not required)
+                run description (not required)
             parameters : Optional[List[Dict[str, Any]]]
                 list of parameters (not required)
 
             Returns
             -------
-            Self -> Experiment object
+            Self -> Run object
 
             Raises
             ------
@@ -433,7 +433,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
 
             Example
             -------
-            >>> from coretex import Experiment
+            >>> from coretex import Run
             >>> from coretex.networking import NetworkRequestError
             \b
             >>> parameters = [
@@ -447,17 +447,17 @@ class Experiment(NetworkObject, Generic[DatasetType]):
                 ]
             \b
             >>> try:
-                    experiment = Experiment.run(
-                        projectId = 1023,
+                    run = Run.run(
+                        jobId = 1023,
                         nodeId = 23,
-                        name = "Dummy Custom Experiment
+                        name = "Dummy Custom Run
                         description = "Dummy description",
                         parameters = parameters
                     )
 
-                    print(f"Created experiment with name: {experiment.name}")
+                    print(f"Created run with name: {run.name}")
             >>> except NetworkRequestError:
-                    print("Failed to create experiment")
+                    print("Failed to create run")
         """
 
         if isinstance(nodeId, int):
@@ -467,7 +467,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
             parameters = []
 
         response = networkManager.genericJSONRequest("run", RequestType.post, {
-            "sub_project_id": projectId,
+            "sub_project_id": jobId,
             "service_id": nodeId,
             "name": name,
             "description": description,
@@ -476,7 +476,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         })
 
         if response.hasFailed():
-            raise NetworkRequestError(response, "Failed to create experiment")
+            raise NetworkRequestError(response, "Failed to create run")
 
         return cls.fetchById(response.json["experiment_ids"][0])
 
@@ -490,24 +490,24 @@ class Experiment(NetworkObject, Generic[DatasetType]):
     ) -> Self:
 
         """
-            Creates Experiment on Coretex.ai with the provided parameters,
+            Creates run on Coretex.ai with the provided parameters,
             which will be run on the same machine which created it immidiately
             after running the entry point file of the Job
 
             Parameters
             ----------
             spaceId : int
-                id of space that is being used for starting Experiment
+                id of space that is being used for starting run
             name : Optional[str]
-                name of Experiment (not required)
+                name of run (not required)
             description : Optional[str]
-                Experiment description (not required)
+                run description (not required)
             parameters : Optional[List[Dict[str, Any]]]
                 list of parameters (not required)
 
             Returns
             -------
-            Self -> Experiment object
+            Self -> Run object
 
             Raises
             ------
@@ -550,6 +550,6 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         })
 
         if response.hasFailed():
-            raise NetworkRequestError(response, "Failed to create experiment")
+            raise NetworkRequestError(response, "Failed to create run")
 
         return cls.fetchById(response.json["experiment_ids"][0])

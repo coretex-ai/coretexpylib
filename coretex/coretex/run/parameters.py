@@ -23,7 +23,7 @@ from ..space import SpaceTask
 from ...codable import Codable
 
 
-class ExperimentParameterType(IntEnum):
+class RunParameterType(IntEnum):
 
     integer       = 1
     floatingPoint = 2
@@ -38,8 +38,8 @@ class ExperimentParameterType(IntEnum):
     enumList      = 11
 
     @staticmethod
-    def fromStringValue(stringValue: str) -> 'ExperimentParameterType':
-        for value in ExperimentParameterType:
+    def fromStringValue(stringValue: str) -> 'RunParameterType':
+        for value in RunParameterType:
             if value.stringValue == stringValue:
                 return value
 
@@ -47,68 +47,68 @@ class ExperimentParameterType(IntEnum):
 
     @property
     def stringValue(self) -> str:
-        if self == ExperimentParameterType.integer:
+        if self == RunParameterType.integer:
             return "int"
 
-        if self == ExperimentParameterType.floatingPoint:
+        if self == RunParameterType.floatingPoint:
             return "float"
 
-        if self == ExperimentParameterType.string:
+        if self == RunParameterType.string:
             return "str"
 
-        if self == ExperimentParameterType.boolean:
+        if self == RunParameterType.boolean:
             return "bool"
 
-        if self == ExperimentParameterType.dataset:
+        if self == RunParameterType.dataset:
             return "dataset"
 
-        if self == ExperimentParameterType.intList:
+        if self == RunParameterType.intList:
             return "list[int]"
 
-        if self == ExperimentParameterType.floatList:
+        if self == RunParameterType.floatList:
             return "list[float]"
 
-        if self == ExperimentParameterType.strList:
+        if self == RunParameterType.strList:
             return "list[str]"
 
-        if self == ExperimentParameterType.imuVectors:
+        if self == RunParameterType.imuVectors:
             return "IMUVectors"
 
-        if self == ExperimentParameterType.enum:
+        if self == RunParameterType.enum:
             return "enum"
 
-        if self == ExperimentParameterType.enumList:
+        if self == RunParameterType.enumList:
             return "list[enum]"
 
         raise ValueError(f">> [Coretex] Unsupported type: {self}")
 
     @property
     def types(self) -> List[Type]:
-        if self == ExperimentParameterType.integer:
+        if self == RunParameterType.integer:
             return [int]
 
-        if self == ExperimentParameterType.floatingPoint:
+        if self == RunParameterType.floatingPoint:
             return [float, int]
 
-        if self == ExperimentParameterType.string:
+        if self == RunParameterType.string:
             return [str]
 
-        if self == ExperimentParameterType.boolean:
+        if self == RunParameterType.boolean:
             return [bool]
 
-        if self == ExperimentParameterType.dataset:
+        if self == RunParameterType.dataset:
             # parameters of type dataset have dataset ID as value
             # str is allowed to allow passing local paths to dataset
             return [int, str]
 
-        if self == ExperimentParameterType.imuVectors:
+        if self == RunParameterType.imuVectors:
             # parameters of type IMUVectors have dictionary as value
             return [dict]
 
-        if self == ExperimentParameterType.enum:
+        if self == RunParameterType.enum:
             return [dict]
 
-        if self == ExperimentParameterType.enumList:
+        if self == RunParameterType.enumList:
             return [dict]
 
         raise ValueError(f">> [Coretex] Unsupported type: {self}")
@@ -116,10 +116,10 @@ class ExperimentParameterType(IntEnum):
     @property
     def isList(self) -> bool:
         return self in [
-            ExperimentParameterType.intList,
-            ExperimentParameterType.floatList,
-            ExperimentParameterType.strList,
-            ExperimentParameterType.enumList
+            RunParameterType.intList,
+            RunParameterType.floatList,
+            RunParameterType.strList,
+            RunParameterType.enumList
         ]
 
     @property
@@ -127,13 +127,13 @@ class ExperimentParameterType(IntEnum):
         if not self.isList:
             raise ValueError(">> [Coretex] Type is not a list")
 
-        if self == ExperimentParameterType.intList:
+        if self == RunParameterType.intList:
             return int
 
-        if self == ExperimentParameterType.floatList:
+        if self == RunParameterType.floatList:
             return float
 
-        if self == ExperimentParameterType.strList:
+        if self == RunParameterType.strList:
             return str
 
         raise ValueError(f">> [Coretex] Unsupported type: {self}")
@@ -145,14 +145,14 @@ class ParameterError(Exception):
         super().__init__(f">> [Coretex] {message}")
 
     @staticmethod
-    def type(parameter: 'ExperimentParameter') -> 'ParameterError':
+    def type(parameter: 'RunParameter') -> 'ParameterError':
         expected = parameter.dataType.stringValue
         received = parameter.generateTypeDescription()
 
         return ParameterError(f"Parameter \"{parameter.name}\" has invalid type. Expected \"{expected}\", got \"{received}\"")
 
 
-def _validateGeneric(parameter: 'ExperimentParameter') -> None:
+def _validateGeneric(parameter: 'RunParameter') -> None:
     if parameter.required and parameter.value is None:
         raise ParameterError.type(parameter)
 
@@ -169,14 +169,14 @@ def _validateGeneric(parameter: 'ExperimentParameter') -> None:
         # Dataset parameter is an integer under the hood, and in python bool is a subclass
         # of integer. To avoid assinging boolean values to dataset parameters we have to explicitly
         # check if the value which was passed in for dataset is a bool.
-        if parameter.dataType == ExperimentParameterType.dataset and isinstance(parameter.value, bool):
+        if parameter.dataType == RunParameterType.dataset and isinstance(parameter.value, bool):
             raise ParameterError.type(parameter)
 
         if not any(isinstance(parameter.value, dataType) for dataType in parameter.dataType.types):
             raise ParameterError.type(parameter)
 
 
-def _validateEnumValue(parameter: 'ExperimentParameter') -> None:
+def _validateEnumValue(parameter: 'RunParameter') -> None:
     value = parameter.value
 
     # Enum parameter must be a dict
@@ -230,17 +230,17 @@ def _validateEnumValue(parameter: 'ExperimentParameter') -> None:
             raise ParameterError(f"Enum parameter \"{parameter.name}.selected\" has out of range value")
 
 
-class ExperimentParameter(Codable):
+class RunParameter(Codable):
 
     name: str
     description: str
     value: Any
-    dataType: ExperimentParameterType
+    dataType: RunParameterType
     required: bool
 
     def _encodeValue(self, key: str, value: Any) -> Any:
         if key == "dataType":
-            if not isinstance(value, ExperimentParameterType):
+            if not isinstance(value, RunParameterType):
                 raise RuntimeError(f">> [Coretex] Unexpected error encoding parameter \"{key}\" with value \"{value}\"")
 
             return value.stringValue
@@ -250,7 +250,7 @@ class ExperimentParameter(Codable):
     @classmethod
     def _decodeValue(cls, key: str, value: Any) -> Any:
         if key == "data_type":
-            return ExperimentParameterType.fromStringValue(value)
+            return RunParameterType.fromStringValue(value)
 
         return super()._decodeValue(key, value)
 
@@ -260,7 +260,7 @@ class ExperimentParameter(Codable):
         self.__validate()
 
     def __validate(self) -> None:
-        if self.dataType == ExperimentParameterType.enum or self.dataType == ExperimentParameterType.enumList:
+        if self.dataType == RunParameterType.enum or self.dataType == RunParameterType.enumList:
             _validateEnumValue(self)
         else:
             _validateGeneric(self)
@@ -273,13 +273,13 @@ class ExperimentParameter(Codable):
         return f"list[{elementTypes}]"
 
 
-def parseParameters(parameters: List[ExperimentParameter], task: SpaceTask) -> Dict[str, Any]:
+def parseParameters(parameters: List[RunParameter], task: SpaceTask) -> Dict[str, Any]:
     values: Dict[str, Any] = {}
 
     for parameter in parameters:
-        if parameter.dataType == ExperimentParameterType.floatingPoint and isinstance(parameter.value, int):
+        if parameter.dataType == RunParameterType.floatingPoint and isinstance(parameter.value, int):
             values[parameter.name] = float(parameter.value)
-        elif parameter.dataType == ExperimentParameterType.dataset:
+        elif parameter.dataType == RunParameterType.dataset:
             if parameter.value is None:
                 values[parameter.name] = None
             else:
@@ -291,7 +291,7 @@ def parseParameters(parameters: List[ExperimentParameter], task: SpaceTask) -> D
                     raise ValueError(f">> [Coretex] Failed to fetch dataset with ID: {parameter.value}")
 
                 values[parameter.name] = dataset
-        elif parameter.dataType == ExperimentParameterType.enum:
+        elif parameter.dataType == RunParameterType.enum:
             values[parameter.name] = parameter.value["options"][parameter.value["selected"]]
         else:
             values[parameter.name] = parameter.value

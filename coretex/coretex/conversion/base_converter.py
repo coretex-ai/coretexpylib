@@ -42,7 +42,7 @@ class ConverterProcessorType(Enum):
     labelMe = 4
     pascalSeg = 5
 
-    # TODO: Migrate to Human Segmentation project template repo, or try to make it generic
+    # TODO: Migrate to Human Segmentation job template repo, or try to make it generic
     humanSegmentation = 6
 
     cityScape = 7

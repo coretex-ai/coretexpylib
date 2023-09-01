@@ -47,16 +47,16 @@ class Model(NetworkObject):
             dataset id that is used for training the model
         spaceId : int
             space id that is used for training the model
-        projectId : int
-            project id that is used for training the model
+        jobId : int
+            job id that is used for training the model
         isTrained : bool
             True if model is trained, False otherwise
         isDeleted : bool
             True if model is deleted, False otherwise
         accuracy : float
             model accuracy
-        experimentId : int
-            experiment id of trained model
+        runId : int
+            run id of trained model
         meta : Dict[str, Any]
             model meta data
     """
@@ -66,11 +66,11 @@ class Model(NetworkObject):
     createdOn: datetime
     datasetId: int
     spaceId: int
-    projectId: int
+    jobId: int
     isTrained: bool
     isDeleted: bool
     accuracy: float
-    experimentId: int
+    runId: int
     meta: Dict[str, Any]
 
     @property
@@ -95,16 +95,16 @@ class Model(NetworkObject):
         return descriptors
 
     @classmethod
-    def createModel(cls, name: str, experimentId: int, accuracy: float, meta: Dict[str, Any]) -> Self:
+    def createModel(cls, name: str, runId: int, accuracy: float, meta: Dict[str, Any]) -> Self:
         """
-            Creates Model object of the provided experiment with specified properties
+            Creates Model object of the provided run with specified properties
 
             Parameters
             ----------
             name : str
                 model name
-            experimentId : int
-                experiment id of model
+            runId : int
+                run id of model
             accuracy : float
                 model accuracy
             meta : Dict[str, Any]
@@ -116,12 +116,12 @@ class Model(NetworkObject):
 
             Example
             -------
-            >>> from coretex import Model, ExecutingExperiment
+            >>> from coretex import Model, ExecutingRun
             \b
-            >>> experiment = ExecutingExperiment.current()
+            >>> run = ExecutingRun.current()
             >>> model = Model.createModel(
-                    name = experiment.name,
-                    experimentId = experiment.id,
+                    name = run.name,
+                    runId = run.id,
                     accuracy = 0.87,
                     meta = {}
                 )
@@ -129,7 +129,7 @@ class Model(NetworkObject):
 
         model = cls.create(parameters = {
             "name": name,
-            "model_queue_id": experimentId,
+            "model_queue_id": runId,
             "accuracy": accuracy,
             "meta": meta
         })
@@ -155,13 +155,13 @@ class Model(NetworkObject):
 
             Example
             -------
-            >>> from coretex import ExecutingExperiment, Model
-            >>> model = Model.createModel(experiment.name, experiment.id, accuracy, {})
+            >>> from coretex import ExecutingRun, Model
+            >>> model = Model.createModel(run.name, run.id, accuracy, {})
             >>> model.saveModelDescriptor(modelPath, {
-                    "project_task": experiment.spaceTask,
+                    "project_task": run.spaceTask,
                     "labels": labels,
                     "modelName": model.name,
-                    "description": experiment.description,
+                    "description": run.description,
 
                     "input_description":
                         Input shape is [x, y]
@@ -225,12 +225,12 @@ class Model(NetworkObject):
 
             Example
             -------
-            >>> from coretex import Model, ExecutingExperiment
+            >>> from coretex import Model, ExecutingRun
             \b
-            >>> experiment: ExecutingExperiment[NetworkDataset] = ExecutingExperiment.current()
+            >>> run: ExecutingRun[NetworkDataset] = ExecutingRun.current()
             >>> model = Model.createModel(
-                name = experiment.name,
-                experimentId = experiment.id,
+                name = run.name,
+                runId = run.id,
                 accuracy = 0.87,
                 meta = {}
             )

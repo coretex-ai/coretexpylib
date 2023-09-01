@@ -26,13 +26,13 @@ from tap import Tap
 
 import psutil
 
-from .base import ProjectCallback
+from .base import JobCallback
 from .. import folder_manager
-from ..coretex import Experiment, ExperimentStatus, ExperimentParameter
+from ..coretex import Run, RunStatus, RunParameter
 from ..networking import networkManager
 
 
-class LocalProjectCallback(ProjectCallback):
+class LocalJobCallback(JobCallback):
 
     def onStart(self) -> None:
         super().onStart()
@@ -42,17 +42,17 @@ class LocalProjectCallback(ProjectCallback):
     def onSuccess(self) -> None:
         super().onSuccess()
 
-        self._experiment.updateStatus(ExperimentStatus.completedWithSuccess)
+        self._run.updateStatus(RunStatus.completedWithSuccess)
 
     def onKeyboardInterrupt(self) -> None:
         super().onKeyboardInterrupt()
 
-        logging.getLogger("coretexpylib").info(">> [Coretex] Stopping the experiment")
+        logging.getLogger("coretexpylib").info(">> [Coretex] Stopping the run")
 
-        self._experiment.updateStatus(ExperimentStatus.stopping)
+        self._run.updateStatus(RunStatus.stopping)
 
-        experimentProcess = psutil.Process(os.getpid())
-        children = experimentProcess.children(recursive = True)
+        runProcess = psutil.Process(os.getpid())
+        children = runProcess.children(recursive = True)
 
         logging.getLogger("coretexpylib").debug(f">> [Coretex] Number of child processes: {len(children)}")
 
@@ -62,12 +62,12 @@ class LocalProjectCallback(ProjectCallback):
         for process in children:
             process.wait()
 
-        self._experiment.updateStatus(ExperimentStatus.stopped)
+        self._run.updateStatus(RunStatus.stopped)
 
     def onException(self, exception: BaseException) -> None:
         super().onException(exception)
 
-        self._experiment.updateStatus(ExperimentStatus.completedWithError)
+        self._run.updateStatus(RunStatus.completedWithError)
 
 
 class LocalArgumentParser(Tap):
@@ -88,8 +88,8 @@ class LocalArgumentParser(Tap):
         self.add_argument("--description", nargs = "?", type = str, default = None)
 
 
-def _readExperimentConfig() -> List['ExperimentParameter']:
-    parameters: List[ExperimentParameter] = []
+def _readExperimentConfig() -> List['RunParameter']:
+    parameters: List[RunParameter] = []
 
     with open("./experiment.config", "rb") as configFile:
         configContent: Dict[str, Any] = json.load(configFile)
@@ -99,13 +99,13 @@ def _readExperimentConfig() -> List['ExperimentParameter']:
             raise ValueError(">> [Coretex] Invalid experiment.config file. Property 'parameters' must be an array")
 
         for parameterJson in parametersJson:
-            parameter = ExperimentParameter.decode(parameterJson)
+            parameter = RunParameter.decode(parameterJson)
             parameters.append(parameter)
 
     return parameters
 
 
-def processLocal(args: Optional[List[str]] = None) -> Tuple[int, ProjectCallback]:
+def processLocal(args: Optional[List[str]] = None) -> Tuple[int, JobCallback]:
     parser, unknown = LocalArgumentParser().parse_known_args(args)
 
     if parser.username is not None and parser.password is not None:
@@ -128,14 +128,14 @@ def processLocal(args: Optional[List[str]] = None) -> Tuple[int, ProjectCallback
     if not os.path.exists("experiment.config"):
         raise FileNotFoundError(">> [Coretex] \"experiment.config\" file not found")
 
-    experiment: Experiment = Experiment.runLocal(
+    run: Run = Run.runLocal(
         parser.spaceId,
         parser.name,
         parser.description,
         [parameter.encode() for parameter in _readExperimentConfig()]
     )
 
-    logging.getLogger("coretexpylib").info(f">> [Coretex] Created local experiment with ID \"{experiment.id}\"")
-    experiment.updateStatus(ExperimentStatus.preparingToStart)
+    logging.getLogger("coretexpylib").info(f">> [Coretex] Created local run with ID \"{run.id}\"")
+    run.updateStatus(RunStatus.preparingToStart)
 
-    return experiment.id, LocalProjectCallback(experiment, response.json["refresh_token"])
+    return run.id, LocalJobCallback(run, response.json["refresh_token"])

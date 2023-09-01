@@ -20,15 +20,15 @@ from typing_extensions import Self
 
 import logging
 
-from .experiment import Experiment
+from .run import Run
 from ..space import SpaceTask
 from ..dataset import *
 
 
-class ExperimentBuilder:
+class RunBuilder:
 
-    def __init__(self, experimentId: int) -> None:
-        self.experimentId: Final = experimentId
+    def __init__(self, runId: int) -> None:
+        self.runId: Final = runId
 
         self.__datasetType: Optional[Type[Dataset]] = None
 
@@ -36,15 +36,15 @@ class ExperimentBuilder:
         self.__datasetType = datasetType
         return self
 
-    def build(self) -> Experiment:
-        experiment: Experiment = Experiment.fetchById(self.experimentId)
+    def build(self) -> Run:
+        run: Run = Run.fetchById(self.runId)
 
         if self.__datasetType is not None:
-            for key, value in experiment.parameters.items():
+            for key, value in run.parameters.items():
                 if isinstance(value, LocalDataset) and issubclass(self.__datasetType, LocalDataset):
-                    experiment.parameters[key] = self.__datasetType(value.path)  # type: ignore
+                    run.parameters[key] = self.__datasetType(value.path)  # type: ignore
 
                 if isinstance(value, NetworkDataset) and issubclass(self.__datasetType, NetworkDataset):
-                    experiment.parameters[key] = self.__datasetType.fetchById(value.id)
+                    run.parameters[key] = self.__datasetType.fetchById(value.id)
 
-        return experiment
+        return run

@@ -35,14 +35,14 @@ from .utils import file as file_utils
         folder where models are stored
     temp : str
         folder where temp files and folders are stored,
-        this is deleted when the experiment has finished executing
+        this is deleted when the run has finished executing
 
     datasetsFolder : Path
         folder where datasets are stored (samples are symlinked for datasets)
     cache : Path
         folder where cache module stores items
     logs : Path
-        folder where node and experiment logs are stored
+        folder where node and run logs are stored
     environments : Path
         folder where node stores python environments
 """
@@ -72,7 +72,7 @@ _artifactsFolder = _createFolder("artifacts")
 def createTempFolder(name: str) -> Path:
     """
         Creates temp folder which is deleted once
-        the experiment has finished executing
+        the run has finished executing
 
         Parameters
         ----------
@@ -105,19 +105,19 @@ def createTempFolder(name: str) -> Path:
     return tempFolderPath
 
 
-def getArtifactsFolder(experimentId: int) -> Path:
+def getArtifactsFolder(runId: int) -> Path:
     """
         Retrieves the path to where the artifacts are stored
-        for the specified experiment
+        for the specified run
 
         Parameters
         ----------
-        experimentId : int
-            id of the experiment
+        runId : int
+            id of the run
 
         Returns
         -------
-        Path -> path to the experiment artifacts local storage
+        Path -> path to the run artifacts local storage
 
         Example
         -------
@@ -129,7 +129,7 @@ def getArtifactsFolder(experimentId: int) -> Path:
 
     """
 
-    return _artifactsFolder / str(experimentId)
+    return _artifactsFolder / str(runId)
 
 
 def _clearDirectory(path: Path) -> None:

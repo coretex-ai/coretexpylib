@@ -88,7 +88,7 @@
 
 #     for key, value in meta.items():
 #         if cachedDataset.meta.get(key) != value:
-#             raise ValueError(">> [Coretex] Dataset.meta field does not match parameters of experiment")
+#             raise ValueError(">> [Coretex] Dataset.meta field does not match parameters of run")
 
 #     cachedDataset.download()
 

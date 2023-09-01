@@ -30,7 +30,7 @@ from .log_severity import LogSeverity
 from ..networking import networkManager, RequestType, RequestFailedError
 
 
-# Logs from library that is being used for making api requests is causing project to freeze because
+# Logs from library that is being used for making api requests is causing jobs to freeze because
 # logs inside requests library are going to be called while api request for log in coretexpylib is not finished
 # so request will never be done and it will enter infinite loop
 IGNORED_LOGGERS = [
@@ -67,8 +67,8 @@ class _LoggerUploadWorker(Thread):
 
             customLogHandler = LogHandler.instance()
 
-            # Check if logger is attached to a experiment
-            if customLogHandler.currentExperimentId is None:
+            # Check if logger is attached to a run
+            if customLogHandler.currentRunId is None:
                 continue
 
             try:
@@ -118,7 +118,7 @@ class LogHandler(StreamHandler):
 
         self.__uploadWorker = _LoggerUploadWorker()
 
-        self.currentExperimentId: Optional[int] = None
+        self.currentRunId: Optional[int] = None
         self.severity = LogSeverity.info
 
         self.__uploadWorker.start()
@@ -158,7 +158,7 @@ class LogHandler(StreamHandler):
             if len(self.__pendingLogs) == 0:
                 return True
 
-            if self.currentExperimentId is None:
+            if self.currentRunId is None:
                 self.__pendingLogs.clear()
                 return True
 
@@ -166,7 +166,7 @@ class LogHandler(StreamHandler):
                 endpoint = "model-queue/add-console-log",
                 requestType = RequestType.post,
                 parameters = {
-                    "model_queue_id": self.currentExperimentId,
+                    "model_queue_id": self.currentRunId,
                     "logs": [log.encode() for log in self.__pendingLogs]
                 }
             )
@@ -184,6 +184,6 @@ class LogHandler(StreamHandler):
             Resets the upload worker thread
         """
 
-        self.currentExperimentId = None
+        self.currentRunId = None
         self.__pendingLogs.clear()
         self.__uploadWorker.reset()

@@ -19,5 +19,5 @@ from .annotation import *
 from .sample import *
 from .dataset import *
 from .model import *
-from .experiment import *
+from .run import *
 from .space import *

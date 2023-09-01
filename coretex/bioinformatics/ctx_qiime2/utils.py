@@ -21,19 +21,19 @@ from pathlib import Path
 import logging
 import gzip
 
-from ...coretex import Experiment, CustomSample, CustomDataset
+from ...coretex import Run, CustomSample, CustomDataset
 
 
-def createSample(name: str, datasetId: int, path: Path, experiment: Experiment, stepName: str, retryCount: int = 0) -> CustomSample:
+def createSample(name: str, datasetId: int, path: Path, run: Run, stepName: str, retryCount: int = 0) -> CustomSample:
     sample = CustomSample.createCustomSample(name, datasetId, str(path))
     if sample is None:
         if retryCount < 3:
             logging.info(f">> [Coretex] Retry count: {retryCount}")
-            return createSample(name, datasetId, path, experiment, stepName, retryCount + 1)
+            return createSample(name, datasetId, path, run, stepName, retryCount + 1)
 
         raise ValueError(">> [Coretex] Failed to create sample")
 
-    experiment.createQiimeArtifact(f"{stepName}/{name}", path)
+    run.createQiimeArtifact(f"{stepName}/{name}", path)
 
     return sample
 

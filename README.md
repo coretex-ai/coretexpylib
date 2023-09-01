@@ -31,17 +31,17 @@ $ pip install coretex
 **Step 3:** Migrate your project to coretex:
 
 ```python
-from coretex import CustomDataset, ExecutingExperiment
-from coretex.project import initializeProject
+from coretex import CustomDataset, ExecutingRun
+from coretex.job import initializeJob
 
 
-def main(experiment: ExecutingExperiment[CustomDataset]):
-    # Remove "pass" and start project execution from here
+def main(run: ExecutingRun[CustomDataset]):
+    # Remove "pass" and start job execution from here
     pass
 
 
 if __name__ == "__main__":
-    initializeProject(main)
+    initializeJob(main)
 ```
 
 Read the documentation and learn how you can migrate your project to the Coretex platform -> [Migrate your project to Coretex](https://app.gitbook.com/o/6QxmEiF5ygi67vFH3kV1/s/YoN0XCeop3vrJ0hyRKxx/getting-started/demo-experiments/migrate-your-project-to-coretex)
@@ -50,7 +50,7 @@ Read the documentation and learn how you can migrate your project to the Coretex
 
 Coretex.ai offers a range of features to support users in their AI experimentation, including:
 
-* **Project Templates:** Battle-tested templates that make training ML models and processing data simple,
+* **Job Templates:** Battle-tested templates that make training ML models and processing data simple,
 
 * **Machine Learning Model Creation:** Quick and easy creation of machine learning models, with less friction and more stability,
 
@@ -60,17 +60,17 @@ Coretex.ai offers a range of features to support users in their AI experimentati
 
 * **Dataset Management and Annotation Tools:** Powerful tools for managing and annotating datasets,
 
-* **Experiment Orchestration and Result Analysis:** Detailed management of experiments, ensuring reproducibility and easy comparison of results,
+* **Run Orchestration and Result Analysis:** Detailed management of runs, ensuring reproducibility and easy comparison of results,
 
 * **IT Infrastructure Setup:** Easy setup of IT infrastructure, whether connecting self-managed computers or using paid, dynamically scalable cloud computers,
 
-* **Live Metrics Tracking:** Real-time tracking of experiment metrics during execution,
+* **Live Metrics Tracking:** Real-time tracking of run metrics during execution,
 
-* **Artifact Upload and Management:** Easy upload and management of experiment artifacts, including models and results.
+* **Artifact Upload and Management:** Easy upload and management of run artifacts, including models and results.
 
 ## Guaranteeing Reproducibility
 
-One of the key benefits of Coretex.ai is its ability to guarantee reproducibility. The platform keeps track of all experiment configurations and parameters between runs, ensuring that users never lose track of their work.
+One of the key benefits of Coretex.ai is its ability to guarantee reproducibility. The platform keeps track of all run configurations and parameters between runs, ensuring that users never lose track of their work.
 
 ## Supported Use Cases
 

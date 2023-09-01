@@ -16,8 +16,8 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from .artifact import Artifact
-from .experiment import Experiment
-from .status import ExperimentStatus
-from .experiment_builder import ExperimentBuilder
+from .run import Run
+from .status import RunStatus
+from .run_builder import RunBuilder
 from .metrics import Metric, MetricType
-from .parameters import ExperimentParameter, ExperimentParameterType
+from .parameters import RunParameter, RunParameterType

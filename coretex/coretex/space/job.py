@@ -22,15 +22,15 @@ from .base import BaseObject
 from ...codable import KeyDescriptor
 
 
-class Project(BaseObject):
+class Job(BaseObject):
 
     """
-        Represents the project entity from Coretex.ai\n
-        Contains properties that describe the project
+        Represents the job entity from Coretex.ai\n
+        Contains properties that describe the job
     """
 
     isDefault: bool
-    projectId: int
+    jobId: int
 
     @classmethod
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
@@ -40,35 +40,35 @@ class Project(BaseObject):
         return descriptors
 
     @classmethod
-    def createProject(cls, name: str, spaceId: int, description: Optional[str]=None) -> Optional[Self]:
+    def createJob(cls, name: str, spaceId: int, description: Optional[str]=None) -> Optional[Self]:
         """
-            Creates a new project with the provided name and description
-            Project is added to the space with provided space id
+            Creates a new job with the provided name and description
+            Job is added to the space with provided space id
 
             Parameters
             ----------
             name : str
-                project name
+                job name
             spaceId : int
-                space id the project belongs to
+                space id the job belongs to
             description : Optional[str]
-                project description
+                job description
 
             Returns
             -------
-            Optional[Self] -> The created project object
+            Optional[Self] -> The created job object
 
             Example
             -------
-            >>> from coretex import Project
+            >>> from coretex import Job
             \b
-            >>> dummyProject = Project.createProject(
-                    name = "dummyProject",
+            >>> dummyJob = Job.createJob(
+                    name = "dummyJob",
                     spaceId = 23,
-                    description = "This is dummy project"
+                    description = "This is dummy job"
                 )
-            >>> if dummyProject is None:
-                    print("Failed to create project")
+            >>> if dummyJob is None:
+                    print("Failed to create job")
         """
 
         return cls.create(parameters={

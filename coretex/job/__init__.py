@@ -24,7 +24,7 @@ import sys
 from .remote import processRemote
 from .local import processLocal
 from .. import folder_manager
-from ..coretex import ExperimentStatus, NetworkDataset, Metric, ExperimentBuilder, Experiment
+from ..coretex import RunStatus, NetworkDataset, Metric, RunBuilder, Run
 from ..logging import LogHandler, initializeLogger, LogSeverity
 from ..networking import RequestFailedError
 
@@ -40,73 +40,73 @@ class ExecutionType(IntEnum):
 
 
 def _prepareForExecution(
-     experimentId: int,
+     runId: int,
      datasetType: Optional[Type[DatasetType]] = None,
      metrics: Optional[List[Metric]] = None
-) -> Experiment:
+) -> Run:
 
-     experiment = ExperimentBuilder(experimentId).setDatasetType(datasetType).build()
+     run = RunBuilder(runId).setDatasetType(datasetType).build()
 
-     logPath = folder_manager.logs / f"experiment_{experimentId}.log"
+     logPath = folder_manager.logs / f"run_{runId}.log"
      customLogHandler = LogHandler.instance()
-     customLogHandler.currentExperimentId = experiment.id
+     customLogHandler.currentRunId = run.id
 
-     # enable/disable verbose mode for experiments
+     # enable/disable verbose mode for runs
      severity = LogSeverity.info
-     verbose = experiment.parameters.get("verbose", False)
+     verbose = run.parameters.get("verbose", False)
 
      if verbose:
           severity = LogSeverity.debug
 
      initializeLogger(severity, logPath)
 
-     experiment.updateStatus(
-          status = ExperimentStatus.inProgress,
-          message = "Executing project."
+     run.updateStatus(
+          status = RunStatus.inProgress,
+          message = "Executing job."
      )
 
      if metrics is not None:
-          experiment.createMetrics(metrics)
+          run.createMetrics(metrics)
           logging.getLogger("coretexpylib").info(">> [Coretex] Metrics successfully created.")
 
-     return experiment
+     return run
 
 
-def initializeProject(
-     mainFunction: Callable[[Experiment], None],
+def initializeJob(
+     mainFunction: Callable[[Run], None],
      datasetType: Optional[Type[DatasetType]] = None,
      metrics: Optional[List[Metric]] = None,
      args: Optional[List[str]] = None
 ) -> None:
 
      """
-          Initializes and starts the python project as
-          Coretex experiment
+          Initializes and starts the python job as
+          Coretex run
 
           Parameters
           ----------
-          mainFunction : Callable[[ExecutingExperiment], None]
+          mainFunction : Callable[[ExecutingRun], None]
                entry point function
           datasetType : Optional[Type[DatasetType]]
                Custom dataset if there is any (Not required)
           metrics : Optional[List[Metric]]
-               list of metric objects that will be created for executing Experiment
+               list of metric objects that will be created for executing Run
           args : Optional[List[str]]
                list of command line arguments, if None sys.argv will be used
      """
 
      try:
-          experimentId, callback = processRemote(args)
+          runId, callback = processRemote(args)
      except:
-          experimentId, callback = processLocal(args)
+          runId, callback = processLocal(args)
 
      try:
-          experiment = _prepareForExecution(experimentId, datasetType, metrics)
+          run = _prepareForExecution(runId, datasetType, metrics)
 
           callback.onStart()
 
-          logging.getLogger("coretexpylib").info("Experiment execution started")
-          mainFunction(experiment)
+          logging.getLogger("coretexpylib").info("Run execution started")
+          mainFunction(run)
 
           callback.onSuccess()
      except RequestFailedError:
