@@ -116,9 +116,9 @@ class Model(NetworkObject):
 
             Example
             -------
-            >>> from coretex import Model, ExecutingRun
+            >>> from coretex import Model, Run
             \b
-            >>> run = ExecutingRun.current()
+            >>> run = Run.current()
             >>> model = Model.createModel(
                     name = run.name,
                     runId = run.id,
@@ -155,7 +155,7 @@ class Model(NetworkObject):
 
             Example
             -------
-            >>> from coretex import ExecutingRun, Model
+            >>> from coretex import Run, Model
             >>> model = Model.createModel(run.name, run.id, accuracy, {})
             >>> model.saveModelDescriptor(modelPath, {
                     "project_task": run.spaceTask,
@@ -225,9 +225,9 @@ class Model(NetworkObject):
 
             Example
             -------
-            >>> from coretex import Model, ExecutingRun
+            >>> from coretex import Model, Run
             \b
-            >>> run: ExecutingRun[NetworkDataset] = ExecutingRun.current()
+            >>> run: Run[NetworkDataset] = Run.current()
             >>> model = Model.createModel(
                 name = run.name,
                 runId = run.id,

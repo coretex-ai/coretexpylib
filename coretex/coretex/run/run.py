@@ -188,9 +188,9 @@ class Run(NetworkObject, Generic[DatasetType]):
 
             Example
             -------
-            >>> from coretex import ExecutingRun, RunStatus
+            >>> from coretex import Run, RunStatus
             \b
-            >>> ExecutingRun.current().updateStatus(
+            >>> Run.current().updateStatus(
                     RunStatus.completedWithSuccess
                 )
             True
@@ -244,9 +244,9 @@ class Run(NetworkObject, Generic[DatasetType]):
 
             Example
             -------
-            >>> from coretex import ExecutingRun, MetricType
+            >>> from coretex import Run, MetricType
             \b
-            >>> metrics = ExecutingRun.current().createMetrics([
+            >>> metrics = Run.current().createMetrics([
                     Metric.create("loss", "epoch", MetricType.int, "value", MetricType.float, None, [0, 100]),
                     Metric.create("accuracy", "epoch", MetricType.int, "value", MetricType.float, None, [0, 100])
                 ])
@@ -282,9 +282,9 @@ class Run(NetworkObject, Generic[DatasetType]):
 
             Example
             -------
-            >>> from coretex import ExecutingRun
+            >>> from coretex import Run
             \b
-            >>> result = ExecutingRun.current().submitMetrics({
+            >>> result = Run.current().submitMetrics({
                     "loss": (epoch, logs["loss"]),
                     "accuracy": (epoch, logs["accuracy"]),
                 })
@@ -397,7 +397,7 @@ class Run(NetworkObject, Generic[DatasetType]):
         #         logging.getLogger("coretexpylib").warning(f">> [Coretex] Failed to upload {localFilePath} to {remoteFilePath}")
 
     @classmethod
-    def run(
+    def start(
         cls,
         jobId: int,
         nodeId: Union[int, str],
@@ -447,7 +447,7 @@ class Run(NetworkObject, Generic[DatasetType]):
                 ]
             \b
             >>> try:
-                    run = Run.run(
+                    run = Run.start(
                         jobId = 1023,
                         nodeId = 23,
                         name = "Dummy Custom Run
@@ -481,7 +481,7 @@ class Run(NetworkObject, Generic[DatasetType]):
         return cls.fetchById(response.json["experiment_ids"][0])
 
     @classmethod
-    def runLocal(
+    def startLocal(
         cls,
         spaceId: int,
         name: Optional[str],

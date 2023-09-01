@@ -85,7 +85,7 @@ def initializeJob(
 
           Parameters
           ----------
-          mainFunction : Callable[[ExecutingRun], None]
+          mainFunction : Callable[[Run], None]
                entry point function
           datasetType : Optional[Type[DatasetType]]
                Custom dataset if there is any (Not required)

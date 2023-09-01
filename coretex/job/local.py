@@ -128,7 +128,7 @@ def processLocal(args: Optional[List[str]] = None) -> Tuple[int, JobCallback]:
     if not os.path.exists("experiment.config"):
         raise FileNotFoundError(">> [Coretex] \"experiment.config\" file not found")
 
-    run: Run = Run.runLocal(
+    run: Run = Run.startLocal(
         parser.spaceId,
         parser.name,
         parser.description,

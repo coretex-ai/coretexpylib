@@ -31,11 +31,11 @@ $ pip install coretex
 **Step 3:** Migrate your project to coretex:
 
 ```python
-from coretex import CustomDataset, ExecutingRun
+from coretex import CustomDataset, Run
 from coretex.job import initializeJob
 
 
-def main(run: ExecutingRun[CustomDataset]):
+def main(run: Run[CustomDataset]):
     # Remove "pass" and start job execution from here
     pass
 
