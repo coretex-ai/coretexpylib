@@ -26,7 +26,7 @@ from tap import Tap
 
 import psutil
 
-from .base import ProjectCallback
+from ._base_callback import ProjectCallback
 from .. import folder_manager
 from ..coretex import Experiment, ExperimentStatus, ExperimentParameter
 from ..networking import networkManager
@@ -105,7 +105,7 @@ def _readExperimentConfig() -> List['ExperimentParameter']:
     return parameters
 
 
-def processLocal(args: Optional[List[str]] = None) -> Tuple[int, ProjectCallback]:
+def _processLocal(args: Optional[List[str]] = None) -> Tuple[int, ProjectCallback]:
     parser, unknown = LocalArgumentParser().parse_known_args(args)
 
     if parser.username is not None and parser.password is not None:
