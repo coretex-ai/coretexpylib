@@ -18,7 +18,7 @@
 from typing import Tuple, Optional, List
 from tap import Tap
 
-from .base import ProjectCallback
+from ._base_callback import ProjectCallback
 from ..networking import networkManager
 
 
@@ -32,7 +32,7 @@ class RemoteArgumentParser(Tap):
         self.add_argument("--experimentId", type = int)
 
 
-def processRemote(args: Optional[List[str]] = None) -> Tuple[int, ProjectCallback]:
+def _processRemote(args: Optional[List[str]] = None) -> Tuple[int, ProjectCallback]:
     remoteArgumentParser, unknown = RemoteArgumentParser().parse_known_args(args)
 
     response = networkManager.authenticateWithRefreshToken(remoteArgumentParser.refreshToken)

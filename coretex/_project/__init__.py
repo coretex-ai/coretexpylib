@@ -15,13 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import logging
-
-from .dataset import Dataset
-
-
-def downloadDataset(dataset: Dataset) -> None:
-    # TODO: Should we think about using deprecation package for handling this?
-    logging.getLogger("coretexpylib").warning(">> [Coretex] (downloadDataset) function is deprecated use Dataset.download instead")
-
-    dataset.download()
+from ._local import _processLocal
+from ._remote import _processRemote
+from ._current_experiment import currentExperiment
+from ._initialization import _prepareForExecution, initializeRProject

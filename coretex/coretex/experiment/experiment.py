@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, Any, List, Dict, Union, Tuple, TypeVar, Generic
+from typing import Optional, Any, List, Dict, Union, Tuple, TypeVar, Generic, Type
 from typing_extensions import Self
 from zipfile import ZipFile, ZIP_DEFLATED
 from pathlib import Path
@@ -31,7 +31,7 @@ from .status import ExperimentStatus
 from .metrics import Metric
 from .parameters import ExperimentParameter, parseParameters
 from .execution_type import ExecutionType
-from ..dataset import *
+from ..dataset import Dataset, LocalDataset, NetworkDataset
 from ..space import SpaceTask
 from ... import folder_manager
 from ...codable import KeyDescriptor
@@ -131,6 +131,15 @@ class Experiment(NetworkObject, Generic[DatasetType]):
             raise ValueError(f">> [Coretex] Experiment \"{self.id}\" does not have a parameter named \"dataset\"")
 
         return dataset  # type: ignore
+
+    def setDatasetType(self, datasetType: Type[DatasetType]) -> None:
+        for key, value in self.__parameters.items():
+            if isinstance(value, LocalDataset) and issubclass(datasetType, LocalDataset):
+                self.__parameters[key] = datasetType(value.path)  # type: ignore
+
+            if isinstance(value, NetworkDataset) and issubclass(datasetType, NetworkDataset):
+                self.__parameters[key] = datasetType.fetchById(value.id)
+
 
     @classmethod
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:

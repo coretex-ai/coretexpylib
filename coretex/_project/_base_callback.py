@@ -25,7 +25,8 @@ import multiprocessing
 import faulthandler
 import signal
 
-from .experiment_worker import experimentWorker
+from ._experiment_worker import experimentWorker
+from ._current_experiment import setCurrentExperiment
 from .. import folder_manager
 from ..coretex import Experiment
 from ..logging import LogHandler
@@ -102,3 +103,4 @@ class ProjectCallback:
             pass
 
         folder_manager.clearTempFiles()
+        setCurrentExperiment(None)
