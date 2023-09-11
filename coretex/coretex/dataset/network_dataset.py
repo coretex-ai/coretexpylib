@@ -108,7 +108,6 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
         cls,
         name: str,
         spaceId: int,
-        sampleIds: Optional[List[int]] = None,
         meta: Optional[Dict[str, Any]] = None
     ) -> Optional[Self]:
 
@@ -122,8 +121,6 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
                 dataset name
             spaceId : int
                 space for which the dataset will be created
-            samplesIds : List[int]
-                samples which should be added to dataset (if present)
 
             Returns
             -------
@@ -138,13 +135,9 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
                     print("Dataset created successfully")
         """
 
-        if sampleIds is None:
-            sampleIds = []
-
         return cls.create({
             "name": name,
             "project_id": spaceId,
-            "sessions": sampleIds,
             "meta": meta
         })
 
@@ -184,19 +177,6 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
         )
 
         processor.process()
-
-    def add(self, sample: SampleType) -> bool:
-        if self.isLocked or sample.isDeleted:
-            return False
-
-        success = self.update({
-            "sessions": [sample.id]
-        })
-
-        if success:
-            return super().add(sample)
-
-        return success
 
     def rename(self, name: str) -> bool:
         success = self.update({
