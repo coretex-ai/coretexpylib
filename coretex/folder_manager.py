@@ -132,7 +132,7 @@ def getArtifactsFolder(experimentId: int) -> Path:
     return _artifactsFolder / str(experimentId)
 
 
-def _clearDirectory(path: Path) -> None:
+def clearDirectory(path: Path) -> None:
     for element in file_utils.walk(path):
         if element.is_file():
             element.unlink()
@@ -146,5 +146,5 @@ def clearTempFiles() -> None:
         Deletes all temp files and folders (including artifacts)
     """
 
-    _clearDirectory(temp)
-    _clearDirectory(_artifactsFolder)
+    clearDirectory(temp)
+    clearDirectory(_artifactsFolder)
