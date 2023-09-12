@@ -32,6 +32,9 @@ from ..coretex import Experiment, ExperimentStatus, ExperimentParameter
 from ..networking import networkManager
 
 
+EXPERIMENT_CONFIG_PATH = "./experiment.config"
+
+
 class LocalProjectCallback(ProjectCallback):
 
     def onStart(self) -> None:
@@ -91,7 +94,10 @@ class LocalArgumentParser(Tap):
 def _readExperimentConfig() -> List['ExperimentParameter']:
     parameters: List[ExperimentParameter] = []
 
-    with open("./experiment.config", "rb") as configFile:
+    if not os.path.exists(EXPERIMENT_CONFIG_PATH):
+        return []
+
+    with open(EXPERIMENT_CONFIG_PATH, "rb") as configFile:
         configContent: Dict[str, Any] = json.load(configFile)
         parametersJson = configContent["parameters"]
 
@@ -124,9 +130,6 @@ def _processLocal(args: Optional[List[str]] = None) -> Tuple[int, ProjectCallbac
 
     if response.hasFailed():
         raise RuntimeError(">> [Coretex] Failed to authenticate")
-
-    if not os.path.exists("experiment.config"):
-        raise FileNotFoundError(">> [Coretex] \"experiment.config\" file not found")
 
     experiment: Experiment = Experiment.runLocal(
         parser.spaceId,

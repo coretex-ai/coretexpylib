@@ -533,6 +533,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
                 Path("./main.py"),
                 Path("./main.r"),
                 Path("./main.R"),
+                Path("experiment.config"),
                 Path("./environment.yml"),
                 Path("./environment-osx.yml")
             ]
@@ -544,7 +545,6 @@ class Experiment(NetworkObject, Generic[DatasetType]):
                 snapshotArchive.write(optionalFile, optionalFile.name)
 
             snapshotArchive.write("requirements.txt")
-            snapshotArchive.write("experiment.config")
 
         files = [
             FileData.createFromPath("file", snapshotPath)
