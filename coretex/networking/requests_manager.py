@@ -19,6 +19,7 @@ from typing import Final, Any, Optional, Dict, List, Union
 from contextlib import ExitStack
 from pathlib import Path
 
+import os
 import logging
 
 from requests import Session
@@ -42,8 +43,7 @@ class RequestsManager:
 
     MAX_RETRY_COUNT: Final = 3
 
-    def __init__(self, baseURL: str, connectionTimeout: int, readTimeout: int):
-        self.__baseURL: Final = baseURL
+    def __init__(self, connectionTimeout: int, readTimeout: int):
         self.__connectionTimeout: Final = connectionTimeout
         self.__readTimeout: Final = readTimeout
         self.__session: Final = Session()
@@ -52,8 +52,13 @@ class RequestsManager:
     def isAuthSet(self) -> bool:
         return self.__session.auth is not None
 
+    @classmethod
+    def serverUrl(cls) -> str:
+        serverUrl = os.environ["CTX_API_URL"]
+        return f"{serverUrl}api/v1/"
+
     def __url(self, endpoint: str) -> str:
-        return self.__baseURL + endpoint
+        return self.serverUrl() + endpoint
 
     def genericRequest(
         self,
@@ -88,7 +93,7 @@ class RequestsManager:
             NetworkResponse -> NetworkResponse object as response content to request
         """
 
-        logging.getLogger("coretexpylib").debug(f"Sending request {requestType}, {endpoint}, HEADERS: {headers}, DATA: {data}")
+        logging.getLogger("coretexpylib").debug(f"Sending request {requestType}, {self.__url(endpoint)}, HEADERS: {headers}, DATA: {data}")
 
         try:
             requestsResponse = self.__session.request(
@@ -138,7 +143,7 @@ class RequestsManager:
             NetworkResponse -> NetworkResponse object as response content to request
         """
 
-        logging.getLogger("coretexpylib").debug(f"Sending request {endpoint}, HEADERS: {headers}, DATA: {data}, JSON_OBJECT: {jsonObject}")
+        logging.getLogger("coretexpylib").debug(f"Sending request {self.__url(endpoint)}, HEADERS: {headers}, DATA: {data}, JSON_OBJECT: {jsonObject}")
 
         try:
             requestsResponse = self.__session.get(
@@ -187,7 +192,7 @@ class RequestsManager:
             NetworkResponse -> NetworkResponse object as response content to request
         """
 
-        logging.getLogger("coretexpylib").debug(f"Sending request {endpoint}, HEADERS: {headers}, DATA: {data}, JSON_OBJECT: {jsonObject}")
+        logging.getLogger("coretexpylib").debug(f"Sending request {self.__url(endpoint)}, HEADERS: {headers}, DATA: {data}, JSON_OBJECT: {jsonObject}")
 
         try:
             requestsResponse = self.__session.post(

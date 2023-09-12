@@ -22,7 +22,6 @@ from importlib.metadata import version as getLibraryVersion
 
 import json
 import logging
-import os
 import platform
 
 from .requests_manager import RequestsManager
@@ -36,7 +35,7 @@ class NetworkManagerBase(ABC):
     MAX_RETRY_COUNT = 3
 
     def __init__(self) -> None:
-        self._requestManager = RequestsManager(self.serverUrl(), 20, 30)
+        self._requestManager = RequestsManager(20, 30)
 
         # Override NetworkManager to update values
         self.loginEndpoint: str = "user/login"
@@ -46,11 +45,6 @@ class NetworkManagerBase(ABC):
 
         self.apiTokenKey: str = "token"
         self.refreshTokenKey: str = "refresh_token"
-
-    @classmethod
-    def serverUrl(cls) -> str:
-        serverUrl = os.environ["CTX_API_URL"]
-        return f"{serverUrl}api/v1/"
 
     @property
     @abstractmethod
