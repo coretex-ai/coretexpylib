@@ -62,23 +62,6 @@ class Dataset(ABC, Generic[SampleType]):
     def download(self, ignoreCache: bool = False) -> None:
         pass
 
-    def add(self, sample: SampleType) -> bool:
-        """
-            Adds the specified sample into the dataset
-
-            Parameters
-            ----------
-            sample : SampleType
-                sample which should be added into the dataset
-
-            Returns
-            -------
-            bool -> True if sample was added, False if sample was not added
-        """
-
-        self.samples.append(sample)
-        return True
-
     def rename(self, name: str) -> bool:
         """
             Renames the dataset, if the provided name is
