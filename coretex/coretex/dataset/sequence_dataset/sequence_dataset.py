@@ -77,7 +77,7 @@ class SequenceDataset(BaseSequenceDataset, NetworkDataset[SequenceSample]):
             metadataPath
         ) is None:
 
-            logging.warning(">> [Coretex] Failed to create _metadata sample")
+            logging.getLogger("coretexpylib").warning(">> [Coretex] Failed to create _metadata sample")
             return None
 
         return cls.fetchById(dataset.id)
