@@ -112,8 +112,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
     ) -> Optional[Self]:
 
         """
-            Creates a new dataset with the provided name, type
-            and samples (if present, samples are not required)
+            Creates a new dataset with the provided name and type
 
             Parameters
             ----------

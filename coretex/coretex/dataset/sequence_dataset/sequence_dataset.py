@@ -15,10 +15,15 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Dict
+from typing import Dict, Optional, Any, Union
+from typing_extensions import Self
+from pathlib import Path
+
+import logging
 
 from .base import BaseSequenceDataset
 from ..network_dataset import NetworkDataset
+from ..custom_dataset import CustomDataset
 from ...sample import SequenceSample, CustomSample
 from ....codable import KeyDescriptor
 
@@ -50,6 +55,33 @@ class SequenceDataset(BaseSequenceDataset, NetworkDataset[SequenceSample]):
             if sample.id != self.metadata.id
         ]
 
+    @classmethod
+    def createSequenceDataset(
+        cls,
+        name: str,
+        spaceId: int,
+        metadataPath: Union[Path, str],
+        meta: Optional[Dict[str, Any]] = None
+    ) -> Optional[Self]:
+
+        if isinstance(metadataPath, str):
+            metadataPath = Path(metadataPath)
+
+        dataset = CustomDataset.createDataset(name, spaceId, meta)
+        if dataset is None:
+            return None
+
+        if CustomSample.createCustomSample(
+            "_metadata",
+            dataset.id,
+            metadataPath
+        ) is None:
+
+            logging.warning(">> [Coretex] Failed to create _metadata sample")
+            return None
+
+        return cls.fetchById(dataset.id)
+
     def download(self, ignoreCache: bool = False) -> None:
         super().download(ignoreCache)
 
@@ -80,4 +112,3 @@ class SequenceDataset(BaseSequenceDataset, NetworkDataset[SequenceSample]):
             return False
 
         raise ValueError(">> [Coretex] Dataset contains a mix of paired-end and single-end sequences. It should contain either one or the other")
-
