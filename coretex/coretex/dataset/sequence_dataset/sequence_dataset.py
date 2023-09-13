@@ -64,6 +64,31 @@ class SequenceDataset(BaseSequenceDataset, NetworkDataset[SequenceSample]):
         meta: Optional[Dict[str, Any]] = None
     ) -> Optional[Self]:
 
+        """
+            Creates a new sequence dataset with the provided name and metadata
+
+            Parameters
+            ----------
+            name : str
+                dataset name
+            spaceId : int
+                space for which the dataset will be created
+            metadataPath : Union[Path, str]
+                path the zipped metadata file
+
+            Returns
+            -------
+            The created sequence dataset object or None if creation failed
+
+            Example
+            -------
+            >>> from coretex import SequenceDataset
+            \b
+            >>> dummyDataset = SequenceDataset.createSequenceDataset("dummyDataset", 123, pathToMetadata)
+            >>> if dummyDataset is not None:
+                    print("Dataset created successfully")
+        """
+
         if isinstance(metadataPath, str):
             metadataPath = Path(metadataPath)
 
