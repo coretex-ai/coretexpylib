@@ -1,0 +1,75 @@
+from typing import Dict, Optional, Any, Tuple, List
+from abc import ABC, abstractmethod
+
+import logging
+
+from .parameter_type import ParameterType
+from ...space import SpaceTask
+from ....codable import Codable, KeyDescriptor
+
+
+class BaseParameter(ABC, Codable):
+
+    name: str
+    description: str
+    value: Optional[Any]
+    dataType: ParameterType
+    required: bool
+
+    @property
+    @abstractmethod
+    def types(self) -> List[type]:
+        pass
+
+    @property
+    def isList(self) -> bool:
+        return False
+
+    @classmethod
+    def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
+        descriptors = super()._keyDescriptors()
+        descriptors["dataType"] = KeyDescriptor("data_type", ParameterType)
+
+        return descriptors
+
+    def makeExceptionMessage(self) -> str:
+        expected = self.dataType.value
+        received = self.generateTypeDescription()
+
+        return f"Parameter \"{self.name}\" has invalid type. Expected \"{expected}\", got \"{received}\""
+
+    def validate(self) -> Tuple[bool, Optional[str]]:
+        if not self.required and self.value is None:
+            return True, None
+
+        if not any(isinstance(self.value, dataType) for dataType in self.types):
+            return False, None
+
+        return True, None
+
+    def generateTypeDescription(self) -> str:
+        if not self.isList or self.value is None:
+            return type(self.value).__name__
+
+        elementTypes = ", ".join({type(value).__name__ for value in self.value})
+        return f"list[{elementTypes}]"
+
+    def parseValue(self, task: SpaceTask) -> Optional[Any]:
+        return self.value
+
+
+def validateParameters(parameters: List[BaseParameter], verbose: bool = True) -> Dict[str, Any]:
+    parameterValidationResults: Dict[str, bool] = {}
+
+    for parameter in parameters:
+        isValid, message = parameter.validate()
+        if not isValid:
+            if message is None:
+                message = parameter.makeExceptionMessage()
+
+            if verbose:
+                logging.getLogger("coretexpylib").fatal(f">> [Coretex] {message}")
+
+        parameterValidationResults[parameter.name] = isValid
+
+    return parameterValidationResults
