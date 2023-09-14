@@ -27,9 +27,18 @@ class BaseListParameter(BaseParameter):
         if not self.required and self.value is None:
             return True, None
 
+        if self.required and len(self.value) == 0:  # type: ignore[arg-type]
+            return False, f"Required parameter \"{self.name}\" must contain a non-empty array"
+
         # self.value is of type Optional[Any], but base class validate method already
         # checks if it is a list, if that fails this is not reachable
         for element in self.value:  # type: ignore[union-attr]
+
+            # bool is a subclass of int, do not allow validation to pass if
+            # we are looking for integer, but bool is received
+            if isinstance(element, bool) and int in self.listTypes and not bool in self.listTypes:
+                return False, None
+
             if not any(isinstance(element, type_) for type_ in self.listTypes):
                 return False, None
 

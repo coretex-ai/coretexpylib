@@ -26,10 +26,13 @@ class ListEnumParameter(BaseListParameter):
         selected = value["selected"]
         options = value["options"]
 
+        if selected is None and not self.required:
+            return True, None
+
         if not isinstance(selected, list):
             return False, f"Enum list parameter \"{self.name}.selected\" has invalid type. Expected \"list[int]\", got \"{type(selected).__name__}\""
 
-        if not all(isinstance(element, int) for element in selected):
+        if not all(type(element) is int for element in selected):
             elementTypes = ", ".join({type(element).__name__ for element in selected})
             return False, f"Enum list parameter \"{self.name}.selected\" has invalid type. Expected \"list[int]\", got \"list[{elementTypes}]\""
 
@@ -43,7 +46,10 @@ class ListEnumParameter(BaseListParameter):
         if self.value is None:
             return self.value
 
-        selected: List[int] = self.value["selected"]
+        selected: Optional[List[int]] = self.value["selected"]
         options: List[str] = self.value["options"]
+
+        if selected is None:
+            return None
 
         return [options[value] for value in selected]

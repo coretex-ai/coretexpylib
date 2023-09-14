@@ -42,6 +42,11 @@ class BaseParameter(ABC, Codable):
         if not self.required and self.value is None:
             return True, None
 
+        # bool is a subclass of int, do not allow validation to pass if
+        # we are looking for integer, but bool is received
+        if isinstance(self.value, bool) and int in self.types and not bool in self.types:
+            return False, None
+
         if not any(isinstance(self.value, dataType) for dataType in self.types):
             return False, None
 

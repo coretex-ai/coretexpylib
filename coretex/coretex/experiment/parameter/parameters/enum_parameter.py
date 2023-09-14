@@ -22,7 +22,10 @@ class EnumParameter(BaseParameter):
         selected = value["selected"]
         options = value["options"]
 
-        if not isinstance(selected, int):
+        if selected is None and not self.required:
+            return True, None
+
+        if not type(selected) is int:
             return False, f"Enum parameter \"{self.name}.selected\" has invalid type. Expected \"int\", got \"{type(selected).__name__}\""
 
         if selected >= len(options) or selected < 0:
@@ -34,4 +37,8 @@ class EnumParameter(BaseParameter):
         if self.value is None:
             return self.value
 
-        return self.value["options"][self.value["selected"]]
+        selected: Optional[int] = self.value.get("selected")
+        if selected is None:
+            return None
+
+        return self.value["options"][selected]
