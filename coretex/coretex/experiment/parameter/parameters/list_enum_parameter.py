@@ -5,15 +5,15 @@ from ..utils import validateEnumStructure
 from ....space import SpaceTask
 
 
-class ListEnumParameter(BaseListParameter):
+class ListEnumParameter(BaseListParameter[Dict[str, Any]]):
 
     @property
     def types(self) -> List[type]:
-        return [str]
+        return NotImplemented
 
     @property
     def listTypes(self) -> List[type]:
-        return [int]
+        return NotImplemented
 
     def validate(self) -> Tuple[bool, Optional[str]]:
         isValid, message = validateEnumStructure(self.name, self.value, self.required)

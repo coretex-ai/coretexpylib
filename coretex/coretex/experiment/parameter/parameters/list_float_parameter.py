@@ -1,10 +1,10 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 from ..base_list_parameter import BaseListParameter
 from ....space import SpaceTask
 
 
-class ListFloatParameter(BaseListParameter):
+class ListFloatParameter(BaseListParameter[List[Union[float, int]]]):
 
     @property
     def listTypes(self) -> List[type]:

@@ -1,11 +1,11 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 from ..base_parameter import BaseParameter
 from ...utils import getDatasetType, fetchDataset
 from ....space import SpaceTask
 
 
-class DatasetParameter(BaseParameter):
+class DatasetParameter(BaseParameter[Union[int, str]]):
 
     @property
     def types(self) -> List[type]:

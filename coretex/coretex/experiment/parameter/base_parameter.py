@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Any, Tuple, List
+from typing import Dict, Optional, Any, Tuple, List, TypeVar, Generic
 from abc import ABC, abstractmethod
 
 import logging
@@ -8,11 +8,14 @@ from ...space import SpaceTask
 from ....codable import Codable, KeyDescriptor
 
 
-class BaseParameter(ABC, Codable):
+T = TypeVar("T")
+
+
+class BaseParameter(ABC, Codable, Generic[T]):
 
     name: str
     description: str
-    value: Optional[Any]
+    value: Optional[T]
     dataType: ParameterType
     required: bool
 
@@ -20,10 +23,6 @@ class BaseParameter(ABC, Codable):
     @abstractmethod
     def types(self) -> List[type]:
         pass
-
-    @property
-    def isList(self) -> bool:
-        return False
 
     @classmethod
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
@@ -53,7 +52,7 @@ class BaseParameter(ABC, Codable):
         return True, None
 
     def generateTypeDescription(self) -> str:
-        if not self.isList or self.value is None:
+        if not isinstance(self.value, list) or self.value is None:
             return type(self.value).__name__
 
         elementTypes = ", ".join({type(value).__name__ for value in self.value})

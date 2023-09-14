@@ -1,10 +1,10 @@
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Generic
 from abc import abstractmethod
 
-from .base_parameter import BaseParameter
+from .base_parameter import BaseParameter, T
 
 
-class BaseListParameter(BaseParameter):
+class BaseListParameter(BaseParameter[T], Generic[T]):
 
     @property
     def types(self) -> List[type]:
@@ -14,10 +14,6 @@ class BaseListParameter(BaseParameter):
     @abstractmethod
     def listTypes(self) -> List[type]:
         pass
-
-    @property
-    def isList(self) -> bool:
-        return True
 
     def validate(self) -> Tuple[bool, Optional[str]]:
         isValid, error = super().validate()
