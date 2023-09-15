@@ -187,9 +187,9 @@ def extractData(samtoolsPath: Path, file: Path) -> Tuple[List[int], List[int], L
         Link to samtools: http://htslib.org/
     """
 
-    scores: list[int] = []
-    positions: list[int] = []
-    sequenceLengths: list[int] = []
+    scores: List[int] = []
+    positions: List[int] = []
+    sequenceLengths: List[int] = []
 
     args = [
         str(samtoolsPath.absolute()),
@@ -238,7 +238,7 @@ def chmodX(file: Path) -> None:
 
 
 def loadFa(dataset: CustomDataset) -> List[Path]:
-    inputFiles: list[Path] = []
+    inputFiles: List[Path] = []
 
     for sample in dataset.samples:
         sample.unzip()
