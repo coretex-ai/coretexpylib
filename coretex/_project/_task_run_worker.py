@@ -27,7 +27,7 @@ import psutil
 from .. import folder_manager
 from ..coretex import MetricType, TaskRun
 from ..networking import networkManager, NetworkRequestError
-from ..coretex.experiment.metrics.metric_factory import createMetric
+from ..coretex.task_run.metrics.metric_factory import createMetric
 
 
 METRICS = [
