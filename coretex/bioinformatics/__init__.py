@@ -15,10 +15,10 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, Union
+from typing import Optional, Union, List
 from pathlib import Path
 
-from .utils import CommandException, command
+from .utils import command
 from ..coretex import CustomDataset
 
 
@@ -64,7 +64,7 @@ def cutadaptTrim(
     if isinstance(reverseOutput, Path):
         reverseOutput = str(reverseOutput)
 
-    args: list[str] = [
+    args: List[str] = [
         "cutadapt",
         "-o", forwardOutput,
         "-g", forwardAdapter,

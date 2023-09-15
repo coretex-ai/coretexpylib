@@ -129,7 +129,7 @@ class LocalSequenceSample(LocalSample):
             sampleContent = archive.namelist()
 
         for extension in self.supportedExtensions():
-            fileNames: list[str] = []
+            fileNames: List[str] = []
 
             for fileName in sampleContent:
                 if fileName.endswith(extension) or fileName.endswith(f"{extension}.gz"):
