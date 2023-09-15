@@ -29,7 +29,7 @@ import json
 from .artifact import Artifact
 from .status import ExperimentStatus
 from .metrics import Metric
-from .parameters import ExperimentParameter, parseParameters
+from .parameter import validateParameters, parameter_factory
 from .execution_type import ExecutionType
 from ..dataset import Dataset, LocalDataset, NetworkDataset
 from ..space import SpaceTask
@@ -170,8 +170,13 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         if not isinstance(self.meta["parameters"], list):
             raise ValueError(">> [Coretex] Invalid parameters")
 
-        parameters = [ExperimentParameter.decode(value) for value in self.meta["parameters"]]
-        self.__parameters = parseParameters(parameters, self.spaceTask)
+        parameters = [parameter_factory.create(value) for value in self.meta["parameters"]]
+
+        parameterValidationResults = validateParameters(parameters, verbose = True)
+        if not all(parameterValidationResults.values()):
+            raise ValueError("Invalid parameters found")
+
+        self.__parameters = {parameter.name: parameter.parseValue(self.spaceTask) for parameter in parameters}
 
     def updateStatus(
         self,

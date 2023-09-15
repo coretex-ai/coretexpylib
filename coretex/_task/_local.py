@@ -21,6 +21,7 @@ from getpass import getpass
 import logging
 import os
 import json
+import sys
 
 from tap import Tap
 
@@ -28,7 +29,7 @@ import psutil
 
 from ._base_callback import TaskCallback
 from .. import folder_manager
-from ..coretex import Experiment, ExperimentStatus, ExperimentParameter
+from ..coretex import Experiment, ExperimentStatus, BaseParameter, validateParameters, parameter_factory
 from ..networking import networkManager
 
 
@@ -88,8 +89,8 @@ class LocalArgumentParser(Tap):
         self.add_argument("--description", nargs = "?", type = str, default = None)
 
 
-def _readExperimentConfig() -> List['ExperimentParameter']:
-    parameters: List[ExperimentParameter] = []
+def _readExperimentConfig() -> List[BaseParameter]:
+    parameters: List[BaseParameter] = []
 
     with open("./experiment.config", "rb") as configFile:
         configContent: Dict[str, Any] = json.load(configFile)
@@ -99,8 +100,13 @@ def _readExperimentConfig() -> List['ExperimentParameter']:
             raise ValueError(">> [Coretex] Invalid experiment.config file. Property 'parameters' must be an array")
 
         for parameterJson in parametersJson:
-            parameter = ExperimentParameter.decode(parameterJson)
+            parameter = parameter_factory.create(parameterJson)
             parameters.append(parameter)
+
+    parameterValidationResults = validateParameters(parameters, verbose = True)
+    if not all(parameterValidationResults.values()):
+        # Using this to make the parameter errors more readable without scrolling through the console
+        sys.exit(1)
 
     return parameters
 
