@@ -26,13 +26,13 @@ from tap import Tap
 
 import psutil
 
-from ._base_callback import ProjectCallback
+from ._base_callback import TaskCallback
 from .. import folder_manager
 from ..coretex import Experiment, ExperimentStatus, ExperimentParameter
 from ..networking import networkManager
 
 
-class LocalProjectCallback(ProjectCallback):
+class LocalTaskCallback(TaskCallback):
 
     def onStart(self) -> None:
         super().onStart()
@@ -105,7 +105,7 @@ def _readExperimentConfig() -> List['ExperimentParameter']:
     return parameters
 
 
-def _processLocal(args: Optional[List[str]] = None) -> Tuple[int, ProjectCallback]:
+def _processLocal(args: Optional[List[str]] = None) -> Tuple[int, TaskCallback]:
     parser, unknown = LocalArgumentParser().parse_known_args(args)
 
     if parser.username is not None and parser.password is not None:
@@ -138,4 +138,4 @@ def _processLocal(args: Optional[List[str]] = None) -> Tuple[int, ProjectCallbac
     logging.getLogger("coretexpylib").info(f">> [Coretex] Created local experiment with ID \"{experiment.id}\"")
     experiment.updateStatus(ExperimentStatus.preparingToStart)
 
-    return experiment.id, LocalProjectCallback(experiment, response.json["refresh_token"])
+    return experiment.id, LocalTaskCallback(experiment, response.json["refresh_token"])

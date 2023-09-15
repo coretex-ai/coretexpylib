@@ -33,7 +33,7 @@ from ..logging import LogHandler
 from ..utils import DATE_FORMAT
 
 
-class ProjectCallback:
+class TaskCallback:
 
     def __init__(self, experiment: Experiment, refreshToken: str) -> None:
         self._experiment: Final = experiment

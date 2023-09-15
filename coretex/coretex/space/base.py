@@ -26,7 +26,7 @@ from ...networking import NetworkObject
 class BaseObject(NetworkObject):
 
     """
-        Represents the base class for Space/Project objects from Coretex.ai
+        Represents the base class for Space/Task objects from Coretex.ai
 
         Properties
         ----------
@@ -61,7 +61,7 @@ class BaseObject(NetworkObject):
 
     def rename(self, name: str) -> bool:
         """
-            Renames the Space/Project
+            Renames the Space/Task
 
             Parameters
             ----------
@@ -70,7 +70,7 @@ class BaseObject(NetworkObject):
 
             Returns
             -------
-            bool -> True if Space/Project was renamed, False if Space/Project was not renamed
+            bool -> True if Space/Task was renamed, False if Space/Task was not renamed
         """
 
         if self.name == name:
@@ -89,7 +89,7 @@ class BaseObject(NetworkObject):
 
     def updateDescription(self, description: str) -> bool:
         """
-            Updates the Space/Project's description
+            Updates the Space/Task's description
 
             Parameters
             ----------
@@ -97,8 +97,8 @@ class BaseObject(NetworkObject):
                 new description
 
             Returns
-                bool -> True if Space/Project's description was updated,
-                False if Space/Project's description was not updated
+                bool -> True if Space/Task's description was updated,
+                False if Space/Task's description was not updated
         """
 
         if self.description == description:

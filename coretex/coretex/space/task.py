@@ -22,53 +22,53 @@ from .base import BaseObject
 from ...codable import KeyDescriptor
 
 
-class Project(BaseObject):
+class Task(BaseObject):
 
     """
-        Represents the project entity from Coretex.ai\n
-        Contains properties that describe the project
+        Represents the task entity from Coretex.ai\n
+        Contains properties that describe the task
     """
 
     isDefault: bool
-    projectId: int
+    taskId: int
 
     @classmethod
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
         descriptors = super()._keyDescriptors()
-        descriptors["projectId"] = KeyDescriptor("parentId")
+        descriptors["taskId"] = KeyDescriptor("parentId")
 
         return descriptors
 
     @classmethod
-    def createProject(cls, name: str, spaceId: int, description: Optional[str]=None) -> Optional[Self]:
+    def createTask(cls, name: str, spaceId: int, description: Optional[str]=None) -> Optional[Self]:
         """
-            Creates a new project with the provided name and description
-            Project is added to the space with provided space id
+            Creates a new task with the provided name and description
+            Task is added to the space with provided space id
 
             Parameters
             ----------
             name : str
-                project name
+                task name
             spaceId : int
-                space id the project belongs to
+                space id the task belongs to
             description : Optional[str]
-                project description
+                task description
 
             Returns
             -------
-            Optional[Self] -> The created project object
+            Optional[Self] -> The created task object
 
             Example
             -------
-            >>> from coretex import Project
+            >>> from coretex import Task
             \b
-            >>> dummyProject = Project.createProject(
-                    name = "dummyProject",
+            >>> dummyTask = Task.createTask(
+                    name = "dummyTask",
                     spaceId = 23,
-                    description = "This is dummy project"
+                    description = "This is dummy task"
                 )
-            >>> if dummyProject is None:
-                    print("Failed to create project")
+            >>> if dummyTask is None:
+                    print("Failed to create task")
         """
 
         return cls.create(parameters={
