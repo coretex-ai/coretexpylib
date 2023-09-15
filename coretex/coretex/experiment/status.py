@@ -18,10 +18,10 @@
 from enum import IntEnum
 
 
-class ExperimentStatus(IntEnum):
+class TaskRunStatus(IntEnum):
 
     """
-        List of possible Experiment statuses during the Experiment lifetime
+        List of possible TaskRun statuses during the TaskRun lifetime
     """
 
     queued = 1
@@ -38,35 +38,35 @@ class ExperimentStatus(IntEnum):
     def defaultMessage(self) -> str:
         """
             List of supported statuses:
-            - preparingToStart : Experiment preparing to start
-            - completedWithSuccess : Experiment is completed without errors
-            - completedWithError : Experiment is completed with error
-            - stopped : Experiment is stopped manually
-            - stopping : Experiment is stopping
+            - preparingToStart : TaskRun preparing to start
+            - completedWithSuccess : TaskRun is completed without errors
+            - completedWithError : TaskRun is completed with error
+            - stopped : TaskRun is stopped manually
+            - stopping : TaskRun is stopping
 
             Returns
             -------
-            str -> Appropriate message based on Experiment status
+            str -> Appropriate message based on TaskRun status
 
             Raises
             ------
             ValueError -> if unsupported status is provided
         """
 
-        if self == ExperimentStatus.preparingToStart:
-            return "Preparing to start the experiment."
+        if self == TaskRunStatus.preparingToStart:
+            return "Preparing to start the run."
 
-        if self == ExperimentStatus.completedWithSuccess:
-            return "Experiment completed successfully."
+        if self == TaskRunStatus.completedWithSuccess:
+            return "TaskRun completed successfully."
 
-        if self == ExperimentStatus.completedWithError:
-            return "Experiment execution was interrupted due to an error. View experiment console for more details."
+        if self == TaskRunStatus.completedWithError:
+            return "TaskRun execution was interrupted due to an error. View run console for more details."
 
-        if self == ExperimentStatus.stopped:
-            return "Experiment execution was stopped by request from the user."
+        if self == TaskRunStatus.stopped:
+            return "TaskRun execution was stopped by request from the user."
 
-        if self == ExperimentStatus.stopping:
-            return "Stopping the experiment."
+        if self == TaskRunStatus.stopping:
+            return "Stopping the run."
 
         raise ValueError(f">> [Coretex] {self.name} has no default message")
 
@@ -74,17 +74,17 @@ class ExperimentStatus(IntEnum):
     def isFinal(self) -> bool:
         """
             List of final statuses:
-            - ExperimentStatus.completedWithSuccess : Experiment finished without error
-            - ExperimentStatus.completedWithError : Experiment finished with an error
-            - ExperimentStatus.stopped : Experiment is manually stopped
+            - TaskRunStatus.completedWithSuccess : TaskRun finished without error
+            - TaskRunStatus.completedWithError : TaskRun finished with an error
+            - TaskRunStatus.stopped : TaskRun is manually stopped
 
             Returns
             -------
-            bool -> True if a status is a final status for a experiment
+            bool -> True if a status is a final status for a run
         """
 
         return (
-                self == ExperimentStatus.completedWithSuccess or
-                self == ExperimentStatus.completedWithError or
-                self == ExperimentStatus.stopped
+                self == TaskRunStatus.completedWithSuccess or
+                self == TaskRunStatus.completedWithError or
+                self == TaskRunStatus.stopped
         )

@@ -31,11 +31,11 @@ $ pip install coretex
 **Step 3:** Migrate your project to coretex:
 
 ```python
-from coretex import CustomDataset, ExecutingExperiment
+from coretex import CustomDataset, ExecutingTaskRun
 from coretex.project import initializeProject
 
 
-def main(experiment: ExecutingExperiment[CustomDataset]):
+def main(TaskRun: ExecutingTaskRun[CustomDataset]):
     # Remove "pass" and start project execution from here
     pass
 
@@ -60,17 +60,17 @@ Coretex.ai offers a range of features to support users in their AI experimentati
 
 * **Dataset Management and Annotation Tools:** Powerful tools for managing and annotating datasets,
 
-* **Experiment Orchestration and Result Analysis:** Detailed management of experiments, ensuring reproducibility and easy comparison of results,
+* **Run Orchestration and Result Analysis:** Detailed management of runs, ensuring reproducibility and easy comparison of results,
 
 * **IT Infrastructure Setup:** Easy setup of IT infrastructure, whether connecting self-managed computers or using paid, dynamically scalable cloud computers,
 
-* **Live Metrics Tracking:** Real-time tracking of experiment metrics during execution,
+* **Live Metrics Tracking:** Real-time tracking of run metrics during execution,
 
-* **Artifact Upload and Management:** Easy upload and management of experiment artifacts, including models and results.
+* **Artifact Upload and Management:** Easy upload and management of run artifacts, including models and results.
 
 ## Guaranteeing Reproducibility
 
-One of the key benefits of Coretex.ai is its ability to guarantee reproducibility. The platform keeps track of all experiment configurations and parameters between runs, ensuring that users never lose track of their work.
+One of the key benefits of Coretex.ai is its ability to guarantee reproducibility. The platform keeps track of all configurations and parameters between runs, ensuring that users never lose track of their work.
 
 ## Supported Use Cases
 

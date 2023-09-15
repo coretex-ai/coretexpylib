@@ -67,8 +67,8 @@ class _LoggerUploadWorker(Thread):
 
             customLogHandler = LogHandler.instance()
 
-            # Check if logger is attached to a experiment
-            if customLogHandler.currentExperimentId is None:
+            # Check if logger is attached to a run
+            if customLogHandler.currentTaskRunId is None:
                 continue
 
             try:
@@ -118,7 +118,7 @@ class LogHandler(StreamHandler):
 
         self.__uploadWorker = _LoggerUploadWorker()
 
-        self.currentExperimentId: Optional[int] = None
+        self.currentTaskRunId: Optional[int] = None
         self.severity = LogSeverity.info
 
         self.__uploadWorker.start()
@@ -158,7 +158,7 @@ class LogHandler(StreamHandler):
             if len(self.__pendingLogs) == 0:
                 return True
 
-            if self.currentExperimentId is None:
+            if self.currentTaskRunId is None:
                 self.__pendingLogs.clear()
                 return True
 
@@ -166,7 +166,7 @@ class LogHandler(StreamHandler):
                 endpoint = "model-queue/add-console-log",
                 requestType = RequestType.post,
                 parameters = {
-                    "model_queue_id": self.currentExperimentId,
+                    "model_queue_id": self.currentTaskRunId,
                     "logs": [log.encode() for log in self.__pendingLogs]
                 }
             )
@@ -184,6 +184,6 @@ class LogHandler(StreamHandler):
             Resets the upload worker thread
         """
 
-        self.currentExperimentId = None
+        self.currentTaskRunId = None
         self.__pendingLogs.clear()
         self.__uploadWorker.reset()

@@ -25,31 +25,31 @@ import multiprocessing
 import faulthandler
 import signal
 
-from ._experiment_worker import experimentWorker
-from ._current_experiment import setCurrentExperiment
+from ._experiment_worker import taskRunWorker
+from ._current_experiment import setCurrentTaskRun
 from .. import folder_manager
-from ..coretex import Experiment
+from ..coretex import TaskRun
 from ..logging import LogHandler
 from ..utils import DATE_FORMAT
 
 
 class ProjectCallback:
 
-    def __init__(self, experiment: Experiment, refreshToken: str) -> None:
-        self._experiment: Final = experiment
+    def __init__(self, taskRun: TaskRun, refreshToken: str) -> None:
+        self._taskRun: Final = taskRun
 
         self.__outputStream, self.__inputStream = multiprocessing.Pipe()
 
         self.workerProcess = multiprocessing.Process(
-            name = f"Experiment {experiment.id} worker process",
-            target = experimentWorker,
-            args = (self.__outputStream, refreshToken, self._experiment.id),
+            name = f"TaskRun {taskRun.id} worker process",
+            target = taskRunWorker,
+            args = (self.__outputStream, refreshToken, self._taskRun.id),
             daemon = True
         )
 
     @classmethod
-    def create(cls, experimentId: int, refreshToken: str) -> Self:
-        return cls(Experiment.fetchById(experimentId), refreshToken)
+    def create(cls, taskRunId: int, refreshToken: str) -> Self:
+        return cls(TaskRun.fetchById(taskRunId), refreshToken)
 
     def onStart(self) -> None:
         self.workerProcess.start()
@@ -60,10 +60,10 @@ class ProjectCallback:
 
         logging.getLogger("coretexpylib").info(result["message"])
 
-        # Call "kill -30 experiment_process_id" to dump current stack trace of the experiment into the file
+        # Call "kill -30 experiment_process_id" to dump current stack trace of the TaskRun into the file
         # 30 == signal.SIGUSR1
         # Only works on *nix systems
-        faultHandlerPath = folder_manager.logs / f"experiment_stacktrace_{self._experiment.id}_{datetime.now().strftime(DATE_FORMAT)}.log"
+        faultHandlerPath = folder_manager.logs / f"task_run_stacktrace_{self._taskRun.id}_{datetime.now().strftime(DATE_FORMAT)}.log"
         faulthandler.register(
             signal.SIGUSR1,
             file = faultHandlerPath.open("w"),
@@ -71,7 +71,7 @@ class ProjectCallback:
         )
 
     def onSuccess(self) -> None:
-        logging.getLogger("coretexpylib").info("Experiment finished successfully")
+        logging.getLogger("coretexpylib").info("TaskRun finished successfully")
 
         LogHandler.instance().flushLogs()
         LogHandler.instance().reset()
@@ -80,7 +80,7 @@ class ProjectCallback:
         pass
 
     def onException(self, exception: BaseException) -> None:
-        logging.getLogger("coretexpylib").critical("Experiment failed to finish due to an error")
+        logging.getLogger("coretexpylib").critical("TaskRun failed to finish due to an error")
         logging.getLogger("coretexpylib").debug(exception, exc_info = True)
         logging.getLogger("coretexpylib").critical(str(exception))
 
@@ -103,4 +103,4 @@ class ProjectCallback:
             pass
 
         folder_manager.clearTempFiles()
-        setCurrentExperiment(None)
+        setCurrentTaskRun(None)

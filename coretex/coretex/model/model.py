@@ -55,8 +55,8 @@ class Model(NetworkObject):
             True if model is deleted, False otherwise
         accuracy : float
             model accuracy
-        experimentId : int
-            experiment id of trained model
+        taskRunId : int
+            TaskRun id of trained model
         meta : Dict[str, Any]
             model meta data
     """
@@ -70,7 +70,7 @@ class Model(NetworkObject):
     isTrained: bool
     isDeleted: bool
     accuracy: float
-    experimentId: int
+    taskRunId: int
     meta: Dict[str, Any]
 
     @property
@@ -90,21 +90,21 @@ class Model(NetworkObject):
     @classmethod
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
         descriptors = super()._keyDescriptors()
-        descriptors["experimentId"] = KeyDescriptor("model_queue_id")
+        descriptors["taskRunId"] = KeyDescriptor("model_queue_id")
 
         return descriptors
 
     @classmethod
-    def createModel(cls, name: str, experimentId: int, accuracy: float, meta: Dict[str, Any]) -> Self:
+    def createModel(cls, name: str, taskRunId: int, accuracy: float, meta: Dict[str, Any]) -> Self:
         """
-            Creates Model object of the provided experiment with specified properties
+            Creates Model object of the provided TaskRun with specified properties
 
             Parameters
             ----------
             name : str
                 model name
-            experimentId : int
-                experiment id of model
+            taskRunId : int
+                TaskRun id of model
             accuracy : float
                 model accuracy
             meta : Dict[str, Any]
@@ -116,12 +116,12 @@ class Model(NetworkObject):
 
             Example
             -------
-            >>> from coretex import Model, ExecutingExperiment
+            >>> from coretex import Model, ExecutingTaskRun
             \b
-            >>> experiment = ExecutingExperiment.current()
+            >>> taskRun = ExecutingTaskRun.current()
             >>> model = Model.createModel(
-                    name = experiment.name,
-                    experimentId = experiment.id,
+                    name = taskRun.name,
+                    taskRunId = taskRun.id,
                     accuracy = 0.87,
                     meta = {}
                 )
@@ -129,7 +129,7 @@ class Model(NetworkObject):
 
         model = cls.create(parameters = {
             "name": name,
-            "model_queue_id": experimentId,
+            "model_queue_id": taskRunId,
             "accuracy": accuracy,
             "meta": meta
         })
@@ -155,13 +155,13 @@ class Model(NetworkObject):
 
             Example
             -------
-            >>> from coretex import ExecutingExperiment, Model
-            >>> model = Model.createModel(experiment.name, experiment.id, accuracy, {})
+            >>> from coretex import ExecutingTaskRun, Model
+            >>> model = Model.createModel(taskRun.name, taskRun.id, accuracy, {})
             >>> model.saveModelDescriptor(modelPath, {
-                    "project_task": experiment.spaceTask,
+                    "project_task": taskRun.spaceTask,
                     "labels": labels,
                     "modelName": model.name,
-                    "description": experiment.description,
+                    "description": taskRun.description,
 
                     "input_description":
                         Input shape is [x, y]
@@ -225,12 +225,12 @@ class Model(NetworkObject):
 
             Example
             -------
-            >>> from coretex import Model, ExecutingExperiment
+            >>> from coretex import Model, ExecutingTaskRun
             \b
-            >>> experiment: ExecutingExperiment[NetworkDataset] = ExecutingExperiment.current()
+            >>> taskRun: ExecutingTaskRun[NetworkDataset] = ExecutingTaskRun.current()
             >>> model = Model.createModel(
-                name = experiment.name,
-                experimentId = experiment.id,
+                name = taskRun.name,
+                taskRunId = taskRun.id,
                 accuracy = 0.87,
                 meta = {}
             )

@@ -1,20 +1,20 @@
 from typing import Optional
 
-from ..coretex import Experiment
+from ..coretex import TaskRun
 
 
-class _CurrentExperimentContainer:
+class _CurrentTaskRunContainer:
 
-    experiment: Optional[Experiment] = None
-
-
-def setCurrentExperiment(experiment: Optional[Experiment]) -> None:
-    _CurrentExperimentContainer.experiment = experiment
+    taskRun: Optional[TaskRun] = None
 
 
-def currentExperiment() -> Experiment:
-    experiment = _CurrentExperimentContainer.experiment
-    if experiment is None:
-        raise ValueError("Experiment is not currently executing")
+def setCurrentTaskRun(taskRun: Optional[TaskRun]) -> None:
+    _CurrentTaskRunContainer.taskRun = taskRun
 
-    return experiment
+
+def currentTaskRun() -> TaskRun:
+    taskRun = _CurrentTaskRunContainer.taskRun
+    if taskRun is None:
+        raise ValueError("TaskRun is not currently executing")
+
+    return taskRun
