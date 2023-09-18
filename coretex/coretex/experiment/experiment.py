@@ -178,6 +178,13 @@ class Experiment(NetworkObject, Generic[DatasetType]):
 
         self.__parameters = {parameter.name: parameter.parseValue(self.spaceTask) for parameter in parameters}
 
+    def _isInterval(self, metricName: str) -> bool:
+        for metric in self.metrics:
+            if metric.name == metricName and metric.xType == MetricType.interval.name:
+                return True
+
+        return False
+
     def updateStatus(
         self,
         status: Optional[ExperimentStatus] = None,
@@ -284,7 +291,6 @@ class Experiment(NetworkObject, Generic[DatasetType]):
 
         self.metrics.extend(metrics)
 
-
     def submitMetrics(self, metricValues: Dict[str, Tuple[float, float]]) -> bool:
         """
             Appends metric values for the provided metrics
@@ -306,21 +312,12 @@ class Experiment(NetworkObject, Generic[DatasetType]):
             True
         """
 
-        metrics : List[Dict[str, Any]] = []
-
-        timestamp = time.time()
-
-        for key, value in metricValues.items():
-            for metric in self.metrics:
-                if metric.name == key and metric.xType == MetricType.interval.name:
-                    timestamp = value[0]
-
-            metrics.append({
-                "timestamp": timestamp,
-                "metric": key,
-                "x": value[0],
-                "y": value[1]
-            })
+        metrics = [{
+            "timestamp": value[0] if self._isInterval(key) else time.time(),
+            "metric": key,
+            "x": value[0],
+            "y": value[1]
+        } for key, value in metricValues.items()]
 
         parameters: Dict[str, Any] = {
             "experiment_id": self.id,
