@@ -28,7 +28,7 @@ import json
 
 from .artifact import Artifact
 from .status import ExperimentStatus
-from .metrics import Metric
+from .metrics import Metric, MetricType
 from .parameter import validateParameters, parameter_factory
 from .execution_type import ExecutionType
 from ..dataset import Dataset, LocalDataset, NetworkDataset
@@ -306,12 +306,21 @@ class Experiment(NetworkObject, Generic[DatasetType]):
             True
         """
 
-        metrics = [{
-            "timestamp": time.time(),
-            "metric": key,
-            "x": value[0],
-            "y": value[1]
-        } for key, value in metricValues.items()]
+        metrics : List[Dict[str, Any]] = []
+
+        timestamp = time.time()
+
+        for key, value in metricValues.items():
+            for metric in self.metrics:
+                if metric.name == key and metric.xType == MetricType.interval.name:
+                    timestamp = value[0]
+
+            metrics.append({
+                "timestamp": timestamp,
+                "metric": key,
+                "x": value[0],
+                "y": value[1]
+            })
 
         parameters: Dict[str, Any] = {
             "experiment_id": self.id,
