@@ -3,29 +3,29 @@ from typing import Type, Any, Optional
 import logging
 
 from ..dataset import *
-from ..space import SpaceTask
+from ..project import ProjectType
 
 
-def getDatasetType(task: SpaceTask, isLocal: bool) -> Type[Dataset]:
-    if task == SpaceTask.other:
+def getDatasetType(task: ProjectType, isLocal: bool) -> Type[Dataset]:
+    if task == ProjectType.other:
         if isLocal:
             return LocalCustomDataset
 
         return CustomDataset
 
-    if task == SpaceTask.imageSegmentation:
+    if task == ProjectType.imageSegmentation:
         if isLocal:
             return LocalImageSegmentationDataset
 
         return ImageSegmentationDataset
 
-    if task == SpaceTask.computerVision:
+    if task == ProjectType.computerVision:
         if isLocal:
             return LocalComputerVisionDataset
 
         return ComputerVisionDataset
 
-    logging.getLogger("coretexpylib").debug(f">> [Coretex] SpaceTask ({task}) does not have a dataset type using CustomDataset")
+    logging.getLogger("coretexpylib").debug(f">> [Coretex] ProjectType ({task}) does not have a dataset type using CustomDataset")
 
     # Returning CustomDataset in case the task doesn't have it's dataset type
     if isLocal:

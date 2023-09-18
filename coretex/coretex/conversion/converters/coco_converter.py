@@ -35,8 +35,8 @@ class _CocoImageAnnotationData:
 
 class COCOConverter(BaseConverter):
 
-    def __init__(self, datasetName: str, spaceId: int, datasetPath: str) -> None:
-        super().__init__(datasetName, spaceId, datasetPath)
+    def __init__(self, datasetName: str, projectId: int, datasetPath: str) -> None:
+        super().__init__(datasetName, projectId, datasetPath)
 
         self.__imagesPath: Final = os.path.join(datasetPath, "images")
 

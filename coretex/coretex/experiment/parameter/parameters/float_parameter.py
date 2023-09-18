@@ -1,7 +1,7 @@
 from typing import Any, List, Optional, Union
 
 from ..base_parameter import BaseParameter
-from ....space import SpaceTask
+from ....project import ProjectType
 
 
 class FloatParameter(BaseParameter[Union[float, int]]):
@@ -10,7 +10,7 @@ class FloatParameter(BaseParameter[Union[float, int]]):
     def types(self) -> List[type]:
         return [float, int]
 
-    def parseValue(self, task: SpaceTask) -> Optional[Any]:
+    def parseValue(self, task: ProjectType) -> Optional[Any]:
         if isinstance(self.value, int):
             return float(self.value)
 

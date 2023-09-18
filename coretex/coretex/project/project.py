@@ -20,50 +20,50 @@ from typing_extensions import Self
 
 from .base import BaseObject
 from .task import Task
-from .space_task import SpaceTask
+from .project_type import ProjectType
 
 
-class Space(BaseObject):
+class Project(BaseObject):
 
     """
-        Represents the space entity from Coretex.ai\n
-        Contains properties that describe the space
+        Represents the project entity from Coretex.ai\n
+        Contains properties that describe the project
     """
 
     tasks: List[Task]
 
     @classmethod
-    def createSpace(cls, name: str, spaceTask: SpaceTask, description: Optional[str] = None) -> Optional[Self]:
+    def createProject(cls, name: str, projectType: ProjectType, description: Optional[str] = None) -> Optional[Self]:
         """
-            Creates a new space with the provided name and description
+            Creates a new project with the provided name and description
 
             Parameters
             ----------
             name : str
-                space name
+                project name
             description : Optional[str]
-                space description
+                project description
 
             Returns
             -------
-            Optional[Self] -> The created space object
+            Optional[Self] -> The created project object
 
             Example
             -------
-            >>> from coretex import Space, SpaceTask
+            >>> from coretex import Project, ProjectType
             \b
-            >>> dummySpace = Space.createSpace(
-                    name = "dummySpace",
-                    spaceTask = SpaceTask.other,
-                    description = "This is dummy Coretex Space"
+            >>> dummyProject = Project.createProject(
+                    name = "dummyProject",
+                    projectType = ProjectType.other,
+                    description = "This is dummy Coretex Project"
                 )
-            >>> if dummySpace is None:
-                    print("Failed to create space")
+            >>> if dummyProject is None:
+                    print("Failed to create project")
         """
 
         return cls.create(parameters={
             "name": name,
-            "project_task": spaceTask.value,
+            "project_task": projectType.value,
             "description": description
         })
 
@@ -78,7 +78,7 @@ class Space(BaseObject):
 
     def addTask(self, name: str, description: Optional[str]) -> bool:
         """
-            Adds new task to the space
+            Adds new task to the project
 
             Parameters
             ----------

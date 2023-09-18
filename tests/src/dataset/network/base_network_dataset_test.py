@@ -20,7 +20,7 @@
 # import os
 # import shutil
 
-# from coretex import NetworkDataset, Space
+# from coretex import NetworkDataset, Project
 
 # from ..base_dataset_test import BaseDatasetTest
 # from ...base_network_test import BaseNetworkTest
@@ -33,7 +33,7 @@
 
 #     class Base(BaseDatasetTest.Base[DatasetType], BaseNetworkTest.Base, Generic[DatasetType]):
 
-#         space: Space
+#         project: Project
 
 #         @classmethod
 #         def tearDownClass(cls) -> None:
@@ -50,8 +50,8 @@
 #                 shutil.rmtree(cls.dataset.path)
 
 #             # TODO: Enable this once delete is working on backend
-#             # if not cls.space.delete():
-#             #     raise RuntimeError(">> [Coretex] Failed to delete space")
+#             # if not cls.project.delete():
+#             #     raise RuntimeError(">> [Coretex] Failed to delete project")
 
 #         def test_networkDatasetDownload(self) -> None:
 #             def verify() -> None:

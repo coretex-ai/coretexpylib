@@ -2,7 +2,7 @@ from typing import Any, List, Optional, Union
 
 from ..base_parameter import BaseParameter
 from ...utils import getDatasetType, fetchDataset
-from ....space import SpaceTask
+from ....project import ProjectType
 
 
 class DatasetParameter(BaseParameter[Union[int, str]]):
@@ -11,7 +11,7 @@ class DatasetParameter(BaseParameter[Union[int, str]]):
     def types(self) -> List[type]:
         return [int, str]
 
-    def parseValue(self, task: SpaceTask) -> Optional[Any]:
+    def parseValue(self, task: ProjectType) -> Optional[Any]:
         if self.value is None:
             return None
 

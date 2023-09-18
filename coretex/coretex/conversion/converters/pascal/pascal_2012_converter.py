@@ -33,8 +33,8 @@ class PascalSegConverter(BaseConverter):
         Represents the Converter from Pascal VOC 2012 Format to Cortex Format
     """
 
-    def __init__(self, datasetName: str, spaceId: int, datasetPath: str) -> None:
-        super().__init__(datasetName, spaceId, datasetPath)
+    def __init__(self, datasetName: str, projectId: int, datasetPath: str) -> None:
+        super().__init__(datasetName, projectId, datasetPath)
 
         self.__imagesPath = os.path.join(datasetPath, "JPEGImages")
         self.__segmentationPath = os.path.join(datasetPath, "SegmentationObject")

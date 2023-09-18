@@ -59,7 +59,7 @@ class SequenceDataset(BaseSequenceDataset, NetworkDataset[SequenceSample]):
     def createSequenceDataset(
         cls,
         name: str,
-        spaceId: int,
+        projectId: int,
         metadataPath: Union[Path, str],
         meta: Optional[Dict[str, Any]] = None
     ) -> Optional[Self]:
@@ -71,8 +71,8 @@ class SequenceDataset(BaseSequenceDataset, NetworkDataset[SequenceSample]):
             ----------
             name : str
                 dataset name
-            spaceId : int
-                space for which the dataset will be created
+            projectId : int
+                project for which the dataset will be created
             metadataPath : Union[Path, str]
                 path the zipped metadata file
 
@@ -92,7 +92,7 @@ class SequenceDataset(BaseSequenceDataset, NetworkDataset[SequenceSample]):
         if isinstance(metadataPath, str):
             metadataPath = Path(metadataPath)
 
-        dataset = CustomDataset.createDataset(name, spaceId, meta)
+        dataset = CustomDataset.createDataset(name, projectId, meta)
         if dataset is None:
             return None
 

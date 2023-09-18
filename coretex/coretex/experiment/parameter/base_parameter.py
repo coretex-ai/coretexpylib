@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 import logging
 
 from .parameter_type import ParameterType
-from ...space import SpaceTask
+from ...project import ProjectType
 from ....codable import Codable, KeyDescriptor
 
 
@@ -58,7 +58,7 @@ class BaseParameter(ABC, Codable, Generic[T]):
         elementTypes = ", ".join({type(value).__name__ for value in self.value})
         return f"list[{elementTypes}]"
 
-    def parseValue(self, task: SpaceTask) -> Optional[Any]:
+    def parseValue(self, task: ProjectType) -> Optional[Any]:
         return self.value
 
 
