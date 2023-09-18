@@ -506,7 +506,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         """
             Creates Experiment on Coretex.ai with the provided parameters,
             which will be run on the same machine which created it immidiately
-            after running the entry point file of the Job
+            after running the entry point file of the task
 
             Parameters
             ----------
