@@ -18,7 +18,7 @@
 from typing import Tuple, Optional, List
 from tap import Tap
 
-from ._base_callback import ProjectCallback
+from ._base_callback import TaskCallback
 from ..networking import networkManager
 
 
@@ -32,11 +32,11 @@ class RemoteArgumentParser(Tap):
         self.add_argument("--taskRunId", type = int)
 
 
-def _processRemote(args: Optional[List[str]] = None) -> Tuple[int, ProjectCallback]:
+def _processRemote(args: Optional[List[str]] = None) -> Tuple[int, TaskCallback]:
     remoteArgumentParser, unknown = RemoteArgumentParser().parse_known_args(args)
 
     response = networkManager.authenticateWithRefreshToken(remoteArgumentParser.refreshToken)
     if response.hasFailed():
         raise RuntimeError(">> [Coretex] Failed to authenticate")
 
-    return remoteArgumentParser.taskRunId, ProjectCallback.create(remoteArgumentParser.taskRunId, remoteArgumentParser.refreshToken)
+    return remoteArgumentParser.taskRunId, TaskCallback.create(remoteArgumentParser.taskRunId, remoteArgumentParser.refreshToken)

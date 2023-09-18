@@ -27,13 +27,13 @@ from tap import Tap
 
 import psutil
 
-from ._base_callback import ProjectCallback
+from ._base_callback import TaskCallback
 from .. import folder_manager
 from ..coretex import TaskRun, TaskRunStatus, BaseParameter, validateParameters, parameter_factory
 from ..networking import networkManager
 
 
-class LocalProjectCallback(ProjectCallback):
+class LocalTaskCallback(TaskCallback):
 
     def onStart(self) -> None:
         super().onStart()
@@ -111,7 +111,7 @@ def _readTaskRunConfig() -> List[BaseParameter]:
     return parameters
 
 
-def _processLocal(args: Optional[List[str]] = None) -> Tuple[int, ProjectCallback]:
+def _processLocal(args: Optional[List[str]] = None) -> Tuple[int, TaskCallback]:
     parser, unknown = LocalArgumentParser().parse_known_args(args)
 
     if parser.username is not None and parser.password is not None:
@@ -144,4 +144,4 @@ def _processLocal(args: Optional[List[str]] = None) -> Tuple[int, ProjectCallbac
     logging.getLogger("coretexpylib").info(f">> [Coretex] Created local run with ID \"{taskRun.id}\"")
     taskRun.updateStatus(TaskRunStatus.preparingToStart)
 
-    return taskRun.id, LocalProjectCallback(taskRun, response.json["refresh_token"])
+    return taskRun.id, LocalTaskCallback(taskRun, response.json["refresh_token"])

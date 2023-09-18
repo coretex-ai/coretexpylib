@@ -19,7 +19,7 @@ from typing import Optional, Any, List, Dict
 from typing_extensions import Self
 
 from .base import BaseObject
-from .project import Project
+from .task import Task
 from .space_task import SpaceTask
 
 
@@ -30,7 +30,7 @@ class Space(BaseObject):
         Contains properties that describe the space
     """
 
-    projects: List[Project]
+    tasks: List[Task]
 
     @classmethod
     def createSpace(cls, name: str, spaceTask: SpaceTask, description: Optional[str] = None) -> Optional[Self]:
@@ -70,31 +70,31 @@ class Space(BaseObject):
     @classmethod
     def decode(cls, encodedObject: Dict[str, Any]) -> Self:
         obj = super().decode(encodedObject)
-        obj.projects = Project.fetchAll(queryParameters=[
+        obj.tasks = Task.fetchAll(queryParameters=[
             f"parentId={obj.id}"
         ])
 
         return obj
 
-    def addProject(self, name: str, description: Optional[str]) -> bool:
+    def addTask(self, name: str, description: Optional[str]) -> bool:
         """
-            Adds new project to the space
+            Adds new task to the space
 
             Parameters
             ----------
             name : str
-                project name
+                task name
             description : Optional[str]
-                project description
+                task description
 
             Returns
             -------
-            bool -> True if the project was added. False if the project was not added
+            bool -> True if the task was added. False if the task was not added
         """
 
-        project = Project.createProject(name, self.id, description)
-        if project is None:
+        task = Task.createTask(name, self.id, description)
+        if task is None:
             return False
 
-        self.projects.append(project)
+        self.tasks.append(task)
         return True

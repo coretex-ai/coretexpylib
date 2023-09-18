@@ -30,15 +30,15 @@ def _prepareForExecution(taskRunId: int) -> TaskRun:
 
     taskRun.updateStatus(
         status = TaskRunStatus.inProgress,
-        message = "Executing project."
+        message = "Executing task."
     )
 
     return taskRun
 
 
-def initializeRProject(mainFunction: Callable[[TaskRun], None], args: List[str]) -> None:
+def initializeRTask(mainFunction: Callable[[TaskRun], None], args: List[str]) -> None:
     """
-        Initializes and starts the R project as Coretex run
+        Initializes and starts the R task as Coretex TaskRun
 
         Parameters
         ----------

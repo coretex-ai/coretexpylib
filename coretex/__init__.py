@@ -27,4 +27,4 @@ _initializeDefaultLogger()
 
 # Use this only
 from .coretex import *
-from ._project import currentTaskRun, initializeRProject
+from ._task import currentTaskRun, initializeRTask

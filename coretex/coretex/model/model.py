@@ -47,8 +47,8 @@ class Model(NetworkObject):
             dataset id that is used for training the model
         spaceId : int
             space id that is used for training the model
-        projectId : int
-            project id that is used for training the model
+        taskId : int
+            task id that is used for training the model
         isTrained : bool
             True if model is trained, False otherwise
         isDeleted : bool
@@ -66,7 +66,7 @@ class Model(NetworkObject):
     createdOn: datetime
     datasetId: int
     spaceId: int
-    projectId: int
+    taskId: int
     isTrained: bool
     isDeleted: bool
     accuracy: float
