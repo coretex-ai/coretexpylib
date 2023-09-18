@@ -63,10 +63,10 @@ class Experiment(NetworkObject, Generic[DatasetType]):
             name of Coretex Space
         spaceTask : SpaceTask
             appropriate space task
-        projectId : int
-            id of project
-        projectName : str
-            name of project
+        taskId : int
+            id of task
+        taskName : str
+            name of task
         createdById : str
             id of created experiment
         useCachedEnv : bool
@@ -80,8 +80,8 @@ class Experiment(NetworkObject, Generic[DatasetType]):
     spaceId: int
     spaceName: str
     spaceTask: SpaceTask
-    projectId: int
-    projectName: str
+    taskId: int
+    taskName: str
     createdById: str
     useCachedEnv: bool
     metrics: List[Metric]
@@ -103,7 +103,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         return self.__parameters
 
     @property
-    def projectPath(self) -> Path:
+    def taskPath(self) -> Path:
         """
             Returns
             -------
@@ -149,8 +149,8 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         descriptors["spaceId"] = KeyDescriptor("project_id")
         descriptors["spaceName"] = KeyDescriptor("project_name")
         descriptors["spaceTask"] = KeyDescriptor("project_task", SpaceTask)
-        descriptors["projectId"] = KeyDescriptor("sub_project_id")
-        descriptors["projectName"] = KeyDescriptor("sub_project_name")
+        descriptors["taskId"] = KeyDescriptor("sub_project_id")
+        descriptors["taskName"] = KeyDescriptor("sub_project_name")
 
         # private properties of the object should not be encoded
         descriptors["__parameters"] = KeyDescriptor(isEncodable = False)
@@ -326,16 +326,16 @@ class Experiment(NetworkObject, Generic[DatasetType]):
 
         return not response.hasFailed()
 
-    def downloadProject(self) -> bool:
+    def downloadTask(self) -> bool:
         """
-            Downloads project snapshot linked to the experiment
+            Downloads task snapshot linked to the experiment
 
             Returns
             -------
-            bool -> True if project downloaded successfully, False if project download has failed
+            bool -> True if task downloaded successfully, False if task download has failed
         """
 
-        zipFilePath = f"{self.projectPath}.zip"
+        zipFilePath = f"{self.taskPath}.zip"
 
         response = networkManager.genericDownload(
             endpoint=f"workspace/download?model_queue_id={self.id}",
@@ -343,13 +343,13 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         )
 
         with ZipFile(zipFilePath) as zipFile:
-            zipFile.extractall(self.projectPath)
+            zipFile.extractall(self.taskPath)
 
         # remove zip file after extract
         os.unlink(zipFilePath)
 
         if response.hasFailed():
-            logging.getLogger("coretexpylib").info(">> [Coretex] Project download has failed")
+            logging.getLogger("coretexpylib").info(">> [Coretex] Task download has failed")
 
         return not response.hasFailed()
 
@@ -413,7 +413,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
     @classmethod
     def run(
         cls,
-        projectId: int,
+        taskId: int,
         nodeId: Union[int, str],
         name: Optional[str],
         description: Optional[str] = None,
@@ -426,8 +426,8 @@ class Experiment(NetworkObject, Generic[DatasetType]):
 
             Parameters
             ----------
-            projectId : int
-                id of project that is being used for starting Experiment
+            taskId : int
+                id of task that is being used for starting Experiment
             nodeId : Union[int, str]
                 id of node that is being used for starting Experiment
             name : Optional[str]
@@ -462,7 +462,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
             \b
             >>> try:
                     experiment = Experiment.run(
-                        projectId = 1023,
+                        taskId = 1023,
                         nodeId = 23,
                         name = "Dummy Custom Experiment
                         description = "Dummy description",
@@ -481,7 +481,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
             parameters = []
 
         response = networkManager.genericJSONRequest("run", RequestType.post, {
-            "sub_project_id": projectId,
+            "sub_project_id": taskId,
             "service_id": nodeId,
             "name": name,
             "description": description,
@@ -506,7 +506,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         """
             Creates Experiment on Coretex.ai with the provided parameters,
             which will be run on the same machine which created it immidiately
-            after running the entry point file of the Job
+            after running the entry point file of the task
 
             Parameters
             ----------

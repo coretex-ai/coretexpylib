@@ -32,16 +32,15 @@ $ pip install coretex
 
 ```python
 from coretex import CustomDataset, ExecutingExperiment
-from coretex.project import initializeProject
 
 
 def main(experiment: ExecutingExperiment[CustomDataset]):
-    # Remove "pass" and start project execution from here
+    # Remove "pass" and start task execution from here
     pass
 
 
 if __name__ == "__main__":
-    initializeProject(main)
+    main()
 ```
 
 Read the documentation and learn how you can migrate your project to the Coretex platform -> [Migrate your project to Coretex](https://app.gitbook.com/o/6QxmEiF5ygi67vFH3kV1/s/YoN0XCeop3vrJ0hyRKxx/getting-started/demo-experiments/migrate-your-project-to-coretex)
@@ -50,7 +49,7 @@ Read the documentation and learn how you can migrate your project to the Coretex
 
 Coretex.ai offers a range of features to support users in their AI experimentation, including:
 
-* **Project Templates:** Battle-tested templates that make training ML models and processing data simple,
+* **Task Templates:** Battle-tested templates that make training ML models and processing data simple,
 
 * **Machine Learning Model Creation:** Quick and easy creation of machine learning models, with less friction and more stability,
 

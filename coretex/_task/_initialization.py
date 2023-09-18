@@ -30,15 +30,15 @@ def _prepareForExecution(experimentId: int) -> Experiment:
 
     experiment.updateStatus(
         status = ExperimentStatus.inProgress,
-        message = "Executing project."
+        message = "Executing task."
     )
 
     return experiment
 
 
-def initializeRProject(mainFunction: Callable[[Experiment], None], args: List[str]) -> None:
+def initializeRTask(mainFunction: Callable[[Experiment], None], args: List[str]) -> None:
     """
-        Initializes and starts the R project as Coretex experiment
+        Initializes and starts the R task as Coretex experiment
 
         Parameters
         ----------

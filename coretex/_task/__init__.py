@@ -18,4 +18,4 @@
 from ._local import _processLocal
 from ._remote import _processRemote
 from ._current_experiment import currentExperiment
-from ._initialization import _prepareForExecution, initializeRProject
+from ._initialization import _prepareForExecution, initializeRTask
