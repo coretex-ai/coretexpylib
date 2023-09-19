@@ -31,8 +31,8 @@ from ...annotation import CoretexImageAnnotation, CoretexSegmentationInstance, B
 
 class CityScapeConverter(BaseConverter):
 
-    def __init__(self, datasetName: str, spaceId: int, datasetPath: str) -> None:
-        super().__init__(datasetName, spaceId, datasetPath)
+    def __init__(self, datasetName: str, projectId: int, datasetPath: str) -> None:
+        super().__init__(datasetName, projectId, datasetPath)
 
         self.__baseImagePath = os.path.join(datasetPath, "leftImg8bit_trainvaltest", "leftImg8bit")
         self.__baseAnnotationsPaths = [

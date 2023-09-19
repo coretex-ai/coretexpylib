@@ -22,7 +22,7 @@ from pathlib import Path
 import os
 
 from .sample import Sample
-from ..space import SpaceTask
+from ..project import ProjectType
 from ... import folder_manager
 from ...codable import KeyDescriptor
 from ...networking import NetworkObject, networkManager, FileData
@@ -39,7 +39,7 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
     """
 
     isLocked: bool
-    spaceTask: SpaceTask
+    projectType: ProjectType
 
     @property
     def path(self) -> Path:
@@ -64,7 +64,7 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
     @classmethod
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
         descriptors = super()._keyDescriptors()
-        descriptors["spaceTask"] = KeyDescriptor("project_task", SpaceTask)
+        descriptors["projectType"] = KeyDescriptor("project_task", ProjectType)
 
         return descriptors
 

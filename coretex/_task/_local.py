@@ -76,7 +76,7 @@ class LocalArgumentParser(Tap):
     username: Optional[str]
     password: Optional[str]
 
-    spaceId: int
+    projectId: int
     name: Optional[str]
     description: Optional[str]
 
@@ -84,7 +84,7 @@ class LocalArgumentParser(Tap):
         self.add_argument("--username", nargs = "?", type = str, default = None)
         self.add_argument("--password", nargs = "?", type = str, default = None)
 
-        self.add_argument("--spaceId", type = int)
+        self.add_argument("--projectId", type = int)
         self.add_argument("--name", nargs = "?", type = str, default = None)
         self.add_argument("--description", nargs = "?", type = str, default = None)
 
@@ -135,7 +135,7 @@ def _processLocal(args: Optional[List[str]] = None) -> Tuple[int, TaskCallback]:
         raise FileNotFoundError(">> [Coretex] \"experiment.config\" file not found")
 
     experiment: Experiment = Experiment.runLocal(
-        parser.spaceId,
+        parser.projectId,
         parser.name,
         parser.description,
         [parameter.encode() for parameter in _readExperimentConfig()]

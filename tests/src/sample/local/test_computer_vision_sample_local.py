@@ -17,7 +17,7 @@
 
 import unittest
 
-from coretex import LocalComputerVisionSample, LocalComputerVisionDataset, SpaceTask
+from coretex import LocalComputerVisionSample, LocalComputerVisionDataset, ProjectType
 
 from ..base_computer_vision_sample_test import BaseComputerVisionSampleTest
 from ...utils import createLocalEnvironmentFor
@@ -31,7 +31,7 @@ class TestComputerVisionSampleLocal(BaseComputerVisionSampleTest.Base):
     def setUpClass(cls) -> None:
         super().setUpClass()
 
-        dataset = createLocalEnvironmentFor(SpaceTask.computerVision, LocalComputerVisionDataset)
+        dataset = createLocalEnvironmentFor(ProjectType.computerVision, LocalComputerVisionDataset)
         cls.sample = dataset.samples[0]
 
 

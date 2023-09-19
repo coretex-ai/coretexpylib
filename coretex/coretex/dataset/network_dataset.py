@@ -49,7 +49,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
             availabilty of dataset for modifications
     """
 
-    spaceId: int
+    projectId: int
     createdOn: datetime
     createdById: str
     isLocked: bool
@@ -76,7 +76,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
         descriptors = super()._keyDescriptors()
 
-        descriptors["spaceId"] = KeyDescriptor("project_id")
+        descriptors["projectId"] = KeyDescriptor("project_id")
         descriptors["samples"] = KeyDescriptor("sessions", NetworkSample, list)
 
         return descriptors
@@ -107,7 +107,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
     def createDataset(
         cls,
         name: str,
-        spaceId: int,
+        projectId: int,
         meta: Optional[Dict[str, Any]] = None
     ) -> Optional[Self]:
 
@@ -118,8 +118,8 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
             ----------
             name : str
                 dataset name
-            spaceId : int
-                space for which the dataset will be created
+            projectId : int
+                project for which the dataset will be created
 
             Returns
             -------
@@ -136,7 +136,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
 
         return cls.create({
             "name": name,
-            "project_id": spaceId,
+            "project_id": projectId,
             "meta": meta
         })
 

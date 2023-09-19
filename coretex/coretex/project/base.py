@@ -18,7 +18,7 @@
 from typing import Optional, Dict
 from datetime import datetime
 
-from .space_task import SpaceTask
+from .project_type import ProjectType
 from ...codable import KeyDescriptor
 from ...networking import NetworkObject
 
@@ -26,7 +26,7 @@ from ...networking import NetworkObject
 class BaseObject(NetworkObject):
 
     """
-        Represents the base class for Space/Task objects from Coretex.ai
+        Represents the base class for Project/Task objects from Coretex.ai
 
         Properties
         ----------
@@ -38,15 +38,15 @@ class BaseObject(NetworkObject):
             date of creation of object
         createdById : str
             id of user that created object
-        spaceTask : SpaceTask
-            space task of created object
+        projectType : ProjectType
+            project type of created object
     """
 
     name: str
     description: Optional[str]
     createdOn: datetime
     createdById: str
-    spaceTask: SpaceTask
+    projectType: ProjectType
 
     @classmethod
     def _endpoint(cls) -> str:
@@ -55,13 +55,13 @@ class BaseObject(NetworkObject):
     @classmethod
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
         descriptors = super()._keyDescriptors()
-        descriptors["spaceTask"] = KeyDescriptor("project_task", SpaceTask)
+        descriptors["projectType"] = KeyDescriptor("project_task", ProjectType)
 
         return descriptors
 
     def rename(self, name: str) -> bool:
         """
-            Renames the Space/Task
+            Renames the Project/Task
 
             Parameters
             ----------
@@ -70,7 +70,7 @@ class BaseObject(NetworkObject):
 
             Returns
             -------
-            bool -> True if Space/Task was renamed, False if Space/Task was not renamed
+            bool -> True if Project/Task was renamed, False if Project/Task was not renamed
         """
 
         if self.name == name:
@@ -89,7 +89,7 @@ class BaseObject(NetworkObject):
 
     def updateDescription(self, description: str) -> bool:
         """
-            Updates the Space/Task's description
+            Updates the Project/Task's description
 
             Parameters
             ----------
@@ -97,8 +97,8 @@ class BaseObject(NetworkObject):
                 new description
 
             Returns
-                bool -> True if Space/Task's description was updated,
-                False if Space/Task's description was not updated
+                bool -> True if Project/Task's description was updated,
+                False if Project/Task's description was not updated
         """
 
         if self.description == description:

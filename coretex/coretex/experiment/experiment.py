@@ -32,7 +32,7 @@ from .metrics import Metric, MetricType
 from .parameter import validateParameters, parameter_factory
 from .execution_type import ExecutionType
 from ..dataset import Dataset, LocalDataset, NetworkDataset
-from ..space import SpaceTask
+from ..project import ProjectType
 from ... import folder_manager
 from ...codable import KeyDescriptor
 from ...networking import networkManager, NetworkObject, RequestType, NetworkRequestError, FileData
@@ -57,12 +57,12 @@ class Experiment(NetworkObject, Generic[DatasetType]):
             meta data of Experiment
         status : ExperimentStatus
             status of Experiment
-        spaceId : int
-            id of Coretex Space
-        spaceName : str
-            name of Coretex Space
-        spaceTask : SpaceTask
-            appropriate space task
+        projectId : int
+            id of Coretex Project
+        projectName : str
+            name of Coretex Project
+        projectType : ProjectType
+            appropriate project type
         taskId : int
             id of task
         taskName : str
@@ -77,9 +77,9 @@ class Experiment(NetworkObject, Generic[DatasetType]):
     description: str
     meta: Dict[str, Any]
     status: ExperimentStatus
-    spaceId: int
-    spaceName: str
-    spaceTask: SpaceTask
+    projectId: int
+    projectName: str
+    projectType: ProjectType
     taskId: int
     taskName: str
     createdById: str
@@ -146,9 +146,9 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         descriptors = super()._keyDescriptors()
 
         descriptors["status"] = KeyDescriptor("status", ExperimentStatus)
-        descriptors["spaceId"] = KeyDescriptor("project_id")
-        descriptors["spaceName"] = KeyDescriptor("project_name")
-        descriptors["spaceTask"] = KeyDescriptor("project_task", SpaceTask)
+        descriptors["projectId"] = KeyDescriptor("project_id")
+        descriptors["projectName"] = KeyDescriptor("project_name")
+        descriptors["projectType"] = KeyDescriptor("project_task", ProjectType)
         descriptors["taskId"] = KeyDescriptor("sub_project_id")
         descriptors["taskName"] = KeyDescriptor("sub_project_name")
 
@@ -176,7 +176,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         if not all(parameterValidationResults.values()):
             raise ValueError("Invalid parameters found")
 
-        self.__parameters = {parameter.name: parameter.parseValue(self.spaceTask) for parameter in parameters}
+        self.__parameters = {parameter.name: parameter.parseValue(self.projectType) for parameter in parameters}
 
     def _isInterval(self, metricName: str) -> bool:
         for metric in self.metrics:
@@ -503,7 +503,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
     @classmethod
     def runLocal(
         cls,
-        spaceId: int,
+        projectId: int,
         name: Optional[str],
         description: Optional[str] = None,
         parameters: Optional[List[Dict[str, Any]]] = None
@@ -516,8 +516,8 @@ class Experiment(NetworkObject, Generic[DatasetType]):
 
             Parameters
             ----------
-            spaceId : int
-                id of space that is being used for starting Experiment
+            projectId : int
+                id of project that is being used for starting Experiment
             name : Optional[str]
                 name of Experiment (not required)
             description : Optional[str]
@@ -562,7 +562,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         ]
 
         response = networkManager.genericUpload("run", files, {
-            "project_id": spaceId,
+            "project_id": projectId,
             "name": name,
             "description": description,
             "execution_type": ExecutionType.local.value,

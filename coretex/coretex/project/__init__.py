@@ -15,6 +15,6 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .space import Space
-from .space_task import SpaceTask
+from .project import Project
+from .project_type import ProjectType
 from .task import Task

@@ -18,10 +18,10 @@
 from enum import IntEnum
 
 
-class SpaceTask(IntEnum):
+class ProjectType(IntEnum):
 
     """
-        List of available SpaceTasks on Coretex.ai
+        List of available ProjectTypes on Coretex.ai
     """
 
     computerVision        = 1
