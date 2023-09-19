@@ -28,7 +28,7 @@ import json
 
 from .artifact import Artifact
 from .status import ExperimentStatus
-from .metrics import Metric
+from .metrics import Metric, MetricType
 from .parameter import validateParameters, parameter_factory
 from .execution_type import ExecutionType
 from ..dataset import Dataset, LocalDataset, NetworkDataset
@@ -178,6 +178,13 @@ class Experiment(NetworkObject, Generic[DatasetType]):
 
         self.__parameters = {parameter.name: parameter.parseValue(self.spaceTask) for parameter in parameters}
 
+    def _isInterval(self, metricName: str) -> bool:
+        for metric in self.metrics:
+            if metric.name == metricName and metric.xType == MetricType.interval.name:
+                return True
+
+        return False
+
     def updateStatus(
         self,
         status: Optional[ExperimentStatus] = None,
@@ -284,7 +291,6 @@ class Experiment(NetworkObject, Generic[DatasetType]):
 
         self.metrics.extend(metrics)
 
-
     def submitMetrics(self, metricValues: Dict[str, Tuple[float, float]]) -> bool:
         """
             Appends metric values for the provided metrics
@@ -307,7 +313,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         """
 
         metrics = [{
-            "timestamp": time.time(),
+            "timestamp": value[0] if self._isInterval(key) else time.time(),
             "metric": key,
             "x": value[0],
             "y": value[1]
