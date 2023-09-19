@@ -2,7 +2,7 @@ from typing import Any, List, Optional, Tuple, Dict
 
 from ..base_list_parameter import BaseListParameter
 from ..utils import validateEnumStructure
-from ....space import SpaceTask
+from ....project import ProjectType
 
 
 class ListEnumParameter(BaseListParameter[Dict[str, Any]]):
@@ -42,7 +42,7 @@ class ListEnumParameter(BaseListParameter[Dict[str, Any]]):
 
         return True, None
 
-    def parseValue(self, task: SpaceTask) -> Optional[Any]:
+    def parseValue(self, type_: ProjectType) -> Optional[Any]:
         if self.value is None:
             return self.value
 

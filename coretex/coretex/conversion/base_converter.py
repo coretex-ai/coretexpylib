@@ -57,14 +57,14 @@ class BaseConverter(ABC):
         ----------
         datasetName : str
             name of dataset
-        spaceId : int
-            id of Coretex Space
+        projectId : int
+            id of Coretex Project
         datasetPath : str
             path to dataset
     """
 
-    def __init__(self, datasetName: str, spaceId: int, datasetPath: str) -> None:
-        dataset: Optional[ImageDatasetType] = ImageDataset.createDataset(datasetName, spaceId)
+    def __init__(self, datasetName: str, projectId: int, datasetPath: str) -> None:
+        dataset: Optional[ImageDatasetType] = ImageDataset.createDataset(datasetName, projectId)
         if dataset is None:
             raise ValueError(">> [Coretex] Failed to create dataset")
 

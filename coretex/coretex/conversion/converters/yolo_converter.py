@@ -40,8 +40,8 @@ class Helper:
 
 class YoloConverter(BaseConverter):
 
-    def __init__(self, datasetName: str, spaceId: int, datasetPath: str) -> None:
-        super().__init__(datasetName, spaceId, datasetPath)
+    def __init__(self, datasetName: str, projectId: int, datasetPath: str) -> None:
+        super().__init__(datasetName, projectId, datasetPath)
 
         self.__imagesPath = os.path.join(datasetPath, "images")
         self.__annotations = os.path.join(datasetPath, "annotations")

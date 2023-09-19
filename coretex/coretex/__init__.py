@@ -20,4 +20,4 @@ from .sample import *
 from .dataset import *
 from .model import *
 from .task_run import *
-from .space import *
+from .project import *

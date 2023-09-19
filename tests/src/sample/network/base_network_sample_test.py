@@ -17,7 +17,7 @@
 
 # import os
 
-# from coretex import Space, NetworkSample, NetworkDataset
+# from coretex import Project, NetworkSample, NetworkDataset
 
 # from ..base_sample_test import BaseSampleTest
 # from ...base_network_test import BaseNetworkTest
@@ -27,7 +27,7 @@
 
 #     class Base(BaseSampleTest.Base, BaseNetworkTest.Base):
 
-#         space: Space
+#         project: Project
 #         dataset: NetworkDataset
 #         sample: NetworkSample
 
@@ -36,8 +36,8 @@
 #             super().tearDownClass()
 
 #             # TODO: Enable this once delete is working on backend
-#             # if not cls.space.delete():
-#             #     raise RuntimeError(">> [Coretex] Failed to delete space")
+#             # if not cls.project.delete():
+#             #     raise RuntimeError(">> [Coretex] Failed to delete project")
 
 #         def setUp(self) -> None:
 #             super().setUp()

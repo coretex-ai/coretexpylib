@@ -40,17 +40,17 @@ class Task(BaseObject):
         return descriptors
 
     @classmethod
-    def createTask(cls, name: str, spaceId: int, description: Optional[str]=None) -> Optional[Self]:
+    def createTask(cls, name: str, projectId: int, description: Optional[str]=None) -> Optional[Self]:
         """
             Creates a new task with the provided name and description
-            Task is added to the space with provided space id
+            Task is added to the project with provided project id
 
             Parameters
             ----------
             name : str
                 task name
-            spaceId : int
-                space id the task belongs to
+            projectId : int
+                project id the task belongs to
             description : Optional[str]
                 task description
 
@@ -64,7 +64,7 @@ class Task(BaseObject):
             \b
             >>> dummyTask = Task.createTask(
                     name = "dummyTask",
-                    spaceId = 23,
+                    projectId = 23,
                     description = "This is dummy task"
                 )
             >>> if dummyTask is None:
@@ -73,6 +73,6 @@ class Task(BaseObject):
 
         return cls.create(parameters={
             "name": name,
-            "parent_id": spaceId,
+            "parent_id": projectId,
             "description": description
         })

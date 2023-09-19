@@ -45,8 +45,8 @@ class Model(NetworkObject):
             date of model creation
         datasetId : int
             dataset id that is used for training the model
-        spaceId : int
-            space id that is used for training the model
+        projectId : int
+            project id that is used for training the model
         taskId : int
             task id that is used for training the model
         isTrained : bool
@@ -65,7 +65,7 @@ class Model(NetworkObject):
     createdById: str
     createdOn: datetime
     datasetId: int
-    spaceId: int
+    projectId: int
     taskId: int
     isTrained: bool
     isDeleted: bool
@@ -158,7 +158,7 @@ class Model(NetworkObject):
             >>> from coretex import ExecutingTaskRun, Model
             >>> model = Model.createModel(taskRun.name, taskRun.id, accuracy, {})
             >>> model.saveModelDescriptor(modelPath, {
-                    "project_task": taskRun.spaceTask,
+                    "project_task": taskRun.projectType,
                     "labels": labels,
                     "modelName": model.name,
                     "description": taskRun.description,

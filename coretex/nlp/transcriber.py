@@ -118,7 +118,7 @@
 
 #     logging.info(">> [Coretex] Caching dataset transcription")
 
-#     cachedDataset = CustomDataset.createDataset(f"{dataset.name}_cached", dataset.spaceId, meta = meta)
+#     cachedDataset = CustomDataset.createDataset(f"{dataset.name}_cached", dataset.projectId, meta = meta)
 #     if cachedDataset is None:
 #         return False
 

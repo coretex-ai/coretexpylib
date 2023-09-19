@@ -17,7 +17,7 @@
 
 # import unittest
 
-# from coretex import CustomSample, CustomDataset, SpaceTask
+# from coretex import CustomSample, CustomDataset, ProjectType
 
 # from .base_network_sample_test import BaseNetworkSampleTest
 # from ...utils import createRemoteEnvironmentFor, generateUniqueName
@@ -32,9 +32,9 @@
 #     def setUpClass(cls) -> None:
 #         super().setUpClass()
 
-#         space, dataset = createRemoteEnvironmentFor(SpaceTask.other, CustomDataset)
+#         project, dataset = createRemoteEnvironmentFor(ProjectType.other, CustomDataset)
 
-#         cls.space = space
+#         cls.project = project
 #         cls.dataset = dataset
 #         cls.sample = dataset.samples[0]
 

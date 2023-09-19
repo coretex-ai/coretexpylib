@@ -36,7 +36,7 @@ class ConverterProcessorFactory:
     def __init__(self, convertProcessorType: ConverterProcessorType):
         self.type: Final = convertProcessorType
 
-    def create(self, datasetName: str, spaceId: int, datasetPath: str) -> BaseConverter:
+    def create(self, datasetName: str, projectId: int, datasetPath: str) -> BaseConverter:
         """
             Creates BaseConverter based on the convertProcessorType
             property of the class
@@ -45,8 +45,8 @@ class ConverterProcessorFactory:
             ----------
             datasetName : str
                 name of dataset
-            spaceId : int
-                id of Coretex Space
+            projectId : int
+                id of Coretex Project
             datasetPath : str
                 path to dataset
 
@@ -57,27 +57,27 @@ class ConverterProcessorFactory:
         """
 
         if self.type == ConverterProcessorType.coco:
-            return COCOConverter(datasetName, spaceId, datasetPath)
+            return COCOConverter(datasetName, projectId, datasetPath)
 
         if self.type == ConverterProcessorType.yolo:
-            return YoloConverter(datasetName, spaceId, datasetPath)
+            return YoloConverter(datasetName, projectId, datasetPath)
 
         if self.type ==  ConverterProcessorType.createML:
-            return CreateMLConverter(datasetName, spaceId, datasetPath)
+            return CreateMLConverter(datasetName, projectId, datasetPath)
 
         if self.type == ConverterProcessorType.voc:
-            return VOCConverter(datasetName, spaceId, datasetPath)
+            return VOCConverter(datasetName, projectId, datasetPath)
 
         if self.type == ConverterProcessorType.labelMe:
-            return LabelMeConverter(datasetName, spaceId, datasetPath)
+            return LabelMeConverter(datasetName, projectId, datasetPath)
 
         if self.type == ConverterProcessorType.pascalSeg:
-            return PascalSegConverter(datasetName, spaceId, datasetPath)
+            return PascalSegConverter(datasetName, projectId, datasetPath)
 
         if self.type == ConverterProcessorType.humanSegmentation:
-            return HumanSegmentationConverter(datasetName, spaceId, datasetPath)
+            return HumanSegmentationConverter(datasetName, projectId, datasetPath)
 
         if self.type == ConverterProcessorType.cityScape:
-            return CityScapeConverter(datasetName, spaceId, datasetPath)
+            return CityScapeConverter(datasetName, projectId, datasetPath)
 
         raise RuntimeError()

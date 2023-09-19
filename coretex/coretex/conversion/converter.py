@@ -22,7 +22,7 @@ from .base_converter import ConverterProcessorType
 from ..dataset import ImageDataset
 
 
-def convert(type: ConverterProcessorType, datasetName: str, spaceId: int, datasetPath: str) -> Optional[ImageDataset]:
+def convert(type: ConverterProcessorType, datasetName: str, projectId: int, datasetPath: str) -> Optional[ImageDataset]:
     """
         Converts and uploads the given dataset to Coretex Format
 
@@ -32,8 +32,8 @@ def convert(type: ConverterProcessorType, datasetName: str, spaceId: int, datase
             dataset format type (coco, yolo, createML, voc, labelMe, pascalSeg)
         datasetName : str
             name of dataset
-        spaceId : str
-            id of Coretex Space
+        projectId : str
+            id of Coretex Project
         datasetPath : str
             path to dataset
 
@@ -48,11 +48,11 @@ def convert(type: ConverterProcessorType, datasetName: str, spaceId: int, datase
         >>> dataset = convert(
                 type = ConvertProcessorType.coco,
                 datasetName = "coretex_dataset",
-                spaceId = 1023,
+                projectId = 1023,
                 datasetPath = "path/to/dataset"
             )
         >>> if dataset is not None:
                 print("Dataset converted successfully")
     """
 
-    return ConverterProcessorFactory(type).create(datasetName, spaceId, datasetPath).convert()
+    return ConverterProcessorFactory(type).create(datasetName, projectId, datasetPath).convert()
