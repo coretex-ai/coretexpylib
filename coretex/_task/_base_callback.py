@@ -60,7 +60,7 @@ class TaskCallback:
 
         logging.getLogger("coretexpylib").info(result["message"])
 
-        # Call "kill -30 experiment_process_id" to dump current stack trace of the TaskRun into the file
+        # Call "kill -30 task_run_process_id" to dump current stack trace of the TaskRun into the file
         # 30 == signal.SIGUSR1
         # Only works on *nix systems
         faultHandlerPath = folder_manager.logs / f"task_run_stacktrace_{self._taskRun.id}_{datetime.now().strftime(DATE_FORMAT)}.log"

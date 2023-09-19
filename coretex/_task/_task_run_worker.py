@@ -58,7 +58,7 @@ def sendFailure(conn: Connection, message: str) -> None:
 def setupGPUMetrics() -> None:
     # Making sure that if GPU exists, GPU related metrics are added to METRICS list
     # py3nvml.nvmlShutdown() is never called because process for uploading metrics
-    # will kill itself after experiment and in that moment py3nvml cleanup will
+    # will kill itself after TaskRun and in that moment py3nvml cleanup will
     # automatically be performed
 
     try:
