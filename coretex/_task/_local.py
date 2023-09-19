@@ -29,7 +29,7 @@ import psutil
 
 from ._base_callback import TaskCallback
 from .. import folder_manager
-from ..coretex import Experiment, ExperimentStatus, BaseParameter, validateParameters, parameter_factory
+from ..coretex import TaskRun, TaskRunStatus, BaseParameter, validateParameters, parameter_factory
 from ..networking import networkManager
 
 
@@ -43,17 +43,17 @@ class LocalTaskCallback(TaskCallback):
     def onSuccess(self) -> None:
         super().onSuccess()
 
-        self._experiment.updateStatus(ExperimentStatus.completedWithSuccess)
+        self._taskRun.updateStatus(TaskRunStatus.completedWithSuccess)
 
     def onKeyboardInterrupt(self) -> None:
         super().onKeyboardInterrupt()
 
-        logging.getLogger("coretexpylib").info(">> [Coretex] Stopping the experiment")
+        logging.getLogger("coretexpylib").info(">> [Coretex] Stopping the run")
 
-        self._experiment.updateStatus(ExperimentStatus.stopping)
+        self._taskRun.updateStatus(TaskRunStatus.stopping)
 
-        experimentProcess = psutil.Process(os.getpid())
-        children = experimentProcess.children(recursive = True)
+        taskRunProcess = psutil.Process(os.getpid())
+        children = taskRunProcess.children(recursive = True)
 
         logging.getLogger("coretexpylib").debug(f">> [Coretex] Number of child processes: {len(children)}")
 
@@ -63,12 +63,12 @@ class LocalTaskCallback(TaskCallback):
         for process in children:
             process.wait()
 
-        self._experiment.updateStatus(ExperimentStatus.stopped)
+        self._taskRun.updateStatus(TaskRunStatus.stopped)
 
     def onException(self, exception: BaseException) -> None:
         super().onException(exception)
 
-        self._experiment.updateStatus(ExperimentStatus.completedWithError)
+        self._taskRun.updateStatus(TaskRunStatus.completedWithError)
 
 
 class LocalArgumentParser(Tap):
@@ -89,7 +89,7 @@ class LocalArgumentParser(Tap):
         self.add_argument("--description", nargs = "?", type = str, default = None)
 
 
-def _readExperimentConfig() -> List[BaseParameter]:
+def _readTaskRunConfig() -> List[BaseParameter]:
     parameters: List[BaseParameter] = []
 
     with open("./experiment.config", "rb") as configFile:
@@ -134,14 +134,14 @@ def _processLocal(args: Optional[List[str]] = None) -> Tuple[int, TaskCallback]:
     if not os.path.exists("experiment.config"):
         raise FileNotFoundError(">> [Coretex] \"experiment.config\" file not found")
 
-    experiment: Experiment = Experiment.runLocal(
+    taskRun: TaskRun = TaskRun.runLocal(
         parser.projectId,
         parser.name,
         parser.description,
-        [parameter.encode() for parameter in _readExperimentConfig()]
+        [parameter.encode() for parameter in _readTaskRunConfig()]
     )
 
-    logging.getLogger("coretexpylib").info(f">> [Coretex] Created local experiment with ID \"{experiment.id}\"")
-    experiment.updateStatus(ExperimentStatus.preparingToStart)
+    logging.getLogger("coretexpylib").info(f">> [Coretex] Created local run with ID \"{taskRun.id}\"")
+    taskRun.updateStatus(TaskRunStatus.preparingToStart)
 
-    return experiment.id, LocalTaskCallback(experiment, response.json["refresh_token"])
+    return taskRun.id, LocalTaskCallback(taskRun, response.json["refresh_token"])

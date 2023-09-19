@@ -16,7 +16,7 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from .artifact import Artifact
-from .experiment import Experiment
-from .status import ExperimentStatus
+from .task_run import TaskRun
+from .status import TaskRunStatus
 from .metrics import Metric, MetricType
 from .parameter import BaseParameter, validateParameters, parameter_factory

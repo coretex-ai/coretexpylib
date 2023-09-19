@@ -5,62 +5,62 @@ import sys
 
 from ._remote import _processRemote
 from ._local import _processLocal
-from ._current_experiment import setCurrentExperiment
+from ._current_task_run import setCurrentTaskRun
 from .. import folder_manager
-from ..coretex import Experiment, ExperimentStatus
+from ..coretex import TaskRun, TaskRunStatus
 from ..logging import LogHandler, LogSeverity, initializeLogger
 from ..networking import RequestFailedError
 
 
-def _prepareForExecution(experimentId: int) -> Experiment:
-    experiment: Experiment = Experiment.fetchById(experimentId)
+def _prepareForExecution(taskRunId: int) -> TaskRun:
+    taskRun: TaskRun = TaskRun.fetchById(taskRunId)
 
     customLogHandler = LogHandler.instance()
-    customLogHandler.currentExperimentId = experiment.id
+    customLogHandler.currentTaskRunId = taskRun.id
 
-    # enable/disable verbose mode for experiments
+    # enable/disable verbose mode for taskRuns
     severity = LogSeverity.info
-    verbose = experiment.parameters.get("verbose", False)
+    verbose = taskRun.parameters.get("verbose", False)
 
     if verbose:
         severity = LogSeverity.debug
 
-    logPath = folder_manager.logs / f"experiment_{experimentId}.log"
+    logPath = folder_manager.logs / f"task_run_{taskRunId}.log"
     initializeLogger(severity, logPath)
 
-    experiment.updateStatus(
-        status = ExperimentStatus.inProgress,
+    taskRun.updateStatus(
+        status = TaskRunStatus.inProgress,
         message = "Executing task."
     )
 
-    return experiment
+    return taskRun
 
 
-def initializeRTask(mainFunction: Callable[[Experiment], None], args: List[str]) -> None:
+def initializeRTask(mainFunction: Callable[[TaskRun], None], args: List[str]) -> None:
     """
-        Initializes and starts the R task as Coretex experiment
+        Initializes and starts the R task as Coretex TaskRun
 
         Parameters
         ----------
-        mainFunction : Callable[[ExecutingExperiment], None]
+        mainFunction : Callable[[ExecutingTaskRun], None]
             entry point function
         args : Optional[List[str]]
             list of command line arguments
     """
 
     try:
-        experimentId, callback = _processRemote(args)
+        taskRunId, callback = _processRemote(args)
     except:
-        experimentId, callback = _processLocal(args)
+        taskRunId, callback = _processLocal(args)
 
     try:
-        experiment = _prepareForExecution(experimentId)
-        setCurrentExperiment(experiment)
+        taskRun = _prepareForExecution(taskRunId)
+        setCurrentTaskRun(taskRun)
 
         callback.onStart()
 
-        logging.getLogger("coretexpylib").info("Experiment execution started")
-        mainFunction(experiment)
+        logging.getLogger("coretexpylib").info("TaskRun execution started")
+        mainFunction(taskRun)
 
         callback.onSuccess()
     except RequestFailedError:

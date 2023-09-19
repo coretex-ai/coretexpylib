@@ -25,9 +25,9 @@ import logging
 import psutil
 
 from .. import folder_manager
-from ..coretex import MetricType, Experiment
+from ..coretex import MetricType, TaskRun
 from ..networking import networkManager, NetworkRequestError
-from ..coretex.experiment.metrics.metric_factory import createMetric
+from ..coretex.task_run.metrics.metric_factory import createMetric
 
 
 METRICS = [
@@ -58,7 +58,7 @@ def sendFailure(conn: Connection, message: str) -> None:
 def setupGPUMetrics() -> None:
     # Making sure that if GPU exists, GPU related metrics are added to METRICS list
     # py3nvml.nvmlShutdown() is never called because process for uploading metrics
-    # will kill itself after experiment and in that moment py3nvml cleanup will
+    # will kill itself after TaskRun and in that moment py3nvml cleanup will
     # automatically be performed
 
     try:
@@ -89,32 +89,32 @@ def _isAlive(output: Connection) -> bool:
     return output.writable and not output.closed
 
 
-def _heartbeat(experiment: Experiment) -> None:
-    # Update status without parameters is considered experiment hearbeat
-    experiment.updateStatus()
+def _heartbeat(taskRun: TaskRun) -> None:
+    # Update status without parameters is considered run hearbeat
+    taskRun.updateStatus()
 
 
-def _uploadMetrics(experiment: Experiment) -> None:
+def _uploadMetrics(taskRun: TaskRun) -> None:
     x = time.time()
     metricValues: Dict[str, Tuple[float, float]] = {}
 
-    for metric in experiment.metrics:
+    for metric in taskRun.metrics:
         metricValue = metric.extract()
 
         if metricValue is not None:
             metricValues[metric.name] = x, metricValue
 
-    experiment.submitMetrics(metricValues)
+    taskRun.submitMetrics(metricValues)
 
 
-def _initializeLogger(experimentId: int) -> None:
+def _initializeLogger(taskRunId: int) -> None:
     formatter = logging.Formatter(
         fmt = "%(asctime)s %(levelname)s: %(message)s",
         datefmt= "%Y-%m-%d %H:%M:%S",
         style = "%",
     )
 
-    workerLogPath = folder_manager.logs / f"experiment_worker_{experimentId}.log"
+    workerLogPath = folder_manager.logs / f"task_run_worker_{taskRunId}.log"
     fileHandler = logging.FileHandler(workerLogPath)
 
     fileHandler.setLevel(logging.DEBUG)
@@ -127,8 +127,8 @@ def _initializeLogger(experimentId: int) -> None:
     )
 
 
-def experimentWorker(output: Connection, refreshToken: str, experimentId: int) -> None:
-    _initializeLogger(experimentId)
+def taskRunWorker(output: Connection, refreshToken: str, taskRunId: int) -> None:
+    _initializeLogger(taskRunId)
 
     currentProcess = psutil.Process(os.getpid())
 
@@ -140,17 +140,17 @@ def experimentWorker(output: Connection, refreshToken: str, experimentId: int) -
         return
 
     try:
-        experiment: Experiment = Experiment.fetchById(experimentId)
+        taskRun: TaskRun = TaskRun.fetchById(taskRunId)
     except NetworkRequestError:
-        sendFailure(output, f"Failed to fetch experiment with id \"{experimentId}\"")
+        sendFailure(output, f"Failed to fetch TaskRun with id \"{taskRunId}\"")
         return
 
     try:
-        experiment.createMetrics(METRICS)
+        taskRun.createMetrics(METRICS)
     except NetworkRequestError:
         sendFailure(output, "Failed to create metrics")
 
-    sendSuccess(output, "Experiment worker succcessfully started")
+    sendSuccess(output, "TaskRun worker succcessfully started")
 
     while (parent := currentProcess.parent()) is not None:
         logging.getLogger("coretexpylib").debug(f">> [Coretex] Worker process id {currentProcess.pid}, parent process id {parent.pid}")
@@ -160,17 +160,17 @@ def experimentWorker(output: Connection, refreshToken: str, experimentId: int) -
         # from the docker container which uses Linux as a base then it is safe to use.
         #
         # In docker container the pid of the Node process is 1, but we are safe to chech since the
-        # node should never be a parent of this process for metric upload, only the experiment
+        # node should never be a parent of this process for metric upload, only the TaskRun
         # process can be the parent.
         if parent.pid == 1 or not parent.is_running() or not _isAlive(output):
             logging.getLogger("coretexpylib").debug(">> [Coretex] Terminating worker process...")
             break
 
         logging.getLogger("coretexpylib").debug(">> [Coretex] Heartbeat")
-        _heartbeat(experiment)
+        _heartbeat(taskRun)
 
         logging.getLogger("coretexpylib").debug(">> [Coretex] Uploading metrics")
-        _uploadMetrics(experiment)
+        _uploadMetrics(taskRun)
 
         logging.getLogger("coretexpylib").debug(">> [Coretex] Sleeping for 5s")
         time.sleep(5)  # delay between sending generic metrics

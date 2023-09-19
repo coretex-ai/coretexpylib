@@ -39,7 +39,7 @@ class ArtifactType(IntEnum):
 class Artifact(Codable):
 
     """
-        Artifact class represents a single result of an experiment\n
+        Artifact class represents a single result of a run\n
         Result can be file of any kind
 
         Properties
@@ -54,8 +54,8 @@ class Artifact(Codable):
             mimeType of Artifact
         timestamp : int
             current timestamp
-        experimentId : int
-            id of experiment
+        taskRunId : int
+            id of run
     """
 
     artifactType: ArtifactType
@@ -63,7 +63,7 @@ class Artifact(Codable):
     size: Optional[int]
     mimeType: str
     timestamp: int
-    experimentId: int
+    taskRunId: int
 
     @property
     def localFilePath(self) -> Path:
@@ -75,7 +75,7 @@ class Artifact(Codable):
             Path -> local path to Artifact
         """
 
-        return folder_manager.getArtifactsFolder(self.experimentId) / self.remoteFilePath
+        return folder_manager.getArtifactsFolder(self.taskRunId) / self.remoteFilePath
 
     @property
     def isDirectory(self) -> bool:
@@ -104,14 +104,14 @@ class Artifact(Codable):
         descriptors["artifactType"] = KeyDescriptor("type", ArtifactType)
         descriptors["remoteFilePath"] = KeyDescriptor("path")
         descriptors["timestamp"] = KeyDescriptor("ts")
-        descriptors["experimentId"] = KeyDescriptor(isEncodable = False)
+        descriptors["taskRunId"] = KeyDescriptor(isEncodable = False)
 
         return descriptors
 
     @classmethod
     def create(
         cls,
-        experimentId: int,
+        taskRunId: int,
         localFilePath: Union[Path, str],
         remoteFilePath: str,
         mimeType: Optional[str] = None
@@ -129,7 +129,7 @@ class Artifact(Codable):
         ]
 
         parameters = {
-            "model_queue_id": experimentId,
+            "model_queue_id": taskRunId,
             "path": remoteFilePath
         }
 
@@ -138,7 +138,7 @@ class Artifact(Codable):
             return None
 
         artifact = cls.decode(response.json)
-        artifact.experimentId = experimentId
+        artifact.taskRunId = taskRunId
 
         return artifact
 
@@ -152,19 +152,19 @@ class Artifact(Codable):
         """
 
         return not networkManager.genericDownload(
-            f"artifact/download-file?path={self.remoteFilePath}&model_queue_id={self.experimentId}",
+            f"artifact/download-file?path={self.remoteFilePath}&model_queue_id={self.taskRunId}",
             str(self.localFilePath)
         ).hasFailed()
 
     @classmethod
-    def fetchAll(cls, experimentId: int, path: Optional[str] = None, recursive: bool = False) -> List[Self]:
+    def fetchAll(cls, taskRunId: int, path: Optional[str] = None, recursive: bool = False) -> List[Self]:
         """
-            Fetch all Artifacts from Coretex.ai for the specified experiment
+            Fetch all Artifacts from Coretex.ai for the specified run
 
             Parameters
             ----------
-            experimentId : int
-                id of experiment
+            taskRunId : int
+                id of run
             path : Optional[str]
                 local path where u want to store fetched Artifacts
             recursive : bool
@@ -172,7 +172,7 @@ class Artifact(Codable):
         """
 
         queryParameters = [
-            f"model_queue_id={experimentId}"
+            f"model_queue_id={taskRunId}"
         ]
 
         if path is not None:
@@ -190,11 +190,11 @@ class Artifact(Codable):
         artifacts = [cls.decode(element) for element in response.json]
 
         for artifact in artifacts:
-            artifact.experimentId = experimentId
+            artifact.taskRunId = taskRunId
 
             if recursive and artifact.isDirectory:
                 artifacts.extend(
-                    cls.fetchAll(experimentId, artifact.remoteFilePath)
+                    cls.fetchAll(taskRunId, artifact.remoteFilePath)
                 )
 
         return artifacts

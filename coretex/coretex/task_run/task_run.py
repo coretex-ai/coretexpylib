@@ -27,7 +27,7 @@ import zipfile
 import json
 
 from .artifact import Artifact
-from .status import ExperimentStatus
+from .status import TaskRunStatus
 from .metrics import Metric, MetricType
 from .parameter import validateParameters, parameter_factory
 from .execution_type import ExecutionType
@@ -40,23 +40,23 @@ from ...networking import networkManager, NetworkObject, RequestType, NetworkReq
 
 DatasetType = TypeVar("DatasetType", bound = Dataset)
 
-class Experiment(NetworkObject, Generic[DatasetType]):
+class TaskRun(NetworkObject, Generic[DatasetType]):
 
     """
-        Represents experiment entity from Coretex.ai
+        Represents TaskRun entity from Coretex.ai
 
         Properties
         ----------
         datasetId : int
             id of dataset
         name : str
-            name of Experiment
+            name of TaskRun
         description : str
-            description of Experiment
+            description of TaskRun
         meta : Dict[str, Any]
-            meta data of Experiment
-        status : ExperimentStatus
-            status of Experiment
+            meta data of TaskRun
+        status : TaskRunStatus
+            status of TaskRun
         projectId : int
             id of Coretex Project
         projectName : str
@@ -68,7 +68,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         taskName : str
             name of task
         createdById : str
-            id of created experiment
+            id of created TaskRun
         useCachedEnv : bool
             if True chached env will be used, otherwise new environment will be created
     """
@@ -76,7 +76,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
     name: str
     description: str
     meta: Dict[str, Any]
-    status: ExperimentStatus
+    status: TaskRunStatus
     projectId: int
     projectName: str
     projectType: ProjectType
@@ -87,7 +87,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
     metrics: List[Metric]
 
     def __init__(self) -> None:
-        super(Experiment, self).__init__()
+        super(TaskRun, self).__init__()
 
         self.metrics = []
         self.__parameters: Dict[str, Any] = {}
@@ -97,7 +97,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         """
             Returns
             -------
-            Dict[str, Any] -> Parameters for Experiment
+            Dict[str, Any] -> Parameters for TaskRun
         """
 
         return self.__parameters
@@ -107,7 +107,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         """
             Returns
             -------
-            Path -> Path for Experiment
+            Path -> Path for TaskRun
         """
 
         return folder_manager.temp / str(self.id)
@@ -115,11 +115,11 @@ class Experiment(NetworkObject, Generic[DatasetType]):
     @property
     def dataset(self) -> DatasetType:
         """
-            Value of the parameter with name "dataset" assigned to this experiment
+            Value of the parameter with name "dataset" assigned to this TaskRun
 
             Returns
             -------
-            Dataset object if there was a parameter with name "dataset" entered when the experiment was started
+            Dataset object if there was a parameter with name "dataset" entered when the TaskRun was started
 
             Raises
             ------
@@ -128,7 +128,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
 
         dataset = self.parameters.get("dataset")
         if dataset is None:
-            raise ValueError(f">> [Coretex] Experiment \"{self.id}\" does not have a parameter named \"dataset\"")
+            raise ValueError(f">> [Coretex] TaskRun \"{self.id}\" does not have a parameter named \"dataset\"")
 
         return dataset  # type: ignore
 
@@ -145,7 +145,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
         descriptors = super()._keyDescriptors()
 
-        descriptors["status"] = KeyDescriptor("status", ExperimentStatus)
+        descriptors["status"] = KeyDescriptor("status", TaskRunStatus)
         descriptors["projectId"] = KeyDescriptor("project_id")
         descriptors["projectName"] = KeyDescriptor("project_name")
         descriptors["projectType"] = KeyDescriptor("project_task", ProjectType)
@@ -187,32 +187,32 @@ class Experiment(NetworkObject, Generic[DatasetType]):
 
     def updateStatus(
         self,
-        status: Optional[ExperimentStatus] = None,
+        status: Optional[TaskRunStatus] = None,
         message: Optional[str] = None,
         notifyServer: bool = True
     ) -> bool:
 
         """
-            Updates Experiment status, if message parameter is None
+            Updates TaskRun status, if message parameter is None
             default message value will be used\n
-            Some Experiment statuses do not have default message
+            Some TaskRun statuses do not have default message
 
             Parameters
             ----------
-            status : Optional[ExperimentStatus]
-                Status to which the experiment will be updated to
+            status : Optional[TaskRunStatus]
+                Status to which the TaskRun will be updated to
             message : Optional[str]
-                Descriptive message for experiment status, it is diplayed
+                Descriptive message for TaskRun status, it is diplayed
                 when the status is hovered on the Coretex Web App
             notifyServer : bool
                 if True update request will be sent to Coretex.ai
 
             Example
             -------
-            >>> from coretex import ExecutingExperiment, ExperimentStatus
+            >>> from coretex import ExecutingTaskRun, TaskRunStatus
             \b
-            >>> ExecutingExperiment.current().updateStatus(
-                    ExperimentStatus.completedWithSuccess
+            >>> ExecutingTaskRun.current().updateStatus(
+                    TaskRunStatus.completedWithSuccess
                 )
             True
         """
@@ -239,7 +239,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
             response = networkManager.genericJSONRequest(endpoint, RequestType.post, parameters)
 
             if response.hasFailed():
-                logging.getLogger("coretexpylib").error(">> [Coretex] Error while updating experiment status")
+                logging.getLogger("coretexpylib").error(">> [Coretex] Error while updating TaskRun status")
 
             return not response.hasFailed()
 
@@ -247,7 +247,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
 
     def createMetrics(self, metrics: List[Metric]) -> None:
         """
-            Creates specified metrics for the experiment
+            Creates specified metrics for the TaskRun
 
             Parameters
             ----------
@@ -265,9 +265,9 @@ class Experiment(NetworkObject, Generic[DatasetType]):
 
             Example
             -------
-            >>> from coretex import ExecutingExperiment, MetricType
+            >>> from coretex import ExecutingTaskRun, MetricType
             \b
-            >>> metrics = ExecutingExperiment.current().createMetrics([
+            >>> metrics = ExecutingTaskRun.current().createMetrics([
                     Metric.create("loss", "epoch", MetricType.int, "value", MetricType.float, None, [0, 100]),
                     Metric.create("accuracy", "epoch", MetricType.int, "value", MetricType.float, None, [0, 100])
                 ])
@@ -302,9 +302,9 @@ class Experiment(NetworkObject, Generic[DatasetType]):
 
             Example
             -------
-            >>> from coretex import ExecutingExperiment
+            >>> from coretex import ExecutingTaskRun
             \b
-            >>> result = ExecutingExperiment.current().submitMetrics({
+            >>> result = ExecutingTaskRun.current().submitMetrics({
                     "loss": (epoch, logs["loss"]),
                     "accuracy": (epoch, logs["accuracy"]),
                 })
@@ -334,7 +334,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
 
     def downloadTask(self) -> bool:
         """
-            Downloads task snapshot linked to the experiment
+            Downloads task snapshot linked to the TaskRun
 
             Returns
             -------
@@ -367,7 +367,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
     ) -> Optional[Artifact]:
 
         """
-            Creates Artifact for the current Experiment on Coretex.ai
+            Creates Artifact for the current TaskRun on Coretex.ai
 
             Parameters
             ----------
@@ -427,25 +427,25 @@ class Experiment(NetworkObject, Generic[DatasetType]):
     ) -> Self:
 
         """
-            Schedules an Experiment for execution on the specified
+            Schedules an TaskRun for execution on the specified
             Node on Coretex.ai
 
             Parameters
             ----------
             taskId : int
-                id of task that is being used for starting Experiment
+                id of task that is being used for starting TaskRun
             nodeId : Union[int, str]
-                id of node that is being used for starting Experiment
+                id of node that is being used for starting TaskRun
             name : Optional[str]
-                name of Experiment (not required)
+                name of TaskRun (not required)
             description : Optional[str]
-                Experiment description (not required)
+                TaskRun description (not required)
             parameters : Optional[List[Dict[str, Any]]]
                 list of parameters (not required)
 
             Returns
             -------
-            Self -> Experiment object
+            Self -> TaskRun object
 
             Raises
             ------
@@ -453,7 +453,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
 
             Example
             -------
-            >>> from coretex import Experiment
+            >>> from coretex import TaskRun
             >>> from coretex.networking import NetworkRequestError
             \b
             >>> parameters = [
@@ -467,17 +467,17 @@ class Experiment(NetworkObject, Generic[DatasetType]):
                 ]
             \b
             >>> try:
-                    experiment = Experiment.run(
+                    taskRun = TaskRun.run(
                         taskId = 1023,
                         nodeId = 23,
-                        name = "Dummy Custom Experiment
+                        name = "Dummy Custom TaskRun
                         description = "Dummy description",
                         parameters = parameters
                     )
 
-                    print(f"Created experiment with name: {experiment.name}")
+                    print(f"Created TaskRun with name: {taskRun.name}")
             >>> except NetworkRequestError:
-                    print("Failed to create experiment")
+                    print("Failed to create TaskRun")
         """
 
         if isinstance(nodeId, int):
@@ -496,7 +496,7 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         })
 
         if response.hasFailed():
-            raise NetworkRequestError(response, "Failed to create experiment")
+            raise NetworkRequestError(response, "Failed to create TaskRun")
 
         return cls.fetchById(response.json["experiment_ids"][0])
 
@@ -510,24 +510,24 @@ class Experiment(NetworkObject, Generic[DatasetType]):
     ) -> Self:
 
         """
-            Creates Experiment on Coretex.ai with the provided parameters,
+            Creates TaskRun on Coretex.ai with the provided parameters,
             which will be run on the same machine which created it immidiately
             after running the entry point file of the task
 
             Parameters
             ----------
             projectId : int
-                id of project that is being used for starting Experiment
+                id of project that is being used for starting TaskRun
             name : Optional[str]
-                name of Experiment (not required)
+                name of TaskRun (not required)
             description : Optional[str]
-                Experiment description (not required)
+                TaskRun description (not required)
             parameters : Optional[List[Dict[str, Any]]]
                 list of parameters (not required)
 
             Returns
             -------
-            Self -> Experiment object
+            Self -> TaskRun object
 
             Raises
             ------
@@ -570,6 +570,6 @@ class Experiment(NetworkObject, Generic[DatasetType]):
         })
 
         if response.hasFailed():
-            raise NetworkRequestError(response, "Failed to create experiment")
+            raise NetworkRequestError(response, "Failed to create TaskRun")
 
         return cls.fetchById(response.json["experiment_ids"][0])

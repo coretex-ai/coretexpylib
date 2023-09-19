@@ -17,5 +17,5 @@
 
 from ._local import _processLocal
 from ._remote import _processRemote
-from ._current_experiment import currentExperiment
+from ._current_task_run import currentTaskRun
 from ._initialization import _prepareForExecution, initializeRTask

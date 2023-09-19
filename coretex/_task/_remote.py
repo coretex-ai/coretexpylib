@@ -25,11 +25,11 @@ from ..networking import networkManager
 class RemoteArgumentParser(Tap):
 
     refreshToken: str
-    experimentId: int
+    taskRunId: int
 
     def configure(self) -> None:
         self.add_argument("--refreshToken", type = str)
-        self.add_argument("--experimentId", type = int)
+        self.add_argument("--taskRunId", type = int)
 
 
 def _processRemote(args: Optional[List[str]] = None) -> Tuple[int, TaskCallback]:
@@ -39,4 +39,4 @@ def _processRemote(args: Optional[List[str]] = None) -> Tuple[int, TaskCallback]
     if response.hasFailed():
         raise RuntimeError(">> [Coretex] Failed to authenticate")
 
-    return remoteArgumentParser.experimentId, TaskCallback.create(remoteArgumentParser.experimentId, remoteArgumentParser.refreshToken)
+    return remoteArgumentParser.taskRunId, TaskCallback.create(remoteArgumentParser.taskRunId, remoteArgumentParser.refreshToken)
