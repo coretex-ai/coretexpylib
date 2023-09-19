@@ -15,10 +15,11 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Any, Callable, Final, Optional, List
+from typing import Any, Callable, Optional, List
 from concurrent.futures import ThreadPoolExecutor, Future
 
 import logging
+import os
 
 
 class MultithreadedDataProcessor:
@@ -28,11 +29,15 @@ class MultithreadedDataProcessor:
         Only useful for I/O bound operations, do not use for
         heavy data processing operations
 
-        data: List[Any] -> list which will be split-processed on multiple threads
-        singleElementProcessor: Callable[[Any], None] -> function which will
-        be called for a single element from the provided list
-        threadCount: int -> number of threads which will be used for processing
-        title: Optional[str] -> title used for displaying the progress bar
+        data: List[Any]
+            list which will be split-processed on multiple threads
+        singleElementProcessor: Callable[[Any], None]
+            function which will be called for a single element from the provided list
+        threadCount: Optional[int]
+            number of threads which will be used for processing, if None
+            it will use all cpu cores
+        title: Optional[str]
+            message which is displayed when the processing starts
 
         Example
         -------
@@ -65,11 +70,26 @@ class MultithreadedDataProcessor:
         >>> processor.process()
     """
 
-    def __init__(self, data: List[Any], singleElementProcessor: Callable[[Any], None], threadCount: int = 1, title: Optional[str] = None) -> None:
-        self.__data: Final = data
-        self.__singleElementProcessor: Final = singleElementProcessor
-        self.__threadCount: Final = threadCount
-        self.__title = title
+    def __init__(
+        self,
+        data: List[Any],
+        singleElementProcessor: Callable[[Any], None],
+        workerCount: Optional[int] = None,
+        message: Optional[str] = None
+    ) -> None:
+
+        if workerCount is None:
+            cpuCount = os.cpu_count()
+
+            if cpuCount is None:
+                cpuCount = 1
+
+            workerCount = cpuCount
+
+        self.__data = data
+        self.__singleElementProcessor = singleElementProcessor
+        self.__workerCount = workerCount
+        self.__message = message
 
     def process(self) -> None:
         """
@@ -80,12 +100,13 @@ class MultithreadedDataProcessor:
             Any unhandled exception which happened during the processing
         """
 
-        if self.__title is not None:
-            logging.getLogger("coretexpylib").info(f">> [Coretex] {self.__title}")
+        if self.__message is not None:
+            logging.getLogger("coretexpylib").info(f">> [Coretex] {self.__message}")
+            logging.getLogger("coretexpylib").info(f"\tUsing {self.__workerCount} workers")
 
         futures: List[Future] = []
 
-        with ThreadPoolExecutor(max_workers = self.__threadCount) as pool:
+        with ThreadPoolExecutor(max_workers = self.__workerCount) as pool:
             for element in self.__data:
                 future = pool.submit(self.__singleElementProcessor, element)
                 futures.append(future)

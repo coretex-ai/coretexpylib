@@ -119,7 +119,7 @@ class BaseConverter(ABC):
         MultithreadedDataProcessor(
             self._dataSource(),
             self._extractSingleAnnotation,
-            title = "Converting dataset..."
+            message = "Converting dataset..."
         ).process()
 
         return self._dataset

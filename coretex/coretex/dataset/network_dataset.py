@@ -172,7 +172,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
         processor = MultithreadedDataProcessor(
             self.samples,
             sampleDownloader,
-            title = f"Downloading dataset \"{self.name}\"..."
+            message = f"Downloading dataset \"{self.name}\"..."
         )
 
         processor.process()
