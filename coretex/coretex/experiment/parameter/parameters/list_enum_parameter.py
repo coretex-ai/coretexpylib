@@ -42,7 +42,7 @@ class ListEnumParameter(BaseListParameter[Dict[str, Any]]):
 
         return True, None
 
-    def parseValue(self, task: ProjectType) -> Optional[Any]:
+    def parseValue(self, type_: ProjectType) -> Optional[Any]:
         if self.value is None:
             return self.value
 

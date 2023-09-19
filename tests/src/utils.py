@@ -18,23 +18,23 @@ def generateUniqueName() -> str:
     return f"PythonUnitTests - {time.time()}"
 
 
-def getDatasetPathForTask(task: ProjectType) -> Path:
+def getDatasetPathForType(type_: ProjectType) -> Path:
     resourcesPath = Path("./tests/resources")
 
-    if task == ProjectType.other:
+    if type_ == ProjectType.other:
         return resourcesPath / "other_dataset"
 
-    if task == ProjectType.computerVision:
+    if type_ == ProjectType.computerVision:
         return resourcesPath / "computer_vision_dataset"
 
-    raise ValueError(f">> [Coretex] {task.name} has no resources")
+    raise ValueError(f">> [Coretex] {type_.name} has no resources")
 
 
-def _createSampleFor(task: ProjectType, datasetId: int, samplePath: Path) -> Optional[NetworkSample]:
-    if task == ProjectType.other:
+def _createSampleFor(type_: ProjectType, datasetId: int, samplePath: Path) -> Optional[NetworkSample]:
+    if type_ == ProjectType.other:
         return CustomSample.createCustomSample(generateUniqueName(), datasetId, samplePath)
 
-    if task == ProjectType.computerVision:
+    if type_ == ProjectType.computerVision:
         extractionDir = samplePath.parent / samplePath.stem
 
         with ZipFile(samplePath) as zipFile:
@@ -45,11 +45,11 @@ def _createSampleFor(task: ProjectType, datasetId: int, samplePath: Path) -> Opt
         shutil.rmtree(extractionDir)
         return sample
 
-    raise ValueError(f">> [Coretex] Unsupported task {task.name}")
+    raise ValueError(f">> [Coretex] Unsupported type {type_.name}")
 
 
-def createRemoteEnvironmentFor(task: ProjectType, datasetType: Type[RemoteDatasetType]) -> Tuple[Project, RemoteDatasetType]:
-    project = Project.createProject(generateUniqueName(), task)
+def createRemoteEnvironmentFor(Type_: ProjectType, datasetType: Type[RemoteDatasetType]) -> Tuple[Project, RemoteDatasetType]:
+    project = Project.createProject(generateUniqueName(), Type_)
     if project is None:
         raise ValueError(">> [Coretex] Failed to create project")
 
@@ -57,13 +57,13 @@ def createRemoteEnvironmentFor(task: ProjectType, datasetType: Type[RemoteDatase
     if dataset is None:
         raise ValueError(">> [Coretex] Failed to create dataset")
 
-    datasetPath = getDatasetPathForTask(task)
+    datasetPath = getDatasetPathForType(Type_)
     for path in datasetPath.iterdir():
         # Gotta check this because macos creates .DS_store files
         if not zipfile.is_zipfile(path):
             continue
 
-        sample = _createSampleFor(task, dataset.id, path)
+        sample = _createSampleFor(Type_, dataset.id, path)
         if sample is None:
             raise ValueError(">> [Coretex] Failed to create sample")
 
@@ -82,5 +82,5 @@ def createRemoteEnvironmentFor(task: ProjectType, datasetType: Type[RemoteDatase
     return project, dataset  # type: ignore
 
 
-def createLocalEnvironmentFor(task: ProjectType, datasetType: Type[LocalDatasetType]) -> LocalDatasetType:
-    return datasetType(getDatasetPathForTask(task))  # type: ignore
+def createLocalEnvironmentFor(Type_: ProjectType, datasetType: Type[LocalDatasetType]) -> LocalDatasetType:
+    return datasetType(getDatasetPathForType(Type_))  # type: ignore

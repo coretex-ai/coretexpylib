@@ -10,7 +10,7 @@ class ListFloatParameter(BaseListParameter[List[Union[float, int]]]):
     def listTypes(self) -> List[type]:
         return [float, int]
 
-    def parseValue(self, task: ProjectType) -> Optional[Any]:
+    def parseValue(self, type_: ProjectType) -> Optional[Any]:
         if self.value is None:
             return None
 

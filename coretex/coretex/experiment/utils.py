@@ -6,28 +6,28 @@ from ..dataset import *
 from ..project import ProjectType
 
 
-def getDatasetType(task: ProjectType, isLocal: bool) -> Type[Dataset]:
-    if task == ProjectType.other:
+def getDatasetType(type_: ProjectType, isLocal: bool) -> Type[Dataset]:
+    if type_ == ProjectType.other:
         if isLocal:
             return LocalCustomDataset
 
         return CustomDataset
 
-    if task == ProjectType.imageSegmentation:
+    if type_ == ProjectType.imageSegmentation:
         if isLocal:
             return LocalImageSegmentationDataset
 
         return ImageSegmentationDataset
 
-    if task == ProjectType.computerVision:
+    if type_ == ProjectType.computerVision:
         if isLocal:
             return LocalComputerVisionDataset
 
         return ComputerVisionDataset
 
-    logging.getLogger("coretexpylib").debug(f">> [Coretex] ProjectType ({task}) does not have a dataset type using CustomDataset")
+    logging.getLogger("coretexpylib").debug(f">> [Coretex] ProjectType ({type_}) does not have a dataset type using CustomDataset")
 
-    # Returning CustomDataset in case the task doesn't have it's dataset type
+    # Returning CustomDataset in case the type_ doesn't have it's dataset type
     if isLocal:
         return LocalCustomDataset
 

@@ -58,7 +58,7 @@ class BaseParameter(ABC, Codable, Generic[T]):
         elementTypes = ", ".join({type(value).__name__ for value in self.value})
         return f"list[{elementTypes}]"
 
-    def parseValue(self, task: ProjectType) -> Optional[Any]:
+    def parseValue(self, type_: ProjectType) -> Optional[Any]:
         return self.value
 
 
