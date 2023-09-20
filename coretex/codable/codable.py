@@ -27,6 +27,12 @@ from .descriptor import KeyDescriptor
 from ..utils.date import DATE_FORMAT
 
 
+CORETEX_DATE_FORMATS = [
+    DATE_FORMAT,
+    "%Y-%m-%dT%H:%M:%S.%f%z"
+]
+
+
 def processDate(value: str, datetimeType: Type[datetime]) -> datetime:
     """
         Converts the date to a format used by Coretex
@@ -36,19 +42,22 @@ def processDate(value: str, datetimeType: Type[datetime]) -> datetime:
         datetime -> object whose datetime is represented using the Coretex datetime format
     """
 
-    try:
-        return datetimeType.strptime(value, DATE_FORMAT)
-    except:
-        # Python's datetime library requires UTC minutes to always
-        # be present in the date in either of those 2 formats:
-        # - +HHMM
-        # - +HH:MM
-        # BUT coretex API sends it in one of those formats:
-        # - +HH
-        # - +HH:MM (only if the minutes have actual value)
-        # so we need to handle the first case where minutes
-        # are not present by adding them manually
-        return datetimeType.strptime(f"{value}00", DATE_FORMAT)
+    for format in CORETEX_DATE_FORMATS:
+        try:
+            return datetimeType.strptime(value, format)
+        except ValueError:
+            continue
+
+    # Python's datetime library requires UTC minutes to always
+    # be present in the date in either of those 2 formats:
+    # - +HHMM
+    # - +HH:MM
+    # BUT coretex API sends it in one of those formats:
+    # - +HH
+    # - +HH:MM (only if the minutes have actual value)
+    # so we need to handle the first case where minutes
+    # are not present by adding them manually
+    return datetimeType.strptime(f"{value}00", DATE_FORMAT)
 
 
 class Codable:
