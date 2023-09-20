@@ -54,7 +54,7 @@ class RequestsManager:
         if cpuCount is None:
             cpuCount = 1
 
-        # 10 is default, keep that value for machines who have <= 10 cores
+        # 10 is default, keep that value for machines which have <= 10 cores
         adapter = HTTPAdapter(pool_maxsize = max(10, cpuCount))
         self.__session.mount("http://", adapter)
         self.__session.mount("https://", adapter)
