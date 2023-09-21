@@ -29,7 +29,7 @@ import psutil
 
 from ._base_callback import TaskCallback
 from .. import folder_manager
-from ..coretex import TaskRun, TaskRunStatus, BaseParameter, validateParameters, parameter_factory
+from ..entities import TaskRun, TaskRunStatus, BaseParameter, validateParameters, parameter_factory
 from ..networking import networkManager
 
 

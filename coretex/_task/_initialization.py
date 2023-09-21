@@ -7,7 +7,7 @@ from ._remote import _processRemote
 from ._local import _processLocal
 from ._current_task_run import setCurrentTaskRun
 from .. import folder_manager
-from ..coretex import TaskRun, TaskRunStatus
+from ..entities import TaskRun, TaskRunStatus
 from ..logging import LogHandler, LogSeverity, initializeLogger
 from ..networking import RequestFailedError
 

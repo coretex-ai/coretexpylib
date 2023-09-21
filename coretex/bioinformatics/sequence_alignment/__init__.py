@@ -22,7 +22,7 @@ import subprocess
 import os
 
 from ..utils import command, logProcessOutput, CommandException
-from ...coretex import CustomDataset
+from ...entities import CustomDataset
 from ...logging import LogSeverity
 
 

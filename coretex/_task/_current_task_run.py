@@ -1,6 +1,6 @@
 from typing import Optional
 
-from ..coretex import TaskRun
+from ..entities import TaskRun
 
 
 class _CurrentTaskRunContainer:

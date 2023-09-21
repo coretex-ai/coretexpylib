@@ -25,19 +25,19 @@ import logging
 import psutil
 
 from .. import folder_manager
-from ..coretex import MetricType, TaskRun
+from ..entities import MetricType, TaskRun
 from ..networking import networkManager, NetworkRequestError
-from ..coretex.task_run.metrics.metric_factory import createMetric
+from ..entities.task_run.metrics import metric_factory
 
 
 METRICS = [
-    createMetric("cpu_usage", "time (s)", MetricType.interval, "usage (%)", MetricType.percent, None, [0, 100]),
-    createMetric("ram_usage", "time (s)", MetricType.interval, "usage (%)", MetricType.percent, None, [0, 100]),
-    createMetric("swap_usage", "time (s)", MetricType.interval, "usage (%)", MetricType.percent, None, [0, 100]),
-    createMetric("download_speed", "time (s)", MetricType.interval, "bytes", MetricType.bytes),
-    createMetric("upload_speed", "time (s)", MetricType.interval, "bytes", MetricType.bytes),
-    createMetric("disk_read", "time (s)", MetricType.interval, "bytes", MetricType.bytes),
-    createMetric("disk_write", "time (s)", MetricType.interval, "bytes", MetricType.bytes)
+    metric_factory.createMetric("cpu_usage", "time (s)", MetricType.interval, "usage (%)", MetricType.percent, None, [0, 100]),
+    metric_factory.createMetric("ram_usage", "time (s)", MetricType.interval, "usage (%)", MetricType.percent, None, [0, 100]),
+    metric_factory.createMetric("swap_usage", "time (s)", MetricType.interval, "usage (%)", MetricType.percent, None, [0, 100]),
+    metric_factory.createMetric("download_speed", "time (s)", MetricType.interval, "bytes", MetricType.bytes),
+    metric_factory.createMetric("upload_speed", "time (s)", MetricType.interval, "bytes", MetricType.bytes),
+    metric_factory.createMetric("disk_read", "time (s)", MetricType.interval, "bytes", MetricType.bytes),
+    metric_factory.createMetric("disk_write", "time (s)", MetricType.interval, "bytes", MetricType.bytes)
 ]
 
 
@@ -66,8 +66,8 @@ def setupGPUMetrics() -> None:
         py3nvml.nvmlInit()
 
         METRICS.extend([
-            createMetric("gpu_usage", "time (s)", MetricType.interval, "usage (%)", MetricType.percent, None, [0, 100]),
-            createMetric("gpu_temperature", "time (s)", MetricType.interval, "usage (%)", MetricType.percent)
+            metric_factory.createMetric("gpu_usage", "time (s)", MetricType.interval, "usage (%)", MetricType.percent, None, [0, 100]),
+            metric_factory.createMetric("gpu_temperature", "time (s)", MetricType.interval, "usage (%)", MetricType.percent)
         ])
 
         logging.getLogger("coretexpylib").debug(">> [Coretex] Initialized GPU metrics")

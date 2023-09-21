@@ -22,7 +22,7 @@ from abc import ABC, abstractmethod
 import logging
 
 from ..annotation import CoretexImageAnnotation
-from ...coretex import ImageDataset, ImageSample, ImageDatasetClass
+from ...entities import ImageDataset, ImageSample, ImageDatasetClass
 from ...threading import MultithreadedDataProcessor
 
 

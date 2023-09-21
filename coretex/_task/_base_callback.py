@@ -28,7 +28,7 @@ import signal
 from ._task_run_worker import taskRunWorker
 from ._current_task_run import setCurrentTaskRun
 from .. import folder_manager
-from ..coretex import TaskRun
+from ..entities import TaskRun
 from ..logging import LogHandler
 from ..utils import DATE_FORMAT
 
