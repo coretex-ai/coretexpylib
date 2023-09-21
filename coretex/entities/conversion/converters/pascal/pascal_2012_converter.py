@@ -24,7 +24,7 @@ import xml.etree.ElementTree as ET
 from .shared import getTag, toInt
 from .instance_extractor import InstanceExtractor
 from ...base_converter import BaseConverter
-from .....coretex import CoretexImageAnnotation
+from .....entities import CoretexImageAnnotation
 
 
 class PascalSegConverter(BaseConverter):

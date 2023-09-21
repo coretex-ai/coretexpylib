@@ -23,7 +23,7 @@ import logging
 import shutil
 import gzip
 
-from ...coretex import TaskRun, CustomSample, CustomDataset
+from ...entities import TaskRun, CustomSample, CustomDataset
 from ... import folder_manager
 
 

@@ -19,7 +19,7 @@ from typing import Optional, Union, List
 from pathlib import Path
 
 from .utils import command
-from ..coretex import CustomDataset
+from ..entities import CustomDataset
 
 
 def cutadaptTrim(
