@@ -81,7 +81,7 @@ def _uploadMetrics(taskRun: TaskRun) -> None:
     taskRun.submitMetrics(metricValues)
 
 
-def _taskRunWorker(output: Connection, refreshToken: str, taskRunId: int) -> None:
+def _taskRunWorker(output: Connection, refreshToken: str, taskRunId: int, parentId: int) -> None:
     utils.initializeLogger(taskRunId)
 
     response = networkManager.authenticateWithRefreshToken(refreshToken)
@@ -103,20 +103,11 @@ def _taskRunWorker(output: Connection, refreshToken: str, taskRunId: int) -> Non
 
     utils.sendSuccess(output, "TaskRun worker succcessfully started")
 
-    currentProcess = psutil.Process(os.getpid())
-    while (parent := currentProcess.parent()) is not None:
-        logging.getLogger("coretexpylib").debug(f">> [Coretex] Worker process id {currentProcess.pid}, parent process id {parent.pid}")
+    parent = psutil.Process(parentId)
+    current = psutil.Process(os.getpid())
 
-        # If parent process ID is set to 1 then that means that the parent process has terminated
-        # the process (this is only true for Unix-based systems), but since we run the Node
-        # from the docker container which uses Linux as a base then it is safe to use.
-        #
-        # In docker container the pid of the Node process is 1, but we are safe to chech since the
-        # node should never be a parent of this process for metric upload, only the TaskRun
-        # process can be the parent.
-        if parent.pid == 1 or not parent.is_running() or not utils.isAlive(output):
-            logging.getLogger("coretexpylib").debug(">> [Coretex] Terminating worker process...")
-            break
+    while parent.is_running():
+        logging.getLogger("coretexpylib").debug(f">> [Coretex] Worker process id {current.pid}, parent process id {parent.pid}")
 
         # Measure elapsed time to calculate for how long should the process sleep
         start = timeit.default_timer()
@@ -144,7 +135,7 @@ class TaskRunWorker:
         self.__process = multiprocessing.Process(
             name = f"TaskRun {taskRunId} worker process",
             target = _taskRunWorker,
-            args = (self.__outputStream, refreshToken, taskRunId),
+            args = (self.__outputStream, refreshToken, taskRunId, os.getpid()),
             daemon = True
         )
 

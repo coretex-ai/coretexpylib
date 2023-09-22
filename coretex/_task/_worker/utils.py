@@ -36,20 +36,6 @@ def sendFailure(conn: Connection, message: str) -> None:
     })
 
 
-def isAlive(output: Connection) -> bool:
-    try:
-        # If parent process gets killed with SIGKILL there
-        # is no guarantee that the child process will get
-        # closed so we ping the parent process to check if
-        # the pipe is available or not
-        output.send(None)
-    except BrokenPipeError:
-        output.close()
-        return False
-
-    return output.writable and not output.closed
-
-
 def initializeLogger(taskRunId: int) -> None:
     formatter = logging.Formatter(
         fmt = "%(asctime)s %(levelname)s: %(message)s",
