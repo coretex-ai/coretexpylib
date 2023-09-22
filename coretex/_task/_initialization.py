@@ -3,8 +3,8 @@ from typing import Callable, List
 import logging
 import sys
 
-from ._remote import _processRemote
-from ._local import _processLocal
+from ._remote import processRemote
+from ._local import processLocal
 from ._current_task_run import setCurrentTaskRun
 from .. import folder_manager
 from ..entities import TaskRun, TaskRunStatus
@@ -49,9 +49,9 @@ def initializeRTask(mainFunction: Callable[[TaskRun], None], args: List[str]) ->
     """
 
     try:
-        taskRunId, callback = _processRemote(args)
+        taskRunId, callback = processRemote(args)
     except:
-        taskRunId, callback = _processLocal(args)
+        taskRunId, callback = processLocal(args)
 
     try:
         taskRun = _prepareForExecution(taskRunId)
