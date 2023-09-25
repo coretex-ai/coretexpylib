@@ -28,6 +28,7 @@ from tap import Tap
 import psutil
 
 from ._base_callback import TaskCallback
+from ._worker import TaskRunWorker
 from .. import folder_manager
 from ..entities import TaskRun, TaskRunStatus, BaseParameter, validateParameters, parameter_factory
 from ..networking import networkManager
@@ -35,7 +36,14 @@ from ..networking import networkManager
 
 class LocalTaskCallback(TaskCallback):
 
+    def __init__(self, taskRun: TaskRun, refreshToken: str) -> None:
+        super().__init__(taskRun)
+
+        self._worker = TaskRunWorker(refreshToken, taskRun.id)
+
     def onStart(self) -> None:
+        self._worker.start()
+
         super().onStart()
 
         folder_manager.clearTempFiles()
@@ -69,6 +77,11 @@ class LocalTaskCallback(TaskCallback):
         super().onException(exception)
 
         self._taskRun.updateStatus(TaskRunStatus.completedWithError)
+
+    def onCleanUp(self) -> None:
+        self._worker.stop()
+
+        super().onCleanUp()
 
 
 class LocalArgumentParser(Tap):
@@ -111,7 +124,7 @@ def _readTaskRunConfig() -> List[BaseParameter]:
     return parameters
 
 
-def _processLocal(args: Optional[List[str]] = None) -> Tuple[int, TaskCallback]:
+def processLocal(args: Optional[List[str]] = None) -> Tuple[int, TaskCallback]:
     parser, unknown = LocalArgumentParser().parse_known_args(args)
 
     if parser.username is not None and parser.password is not None:

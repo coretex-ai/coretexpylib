@@ -15,17 +15,13 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Final
-from typing_extensions import Self
 from datetime import datetime
 
 import sys
 import logging
-import multiprocessing
 import faulthandler
 import signal
 
-from ._task_run_worker import taskRunWorker
 from ._current_task_run import setCurrentTaskRun
 from .. import folder_manager
 from ..entities import TaskRun
@@ -35,31 +31,10 @@ from ..utils import DATE_FORMAT
 
 class TaskCallback:
 
-    def __init__(self, taskRun: TaskRun, refreshToken: str) -> None:
-        self._taskRun: Final = taskRun
-
-        self.__outputStream, self.__inputStream = multiprocessing.Pipe()
-
-        self.workerProcess = multiprocessing.Process(
-            name = f"TaskRun {taskRun.id} worker process",
-            target = taskRunWorker,
-            args = (self.__outputStream, refreshToken, self._taskRun.id),
-            daemon = True
-        )
-
-    @classmethod
-    def create(cls, taskRunId: int, refreshToken: str) -> Self:
-        return cls(TaskRun.fetchById(taskRunId), refreshToken)
+    def __init__(self, taskRun: TaskRun) -> None:
+        self._taskRun = taskRun
 
     def onStart(self) -> None:
-        self.workerProcess.start()
-
-        result = self.__inputStream.recv()
-        if result["code"] != 0:
-            raise RuntimeError(result["message"])
-
-        logging.getLogger("coretexpylib").info(result["message"])
-
         # Call "kill -30 task_run_process_id" to dump current stack trace of the TaskRun into the file
         # 30 == signal.SIGUSR1
         # Only works on *nix systems
@@ -93,9 +68,6 @@ class TaskCallback:
         sys.exit(1)
 
     def onCleanUp(self) -> None:
-        self.workerProcess.kill()
-        self.workerProcess.join()
-
         try:
             from py3nvml import py3nvml
             py3nvml.nvmlShutdown()

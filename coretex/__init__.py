@@ -27,4 +27,4 @@ _initializeDefaultLogger()
 
 # Use this only
 from .entities import *
-from ._task import currentTaskRun, initializeRTask
+from ._task import currentTaskRun, initializeRTask, TaskRunWorker
