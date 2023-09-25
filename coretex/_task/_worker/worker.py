@@ -130,25 +130,28 @@ class TaskRunWorker:
     def __init__(self, refreshToken: str, taskRunId: int) -> None:
         self._refreshToken = refreshToken
 
-        self.__outputStream, self.__inputStream = multiprocessing.Pipe()
+        output, input = multiprocessing.Pipe()
+        self.__input = input
 
         self.__process = multiprocessing.Process(
             name = f"TaskRun {taskRunId} worker process",
             target = _taskRunWorker,
-            args = (self.__outputStream, refreshToken, taskRunId, os.getpid()),
+            args = (output, refreshToken, taskRunId, os.getpid()),
             daemon = True
         )
 
     def start(self) -> None:
         self.__process.start()
 
-        result = self.__inputStream.recv()
+        result = self.__input.recv()
         if result["code"] != 0:
             raise RuntimeError(result["message"])
 
         logging.getLogger("coretexpylib").info(result["message"])
 
     def stop(self) -> None:
+        logging.getLogger("coretexpylib").debug(">> [Coretex] Stopping the worker process")
+
         self.__process.kill()
         self.__process.join()
 
