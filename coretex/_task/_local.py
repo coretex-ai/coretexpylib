@@ -124,8 +124,28 @@ def _readTaskRunConfig() -> List[BaseParameter]:
     return parameters
 
 
+def _getNewParameterValue(parameter: BaseParameter, parameterArgs: List[str]) -> BaseParameter:
+    for i, arg in enumerate(parameterArgs):
+        if arg == f"--{parameter.name}":
+            parameter.value = parameterArgs[i + 1]
+
+    return parameter
+
+
+def _parseParameters(parameters: List[BaseParameter], parameterArgs: List[str]) -> List[BaseParameter]:
+    newParameters: List[BaseParameter] = []
+    for parameter in parameters:
+        newParameters.append(_getNewParameterValue(parameter, parameterArgs))
+
+    parameterValidationResults = validateParameters(newParameters, verbose = True)
+    if not all(parameterValidationResults.values()):
+        sys.exit(1)
+
+    return newParameters
+
+
 def processLocal(args: Optional[List[str]] = None) -> Tuple[int, TaskCallback]:
-    parser, unknown = LocalArgumentParser().parse_known_args(args)
+    parser, extra = LocalArgumentParser().parse_known_args(args)
 
     if parser.username is not None and parser.password is not None:
         logging.getLogger("coretexpylib").info(">> [Coretex] Logging in with provided credentials")
@@ -147,11 +167,15 @@ def processLocal(args: Optional[List[str]] = None) -> Tuple[int, TaskCallback]:
     if not os.path.exists("experiment.config"):
         raise FileNotFoundError(">> [Coretex] \"experiment.config\" file not found")
 
+    parameters = _readTaskRunConfig()
+    if len(extra) > 0:
+        parameters = _parseParameters(parameters, extra)
+
     taskRun: TaskRun = TaskRun.runLocal(
         parser.projectId,
         parser.name,
         parser.description,
-        [parameter.encode() for parameter in _readTaskRunConfig()]
+        [parameter.encode() for parameter in parameters]
     )
 
     logging.getLogger("coretexpylib").info(f">> [Coretex] Created local run with ID \"{taskRun.id}\"")
