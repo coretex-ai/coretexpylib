@@ -102,7 +102,7 @@ class LocalArgumentParser(Tap):
         self.add_argument("--description", nargs = "?", type = str, default = None)
 
 
-def _readTaskRunConfig() -> List[BaseParameter]:
+def _readTaskRunConfig(parameterArgs: List[str]) -> List[BaseParameter]:
     parameters: List[BaseParameter] = []
 
     with open("./experiment.config", "rb") as configFile:
@@ -114,6 +114,7 @@ def _readTaskRunConfig() -> List[BaseParameter]:
 
         for parameterJson in parametersJson:
             parameter = parameter_factory.create(parameterJson)
+            parameter = _getParsedParameterValue(parameter, parameterArgs)
             parameters.append(parameter)
 
     parameterValidationResults = validateParameters(parameters, verbose = True)
@@ -124,24 +125,12 @@ def _readTaskRunConfig() -> List[BaseParameter]:
     return parameters
 
 
-def _getNewParameterValue(parameter: BaseParameter, parameterArgs: List[str]) -> BaseParameter:
+def _getParsedParameterValue(parameter: BaseParameter, parameterArgs: List[str]) -> BaseParameter:
     for i, arg in enumerate(parameterArgs):
         if arg == f"--{parameter.name}":
             parameter.value = parameterArgs[i + 1]
 
     return parameter
-
-
-def _parseParameters(parameters: List[BaseParameter], parameterArgs: List[str]) -> List[BaseParameter]:
-    newParameters: List[BaseParameter] = []
-    for parameter in parameters:
-        newParameters.append(_getNewParameterValue(parameter, parameterArgs))
-
-    parameterValidationResults = validateParameters(newParameters, verbose = True)
-    if not all(parameterValidationResults.values()):
-        sys.exit(1)
-
-    return newParameters
 
 
 def processLocal(args: Optional[List[str]] = None) -> Tuple[int, TaskCallback]:
@@ -167,9 +156,7 @@ def processLocal(args: Optional[List[str]] = None) -> Tuple[int, TaskCallback]:
     if not os.path.exists("experiment.config"):
         raise FileNotFoundError(">> [Coretex] \"experiment.config\" file not found")
 
-    parameters = _readTaskRunConfig()
-    if len(extra) > 0:
-        parameters = _parseParameters(parameters, extra)
+    parameters = _readTaskRunConfig(extra)
 
     taskRun: TaskRun = TaskRun.runLocal(
         parser.projectId,
