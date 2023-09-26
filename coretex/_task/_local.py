@@ -114,11 +114,7 @@ def _readTaskRunConfig(parameterArgs: List[str]) -> List[BaseParameter]:
 
         for parameterJson in parametersJson:
             parameter = parameter_factory.create(parameterJson)
-
-            parsedValue = _getParsedParameterValue(parameter.name, parameterArgs)
-            if parsedValue is not None:
-                parameter.value = parsedValue
-
+            parameter.value = _getParsedParameterValue(parameter.name, parameterArgs, parameter.value)
             parameters.append(parameter)
 
     parameterValidationResults = validateParameters(parameters, verbose = True)
@@ -129,12 +125,17 @@ def _readTaskRunConfig(parameterArgs: List[str]) -> List[BaseParameter]:
     return parameters
 
 
-def _getParsedParameterValue(parameterName: str, parameterArgs: List[str]) -> Optional[Any]:
+def _getParsedParameterValue(
+    parameterName: str,
+    parameterArgs: List[str],
+    default: Any
+) -> Optional[Any]:
+
     for i, arg in enumerate(parameterArgs):
         if arg == f"--{parameterName}":
             return parameterArgs[i + 1]
 
-    return None
+    return default
 
 
 def processLocal(args: Optional[List[str]] = None) -> Tuple[int, TaskCallback]:
