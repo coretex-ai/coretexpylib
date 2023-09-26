@@ -147,7 +147,8 @@ class TaskRunWorker:
         if result["code"] != 0:
             raise RuntimeError(result["message"])
 
-        logging.getLogger("coretexpylib").info(result["message"])
+        message = result["message"]
+        logging.getLogger("coretexpylib").info(f">> [Coretex] {message}")
 
     def stop(self) -> None:
         logging.getLogger("coretexpylib").debug(">> [Coretex] Stopping the worker process")
