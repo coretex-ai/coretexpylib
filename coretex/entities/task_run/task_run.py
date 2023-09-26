@@ -240,6 +240,8 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
 
             if response.hasFailed():
                 logging.getLogger("coretexpylib").error(">> [Coretex] Error while updating TaskRun status")
+            elif status is not None:
+                logging.getLogger("coretexpylib").info(f">> [Coretex] Updated Task Run status to \"{status.name}\"")
 
             return not response.hasFailed()
 
