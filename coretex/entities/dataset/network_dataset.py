@@ -20,7 +20,7 @@ from typing_extensions import Self
 from datetime import datetime
 from pathlib import Path
 
-import os
+import logging
 
 from .dataset import Dataset
 from ..sample import NetworkSample
@@ -167,7 +167,9 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
 
             sampleHardLinkPath = self.path / sample.zipPath.name
             if not sampleHardLinkPath.exists():
-                os.link(sample.zipPath, sampleHardLinkPath)
+                sample.zipPath.link_to(sampleHardLinkPath)
+
+            logging.getLogger("coretexpylib").info(f"\tDownloaded \"{sample.name}\"")
 
         processor = MultithreadedDataProcessor(
             self.samples,
