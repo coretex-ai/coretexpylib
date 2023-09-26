@@ -48,6 +48,8 @@ def _getMetrics() -> List[Metric]:
     # If GPU exists add GPU related metrics to the list
     try:
         from py3nvml import py3nvml
+
+        # Do not shutdown otherwise when extracting gpu metrics it will throw error
         py3nvml.nvmlInit()
 
         metrics.extend([
@@ -56,7 +58,6 @@ def _getMetrics() -> List[Metric]:
         ])
 
         logging.getLogger("coretexpylib").debug(">> [Coretex] Initialized GPU metrics")
-        py3nvml.nvmlShutdown()
     except:
         logging.getLogger("coretexpylib").debug(">> [Coretex] Failed to initialize GPU metrics")
 
