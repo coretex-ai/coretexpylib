@@ -20,6 +20,7 @@ from __future__ import annotations
 from typing import Optional, Any, List
 from threading import Lock, Thread
 from logging import LogRecord, StreamHandler
+from concurrent.futures import ThreadPoolExecutor
 
 import time
 import sys
@@ -27,7 +28,7 @@ import logging
 
 from .log import Log
 from .log_severity import LogSeverity
-from ..networking import networkManager, RequestType, RequestFailedError
+from ..networking import networkManager, RequestType
 
 
 # Logs from library that is being used for making api requests is causing project to freeze because
@@ -58,22 +59,59 @@ class _LoggerUploadWorker(Thread):
         self.setDaemon(True)
         self.setName("LoggerUploadWorker")
 
+        # Task run for which the logs are uploaded
+        self._taskRunId: Optional[int] = None
+
+        self.__queue = ThreadPoolExecutor(max_workers = 1, thread_name_prefix = "LogQueue")
         self.__waitTime = MAX_WAIT_TIME_BEFORE_UPDATE
+        self.__pendingLogs: List[Log] = []
+
+    def add(self, log: Log) -> None:
+        self.__queue.submit(self.__pendingLogs.append, log)
+
+    def uploadLogs(self) -> bool:
+        def worker() -> bool:
+            if len(self.__pendingLogs) == 0:
+                return True
+
+            if self._taskRunId is None:
+                raise ValueError(">> [Coretex] Tried to upload logs but no Task is being executed")
+
+            response = networkManager.genericJSONRequest(
+                endpoint = "model-queue/add-console-log",
+                requestType = RequestType.post,
+                parameters = {
+                    "model_queue_id": self._taskRunId,
+                    "logs": [log.encode() for log in self.__pendingLogs]
+                }
+            )
+
+            # Only clear logs if they were successfully uploaded to coretex
+            if not response.hasFailed():
+                self.__pendingLogs.clear()
+
+            return not response.hasFailed()
+
+        future = self.__queue.submit(worker)
+
+        exception = future.exception()
+        if exception is not None:
+            logging.getLogger("coretexpylib").debug(">> [Coretex] Failed to upload logs", exc_info = exception)
+            return False
+
+        return future.result()
 
     def run(self) -> None:
         while True:
-            logging.getLogger("coretexpylib").debug(f">> [Coretex] LoggerUploadWorker sleeping for: {self.__waitTime}s")
             time.sleep(self.__waitTime)
 
-            customLogHandler = LogHandler.instance()
-
             # Check if logger is attached to a run
-            if customLogHandler.currentTaskRunId is None:
+            if self._taskRunId is None:
                 continue
 
             try:
-                success = customLogHandler.flushLogs()
-            except RequestFailedError:
+                success = self.uploadLogs()
+            except:
                 success = False
 
             if success:
@@ -84,7 +122,12 @@ class _LoggerUploadWorker(Thread):
                 self.__waitTime *= 2
 
     def reset(self) -> None:
+        self.__queue.shutdown(wait = True)
+        self.__queue = ThreadPoolExecutor(max_workers = 1, thread_name_prefix = "LogQueue")
+
+        self._taskRunId = None
         self.__waitTime = MAX_WAIT_TIME_BEFORE_UPDATE
+        self.__pendingLogs.clear()
 
 
 class LogHandler(StreamHandler):
@@ -110,40 +153,43 @@ class LogHandler(StreamHandler):
     def __init__(self, stream: Any) -> None:
         super().__init__(stream)
 
-        # Locks appending and flushing of the pending logs,
-        # reset will not be locked to avoid waiting on flush
-        # if the request for uploading logs will timeout
-        self.__pendingLogsLock = Lock()
-        self.__pendingLogs: List[Log] = []
-
         self.__uploadWorker = _LoggerUploadWorker()
-
-        self.currentTaskRunId: Optional[int] = None
-        self.severity = LogSeverity.info
-
         self.__uploadWorker.start()
+
+    @property
+    def taskRunId(self) -> Optional[int]:
+        return self.__uploadWorker._taskRunId
+
+    @taskRunId.setter
+    def taskRunId(self, value: Optional[int]) -> None:
+        self.__uploadWorker._taskRunId = value
 
     def __restartUploadWorker(self) -> None:
         if self.__uploadWorker.is_alive():
             raise RuntimeError(">> [Coretex] Upload worker is already running")
 
+        old = self.__uploadWorker
+
         self.__uploadWorker = _LoggerUploadWorker()
+        self.__uploadWorker._taskRunId = old._taskRunId
         self.__uploadWorker.start()
 
     def emit(self, record: LogRecord) -> None:
         super().emit(record)
 
-        with self.__pendingLogsLock:
-            if record.name in IGNORED_LOGGERS:
-                return
+        if self.taskRunId is None:
+            return
 
-            if not self.__uploadWorker.is_alive():
-                self.__restartUploadWorker()
+        if record.name in IGNORED_LOGGERS:
+            return
 
-            severity = LogSeverity.fromStd(record.levelno)
-            log = Log.create(record.message, severity)
+        if not self.__uploadWorker.is_alive():
+            self.__restartUploadWorker()
 
-            self.__pendingLogs.append(log)
+        severity = LogSeverity.fromStd(record.levelno)
+        log = Log.create(record.message, severity)
+
+        self.__uploadWorker.add(log)
 
     def flushLogs(self) -> bool:
         """
@@ -154,28 +200,7 @@ class LogHandler(StreamHandler):
             bool -> True if the upload is successful, False otherwise
         """
 
-        with self.__pendingLogsLock:
-            if len(self.__pendingLogs) == 0:
-                return True
-
-            if self.currentTaskRunId is None:
-                self.__pendingLogs.clear()
-                return True
-
-            response = networkManager.genericJSONRequest(
-                endpoint = "model-queue/add-console-log",
-                requestType = RequestType.post,
-                parameters = {
-                    "model_queue_id": self.currentTaskRunId,
-                    "logs": [log.encode() for log in self.__pendingLogs]
-                }
-            )
-
-            # Only clear logs if they were successfully uploaded to coretex
-            if not response.hasFailed():
-                self.__pendingLogs.clear()
-
-            return not response.hasFailed()
+        return self.__uploadWorker.uploadLogs()
 
     def reset(self) -> None:
         """
@@ -184,6 +209,4 @@ class LogHandler(StreamHandler):
             Resets the upload worker thread
         """
 
-        self.currentTaskRunId = None
-        self.__pendingLogs.clear()
         self.__uploadWorker.reset()

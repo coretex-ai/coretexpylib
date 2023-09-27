@@ -16,7 +16,7 @@ def _prepareForExecution(taskRunId: int) -> TaskRun:
     taskRun: TaskRun = TaskRun.fetchById(taskRunId)
 
     customLogHandler = LogHandler.instance()
-    customLogHandler.currentTaskRunId = taskRun.id
+    customLogHandler.taskRunId = taskRun.id
 
     # enable/disable verbose mode for taskRuns
     severity = LogSeverity.info
