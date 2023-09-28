@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Tuple, Optional, List, Dict, Any
+from typing import Tuple, Optional, List, Dict, Any, cast
 from getpass import getpass
 
 import logging
@@ -30,8 +30,10 @@ import psutil
 from ._base_callback import TaskCallback
 from ._worker import TaskRunWorker
 from .. import folder_manager
-from ..entities import TaskRun, TaskRunStatus, BaseParameter, validateParameters, parameter_factory
+from ..entities import TaskRun, TaskRunStatus, BaseParameter, BaseListParameter, validateParameters, parameter_factory, ParameterType
 from ..networking import networkManager
+from ..entities.task_run.parameter.parameter_type import ParameterType
+
 
 
 class LocalTaskCallback(TaskCallback):
@@ -86,12 +88,21 @@ class LocalTaskCallback(TaskCallback):
 
 class LocalArgumentParser(Tap):
 
+    parameters: List[BaseParameter]
+
     username: Optional[str]
     password: Optional[str]
 
     projectId: int
     name: Optional[str]
     description: Optional[str]
+
+    def __init__(self, parameters: List[BaseParameter]) -> None:
+        self.parameters = parameters
+        for parameter in parameters:
+            setattr(self, parameter.name, None)
+
+        super().__init__()
 
     def configure(self) -> None:
         self.add_argument("--username", nargs = "?", type = str, default = None)
@@ -101,8 +112,17 @@ class LocalArgumentParser(Tap):
         self.add_argument("--name", nargs = "?", type = str, default = None)
         self.add_argument("--description", nargs = "?", type = str, default = None)
 
+        for parameter in self.parameters:
+            if parameter.dataType in [ParameterType.dataset, ParameterType.enum, ParameterType.enumList, ParameterType.imuVectors]:
+                self.add_argument(f"--{parameter.name}", nargs = "?", type = parameter.overrideValue, default = None)
+            elif parameter.dataType.value.startswith("list"):
+                parameter = cast(BaseListParameter,  parameter)
+                self.add_argument(f"--{parameter.name}", nargs = "+", type = parameter.listTypes[0])
+            else:
+                self.add_argument(f"--{parameter.name}", nargs = "?", type = parameter.types[0], default = None)
 
-def _readTaskRunConfig(parameterArgs: List[str]) -> List[BaseParameter]:
+
+def _readTaskRunConfig() -> List[BaseParameter]:
     parameters: List[BaseParameter] = []
 
     with open("./experiment.config", "rb") as configFile:
@@ -114,32 +134,27 @@ def _readTaskRunConfig(parameterArgs: List[str]) -> List[BaseParameter]:
 
         for parameterJson in parametersJson:
             parameter = parameter_factory.create(parameterJson)
-            parameter.value = _getParsedParameterValue(parameter.name, parameterArgs, parameter.value)
             parameters.append(parameter)
-
-    parameterValidationResults = validateParameters(parameters, verbose = True)
-    if not all(parameterValidationResults.values()):
-        # Using this to make the parameter errors more readable without scrolling through the console
-        sys.exit(1)
 
     return parameters
 
 
 def _getParsedParameterValue(
     parameterName: str,
-    parameterArgs: List[str],
+    parser: Any,
     default: Any
 ) -> Optional[Any]:
 
-    for i, arg in enumerate(parameterArgs):
-        if arg == f"--{parameterName}":
-            return parameterArgs[i + 1]
+    parsedParameter = getattr(parser, parameterName)
+    if parsedParameter is None:
+        return default
 
-    return default
+    return parsedParameter
 
 
 def processLocal(args: Optional[List[str]] = None) -> Tuple[int, TaskCallback]:
-    parser, extra = LocalArgumentParser().parse_known_args(args)
+    parameters = _readTaskRunConfig()
+    parser, extra = LocalArgumentParser(parameters).parse_known_args(args)
 
     if parser.username is not None and parser.password is not None:
         logging.getLogger("coretexpylib").info(">> [Coretex] Logging in with provided credentials")
@@ -161,7 +176,14 @@ def processLocal(args: Optional[List[str]] = None) -> Tuple[int, TaskCallback]:
     if not os.path.exists("experiment.config"):
         raise FileNotFoundError(">> [Coretex] \"experiment.config\" file not found")
 
-    parameters = _readTaskRunConfig(extra)
+    for parameter in parameters:
+        parameter.value = _getParsedParameterValue(parameter.name, parser, parameter.value)
+        logging.info(parameter.value)
+
+    parameterValidationResults = validateParameters(parameters, verbose = True)
+    if not all(parameterValidationResults.values()):
+        # Using this to make the parameter errors more readable without scrolling through the console
+        sys.exit(1)
 
     taskRun: TaskRun = TaskRun.runLocal(
         parser.projectId,

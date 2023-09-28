@@ -42,3 +42,13 @@ class EnumParameter(BaseParameter[Dict[str, Any]]):
             return None
 
         return self.value["options"][selected]
+
+    def overrideValue(self, value: Optional[Any]) -> Optional[Any]:
+        if value is None or self.value is None:
+            return None
+
+        try:
+            self.value["selected"] = int(value)
+            return self.value
+        except ValueError:
+            return None

@@ -23,3 +23,15 @@ class DatasetParameter(BaseParameter[Union[int, str]]):
             raise ValueError(f">> [Coretex] Failed to create dataset with type \"{datasetType.__name__}\"")
 
         return dataset
+
+    def overrideValue(self, value: Optional[Any]) -> Optional[Any]:
+        if value is None:
+            return None
+
+        try:
+            return int(value)
+        except ValueError:
+            if isinstance(value, str):
+                return value
+
+        return None

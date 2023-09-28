@@ -1,5 +1,7 @@
 from typing import Any, List, Optional, Tuple, Dict
 
+import json
+
 from ..base_list_parameter import BaseListParameter
 from ..utils import validateEnumStructure
 from ....project import ProjectType
@@ -53,3 +55,12 @@ class ListEnumParameter(BaseListParameter[Dict[str, Any]]):
             return None
 
         return [options[value] for value in selected]
+
+    def overrideValue(self, value: Optional[Any]) -> Optional[Any]:
+        if value is None:
+            return None
+
+        try:
+            return json.loads(value.replace("'", "\""))
+        except ValueError:
+            return None

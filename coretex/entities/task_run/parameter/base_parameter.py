@@ -61,6 +61,9 @@ class BaseParameter(ABC, Codable, Generic[T]):
     def parseValue(self, type_: ProjectType) -> Optional[Any]:
         return self.value
 
+    def overrideValue(self, value: Optional[Any]) -> Optional[Any]:
+        return value
+
 
 def validateParameters(parameters: List[BaseParameter], verbose: bool = True) -> Dict[str, Any]:
     parameterValidationResults: Dict[str, bool] = {}
