@@ -178,7 +178,6 @@ def processLocal(args: Optional[List[str]] = None) -> Tuple[int, TaskCallback]:
 
     for parameter in parameters:
         parameter.value = _getParsedParameterValue(parameter.name, parser, parameter.value)
-        logging.info(parameter.value)
 
     parameterValidationResults = validateParameters(parameters, verbose = True)
     if not all(parameterValidationResults.values()):
