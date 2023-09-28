@@ -17,6 +17,7 @@
 
 from typing import Any, TypeVar, Optional, Generic, Dict, Union
 from typing_extensions import Self
+from datetime import datetime
 from pathlib import Path
 
 import os
@@ -26,6 +27,7 @@ from ..project import ProjectType
 from ... import folder_manager
 from ...codable import KeyDescriptor
 from ...networking import NetworkObject, networkManager, FileData
+from ...utils import DATE_FORMAT, TIME_ZONE
 
 
 SampleDataType = TypeVar("SampleDataType")
@@ -112,6 +114,31 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
 
         return cls.decode(response.json)
 
+    def modifiedSinceLastDownload(self) -> bool:
+        """
+            Checking if sample has been modified since last download, if the sample is already
+            stored locally
+
+            Returns
+            -------
+            bool -> False if sample has not changed since last download, True otherwise
+        """
+
+        if not self.zipPath.exists():
+            return False
+
+        sampleJson = self.fetchById(self.id).encode()
+        lastModified = sampleJson["storage_last_modified"]
+
+        if lastModified is None:
+            return False
+
+        lastModifiedNew = datetime.strptime(lastModified, DATE_FORMAT)
+        lastModifiedOld = datetime.fromtimestamp(self.zipPath.stat().st_mtime).astimezone()
+        lastModifiedOldUtc = lastModifiedOld.astimezone(TIME_ZONE)
+
+        return lastModifiedNew > lastModifiedOldUtc
+
     def download(self, ignoreCache: bool = False) -> bool:
         """
             Downloads sample from Coretex.ai
@@ -120,6 +147,9 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
             -------
             bool -> False if response is failed, True otherwise
         """
+
+        if self.modifiedSinceLastDownload():
+            ignoreCache = True
 
         response = networkManager.sampleDownload(
             endpoint = f"{self.__class__._endpoint()}/export?id={self.id}",
