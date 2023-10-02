@@ -21,6 +21,8 @@ from datetime import datetime
 from pathlib import Path
 
 import os
+import time
+import logging
 
 from .sample import Sample
 from ..project import ProjectType
@@ -125,12 +127,15 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
         """
 
         if not self.zipPath.exists():
-            return False
+            raise FileNotFoundError(f">> [Coretex] Sample file could not be found at {self.zipPath}. Cannot check if file has been modified since last download")
 
-        sampleJson = self.fetchById(self.id).encode()
-        lastModified = sampleJson["storage_last_modified"]
+        #sampleJson = self.fetchById(self.id).encode()
+        #lastModified = sampleJson["storage_last_modified"]
+
+        lastModified = self.encode()["storage_last_modified"]
 
         if lastModified is None:
+            logging.error(f">> storage_last_modified is None for sample {self.name}")
             return False
 
         lastModifiedNew = datetime.strptime(lastModified, DATE_FORMAT)
@@ -148,7 +153,7 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
             bool -> False if response is failed, True otherwise
         """
 
-        if self.modifiedSinceLastDownload():
+        if self.zipPath.exists() and self.modifiedSinceLastDownload():
             ignoreCache = True
 
         response = networkManager.sampleDownload(
@@ -166,6 +171,9 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
 
                 sampleHardLinkPath.unlink()
                 os.link(self.zipPath, sampleHardLinkPath)
+
+        if Path(self.zipPath).exists():
+            os.utime(self.zipPath, (os.stat(self.zipPath).st_atime, time.time()))
 
         return not response.hasFailed()
 

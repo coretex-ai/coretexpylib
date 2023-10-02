@@ -20,8 +20,6 @@ from pathlib import Path
 from abc import ABC, abstractmethod
 from importlib.metadata import version as getLibraryVersion
 
-import os
-import time
 import json
 import logging
 import platform
@@ -301,9 +299,6 @@ class NetworkManagerBase(ABC):
         if self.shouldRetry(retryCount, networkResponse):
             print(">> [Coretex] Retry count: {0}".format(retryCount))
             return self.sampleDownload(endpoint, destination, ignoreCache, parameters, retryCount + 1)
-
-        if Path(destination).exists():
-            os.utime(destination, (os.stat(destination).st_atime, time.time()))
 
         return networkResponse
 
