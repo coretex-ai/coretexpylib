@@ -88,8 +88,6 @@ class LocalTaskCallback(TaskCallback):
 
 class LocalArgumentParser(Tap):
 
-    parameters: List[BaseParameter]
-
     username: Optional[str]
     password: Optional[str]
 
@@ -115,45 +113,47 @@ class LocalArgumentParser(Tap):
         for parameter in self.parameters:
             if parameter.dataType in [ParameterType.dataset, ParameterType.enum, ParameterType.enumList, ParameterType.imuVectors]:
                 self.add_argument(f"--{parameter.name}", nargs = "?", type = parameter.overrideValue, default = None)
-            elif parameter.dataType.value.startswith("list"):
-                parameter = cast(BaseListParameter,  parameter)
+            elif isinstance(parameter, BaseListParameter):
                 self.add_argument(f"--{parameter.name}", nargs = "+", type = parameter.listTypes[0])
             else:
                 self.add_argument(f"--{parameter.name}", nargs = "?", type = parameter.types[0], default = None)
 
+    @classmethod
+    def _readTaskRunConfig(self) -> List[BaseParameter]:
+        if not os.path.exists("experiment.config"):
+            raise FileNotFoundError(">> [Coretex] \"experiment.config\" file not found")
 
-def _readTaskRunConfig() -> List[BaseParameter]:
-    parameters: List[BaseParameter] = []
+        parameters: List[BaseParameter] = []
+        with open("./experiment.config", "rb") as configFile:
+            configContent: Dict[str, Any] = json.load(configFile)
+            parametersJson = configContent["parameters"]
 
-    with open("./experiment.config", "rb") as configFile:
-        configContent: Dict[str, Any] = json.load(configFile)
-        parametersJson = configContent["parameters"]
+            if not isinstance(parametersJson, list):
+                raise ValueError(">> [Coretex] Invalid experiment.config file. Property 'parameters' must be an array")
 
-        if not isinstance(parametersJson, list):
-            raise ValueError(">> [Coretex] Invalid experiment.config file. Property 'parameters' must be an array")
+            for parameterJson in parametersJson:
+                parameter = parameter_factory.create(parameterJson)
+                parameters.append(parameter)
 
-        for parameterJson in parametersJson:
-            parameter = parameter_factory.create(parameterJson)
-            parameters.append(parameter)
+        return parameters
 
-    return parameters
+    @classmethod
+    def _getParsedParameterValue(
+        self,
+        parameterName: str,
+        parser: Any,
+        default: Any
+    ) -> Optional[Any]:
 
+        parsedParameter = getattr(parser, parameterName)
+        if parsedParameter is None:
+            return default
 
-def _getParsedParameterValue(
-    parameterName: str,
-    parser: Any,
-    default: Any
-) -> Optional[Any]:
-
-    parsedParameter = getattr(parser, parameterName)
-    if parsedParameter is None:
-        return default
-
-    return parsedParameter
+        return parsedParameter
 
 
 def processLocal(args: Optional[List[str]] = None) -> Tuple[int, TaskCallback]:
-    parameters = _readTaskRunConfig()
+    parameters = LocalArgumentParser._readTaskRunConfig()
     parser, extra = LocalArgumentParser(parameters).parse_known_args(args)
 
     if parser.username is not None and parser.password is not None:
@@ -173,11 +173,8 @@ def processLocal(args: Optional[List[str]] = None) -> Tuple[int, TaskCallback]:
     if response.hasFailed():
         raise RuntimeError(">> [Coretex] Failed to authenticate")
 
-    if not os.path.exists("experiment.config"):
-        raise FileNotFoundError(">> [Coretex] \"experiment.config\" file not found")
-
     for parameter in parameters:
-        parameter.value = _getParsedParameterValue(parameter.name, parser, parameter.value)
+        parameter.value = LocalArgumentParser._getParsedParameterValue(parameter.name, parser, parameter.value)
 
     parameterValidationResults = validateParameters(parameters, verbose = True)
     if not all(parameterValidationResults.values()):
