@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Tuple, Optional, List, Dict, Any, cast
+from typing import Tuple, Optional, List, Dict, Any
 from getpass import getpass
 
 import logging
@@ -32,8 +32,6 @@ from ._worker import TaskRunWorker
 from .. import folder_manager
 from ..entities import TaskRun, TaskRunStatus, BaseParameter, BaseListParameter, validateParameters, parameter_factory, ParameterType
 from ..networking import networkManager
-from ..entities.task_run.parameter.parameter_type import ParameterType
-
 
 
 class LocalTaskCallback(TaskCallback):
@@ -98,6 +96,8 @@ class LocalArgumentParser(Tap):
     def __init__(self, parameters: List[BaseParameter]) -> None:
         self.parameters = parameters
         for parameter in parameters:
+            # Dynamically add parameter names as attributes to the class, so they will
+            # get parsed by parse_known_args
             setattr(self, parameter.name, None)
 
         super().__init__()
@@ -114,12 +114,12 @@ class LocalArgumentParser(Tap):
             if parameter.dataType in [ParameterType.dataset, ParameterType.enum, ParameterType.enumList, ParameterType.imuVectors]:
                 self.add_argument(f"--{parameter.name}", nargs = "?", type = parameter.overrideValue, default = None)
             elif isinstance(parameter, BaseListParameter):
-                self.add_argument(f"--{parameter.name}", nargs = "+", type = parameter.listTypes[0])
+                self.add_argument(f"--{parameter.name}", nargs = "+",  type = parameter.listTypes[0], default = None)
             else:
                 self.add_argument(f"--{parameter.name}", nargs = "?", type = parameter.types[0], default = None)
 
     @classmethod
-    def _readTaskRunConfig(self) -> List[BaseParameter]:
+    def _readTaskRunConfig(cls) -> List[BaseParameter]:
         if not os.path.exists("experiment.config"):
             raise FileNotFoundError(">> [Coretex] \"experiment.config\" file not found")
 
@@ -137,7 +137,6 @@ class LocalArgumentParser(Tap):
 
         return parameters
 
-    @classmethod
     def _getParsedParameterValue(
         self,
         parameterName: str,
@@ -153,12 +152,14 @@ class LocalArgumentParser(Tap):
 
 
 def processLocal(args: Optional[List[str]] = None) -> Tuple[int, TaskCallback]:
-    parameters = LocalArgumentParser._readTaskRunConfig()
-    parser, extra = LocalArgumentParser(parameters).parse_known_args(args)
 
-    if parser.username is not None and parser.password is not None:
+    parameters = LocalArgumentParser._readTaskRunConfig()
+    parser = LocalArgumentParser(parameters)
+    parsedArguments, _ = parser.parse_known_args(args)
+
+    if parsedArguments.username is not None and parsedArguments.password is not None:
         logging.getLogger("coretexpylib").info(">> [Coretex] Logging in with provided credentials")
-        response = networkManager.authenticate(parser.username, parser.password)
+        response = networkManager.authenticate(parsedArguments.username, parsedArguments.password)
     elif networkManager.hasStoredCredentials:
         logging.getLogger("coretexpylib").info(">> [Coretex] Logging in with stored credentials")
         response = networkManager.authenticateWithStoredCredentials()
@@ -174,7 +175,7 @@ def processLocal(args: Optional[List[str]] = None) -> Tuple[int, TaskCallback]:
         raise RuntimeError(">> [Coretex] Failed to authenticate")
 
     for parameter in parameters:
-        parameter.value = LocalArgumentParser._getParsedParameterValue(parameter.name, parser, parameter.value)
+        parameter.value = parser._getParsedParameterValue(parameter.name, parsedArguments, parameter.value)
 
     parameterValidationResults = validateParameters(parameters, verbose = True)
     if not all(parameterValidationResults.values()):
@@ -182,9 +183,9 @@ def processLocal(args: Optional[List[str]] = None) -> Tuple[int, TaskCallback]:
         sys.exit(1)
 
     taskRun: TaskRun = TaskRun.runLocal(
-        parser.projectId,
-        parser.name,
-        parser.description,
+        parsedArguments.projectId,
+        parsedArguments.name,
+        parsedArguments.description,
         [parameter.encode() for parameter in parameters]
     )
 

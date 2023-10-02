@@ -25,12 +25,3 @@ class ListFloatParameter(BaseListParameter[List[Union[float, int]]]):
                 values.append(element)
 
         return values
-
-    def overrideValue(self, value: Optional[Any]) -> Optional[Any]:
-        if value is None:
-            return None
-
-        try:
-            return json.loads(value.replace("'", "\""))
-        except ValueError:
-            return None
