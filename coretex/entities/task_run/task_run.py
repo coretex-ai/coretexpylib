@@ -85,11 +85,13 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
     createdById: str
     useCachedEnv: bool
     metrics: List[Metric]
+    outputs: List[Dict[str, Any]]
 
     def __init__(self) -> None:
         super(TaskRun, self).__init__()
 
         self.metrics = []
+        self.outputs = []
         self.__parameters: Dict[str, Any] = {}
 
     @property
@@ -328,6 +330,24 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
 
         response = networkManager.genericJSONRequest(
             "model-queue/metrics",
+            RequestType.post,
+            parameters
+        )
+
+        return not response.hasFailed()
+
+    def submitOutputParameter(self, parameter: str, value: Any) -> bool:
+        if isinstance(value, NetworkDataset):
+            value = value.id
+
+        self.outputs.append({f"{parameter}": value})
+        parameters: Dict[str, Any] = {
+            "id": self.id,
+            "parameters": self.outputs
+        }
+
+        response = networkManager.genericJSONRequest(
+            "/model-queue/submit-output-parameter",
             RequestType.post,
             parameters
         )
