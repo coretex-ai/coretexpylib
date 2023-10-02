@@ -33,6 +33,7 @@ from .parameter import validateParameters, parameter_factory
 from .execution_type import ExecutionType
 from ..dataset import Dataset, LocalDataset, NetworkDataset
 from ..project import ProjectType
+from ..model import Model
 from ... import folder_manager
 from ...codable import KeyDescriptor
 from ...networking import networkManager, NetworkObject, RequestType, NetworkRequestError, FileData
@@ -140,6 +141,10 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
             if isinstance(value, NetworkDataset) and issubclass(datasetType, NetworkDataset):
                 self.__parameters[key] = datasetType.fetchById(value.id)
 
+    def setModelType(self, modelType: Type[Model]) -> None:
+        for key, value in self.__parameters.items():
+            if isinstance(value, Model):
+                self.__parameters[key] = modelType.fetchById(value.id)
 
     @classmethod
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:

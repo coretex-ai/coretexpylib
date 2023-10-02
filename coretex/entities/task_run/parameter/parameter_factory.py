@@ -30,6 +30,9 @@ def create(value: Dict[str, Any]) -> BaseParameter:
     if parameterType == ParameterType.dataset:
         return DatasetParameter.decode(value)
 
+    if parameterType == ParameterType.model:
+        return ModelParameter.decode(value)
+
     if parameterType == ParameterType.imuVectors:
         return IMUVectorsParameter.decode(value)
 
@@ -44,6 +47,12 @@ def create(value: Dict[str, Any]) -> BaseParameter:
 
     if parameterType == ParameterType.strList:
         return ListStrParameter.decode(value)
+
+    if parameterType == ParameterType.datasetList:
+        return ListDatasetParameter.decode(value)
+
+    if parameterType == ParameterType.modelList:
+        return ListModelParameter.decode(value)
 
     if parameterType == ParameterType.enumList:
         return ListEnumParameter.decode(value)
