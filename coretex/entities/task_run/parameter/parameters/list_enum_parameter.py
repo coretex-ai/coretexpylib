@@ -1,7 +1,5 @@
 from typing import Any, List, Optional, Tuple, Dict
 
-import json
-
 from ..base_list_parameter import BaseListParameter
 from ..utils import validateEnumStructure
 from ....project import ProjectType

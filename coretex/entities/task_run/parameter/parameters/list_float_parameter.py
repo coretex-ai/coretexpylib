@@ -1,7 +1,5 @@
 from typing import Any, List, Optional, Union
 
-import json
-
 from ..base_list_parameter import BaseListParameter
 from ....project import ProjectType
 

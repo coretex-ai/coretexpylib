@@ -16,6 +16,7 @@ class IMUVectorsParameter(BaseParameter[Dict[str, int]]):
             return None
 
         try:
-            return json.loads(value.replace("'", "\""))
+            self.value = json.loads(value.replace("'", "\""))
+            return self.value
         except ValueError:
             return None

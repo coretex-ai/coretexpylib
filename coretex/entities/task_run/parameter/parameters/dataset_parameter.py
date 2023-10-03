@@ -29,7 +29,8 @@ class DatasetParameter(BaseParameter[Union[int, str]]):
             return None
 
         try:
-            return int(value)
+            self.value = int(value)
+            return self.value
         except ValueError:
             if isinstance(value, str):
                 return value

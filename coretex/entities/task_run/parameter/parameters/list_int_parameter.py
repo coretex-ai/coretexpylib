@@ -1,6 +1,4 @@
-from typing import List, Optional, Any
-
-import json
+from typing import List
 
 from ..base_list_parameter import BaseListParameter
 
