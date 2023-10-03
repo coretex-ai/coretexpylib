@@ -90,7 +90,6 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
         super(TaskRun, self).__init__()
 
         self.metrics = []
-        self.outputs = []
         self.__parameters: Dict[str, Any] = {}
 
     @property
@@ -335,7 +334,7 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
 
         return not response.hasFailed()
 
-    def submitOutput(self, parameterName: str, value: Any) -> bool:
+    def submitOutput(self, parameterName: str, value: Any) -> None:
         """
             Submit an output of this task to act as a parameter in tasks
             downstream in the Workflow
@@ -362,7 +361,7 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
 
         self.submitOutputs({parameterName: value})
 
-    def submitOutputs(self, outputs: Dict[str, Any]) -> bool:
+    def submitOutputs(self, outputs: Dict[str, Any]) -> None:
         """
             Submit multiple outputs of this task to act as parameters in tasks
             downstream in the Workflow
@@ -386,15 +385,17 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
             True
         """
 
+        outputParameters: List[Dict[str, Any]] = []
+
         for key, value in outputs.items():
             if isinstance(value, NetworkObject):
-                outputs[key] = value.id
+                value = value.id
 
-            self.outputs.append({key: outputs[key]})
+            outputParameters.append({key: value})
 
         parameters: Dict[str, Any] = {
             "id": self.id,
-            "parameters": self.outputs
+            "parameters": outputParameters
         }
 
         response = networkManager.genericJSONRequest(
