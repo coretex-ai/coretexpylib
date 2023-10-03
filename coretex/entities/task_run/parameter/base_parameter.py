@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 import logging
 
 from .parameter_type import ParameterType
-from .parameter_io_type import ParameterIOType
 from ...project import ProjectType
 from ....codable import Codable, KeyDescriptor
 
@@ -19,7 +18,6 @@ class BaseParameter(ABC, Codable, Generic[T]):
     value: Optional[T]
     dataType: ParameterType
     required: bool
-    ioType: ParameterIOType
 
     @property
     @abstractmethod

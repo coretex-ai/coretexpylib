@@ -336,11 +336,78 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
 
         return not response.hasFailed()
 
-    def submitOutputParameter(self, parameter: str, value: Any) -> bool:
-        if isinstance(value, NetworkDataset):
+    def submitOutputParameter(self, parameterName: str, value: Any) -> bool:
+        """
+            Submit an output of this task to act as a parameter in tasks
+            downstream in the Workflow
+
+            Parameters
+            ----------
+            parameterName : str
+                name of the parameter
+            value : Any
+                value that will be sent (id of the object will be sent
+                in case Coretex objects like CustomDataset, Model etc. is submited)
+
+            Example
+            -------
+            >>> from coretex import TaskRun
+            \b
+            >>> result = ExecutingTaskRun.current().submitOutputParameter(
+                    parameterName = "outputDataset"
+                    value = outputDataset
+                )
+            >>> print(result)
+            True
+        """
+
+        if isinstance(value, NetworkObject):
             value = value.id
 
-        self.outputs.append({f"{parameter}": value})
+        self.outputs.append({f"{parameterName}": value})
+        parameters: Dict[str, Any] = {
+            "id": self.id,
+            "parameters": self.outputs
+        }
+
+        response = networkManager.genericJSONRequest(
+            "/model-queue/submit-output-parameter",
+            RequestType.post,
+            parameters
+        )
+
+        return not response.hasFailed()
+
+    def submitOutputParameters(self, outputs: Dict[str, Any]) -> bool:
+        """
+            Submit multiple outputs of this task to act as parameters in tasks
+            downstream in the Workflow
+
+            Parameters
+            ----------
+            outputs : Dict[str, Any]
+                dictionary with outputs, with key being the name of the parameter
+                (id of the object will be sent in case Coretex objects like
+                CustomDataset, Model etc. is submited)
+
+            Example
+            -------
+            >>> from coretex import TaskRun
+            \b
+            >>> result = ExecutingTaskRun.current().submitOutputParameters({
+                    "outputDataset": outputDataset,
+                    "numbers": 123
+                })
+            >>> print(result)
+            True
+        """
+
+        for key, value in outputs.items():
+            if isinstance(value, NetworkObject):
+                outputs[key] = value.id
+
+            self.outputs.append({key: outputs[key]})
+
         parameters: Dict[str, Any] = {
             "id": self.id,
             "parameters": self.outputs
