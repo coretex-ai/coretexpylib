@@ -85,7 +85,6 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
     createdById: str
     useCachedEnv: bool
     metrics: List[Metric]
-    outputs: List[Dict[str, Any]]
 
     def __init__(self) -> None:
         super(TaskRun, self).__init__()
@@ -336,7 +335,7 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
 
         return not response.hasFailed()
 
-    def submitOutputParameter(self, parameterName: str, value: Any) -> bool:
+    def submitOutput(self, parameterName: str, value: Any) -> bool:
         """
             Submit an output of this task to act as a parameter in tasks
             downstream in the Workflow
@@ -361,24 +360,9 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
             True
         """
 
-        if isinstance(value, NetworkObject):
-            value = value.id
+        self.submitOutputs({parameterName: value})
 
-        self.outputs.append({f"{parameterName}": value})
-        parameters: Dict[str, Any] = {
-            "id": self.id,
-            "parameters": self.outputs
-        }
-
-        response = networkManager.genericJSONRequest(
-            "/model-queue/submit-output-parameter",
-            RequestType.post,
-            parameters
-        )
-
-        return not response.hasFailed()
-
-    def submitOutputParameters(self, outputs: Dict[str, Any]) -> bool:
+    def submitOutputs(self, outputs: Dict[str, Any]) -> bool:
         """
             Submit multiple outputs of this task to act as parameters in tasks
             downstream in the Workflow
@@ -414,12 +398,13 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
         }
 
         response = networkManager.genericJSONRequest(
-            "/model-queue/submit-output-parameter",
+            f"{self._endpoint()}/submit-output-parameter",
             RequestType.post,
             parameters
         )
 
-        return not response.hasFailed()
+        if response.hasFailed():
+            raise NetworkRequestError(response, ">> [Coretex] Failed to submit outputs")
 
     def downloadTask(self) -> bool:
         """
