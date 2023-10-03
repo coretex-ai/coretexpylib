@@ -30,7 +30,7 @@ import psutil
 from ._base_callback import TaskCallback
 from ._worker import TaskRunWorker
 from .. import folder_manager
-from ..entities import TaskRun, TaskRunStatus, BaseParameter, validateParameters, parameter_factory
+from ..entities import TaskRun, TaskRunStatus, BaseParameter, BaseListParameter, validateParameters, parameter_factory, ParameterType
 from ..networking import networkManager
 
 
@@ -93,6 +93,15 @@ class LocalArgumentParser(Tap):
     name: Optional[str]
     description: Optional[str]
 
+    def __init__(self, parameters: List[BaseParameter]) -> None:
+        self.parameters = parameters
+        for parameter in parameters:
+            # Dynamically add parameter names as attributes to the class, so they will
+            # get parsed by parse_known_args
+            setattr(self, parameter.name, None)
+
+        super().__init__()
+
     def configure(self) -> None:
         self.add_argument("--username", nargs = "?", type = str, default = None)
         self.add_argument("--password", nargs = "?", type = str, default = None)
@@ -101,35 +110,56 @@ class LocalArgumentParser(Tap):
         self.add_argument("--name", nargs = "?", type = str, default = None)
         self.add_argument("--description", nargs = "?", type = str, default = None)
 
+        for parameter in self.parameters:
+            if parameter.dataType in [ParameterType.dataset, ParameterType.enum, ParameterType.enumList, ParameterType.imuVectors]:
+                self.add_argument(f"--{parameter.name}", nargs = "?", type = parameter.overrideValue, default = None)
+            elif isinstance(parameter, BaseListParameter):
+                self.add_argument(f"--{parameter.name}", nargs = "+",  type = parameter.listTypes[0], default = None)
+            else:
+                self.add_argument(f"--{parameter.name}", nargs = "?", type = parameter.types[0], default = None)
 
-def _readTaskRunConfig() -> List[BaseParameter]:
-    parameters: List[BaseParameter] = []
+    @classmethod
+    def _readTaskRunConfig(cls) -> List[BaseParameter]:
+        if not os.path.exists("experiment.config"):
+            raise FileNotFoundError(">> [Coretex] \"experiment.config\" file not found")
 
-    with open("./experiment.config", "rb") as configFile:
-        configContent: Dict[str, Any] = json.load(configFile)
-        parametersJson = configContent["parameters"]
+        parameters: List[BaseParameter] = []
+        with open("./experiment.config", "rb") as configFile:
+            configContent: Dict[str, Any] = json.load(configFile)
+            parametersJson = configContent["parameters"]
 
-        if not isinstance(parametersJson, list):
-            raise ValueError(">> [Coretex] Invalid experiment.config file. Property 'parameters' must be an array")
+            if not isinstance(parametersJson, list):
+                raise ValueError(">> [Coretex] Invalid experiment.config file. Property 'parameters' must be an array")
 
-        for parameterJson in parametersJson:
-            parameter = parameter_factory.create(parameterJson)
-            parameters.append(parameter)
+            for parameterJson in parametersJson:
+                parameter = parameter_factory.create(parameterJson)
+                parameters.append(parameter)
 
-    parameterValidationResults = validateParameters(parameters, verbose = True)
-    if not all(parameterValidationResults.values()):
-        # Using this to make the parameter errors more readable without scrolling through the console
-        sys.exit(1)
+        return parameters
 
-    return parameters
+    def _getParsedParameterValue(
+        self,
+        parameterName: str,
+        parser: Any,
+        default: Any
+    ) -> Optional[Any]:
+
+        parsedParameter = getattr(parser, parameterName)
+        if parsedParameter is None:
+            return default
+
+        return parsedParameter
 
 
 def processLocal(args: Optional[List[str]] = None) -> Tuple[int, TaskCallback]:
-    parser, unknown = LocalArgumentParser().parse_known_args(args)
 
-    if parser.username is not None and parser.password is not None:
+    parameters = LocalArgumentParser._readTaskRunConfig()
+    parser = LocalArgumentParser(parameters)
+    parsedArguments, _ = parser.parse_known_args(args)
+
+    if parsedArguments.username is not None and parsedArguments.password is not None:
         logging.getLogger("coretexpylib").info(">> [Coretex] Logging in with provided credentials")
-        response = networkManager.authenticate(parser.username, parser.password)
+        response = networkManager.authenticate(parsedArguments.username, parsedArguments.password)
     elif networkManager.hasStoredCredentials:
         logging.getLogger("coretexpylib").info(">> [Coretex] Logging in with stored credentials")
         response = networkManager.authenticateWithStoredCredentials()
@@ -144,14 +174,19 @@ def processLocal(args: Optional[List[str]] = None) -> Tuple[int, TaskCallback]:
     if response.hasFailed():
         raise RuntimeError(">> [Coretex] Failed to authenticate")
 
-    if not os.path.exists("experiment.config"):
-        raise FileNotFoundError(">> [Coretex] \"experiment.config\" file not found")
+    for parameter in parameters:
+        parameter.value = parser._getParsedParameterValue(parameter.name, parsedArguments, parameter.value)
+
+    parameterValidationResults = validateParameters(parameters, verbose = True)
+    if not all(parameterValidationResults.values()):
+        # Using this to make the parameter errors more readable without scrolling through the console
+        sys.exit(1)
 
     taskRun: TaskRun = TaskRun.runLocal(
-        parser.projectId,
-        parser.name,
-        parser.description,
-        [parameter.encode() for parameter in _readTaskRunConfig()]
+        parsedArguments.projectId,
+        parsedArguments.name,
+        parsedArguments.description,
+        [parameter.encode() for parameter in parameters]
     )
 
     logging.getLogger("coretexpylib").info(f">> [Coretex] Created local run with ID \"{taskRun.id}\"")

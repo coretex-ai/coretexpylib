@@ -53,3 +53,16 @@ class ListEnumParameter(BaseListParameter[Dict[str, Any]]):
             return None
 
         return [options[value] for value in selected]
+
+    def overrideValue(self, values: Optional[Any]) -> Optional[Any]:
+        if values is None or self.value is None:
+            return None
+
+        try:
+            self.value["selected"] = []
+            for value in values.split(" "):
+                self.value["selected"].append(int(value))
+
+            return self.value
+        except ValueError:
+            return None
