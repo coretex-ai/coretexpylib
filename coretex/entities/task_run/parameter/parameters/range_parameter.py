@@ -59,9 +59,15 @@ class RangeParameter(BaseParameter[Dict[str, Any]]):
 
         try:
             args = value.split(" ")
-            self.value["from"] = args[0]
-            self.value["to"] = args[1]
-            self.value["step"] = args[2]
+
+            # In case the only 2 values are entered, they will be treaded as "from" and "to"
+            # Default step is 1
+            if len(args) not in [2, 3]:
+                return None
+
+            self.value["from"] = int(args[0])
+            self.value["to"] = int(args[1])
+            self.value["step"] = int(args[2]) if len(args) == 3 else 1
 
             return self.value
         except ValueError:
