@@ -39,6 +39,9 @@ def create(value: Dict[str, Any]) -> BaseParameter:
     if parameterType == ParameterType.enum:
         return EnumParameter.decode(value)
 
+    if parameterType == ParameterType.range:
+        return RangeParameter.decode(value)
+
     if parameterType == ParameterType.intList:
         return ListIntParameter.decode(value)
 

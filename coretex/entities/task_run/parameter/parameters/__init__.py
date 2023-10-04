@@ -23,6 +23,7 @@ from .dataset_parameter import DatasetParameter
 from .model_parameter import ModelParameter
 from .imu_vectors_parameter import IMUVectorsParameter
 from .enum_parameter import EnumParameter
+from .range_parameter import RangeParameter
 from .list_int_parameter import ListIntParameter
 from .list_float_parameter import ListFloatParameter
 from .list_str_parameter import ListStrParameter
