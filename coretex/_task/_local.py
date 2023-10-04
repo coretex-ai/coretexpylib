@@ -17,6 +17,7 @@
 
 from typing import Tuple, Optional, List, Dict, Any
 from getpass import getpass
+from pathlib import Path
 
 import logging
 import os
@@ -34,7 +35,7 @@ from ..entities import TaskRun, TaskRunStatus, BaseParameter, BaseListParameter,
 from ..networking import networkManager
 
 
-EXPERIMENT_CONGIF_PATH = "./experiment.config"
+EXPERIMENT_CONGIF_PATH = Path(".", "experiment.config")
 
 
 class LocalTaskCallback(TaskCallback):
@@ -125,10 +126,10 @@ class LocalArgumentParser(Tap):
     def _readTaskRunConfig(cls) -> List[BaseParameter]:
         parameters: List[BaseParameter] = []
 
-        if not os.path.exists(EXPERIMENT_CONGIF_PATH):
+        if not EXPERIMENT_CONGIF_PATH.exists():
             return []
 
-        with open(EXPERIMENT_CONGIF_PATH, "rb") as configFile:
+        with EXPERIMENT_CONGIF_PATH.open() as configFile:
             configContent: Dict[str, Any] = json.load(configFile)
             parametersJson = configContent["parameters"]
 
