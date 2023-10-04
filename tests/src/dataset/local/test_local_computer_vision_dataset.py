@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from coretex import LocalComputerVisionDataset, LocalComputerVisionSample, SpaceTask
+from coretex import LocalComputerVisionDataset, LocalComputerVisionSample, ProjectType
 
 from ..base_computer_vision_dataset_test import BaseComputerVisionDatasetTest
 from ...utils import createLocalEnvironmentFor
@@ -27,5 +27,5 @@ class TestLocalComputerVisionDataset(BaseComputerVisionDatasetTest.Base[LocalCom
     def setUpClass(cls) -> None:
         super().setUpClass()
 
-        cls.dataset = createLocalEnvironmentFor(SpaceTask.computerVision, LocalComputerVisionDataset)
+        cls.dataset = createLocalEnvironmentFor(ProjectType.computerVision, LocalComputerVisionDataset)
         cls.sampleType = LocalComputerVisionSample

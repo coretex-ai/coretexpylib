@@ -17,7 +17,7 @@
 
 # import unittest
 
-# from coretex import ComputerVisionDataset, ComputerVisionSample, SpaceTask
+# from coretex import ComputerVisionDataset, ComputerVisionSample, ProjectType
 
 # from .base_network_dataset_test import BaseNetworkDatasetTest
 # from ..base_computer_vision_dataset_test import BaseComputerVisionDatasetTest
@@ -30,9 +30,9 @@
 #     def setUpClass(cls) -> None:
 #         super().setUpClass()
 
-#         space, dataset = createRemoteEnvironmentFor(SpaceTask.computerVision, ComputerVisionDataset)
+#         project, dataset = createRemoteEnvironmentFor(ProjectType.computerVision, ComputerVisionDataset)
 
-#         cls.space = space
+#         cls.project = project
 #         cls.dataset = dataset
 #         cls.sampleType = ComputerVisionSample
 

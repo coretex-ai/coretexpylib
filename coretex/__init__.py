@@ -26,5 +26,5 @@ _initializeDefaultLogger()
 
 
 # Use this only
-from .coretex import *
-from ._project import currentExperiment, initializeRProject
+from .entities import *
+from ._task import currentTaskRun, initializeRTask, TaskRunWorker

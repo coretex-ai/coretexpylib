@@ -88,7 +88,7 @@
 
 #     for key, value in meta.items():
 #         if cachedDataset.meta.get(key) != value:
-#             raise ValueError(">> [Coretex] Dataset.meta field does not match parameters of experiment")
+#             raise ValueError(">> [Coretex] Dataset.meta field does not match parameters of TaskRun")
 
 #     cachedDataset.download()
 
@@ -118,7 +118,7 @@
 
 #     logging.info(">> [Coretex] Caching dataset transcription")
 
-#     cachedDataset = CustomDataset.createDataset(f"{dataset.name}_cached", dataset.spaceId, meta = meta)
+#     cachedDataset = CustomDataset.createDataset(f"{dataset.name}_cached", dataset.projectId, meta = meta)
 #     if cachedDataset is None:
 #         return False
 

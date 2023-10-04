@@ -27,7 +27,13 @@ from .descriptor import KeyDescriptor
 from ..utils.date import DATE_FORMAT
 
 
-def processDate(value: str, datetimeType: Type[datetime]) -> datetime:
+CORETEX_DATE_FORMATS = [
+    DATE_FORMAT,
+    "%Y-%m-%dT%H:%M:%S.%f%z"
+]
+
+
+def decodeDate(value: str, datetimeType: Type[datetime]) -> datetime:
     """
         Converts the date to a format used by Coretex
 
@@ -36,19 +42,28 @@ def processDate(value: str, datetimeType: Type[datetime]) -> datetime:
         datetime -> object whose datetime is represented using the Coretex datetime format
     """
 
-    try:
-        return datetimeType.strptime(value, DATE_FORMAT)
-    except:
-        # Python's datetime library requires UTC minutes to always
-        # be present in the date in either of those 2 formats:
-        # - +HHMM
-        # - +HH:MM
-        # BUT coretex API sends it in one of those formats:
-        # - +HH
-        # - +HH:MM (only if the minutes have actual value)
-        # so we need to handle the first case where minutes
-        # are not present by adding them manually
-        return datetimeType.strptime(f"{value}00", DATE_FORMAT)
+    for format in CORETEX_DATE_FORMATS:
+        try:
+            return datetimeType.strptime(value, format)
+        except ValueError:
+            continue
+
+    for format in CORETEX_DATE_FORMATS:
+        try:
+            # Python's datetime library requires UTC minutes to always
+            # be present in the date in either of those 2 formats:
+            # - +HHMM
+            # - +HH:MM
+            # BUT coretex API sends it in one of those formats:
+            # - +HH
+            # - +HH:MM (only if the minutes have actual value)
+            # so we need to handle the first case where minutes
+            # are not present by adding them manually
+            return datetimeType.strptime(f"{value}00", format)
+        except ValueError:
+            continue
+
+    raise ValueError(f"Failed to convert \"{value}\" to any of the supported formats \"{CORETEX_DATE_FORMATS}\"")
 
 
 class Codable:
@@ -225,9 +240,9 @@ class Codable:
 
         if issubclass(descriptor.pythonType, datetime):
             if descriptor.isList() and descriptor.collectionType is not None:
-                return descriptor.collectionType([processDate(element, descriptor.pythonType) for element in value])
+                return descriptor.collectionType([decodeDate(element, descriptor.pythonType) for element in value])
 
-            return processDate(value, descriptor.pythonType)
+            return decodeDate(value, descriptor.pythonType)
 
         return value
 

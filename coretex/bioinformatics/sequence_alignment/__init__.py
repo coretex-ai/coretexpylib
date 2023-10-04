@@ -19,10 +19,10 @@ from typing import List, Tuple
 from pathlib import Path
 
 import subprocess
-import logging
+import os
 
 from ..utils import command, logProcessOutput, CommandException
-from ...coretex import CustomDataset
+from ...entities import CustomDataset
 from ...logging import LogSeverity
 
 
@@ -61,7 +61,14 @@ def indexCommand(bwaPath: Path, sequencePath: Path, prefix: Path) -> None:
     ])
 
 
-def alignCommand(bwaPath: Path, prefix: Path, sequencePath: Path, outputPath: Path) -> None:
+def alignCommand(
+    bwaPath: Path,
+    prefix: Path,
+    sequencePath: Path,
+    outputPath: Path,
+    multithreading: bool = True
+) -> None:
+
     """
         This function acts as a wrapper for the mem command of BWA
         (Burrows-Wheeler Aligner). It perfoms alignment of a given sequence read
@@ -92,15 +99,29 @@ def alignCommand(bwaPath: Path, prefix: Path, sequencePath: Path, outputPath: Pa
 
     args = [
         str(bwaPath.absolute()), "mem",
-        "-o", str(outputPath.absolute()),
+        "-o", str(outputPath.absolute())
+    ]
+
+    if multithreading:
+        threads = os.cpu_count()
+        if threads is not None:
+            args.extend(["-t", str(threads)])
+
+    args.extend([
         str(prefix.absolute()),
         str(sequencePath.absolute())
-    ]
+    ])
 
     command(args, True)
 
 
-def sam2bamCommand(samtoolsPath: Path, samPath: Path, outputPath: Path) -> None:
+def sam2bamCommand(
+    samtoolsPath: Path,
+    samPath: Path,
+    outputPath: Path,
+    multithreading: bool = True
+) -> None:
+
     """
         This function uses the CLI tool "samtools" to convert SAM files into their binary
         version, BAM.
@@ -125,12 +146,22 @@ def sam2bamCommand(samtoolsPath: Path, samPath: Path, outputPath: Path) -> None:
         Link to samtools: http://htslib.org/
     """
 
-    command([
+    args = [
         str(samtoolsPath.absolute()), "view",
-        "-b", "-S", "-o",
-        str(outputPath.absolute()),
+        "-b", "-S"
+    ]
+
+    if multithreading:
+        threads = os.cpu_count()
+        if threads is not None:
+            args.extend(["--threads", str(threads - 1)])
+
+    args.extend([
+        "-o", str(outputPath.absolute()),
         str(samPath.absolute())
     ])
+
+    command(args)
 
 
 def extractData(samtoolsPath: Path, file: Path) -> Tuple[List[int], List[int], List[int]]:
@@ -156,9 +187,9 @@ def extractData(samtoolsPath: Path, file: Path) -> Tuple[List[int], List[int], L
         Link to samtools: http://htslib.org/
     """
 
-    scores: list[int] = []
-    positions: list[int] = []
-    sequenceLengths: list[int] = []
+    scores: List[int] = []
+    positions: List[int] = []
+    sequenceLengths: List[int] = []
 
     args = [
         str(samtoolsPath.absolute()),
@@ -207,7 +238,7 @@ def chmodX(file: Path) -> None:
 
 
 def loadFa(dataset: CustomDataset) -> List[Path]:
-    inputFiles: list[Path] = []
+    inputFiles: List[Path] = []
 
     for sample in dataset.samples:
         sample.unzip()

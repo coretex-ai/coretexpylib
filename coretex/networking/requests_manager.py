@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Final, Any, Optional, Dict, List, Union
+from typing import Any, Optional, Dict, List, Union
 from contextlib import ExitStack
 from pathlib import Path
 
@@ -23,6 +23,7 @@ import os
 import logging
 
 from requests import Session
+from requests.adapters import HTTPAdapter
 
 from .network_response import NetworkResponse
 from .request_type import RequestType
@@ -41,12 +42,22 @@ class RequestsManager:
         Represents class that is used for handling requests
     """
 
-    MAX_RETRY_COUNT: Final = 3
+    MAX_RETRY_COUNT = 3
 
     def __init__(self, connectionTimeout: int, readTimeout: int):
-        self.__connectionTimeout: Final = connectionTimeout
-        self.__readTimeout: Final = readTimeout
-        self.__session: Final = Session()
+        self.__connectionTimeout = connectionTimeout
+        self.__readTimeout = readTimeout
+
+        self.__session = Session()
+
+        cpuCount = os.cpu_count()
+        if cpuCount is None:
+            cpuCount = 1
+
+        # 10 is default, keep that value for machines which have <= 10 cores
+        adapter = HTTPAdapter(pool_maxsize = max(10, cpuCount))
+        self.__session.mount("http://", adapter)
+        self.__session.mount("https://", adapter)
 
     @property
     def isAuthSet(self) -> bool:
