@@ -17,12 +17,17 @@
 
 from typing import Any, List, Dict, Optional, Tuple
 
+import logging
+
 from ..base_parameter import BaseParameter
 from ..utils import validateRangeStructure
 from ....project import ProjectType
 
 
-class RangeParameter(BaseParameter[Dict[str, Any]]):
+RANGE_LIMIT = 2^32
+
+
+class RangeParameter(BaseParameter[Dict[str, int]]):
 
     @property
     def types(self) -> List[type]:
@@ -36,7 +41,7 @@ class RangeParameter(BaseParameter[Dict[str, Any]]):
         if not isValid:
             return isValid, message
 
-        if self.value["to"] > 2^32:
+        if self.value["to"] > RANGE_LIMIT:
             return False, f"Range value \"to\" must not exceed 2^32"
 
         if not self.value["to"] > self.value["from"]:
@@ -59,16 +64,18 @@ class RangeParameter(BaseParameter[Dict[str, Any]]):
 
         try:
             args = value.split(" ")
+            parsedValue: Dict[str, int] = {}
 
             # In case the only 2 values are entered, they will be treaded as "from" and "to"
             # Default step is 1
             if len(args) not in [2, 3]:
                 return None
 
-            self.value["from"] = int(args[0])
-            self.value["to"] = int(args[1])
-            self.value["step"] = int(args[2]) if len(args) == 3 else 1
+            parsedValue["from"] = int(args[0])
+            parsedValue["to"] = int(args[1])
+            parsedValue["step"] = int(args[2]) if len(args) == 3 else 1
 
+            return parsedValue
+        except ValueError as e:
+            logging.getLogger("coretexpylib").warning(f">> [Coretex] Failed to override range parameter \"{self.name}\". | {e}")
             return self.value
-        except ValueError:
-            return None

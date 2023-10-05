@@ -40,8 +40,11 @@ def validateRangeStructure(name: str, value: Dict[str, Any], required: bool) -> 
     if any(element is None for element in value.values()) and required:
         return False, f"Elements of range parameter \"{name}\" must not be null"
 
-    if not all(isinstance(element, int) for element in value.values()) and required:
-        elementTypes = ", ".join({type(element).__name__ for element in value.values()})
-        return False, f"Elements of range parameter \"{name}\" have invalid type. Expected \"int\" got \"{elementTypes}\""
+    try:
+        if not all(type(element)(int(element)) == element for element in value.values()) and required:
+            elementTypes = ", ".join({type(element).__name__ for element in value.values()})
+            return False, f"Elements of range parameter \"{name}\" have invalid type. Expected \"int\" got \"{elementTypes}\""
+    except ValueError as e:
+        return False, f"Elements of range parameter \"{name}\" have invalid type. \\ {e}"
 
     return True, None
