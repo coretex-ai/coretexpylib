@@ -17,6 +17,7 @@
 
 from typing import Tuple, Optional, List, Dict, Any
 from getpass import getpass
+from pathlib import Path
 
 import logging
 import os
@@ -32,6 +33,9 @@ from ._worker import TaskRunWorker
 from .. import folder_manager
 from ..entities import TaskRun, TaskRunStatus, BaseParameter, BaseListParameter, validateParameters, parameter_factory, ParameterType
 from ..networking import networkManager
+
+
+EXPERIMENT_CONGIF_PATH = Path(".", "experiment.config")
 
 
 class LocalTaskCallback(TaskCallback):
@@ -120,11 +124,12 @@ class LocalArgumentParser(Tap):
 
     @classmethod
     def _readTaskRunConfig(cls) -> List[BaseParameter]:
-        if not os.path.exists("experiment.config"):
-            raise FileNotFoundError(">> [Coretex] \"experiment.config\" file not found")
-
         parameters: List[BaseParameter] = []
-        with open("./experiment.config", "rb") as configFile:
+
+        if not EXPERIMENT_CONGIF_PATH.exists():
+            return []
+
+        with EXPERIMENT_CONGIF_PATH.open() as configFile:
             configContent: Dict[str, Any] = json.load(configFile)
             parametersJson = configContent["parameters"]
 
