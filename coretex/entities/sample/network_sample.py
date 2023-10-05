@@ -127,6 +127,10 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
             Returns
             -------
             bool -> False if sample has not changed since last download, True otherwise
+
+            Raises
+            ------
+            FileNotFoundError -> sample file cannot be found
         """
 
         if not self.zipPath.exists():
@@ -164,9 +168,7 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
 
                 sampleHardLinkPath.unlink()
                 os.link(self.zipPath, sampleHardLinkPath)
-
-        if self.zipPath.exists():
-            os.utime(self.zipPath, (os.stat(self.zipPath).st_atime, time.time()))
+                os.utime(self.zipPath, (os.stat(self.zipPath).st_atime, time.time()))
 
         return not response.hasFailed()
 
