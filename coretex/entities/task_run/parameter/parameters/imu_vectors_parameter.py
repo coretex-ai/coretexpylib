@@ -1,6 +1,7 @@
 from typing import Any, List, Dict, Optional
 
 import json
+import logging
 
 from ..base_parameter import BaseParameter
 
@@ -16,7 +17,8 @@ class IMUVectorsParameter(BaseParameter[Dict[str, int]]):
             return None
 
         try:
-            self.value = json.loads(value.replace("'", "\""))
+            parsedValue = json.loads(value.replace("'", "\""))
+            return parsedValue
+        except ValueError as e:
+            logging.getLogger("coretexpylib").warning(f">> [Coretex] Failed to override IMU vectors parameter \"{self.name}\". | {e}")
             return self.value
-        except ValueError:
-            return None

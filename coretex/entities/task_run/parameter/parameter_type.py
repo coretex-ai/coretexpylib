@@ -11,6 +11,7 @@ class ParameterType(Enum):
     model         = "model"
     imuVectors    = "IMUVectors"
     enum          = "enum"
+    range         = "range"
     intList       = "list[int]"
     floatList     = "list[float]"
     strList       = "list[str]"

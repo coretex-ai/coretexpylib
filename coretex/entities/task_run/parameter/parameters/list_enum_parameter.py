@@ -1,5 +1,7 @@
 from typing import Any, List, Optional, Tuple, Dict
 
+import logging
+
 from ..base_list_parameter import BaseListParameter
 from ..utils import validateEnumStructure
 from ....project import ProjectType
@@ -59,10 +61,13 @@ class ListEnumParameter(BaseListParameter[Dict[str, Any]]):
             return None
 
         try:
-            self.value["selected"] = []
-            for value in values.split(" "):
-                self.value["selected"].append(int(value))
+            parsedValue: Dict[str, Any] = self.value
+            parsedValue["selected"] = []
 
+            for value in values.split(" "):
+                parsedValue["selected"].append(int(value))
+
+            return parsedValue
+        except ValueError as e:
+            logging.getLogger("coretexpylib").warning(f">> [Coretex] Failed to override list[enum] parameter \"{self.name}\". | {e}")
             return self.value
-        except ValueError:
-            return None

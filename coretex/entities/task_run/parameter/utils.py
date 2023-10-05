@@ -1,4 +1,4 @@
-from typing import Optional, Any, Tuple
+from typing import Optional, Any, Tuple, Dict
 
 
 def validateEnumStructure(name: str, value: Optional[Any], required: bool) -> Tuple[bool, Optional[str]]:
@@ -28,5 +28,20 @@ def validateEnumStructure(name: str, value: Optional[Any], required: bool) -> Tu
     selected = value.get("selected")
     if selected is None and required:
         return False, f"Enum parameter \"{name}.selected\" has invalid type. Expected \"int\", got \"{type(selected).__name__}\""
+
+    return True, None
+
+
+def validateRangeStructure(name: str, value: Dict[str, Any], required: bool) -> Tuple[bool, Optional[str]]:
+    if len(value) != 3 or "from" not in value or "to" not in value or "step" not in value:
+        keys = ", ".join(value.keys())
+        return False, f"Range parameter \"{name}\" must contain only \"from\",  \"to\" and \"step\" properties, but it contains \"{keys}\""
+
+    if any(element is None for element in value.values()) and required:
+        return False, f"Elements of range parameter \"{name}\" must not be null"
+
+    if not all(type(element) is int for element in value.values()) and required:
+        elementTypes = ", ".join({type(element).__name__ for element in value.values()})
+        return False, f"Elements of range parameter \"{name}\" have invalid type. Expected \"int\" got \"{elementTypes}\""
 
     return True, None
