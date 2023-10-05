@@ -83,6 +83,7 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
     projectType: ProjectType
     taskId: int
     taskName: str
+    entryPoint: str
     createdById: str
     useCachedEnv: bool
     metrics: List[Metric]
@@ -156,6 +157,7 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
         descriptors["projectType"] = KeyDescriptor("project_task", ProjectType)
         descriptors["taskId"] = KeyDescriptor("sub_project_id")
         descriptors["taskName"] = KeyDescriptor("sub_project_name")
+        descriptors["entryPoint"] = KeyDescriptor("entry_point")
 
         # private properties of the object should not be encoded
         descriptors["__parameters"] = KeyDescriptor(isEncodable = False)
