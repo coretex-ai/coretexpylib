@@ -20,3 +20,4 @@ from .task_run import TaskRun
 from .status import TaskRunStatus
 from .metrics import Metric, MetricType
 from .parameter import BaseParameter, validateParameters, parameter_factory, BaseListParameter, ParameterType
+from .log import Log, LogSeverity

@@ -22,8 +22,8 @@ from concurrent.futures import ThreadPoolExecutor
 import time
 import logging
 
-from .log import Log
-from ..networking import networkManager, RequestType
+from ...entities import Log
+from ...networking import networkManager
 
 
 MAX_WAIT_TIME_BEFORE_UPDATE = 5
@@ -64,9 +64,8 @@ class LoggerUploadWorker(Thread):
             if self._taskRunId is None:
                 raise ValueError(">> [Coretex] Tried to upload logs but no Task is being executed")
 
-            response = networkManager.genericJSONRequest(
+            response = networkManager.post(
                 endpoint = "model-queue/add-console-log",
-                requestType = RequestType.post,
                 parameters = {
                     "model_queue_id": self._taskRunId,
                     "logs": [log.encode() for log in self.__pendingLogs]

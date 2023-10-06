@@ -28,11 +28,12 @@ from tap import Tap
 
 import psutil
 
-from ._base_callback import TaskCallback
+from .base_callback import TaskCallback
 from ._worker import TaskRunWorker
 from .. import folder_manager
 from ..entities import TaskRun, TaskRunStatus, BaseParameter, BaseListParameter, validateParameters, parameter_factory, ParameterType
 from ..networking import networkManager
+from ..logging import LogHandler
 
 
 EXPERIMENT_CONGIF_PATH = Path(".", "experiment.config")
@@ -45,6 +46,9 @@ class LocalTaskCallback(TaskCallback):
 
         self._worker = TaskRunWorker(refreshToken, taskRun.id)
 
+        self._logHandler = LogHandler.instance()
+        self._logHandler.taskRunId = taskRun.id
+
     def onStart(self) -> None:
         self._worker.start()
 
@@ -56,6 +60,9 @@ class LocalTaskCallback(TaskCallback):
         super().onSuccess()
 
         self._taskRun.updateStatus(TaskRunStatus.completedWithSuccess)
+
+        LogHandler.instance().flushLogs()
+        LogHandler.instance().reset()
 
     def onKeyboardInterrupt(self) -> None:
         super().onKeyboardInterrupt()
@@ -81,6 +88,9 @@ class LocalTaskCallback(TaskCallback):
         super().onException(exception)
 
         self._taskRun.updateStatus(TaskRunStatus.completedWithError)
+
+        LogHandler.instance().flushLogs()
+        LogHandler.instance().reset()
 
     def onCleanUp(self) -> None:
         self._worker.stop()
@@ -122,8 +132,20 @@ class LocalArgumentParser(Tap):
             else:
                 self.add_argument(f"--{parameter.name}", nargs = "?", type = parameter.types[0], default = None)
 
+    def getParameter(
+        self,
+        parameterName: str,
+        default: Any
+    ) -> Optional[Any]:
+
+        parsedParameter = getattr(self, parameterName)
+        if parsedParameter is None:
+            return default
+
+        return parsedParameter
+
     @classmethod
-    def _readTaskRunConfig(cls) -> List[BaseParameter]:
+    def readTaskRunConfig(cls) -> List[BaseParameter]:
         parameters: List[BaseParameter] = []
 
         if not EXPERIMENT_CONGIF_PATH.exists():
@@ -142,29 +164,16 @@ class LocalArgumentParser(Tap):
 
         return parameters
 
-    def _getParsedParameterValue(
-        self,
-        parameterName: str,
-        parser: Any,
-        default: Any
-    ) -> Optional[Any]:
-
-        parsedParameter = getattr(parser, parameterName)
-        if parsedParameter is None:
-            return default
-
-        return parsedParameter
-
 
 def processLocal(args: Optional[List[str]] = None) -> Tuple[int, TaskCallback]:
+    parameters = LocalArgumentParser.readTaskRunConfig()
 
-    parameters = LocalArgumentParser._readTaskRunConfig()
     parser = LocalArgumentParser(parameters)
-    parsedArguments, _ = parser.parse_known_args(args)
+    parser.parse_args()
 
-    if parsedArguments.username is not None and parsedArguments.password is not None:
+    if parser.username is not None and parser.password is not None:
         logging.getLogger("coretexpylib").info(">> [Coretex] Logging in with provided credentials")
-        response = networkManager.authenticate(parsedArguments.username, parsedArguments.password)
+        response = networkManager.authenticate(parser.username, parser.password)
     elif networkManager.hasStoredCredentials:
         logging.getLogger("coretexpylib").info(">> [Coretex] Logging in with stored credentials")
         response = networkManager.authenticateWithStoredCredentials()
@@ -180,7 +189,7 @@ def processLocal(args: Optional[List[str]] = None) -> Tuple[int, TaskCallback]:
         raise RuntimeError(">> [Coretex] Failed to authenticate")
 
     for parameter in parameters:
-        parameter.value = parser._getParsedParameterValue(parameter.name, parsedArguments, parameter.value)
+        parameter.value = parser.getParameter(parameter.name, parameter.value)
 
     parameterValidationResults = validateParameters(parameters, verbose = True)
     if not all(parameterValidationResults.values()):
@@ -188,9 +197,9 @@ def processLocal(args: Optional[List[str]] = None) -> Tuple[int, TaskCallback]:
         sys.exit(1)
 
     taskRun: TaskRun = TaskRun.runLocal(
-        parsedArguments.projectId,
-        parsedArguments.name,
-        parsedArguments.description,
+        parser.projectId,
+        parser.name,
+        parser.description,
         [parameter.encode() for parameter in parameters]
     )
 

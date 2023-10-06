@@ -3,20 +3,17 @@ from typing import Callable, List
 import logging
 import sys
 
-from ._remote import processRemote
-from ._local import processLocal
-from ._current_task_run import setCurrentTaskRun
+from .remote import processRemote
+from .local import processLocal
+from .current_task_run import setCurrentTaskRun
 from .. import folder_manager
 from ..entities import TaskRun, TaskRunStatus
-from ..logging import LogHandler, LogSeverity, initializeLogger
+from ..logging import LogSeverity, initializeLogger
 from ..networking import RequestFailedError
 
 
 def _prepareForExecution(taskRunId: int) -> TaskRun:
     taskRun: TaskRun = TaskRun.fetchById(taskRunId)
-
-    customLogHandler = LogHandler.instance()
-    customLogHandler.taskRunId = taskRun.id
 
     # enable/disable verbose mode for taskRuns
     severity = LogSeverity.info

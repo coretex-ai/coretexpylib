@@ -22,10 +22,9 @@ import logging
 import faulthandler
 import signal
 
-from ._current_task_run import setCurrentTaskRun
+from .current_task_run import setCurrentTaskRun
 from .. import folder_manager
 from ..entities import TaskRun
-from ..logging import LogHandler
 from ..utils import DATE_FORMAT
 
 
@@ -33,6 +32,9 @@ class TaskCallback:
 
     def __init__(self, taskRun: TaskRun) -> None:
         self._taskRun = taskRun
+
+        self.__stdoutBackup = sys.stdout
+        self.__stderrBackup = sys.stderr
 
     def onStart(self) -> None:
         # Call "kill -30 task_run_process_id" to dump current stack trace of the TaskRun into the file
@@ -48,9 +50,6 @@ class TaskCallback:
     def onSuccess(self) -> None:
         logging.getLogger("coretexpylib").info("TaskRun finished successfully")
 
-        LogHandler.instance().flushLogs()
-        LogHandler.instance().reset()
-
     def onKeyboardInterrupt(self) -> None:
         pass
 
@@ -58,9 +57,6 @@ class TaskCallback:
         logging.getLogger("coretexpylib").critical("TaskRun failed to finish due to an error")
         logging.getLogger("coretexpylib").debug(exception, exc_info = True)
         logging.getLogger("coretexpylib").critical(str(exception))
-
-        LogHandler.instance().flushLogs()
-        LogHandler.instance().reset()
 
     def onNetworkConnectionLost(self) -> None:
         folder_manager.clearTempFiles()

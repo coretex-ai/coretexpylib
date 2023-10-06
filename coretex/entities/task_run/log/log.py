@@ -15,15 +15,15 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Final, Dict
+from typing import Dict
 from typing_extensions import Self
 
 import time
 import termcolor
 
 from .log_severity import LogSeverity
-from ..utils import mathematicalRound
-from ..codable import Codable, KeyDescriptor
+from ....utils import mathematicalRound
+from ....codable import Codable, KeyDescriptor
 
 
 class Log(Codable):
@@ -42,12 +42,6 @@ class Log(Codable):
     timestamp: float
     message: str
     severity: LogSeverity
-
-    def __init__(self) -> None:
-        super().__init__()
-
-        # type is deprecated, leaving this here until backend no longer requires it
-        self.type: Final = 1
 
     @classmethod
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:

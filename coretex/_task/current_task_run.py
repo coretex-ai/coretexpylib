@@ -13,6 +13,12 @@ def setCurrentTaskRun(taskRun: Optional[TaskRun]) -> None:
 
 
 def currentTaskRun() -> TaskRun:
+    """
+        Returns
+        -------
+        TaskRun -> Currently executing Task
+    """
+
     taskRun = _CurrentTaskRunContainer.taskRun
     if taskRun is None:
         raise ValueError("TaskRun is not currently executing")

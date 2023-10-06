@@ -464,8 +464,6 @@ class NetworkManagerBase(ABC):
                 request type
             parameters : Optional[dict[str, Any]]
                 request parameters (not required)
-            headers : Optional[dict[str, str]]
-                headers (not required)
             retryCount : int
                 number of function calls if request has failed, used
                 for internal retry mechanism
@@ -499,6 +497,35 @@ class NetworkManagerBase(ABC):
             return self.genericJSONRequest(endpoint, requestType, parameters, retryCount + 1)
 
         return networkResponse
+
+    def post(self, endpoint: str, parameters: Optional[Dict[str, Any]]) -> NetworkResponse:
+        """
+            Sends POST http request
+
+            Parameters
+            ----------
+            endpoint : str
+                API endpoint
+            parameters : Optional[dict[str, Any]]
+                request parameters (not required)
+
+            Returns
+            -------
+            NetworkResponse -> NetworkResponse object containing the full response info
+
+            Example
+            -------
+            >>> from coretex import networkManager
+            \b
+            >>> response = networkManager.post(endpoint = "dummy/add", parameters = {
+                    "object_id": 1,
+                })
+            \b
+            >>> if response.hasFailed():
+                    print("Failed to add the object")
+        """
+
+        return self.genericJSONRequest(endpoint, RequestType.post, parameters)
 
     def refreshToken(self) -> NetworkResponse:
         """

@@ -18,7 +18,7 @@
 from typing import Tuple, Optional, List
 from tap import Tap
 
-from ._base_callback import TaskCallback
+from .base_callback import TaskCallback
 from ..networking import networkManager
 from ..entities import TaskRun
 
