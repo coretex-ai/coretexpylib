@@ -37,7 +37,7 @@ def _parseSingleDataset(value: Union[int, str], type_: ProjectType) -> Dataset:
 class ListDatasetParameter(BaseListParameter[List[Union[int, str]]]):
 
     @property
-    def lis(self) -> List[type]:
+    def listTypes(self) -> List[type]:
         return [int, str]
 
     def parseValue(self, type_: ProjectType) -> Optional[Any]:
