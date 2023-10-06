@@ -250,7 +250,14 @@ class RequestsManager:
             Returns
             -------
             NetworkResponse -> NetworkResponse object as response content to request
+
+            Raises
+            ------
+            ValueError -> If provided destination is a directory not a file
         """
+
+        if isinstance(destinationPath, str):
+            destinationPath = Path(destinationPath)
 
         try:
             with self.__session.get(
@@ -260,13 +267,11 @@ class RequestsManager:
                 json = parameters
             ) as response:
 
-                response.raise_for_status()
-
-                if isinstance(destinationPath, str):
-                    destinationPath = Path(destinationPath)
+                if not response.ok:
+                    return NetworkResponse(response, endpoint)
 
                 if destinationPath.is_dir():
-                    raise RuntimeError(">> [Coretex] Destination is a directory not a file")
+                    raise ValueError(">> [Coretex] Destination is a directory not a file")
 
                 if destinationPath.exists():
                     if int(response.headers["Content-Length"]) == destinationPath.stat().st_size and not ignoreCache:
