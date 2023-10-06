@@ -16,3 +16,4 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from .output_interceptor import OutputInterceptor
+from .upload_worker import LoggerUploadWorker

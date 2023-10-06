@@ -33,9 +33,6 @@ class TaskCallback:
     def __init__(self, taskRun: TaskRun) -> None:
         self._taskRun = taskRun
 
-        self.__stdoutBackup = sys.stdout
-        self.__stderrBackup = sys.stderr
-
     def onStart(self) -> None:
         # Call "kill -30 task_run_process_id" to dump current stack trace of the TaskRun into the file
         # 30 == signal.SIGUSR1
@@ -50,13 +47,13 @@ class TaskCallback:
     def onSuccess(self) -> None:
         logging.getLogger("coretexpylib").info("TaskRun finished successfully")
 
-    def onKeyboardInterrupt(self) -> None:
-        pass
-
     def onException(self, exception: BaseException) -> None:
         logging.getLogger("coretexpylib").critical("TaskRun failed to finish due to an error")
         logging.getLogger("coretexpylib").debug(exception, exc_info = True)
         logging.getLogger("coretexpylib").critical(str(exception))
+
+    def onKeyboardInterrupt(self) -> None:
+        pass
 
     def onNetworkConnectionLost(self) -> None:
         folder_manager.clearTempFiles()

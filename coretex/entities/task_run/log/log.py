@@ -21,7 +21,7 @@ from typing_extensions import Self
 import time
 import termcolor
 
-from .log_severity import LogSeverity
+from .severity import LogSeverity
 from ....utils import mathematicalRound
 from ....codable import Codable, KeyDescriptor
 
@@ -42,6 +42,12 @@ class Log(Codable):
     timestamp: float
     message: str
     severity: LogSeverity
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        # Here for backwards compatibility
+        self.type = 1
 
     @classmethod
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:

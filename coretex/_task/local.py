@@ -29,11 +29,11 @@ from tap import Tap
 import psutil
 
 from .base_callback import TaskCallback
-from ._worker import TaskRunWorker
+from .worker import TaskRunWorker
+from .logging import OutputInterceptor
 from .. import folder_manager
 from ..entities import TaskRun, TaskRunStatus, BaseParameter, BaseListParameter, validateParameters, parameter_factory, ParameterType
 from ..networking import networkManager
-from ..logging import LogHandler
 
 
 EXPERIMENT_CONGIF_PATH = Path(".", "experiment.config")
@@ -46,8 +46,14 @@ class LocalTaskCallback(TaskCallback):
 
         self._worker = TaskRunWorker(refreshToken, taskRun.id)
 
-        self._logHandler = LogHandler.instance()
-        self._logHandler.taskRunId = taskRun.id
+        # Store sys values so they can be restored later
+        self.__stdoutBackup = sys.stdout
+        self.__stderrBackup = sys.stderr
+
+        self._interceptor = OutputInterceptor(sys.stdout)
+        self._interceptor.attachTo(taskRun)
+
+        sys.stdout = self._interceptor
 
     def onStart(self) -> None:
         self._worker.start()
@@ -59,10 +65,18 @@ class LocalTaskCallback(TaskCallback):
     def onSuccess(self) -> None:
         super().onSuccess()
 
+        self._interceptor.flushLogs()
+        self._interceptor.reset()
+
         self._taskRun.updateStatus(TaskRunStatus.completedWithSuccess)
 
-        LogHandler.instance().flushLogs()
-        LogHandler.instance().reset()
+    def onException(self, exception: BaseException) -> None:
+        super().onException(exception)
+
+        self._interceptor.flushLogs()
+        self._interceptor.reset()
+
+        self._taskRun.updateStatus(TaskRunStatus.completedWithError)
 
     def onKeyboardInterrupt(self) -> None:
         super().onKeyboardInterrupt()
@@ -84,16 +98,11 @@ class LocalTaskCallback(TaskCallback):
 
         self._taskRun.updateStatus(TaskRunStatus.stopped)
 
-    def onException(self, exception: BaseException) -> None:
-        super().onException(exception)
-
-        self._taskRun.updateStatus(TaskRunStatus.completedWithError)
-
-        LogHandler.instance().flushLogs()
-        LogHandler.instance().reset()
-
     def onCleanUp(self) -> None:
         self._worker.stop()
+
+        sys.stdout = self.__stdoutBackup
+        sys.stderr = self.__stderrBackup
 
         super().onCleanUp()
 

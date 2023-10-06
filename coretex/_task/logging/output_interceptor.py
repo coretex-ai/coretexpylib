@@ -15,6 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from typing import TextIO
 from io import StringIO
 
 from .upload_worker import LoggerUploadWorker
@@ -23,7 +24,7 @@ from ...entities import Log, LogSeverity, TaskRun
 
 class OutputInterceptor(StringIO):
 
-    def __init__(self, stream: StringIO) -> None:
+    def __init__(self, stream: TextIO) -> None:
         super().__init__()
 
         self.stream = stream
@@ -31,15 +32,17 @@ class OutputInterceptor(StringIO):
 
         self.worker.start()
 
-    def attach(self, taskRun: TaskRun) -> None:
+    def attachTo(self, taskRun: TaskRun) -> None:
         if self.worker._taskRunId is not None:
             raise RuntimeError(">> [Coretex] OutputInterceptor is already attached to a TaskRun")
 
         self.worker._taskRunId = taskRun.id
 
     def write(self, value: str) -> int:
-        self.stream.write(value)
         self.worker.add(Log.create(value, LogSeverity.info))
+
+        self.stream.write(value)
+        self.stream.flush()
 
         return super().write(value)
 

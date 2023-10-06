@@ -19,4 +19,5 @@ from .local import processLocal
 from .remote import processRemote
 from .current_task_run import currentTaskRun
 from .initialization import _prepareForExecution, initializeRTask
-from ._worker import TaskRunWorker
+from .worker import TaskRunWorker
+from .logging import LoggerUploadWorker
