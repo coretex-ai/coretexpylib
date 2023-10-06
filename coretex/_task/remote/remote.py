@@ -18,9 +18,9 @@
 from typing import Tuple, Optional, List
 from tap import Tap
 
-from .base_callback import TaskCallback
-from ..networking import networkManager
-from ..entities import TaskRun
+from ..base_callback import TaskCallback
+from ...networking import networkManager
+from ...entities import TaskRun
 
 
 class RemoteArgumentParser(Tap):
