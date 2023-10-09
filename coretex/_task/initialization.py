@@ -1,23 +1,35 @@
+#     Copyright (C) 2023  Coretex LLC
+
+#     This file is part of Coretex.ai
+
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU Affero General Public License as
+#     published by the Free Software Foundation, either version 3 of the
+#     License, or (at your option) any later version.
+
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU Affero General Public License for more details.
+
+#     You should have received a copy of the GNU Affero General Public License
+#     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from typing import Callable, List
 
 import logging
 import sys
 
-from ._remote import processRemote
-from ._local import processLocal
-from ._current_task_run import setCurrentTaskRun
+from .remote import processRemote
+from .local import processLocal
+from .current_task_run import setCurrentTaskRun
 from .. import folder_manager
-from ..entities import TaskRun, TaskRunStatus
-from ..logging import LogHandler, LogSeverity, initializeLogger
+from ..entities import TaskRun, TaskRunStatus, LogSeverity
+from ..logging import createFormatter, initializeLogger
 from ..networking import RequestFailedError
 
 
-def _prepareForExecution(taskRunId: int) -> TaskRun:
-    taskRun: TaskRun = TaskRun.fetchById(taskRunId)
-
-    customLogHandler = LogHandler.instance()
-    customLogHandler.taskRunId = taskRun.id
-
+def _initializeLogger(taskRun: TaskRun) -> None:
     # enable/disable verbose mode for taskRuns
     severity = LogSeverity.info
     verbose = taskRun.parameters.get("verbose", False)
@@ -25,8 +37,20 @@ def _prepareForExecution(taskRunId: int) -> TaskRun:
     if verbose:
         severity = LogSeverity.debug
 
-    logPath = folder_manager.logs / f"task_run_{taskRunId}.log"
-    initializeLogger(severity, logPath)
+    streamHandler = logging.StreamHandler(sys.stdout)
+    streamHandler.setLevel(severity.stdSeverity)
+    streamHandler.setFormatter(createFormatter(
+        includeTime = False,
+        includeLevel = taskRun.isLocal
+    ))
+
+    logPath = folder_manager.logs / f"task_run_{taskRun.id}.log"
+    initializeLogger(severity, logPath, streamHandler)
+
+
+def _prepareForExecution(taskRunId: int) -> TaskRun:
+    taskRun: TaskRun = TaskRun.fetchById(taskRunId)
+    _initializeLogger(taskRun)
 
     taskRun.updateStatus(
         status = TaskRunStatus.inProgress,

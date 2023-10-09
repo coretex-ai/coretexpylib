@@ -15,13 +15,29 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import List
+from typing import Optional
 
-from ..base_parameter import BaseParameter
+from ..entities import TaskRun
 
 
-class StrParameter(BaseParameter[str]):
+class _CurrentTaskRunContainer:
 
-    @property
-    def types(self) -> List[type]:
-        return [str]
+    taskRun: Optional[TaskRun] = None
+
+
+def setCurrentTaskRun(taskRun: Optional[TaskRun]) -> None:
+    _CurrentTaskRunContainer.taskRun = taskRun
+
+
+def currentTaskRun() -> TaskRun:
+    """
+        Returns
+        -------
+        TaskRun -> Currently executing Task
+    """
+
+    taskRun = _CurrentTaskRunContainer.taskRun
+    if taskRun is None:
+        raise ValueError("TaskRun is not currently executing")
+
+    return taskRun
