@@ -8,13 +8,11 @@ from .local import processLocal
 from .current_task_run import setCurrentTaskRun
 from .. import folder_manager
 from ..entities import TaskRun, TaskRunStatus, LogSeverity
-from ..logging import initializeLogger
+from ..logging import createFormatter, initializeLogger
 from ..networking import RequestFailedError
 
 
-def _prepareForExecution(taskRunId: int) -> TaskRun:
-    taskRun: TaskRun = TaskRun.fetchById(taskRunId)
-
+def _initializeLogger(taskRun: TaskRun) -> None:
     # enable/disable verbose mode for taskRuns
     severity = LogSeverity.info
     verbose = taskRun.parameters.get("verbose", False)
@@ -22,8 +20,20 @@ def _prepareForExecution(taskRunId: int) -> TaskRun:
     if verbose:
         severity = LogSeverity.debug
 
-    logPath = folder_manager.logs / f"task_run_{taskRunId}.log"
-    initializeLogger(severity, logPath, formatConsole = False)
+    streamHandler = logging.StreamHandler(sys.stdout)
+    streamHandler.setLevel(severity.stdSeverity)
+    streamHandler.setFormatter(createFormatter(
+        includeTime = False,
+        includeLevel = taskRun.isLocal
+    ))
+
+    logPath = folder_manager.logs / f"task_run_{taskRun.id}.log"
+    initializeLogger(severity, logPath, streamHandler)
+
+
+def _prepareForExecution(taskRunId: int) -> TaskRun:
+    taskRun: TaskRun = TaskRun.fetchById(taskRunId)
+    _initializeLogger(taskRun)
 
     taskRun.updateStatus(
         status = TaskRunStatus.inProgress,

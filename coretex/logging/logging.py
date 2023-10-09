@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import List
+from typing import List, Optional
 from pathlib import Path
 
 import sys
@@ -25,7 +25,7 @@ from .formatter import CTXFormatter
 from ..entities import LogSeverity
 
 
-def _getFormatter(
+def createFormatter(
     includeTime: bool = True,
     includeLevel: bool = True,
     includeColor: bool = True
@@ -52,7 +52,12 @@ def _getFormatter(
     )
 
 
-def initializeLogger(severity: LogSeverity, logPath: Path, formatConsole: bool = True) -> None:
+def initializeLogger(
+    severity: LogSeverity,
+    logPath: Path,
+    streamHandler: Optional[logging.StreamHandler] = None
+) -> None:
+
     """
         Initializes python logging module
 
@@ -62,27 +67,28 @@ def initializeLogger(severity: LogSeverity, logPath: Path, formatConsole: bool =
             Severity level of the logger
         logPath : Path
             File path where logs will be stored
-        includeTime : bool
-            Should datetime be included in logged message or not
+        streamHandler: Optional[logging.StreamHandler] : bool
+            Stream handler which will be used for logging
+            If None default one will be used
     """
 
-    consoleHandler = logging.StreamHandler(sys.stdout)
-    consoleHandler.setLevel(severity.stdSeverity)
+    if streamHandler is None:
+        streamHandler = logging.StreamHandler(sys.stdout)
+        streamHandler.setLevel(severity.stdSeverity)
 
-    consoleFormatter = _getFormatter(includeTime = formatConsole, includeLevel = formatConsole)
-    consoleHandler.setFormatter(consoleFormatter)
+        streamHandler.setFormatter(createFormatter(
+            includeTime = False
+        ))
 
     fileHandler = logging.FileHandler(logPath)
     fileHandler.setLevel(logging.DEBUG)
-
-    fileFormatter = _getFormatter(includeColor = False)
-    fileHandler.setFormatter(fileFormatter)
+    fileHandler.setFormatter(createFormatter(includeColor = False))
 
     logging.basicConfig(
         level = logging.NOTSET,
         force = True,
         handlers = [
-            consoleHandler,
+            streamHandler,
             fileHandler
         ]
     )

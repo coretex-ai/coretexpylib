@@ -21,3 +21,4 @@ from .status import TaskRunStatus
 from .metrics import Metric, MetricType
 from .parameter import BaseParameter, validateParameters, parameter_factory, BaseListParameter, ParameterType
 from .log import Log, LogSeverity
+from .execution_type import ExecutionType
