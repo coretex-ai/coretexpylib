@@ -373,6 +373,10 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
                 (id of the object will be sent in case Coretex objects like
                 CustomDataset, Model etc. is submited)
 
+            Raises
+            ------
+                NetworkRequestError -> if the request failed
+
             Example
             -------
             >>> from coretex import TaskRun
