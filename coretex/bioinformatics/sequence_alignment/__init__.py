@@ -22,8 +22,7 @@ import subprocess
 import os
 
 from ..utils import command, logProcessOutput, CommandException
-from ...entities import CustomDataset
-from ...logging import LogSeverity
+from ...entities import CustomDataset, LogSeverity
 
 
 def indexCommand(bwaPath: Path, sequencePath: Path, prefix: Path) -> None:

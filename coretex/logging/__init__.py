@@ -15,14 +15,4 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from datetime import datetime
-
-from . import folder_manager
-from .entities import LogSeverity
 from .logging import initializeLogger
-from .utils import DATE_FORMAT
-
-
-def _initializeDefaultLogger() -> None:
-    logPath = folder_manager.logs / f"coretexpylib_{datetime.now().strftime(DATE_FORMAT)}.log"
-    initializeLogger(LogSeverity.info, logPath)

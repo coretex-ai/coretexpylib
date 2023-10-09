@@ -15,6 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from typing import TextIO
 from datetime import datetime
 
 import sys
@@ -30,8 +31,20 @@ from ..utils import DATE_FORMAT
 
 class TaskCallback:
 
-    def __init__(self, taskRun: TaskRun) -> None:
+    def __init__(self, taskRun: TaskRun, outputStream: TextIO = sys.stdout) -> None:
         self._taskRun = taskRun
+
+        # Store sys streams so they can be restored later
+        self.__stdoutBackup = sys.stdout
+        self.__stderrBackup = sys.stderr
+
+        # Set sys output to new stream
+        sys.stdout = outputStream
+        sys.stderr = outputStream
+
+    def _restoreStreams(self) -> None:
+        sys.stdout = self.__stdoutBackup
+        sys.stderr = self.__stderrBackup
 
     def onStart(self) -> None:
         # Call "kill -30 task_run_process_id" to dump current stack trace of the TaskRun into the file
@@ -47,10 +60,14 @@ class TaskCallback:
     def onSuccess(self) -> None:
         logging.getLogger("coretexpylib").info("TaskRun finished successfully")
 
+        self._restoreStreams()
+
     def onException(self, exception: BaseException) -> None:
         logging.getLogger("coretexpylib").critical("TaskRun failed to finish due to an error")
         logging.getLogger("coretexpylib").debug(exception, exc_info = True)
         logging.getLogger("coretexpylib").critical(str(exception))
+
+        self._restoreStreams()
 
     def onKeyboardInterrupt(self) -> None:
         pass

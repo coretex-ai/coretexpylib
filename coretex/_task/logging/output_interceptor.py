@@ -19,27 +19,21 @@ from typing import TextIO
 from io import StringIO
 
 from .upload_worker import LoggerUploadWorker
-from ...entities import Log, LogSeverity, TaskRun
+from ...entities import Log, LogSeverity
 
 
 class OutputInterceptor(StringIO):
 
-    def __init__(self, stream: TextIO) -> None:
+    def __init__(self, stream: TextIO, taskRunId: int) -> None:
         super().__init__()
 
         self.stream = stream
-        self.worker = LoggerUploadWorker()
+        self.worker = LoggerUploadWorker(taskRunId)
 
         self.worker.start()
 
-    def attachTo(self, taskRun: TaskRun) -> None:
-        if self.worker._taskRunId is not None:
-            raise RuntimeError(">> [Coretex] OutputInterceptor is already attached to a TaskRun")
-
-        self.worker._taskRunId = taskRun.id
-
     def write(self, value: str) -> int:
-        self.worker.add(Log.create(value, LogSeverity.info))
+        self.worker.add(Log.create(value.rstrip(), LogSeverity.info))
 
         self.stream.write(value)
         self.stream.flush()
@@ -49,5 +43,5 @@ class OutputInterceptor(StringIO):
     def flushLogs(self) -> bool:
         return self.worker.uploadLogs()
 
-    def reset(self) -> None:
-        self.worker.reset()
+    def stop(self) -> None:
+        self.worker.stop()

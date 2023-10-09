@@ -31,18 +31,16 @@ from ...entities import TaskRun, TaskRunStatus
 class LocalTaskCallback(TaskCallback):
 
     def __init__(self, taskRun: TaskRun, refreshToken: str) -> None:
-        super().__init__(taskRun)
-
         self._worker = TaskRunWorker(refreshToken, taskRun.id)
+        self._interceptor = OutputInterceptor(sys.stdout, taskRun.id)
 
-        # Store sys values so they can be restored later
-        self.__stdoutBackup = sys.stdout
-        self.__stderrBackup = sys.stderr
+        super().__init__(taskRun, self._interceptor)
 
-        self._interceptor = OutputInterceptor(sys.stdout)
-        self._interceptor.attachTo(taskRun)
+    def _onTaskRunFinished(self, status: TaskRunStatus) -> None:
+        self._interceptor.flushLogs()
+        self._interceptor.stop()
 
-        sys.stdout = self._interceptor
+        self._taskRun.updateStatus(status)
 
     def onStart(self) -> None:
         self._worker.start()
@@ -54,24 +52,17 @@ class LocalTaskCallback(TaskCallback):
     def onSuccess(self) -> None:
         super().onSuccess()
 
-        self._interceptor.flushLogs()
-        self._interceptor.reset()
-
-        self._taskRun.updateStatus(TaskRunStatus.completedWithSuccess)
+        self._onTaskRunFinished(TaskRunStatus.completedWithSuccess)
 
     def onException(self, exception: BaseException) -> None:
         super().onException(exception)
 
-        self._interceptor.flushLogs()
-        self._interceptor.reset()
-
-        self._taskRun.updateStatus(TaskRunStatus.completedWithError)
+        self._onTaskRunFinished(TaskRunStatus.completedWithError)
 
     def onKeyboardInterrupt(self) -> None:
         super().onKeyboardInterrupt()
 
         logging.getLogger("coretexpylib").info(">> [Coretex] Stopping the run")
-
         self._taskRun.updateStatus(TaskRunStatus.stopping)
 
         taskRunProcess = psutil.Process(os.getpid())
@@ -85,12 +76,9 @@ class LocalTaskCallback(TaskCallback):
         for process in children:
             process.wait()
 
-        self._taskRun.updateStatus(TaskRunStatus.stopped)
+        self._onTaskRunFinished(TaskRunStatus.stopped)
 
     def onCleanUp(self) -> None:
         self._worker.stop()
-
-        sys.stdout = self.__stdoutBackup
-        sys.stderr = self.__stderrBackup
 
         super().onCleanUp()

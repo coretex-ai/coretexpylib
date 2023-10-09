@@ -27,16 +27,16 @@ class LogSeverity(IntEnum):
         List of all log severities supported by Coretex
     """
 
-    fatal   = 1  # color = red
-    error   = 2  # color = red
-    warning = 3  # color = yellow
-    info    = 4  # color = white
-    debug   = 5  # color = yellow
+    fatal   = 1
+    error   = 2
+    warning = 3
+    info    = 4
+    debug   = 5
 
     @property
-    def color(self) -> str:
+    def color(self) -> int:
         """
-            Color of the log severity
+            ANSI color of the log severity
 
             Returns
             -------
@@ -44,19 +44,19 @@ class LogSeverity(IntEnum):
         """
 
         if self == LogSeverity.fatal:
-            return "red"
+            return 31  # red
 
         if self == LogSeverity.error:
-            return "red"
+            return 31  # red
 
         if self == LogSeverity.warning:
-            return "yellow"
+            return 33  # yellow
 
         if self == LogSeverity.info:
-            return "white"
+            return 97  # white
 
         if self == LogSeverity.debug:
-            return "yellow"
+            return 33  # yellow
 
         raise RuntimeError(">> [Coretex] Invalid enum value")
 

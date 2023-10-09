@@ -7,8 +7,8 @@ from .remote import processRemote
 from .local import processLocal
 from .current_task_run import setCurrentTaskRun
 from .. import folder_manager
-from ..entities import TaskRun, TaskRunStatus
-from ..logging import LogSeverity, initializeLogger
+from ..entities import TaskRun, TaskRunStatus, LogSeverity
+from ..logging import initializeLogger
 from ..networking import RequestFailedError
 
 
@@ -23,7 +23,7 @@ def _prepareForExecution(taskRunId: int) -> TaskRun:
         severity = LogSeverity.debug
 
     logPath = folder_manager.logs / f"task_run_{taskRunId}.log"
-    initializeLogger(severity, logPath)
+    initializeLogger(severity, logPath, formatConsole = False)
 
     taskRun.updateStatus(
         status = TaskRunStatus.inProgress,

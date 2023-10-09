@@ -19,7 +19,6 @@ from typing import Dict
 from typing_extensions import Self
 
 import time
-import termcolor
 
 from .severity import LogSeverity
 from ....utils import mathematicalRound
@@ -78,14 +77,12 @@ class Log(Codable):
         log = cls()
 
         log.timestamp = mathematicalRound(time.time(), 6)
-        log.message = Log.__createMessage(message, severity)
+        log.message = message
         log.severity = severity
 
         return log
 
-    @staticmethod
-    def __createMessage(message: str, severity: LogSeverity) -> str:
-        message = f"{severity.prefix}: {message}"
-        message = termcolor.colored(message, severity.color)
-
-        return message
+    @classmethod
+    def coloredMessage(cls, message: str, severity: LogSeverity) -> str:
+        fmt = "\033[%dm%s\033[0m"
+        return fmt % (severity.color, message)

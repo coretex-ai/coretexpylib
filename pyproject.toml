@@ -30,7 +30,6 @@ dependencies = [
   "shapely",
   "protobuf~=3.19.0",
   "typed-argument-parser",
-  "termcolor",
   "typing-extensions",
   "psutil",
   "py3nvml",
