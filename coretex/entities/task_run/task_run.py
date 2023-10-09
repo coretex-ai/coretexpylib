@@ -375,7 +375,7 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
 
             Raises
             ------
-                NetworkRequestError -> if the request failed
+            NetworkRequestError -> if the request failed
 
             Example
             -------
