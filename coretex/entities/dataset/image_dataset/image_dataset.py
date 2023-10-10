@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import TypeVar, Optional, Dict, List
+from typing import TypeVar, Dict, List, Any
 from typing_extensions import Self
 
 from .base import BaseImageDataset
@@ -23,7 +23,7 @@ from ..network_dataset import NetworkDataset
 from ...sample import ImageSample
 from ...annotation import ImageDatasetClass, ImageDatasetClasses
 from ....codable import KeyDescriptor, Codable
-from ....networking import networkManager, RequestType
+from ....networking import networkManager
 
 
 SampleType = TypeVar("SampleType", bound = "ImageSample")
@@ -57,13 +57,10 @@ class ImageDataset(BaseImageDataset[SampleType], NetworkDataset[SampleType]):  #
         return descriptors
 
     @classmethod
-    def fetchById(cls, objectId: int, queryParameters: Optional[List[str]] = None) -> Self:
-        obj = super().fetchById(objectId, queryParameters)
+    def fetchById(cls, objectId: int, **kwargs: Any) -> Self:
+        obj = super().fetchById(objectId, **kwargs)
 
-        response = networkManager.genericJSONRequest(
-            endpoint=f"annotation-class?dataset_id={obj.id}",
-            requestType=RequestType.get,
-        )
+        response = networkManager.get(f"annotation-class?dataset_id={obj.id}")
 
         if not response.hasFailed():
             obj.classes = cls._decodeValue("classes", response.json)
@@ -77,7 +74,7 @@ class ImageDataset(BaseImageDataset[SampleType], NetworkDataset[SampleType]):  #
             "classes": [clazz.encode() for clazz in classes]
         }
 
-        response = networkManager.genericJSONRequest("annotation-class", RequestType.post, parameters)
+        response = networkManager.post("annotation-class", parameters)
         if not response.hasFailed():
             return super().saveClasses(classes)
 

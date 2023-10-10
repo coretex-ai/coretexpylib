@@ -72,7 +72,7 @@ def chunkSampleImport(
         "file_id": uploadId
     }
 
-    response = networkManager.genericFormData("session/import", parameters)
+    response = networkManager.formData("session/import", parameters)
     if response.hasFailed():
         raise NetworkRequestError(response, "Failed to create sample from \"{path}\"")
 

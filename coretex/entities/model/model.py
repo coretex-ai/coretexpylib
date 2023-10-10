@@ -201,7 +201,9 @@ class Model(NetworkObject):
             return
 
         modelZip = folder_manager.modelsFolder / f"{self.id}.zip"
-        response = networkManager.genericDownload(f"model/download?id={self.id}", modelZip)
+        response = networkManager.download(f"{self._endpoint()}/download", modelZip, {
+            "id": self.id
+        })
 
         if response.hasFailed():
             logging.getLogger("coretexpylib").info(">> [Coretex] Failed to download the model")
@@ -265,7 +267,7 @@ class Model(NetworkObject):
             "id": self.id
         }
 
-        response = networkManager.genericUpload("model/upload", files, parameters)
+        response = networkManager.formData("model/upload", parameters, files)
         if response.hasFailed():
             logging.getLogger("coretexpylib").info(">> [Coretex] Failed to upload model file")
         else:

@@ -76,13 +76,10 @@ class LoggerUploadWorker(Thread):
             if len(self.__pendingLogs) == 0:
                 return True
 
-            response = networkManager.post(
-                endpoint = "model-queue/add-console-log",
-                parameters = {
-                    "model_queue_id": self.taskRunId,
-                    "logs": [log.encode() for log in self.__pendingLogs]
-                }
-            )
+            response = networkManager.post("model-queue/add-console-log", {
+                "model_queue_id": self.taskRunId,
+                "logs": [log.encode() for log in self.__pendingLogs]
+            })
 
             # Only clear logs if they were successfully uploaded to coretex
             if not response.hasFailed():

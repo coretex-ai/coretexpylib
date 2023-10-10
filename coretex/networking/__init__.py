@@ -15,10 +15,10 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .network_manager_base import NetworkManagerBase, FileData
+from .network_manager_base import NetworkManagerBase, RequestFailedError
 from .network_manager import networkManager
 from .network_object import NetworkObject, DEFAULT_PAGE_SIZE
 from .network_response import NetworkResponse, NetworkRequestError
 from .request_type import RequestType
-from .requests_manager import RequestFailedError
 from .chunk_upload_session import ChunkUploadSession, MAX_CHUNK_SIZE
+from .file_data import FileData

@@ -106,7 +106,7 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
             FileData.createFromPath("file", filePath, mimeType = mimeType)
         ]
 
-        response = networkManager.genericUpload("session/import", files, parameters)
+        response = networkManager.formData("session/import", parameters, files)
         if response.hasFailed():
             return None
 
@@ -121,11 +121,9 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
             bool -> False if response is failed, True otherwise
         """
 
-        response = networkManager.sampleDownload(
-            endpoint = f"{self.__class__._endpoint()}/export?id={self.id}",
-            destination = self.zipPath,
-            ignoreCache = ignoreCache
-        )
+        response = networkManager.streamDownload(f"{self._endpoint()}/export", self.zipPath, {
+            "id": self.id
+        })
 
         # If sample was downloaded succesfully relink it to datasets to which it is linked
         if not response.hasFailed():

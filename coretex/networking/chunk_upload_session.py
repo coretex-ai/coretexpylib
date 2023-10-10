@@ -23,7 +23,6 @@ import logging
 from .network_manager_base import FileData
 from .network_manager import networkManager
 from .network_response import NetworkRequestError
-from .request_type import RequestType
 
 
 MAX_CHUNK_SIZE = 128 * 1024 * 1024  # 128 MiB
@@ -72,7 +71,7 @@ class ChunkUploadSession:
             "size": self.fileSize
         }
 
-        response = networkManager.genericJSONRequest("upload/start", RequestType.post, parameters)
+        response = networkManager.post("upload/start", parameters)
         if response.hasFailed():
             raise NetworkRequestError(response, f"Failed to start chunked upload for \"{self.filePath}\"")
 
@@ -84,18 +83,18 @@ class ChunkUploadSession:
         return uploadId
 
     def __uploadChunk(self, uploadId: str, start: int, end: int) -> None:
-        chunk = _loadChunk(self.filePath, start, self.chunkSize)
-        files = [
-            FileData.createFromBytes("file", chunk, self.filePath.name)
-        ]
-
         parameters = {
             "id": uploadId,
             "start": start,
             "end": end - 1  # API expects start/end to be inclusive
         }
 
-        response = networkManager.genericUpload("upload/chunk", files, parameters)
+        chunk = _loadChunk(self.filePath, start, self.chunkSize)
+        files = [
+            FileData.createFromBytes("file", chunk, self.filePath.name)
+        ]
+
+        response = networkManager.formData("upload/chunk", parameters, files)
         if response.hasFailed():
             raise NetworkRequestError(response, f"Failed to upload file chunk with byte range \"{start}-{end}\"")
 
