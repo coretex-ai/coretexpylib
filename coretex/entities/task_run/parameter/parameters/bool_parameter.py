@@ -15,7 +15,9 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import List
+from typing import List, Optional, Any
+
+import logging
 
 from ..base_parameter import BaseParameter
 
@@ -25,3 +27,18 @@ class BoolParameter(BaseParameter[bool]):
     @property
     def types(self) -> List[type]:
         return [bool]
+
+    def overrideValue(self, value: Optional[Any]) -> Optional[Any]:
+        if value is None:
+            return None
+
+        try:
+            if value.lower() == "true":
+                return True
+            elif value.lower() == "false":
+                return False
+            else:
+                raise ValueError("Could not recognise parsed value as boolean. Only accepted options are \"true\" and \"false\" (case insensitive)")
+        except ValueError as e:
+            logging.getLogger("coretexpylib").warning(f">> [Coretex] Failed to override boolean parameter \"{self.name}\". | {e}")
+            return self.value

@@ -55,7 +55,7 @@ class LocalArgumentParser(Tap):
         self.add_argument("--description", nargs = "?", type = str, default = None)
 
         for parameter in self.parameters:
-            if parameter.dataType in [ParameterType.dataset, ParameterType.enum, ParameterType.enumList, ParameterType.imuVectors, ParameterType.range]:
+            if parameter.dataType in [ParameterType.dataset, ParameterType.enum, ParameterType.enumList, ParameterType.imuVectors, ParameterType.range, ParameterType.boolean]:
                 self.add_argument(f"--{parameter.name}", nargs = "?", type = parameter.overrideValue, default = None)
             elif isinstance(parameter, BaseListParameter):
                 self.add_argument(f"--{parameter.name}", nargs = "+",  type = parameter.listTypes[0], default = None)
