@@ -110,7 +110,7 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
         if response.hasFailed():
             return None
 
-        return cls.decode(response.json)
+        return cls.decode(response.getJson(dict))
 
     def download(self, ignoreCache: bool = False) -> bool:
         """

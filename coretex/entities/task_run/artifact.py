@@ -137,7 +137,7 @@ class Artifact(Codable):
         if response.hasFailed():
             return None
 
-        artifact = cls.decode(response.json)
+        artifact = cls.decode(response.getJson(dict))
         artifact.taskRunId = taskRunId
 
         return artifact
@@ -184,7 +184,7 @@ class Artifact(Codable):
         if response.hasFailed():
             return []
 
-        artifacts = [cls.decode(element) for element in response.json]
+        artifacts = [cls.decode(element) for element in response.getJson(list)]
 
         for artifact in artifacts:
             artifact.taskRunId = taskRunId

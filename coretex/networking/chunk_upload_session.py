@@ -75,7 +75,7 @@ class ChunkUploadSession:
         if response.hasFailed():
             raise NetworkRequestError(response, f"Failed to start chunked upload for \"{self.filePath}\"")
 
-        uploadId = response.json.get("id")
+        uploadId = response.getJson(dict).get("id")
 
         if not isinstance(uploadId, str):
             raise ValueError(f">> [Coretex] Invalid API response, invalid value \"{uploadId}\" for field \"id\"")

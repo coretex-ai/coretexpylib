@@ -76,11 +76,7 @@ class BaseObject(NetworkObject):
         if self.name == name:
             return False
 
-        success = self.update(
-            parameters = {
-                "name": name
-            }
-        )
+        success = self.update(name = name)
 
         if success:
             self.name = name
@@ -104,12 +100,7 @@ class BaseObject(NetworkObject):
         if self.description == description:
             return False
 
-        success = self.update(
-            parameters = {
-                "description": description
-            }
-        )
-
+        success = self.update(description = description)
         if success:
             self.description = description
 

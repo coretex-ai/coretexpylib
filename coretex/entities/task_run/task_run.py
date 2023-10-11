@@ -502,7 +502,8 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
         if response.hasFailed():
             raise NetworkRequestError(response, "Failed to create TaskRun")
 
-        return cls.fetchById(response.json["experiment_ids"][0])
+        responseJson = response.getJson(dict)
+        return cls.fetchById(responseJson["experiment_ids"][0])
 
     @classmethod
     def runLocal(
@@ -577,4 +578,5 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
         if response.hasFailed():
             raise NetworkRequestError(response, "Failed to create TaskRun")
 
-        return cls.fetchById(response.json["experiment_ids"][0])
+        responseJson = response.getJson(dict)
+        return cls.fetchById(responseJson["experiment_ids"][0])

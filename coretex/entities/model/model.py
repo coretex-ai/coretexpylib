@@ -127,12 +127,12 @@ class Model(NetworkObject):
                 )
         """
 
-        model = cls.create(parameters = {
-            "name": name,
-            "model_queue_id": taskRunId,
-            "accuracy": accuracy,
-            "meta": meta
-        })
+        model = cls.create(
+            name = name,
+            model_queue_id = taskRunId,
+            accuracy = accuracy,
+            meta = meta
+        )
 
         if model is None:
             raise ValueError(">> [Coretex] Failed to create Model entity")

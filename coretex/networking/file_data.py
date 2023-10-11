@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, Any, Tuple, Union
+from typing import Optional, Any, Tuple, Union, BinaryIO
 from typing_extensions import Self
 from pathlib import Path
 from contextlib import ExitStack
@@ -156,7 +156,7 @@ class FileData:
 
         return cls(parameterName, fileName, mimeType, fileBytes = fileBytes)
 
-    def __getFileData(self, exitStack: ExitStack) -> Any:
+    def __getFileData(self, exitStack: ExitStack) -> Union[bytes, BinaryIO]:
         if self.fileBytes is not None:
             return self.fileBytes
 
@@ -165,7 +165,7 @@ class FileData:
 
         raise ValueError(">> [Coretex] Either \"filePath\" or \"fileData\" have to provided for file upload. \"fileData\" will be used if both are provided")
 
-    def prepareForUpload(self, exitStack: ExitStack) -> Tuple[str, Tuple[str, Any, str]]:
+    def prepareForUpload(self, exitStack: ExitStack) -> Tuple[str, Tuple[str, Union[bytes, BinaryIO], str]]:
         """
             Converts the "FileData" object into a format which can be used
             by the requests library for uploading files.

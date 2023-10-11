@@ -63,7 +63,7 @@ class ImageDataset(BaseImageDataset[SampleType], NetworkDataset[SampleType]):  #
         response = networkManager.get(f"annotation-class?dataset_id={obj.id}")
 
         if not response.hasFailed():
-            obj.classes = cls._decodeValue("classes", response.json)
+            obj.classes = cls._decodeValue("classes", response.getJson(dict))
             obj._writeClassesToFile()
 
         return obj

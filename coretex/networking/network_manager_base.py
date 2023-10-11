@@ -19,20 +19,21 @@ from typing import Optional, Any, Dict, List, Union, Tuple
 from pathlib import Path
 from abc import ABC, abstractmethod
 from contextlib import ExitStack
+from http import HTTPStatus
 from importlib.metadata import version as getLibraryVersion
 
 import os
+import io
+import json
 import logging
 import platform
 import requests
 
+from .utils import RequestBodyType, RequestFormType, logFilesData, logRequestFailure
 from .request_type import RequestType
-from .network_response import HttpCode, NetworkResponse
+from .network_response import NetworkResponse
 from .file_data import FileData
 
-
-RequestBodyType = Union[Dict[str, Any], List[Dict[str, Any]]]
-RequestFormType = List[Tuple[str, Tuple[str, Any, str]]]
 
 MAX_RETRY_COUNT = 3
 
@@ -59,7 +60,7 @@ class NetworkManagerBase(ABC):
 
     @property
     def serverUrl(self) -> str:
-        return os.environ["CTX_API_URL"]
+        return os.environ["CTX_API_URL"] + "api/v1/"
 
     @property
     @abstractmethod
@@ -123,23 +124,76 @@ class NetworkManagerBase(ABC):
         retryCount: int = 0
     ) -> NetworkResponse:
 
+        """
+            Sends an HTTP request with provided parameters
+            This method is used as a base for all other networkManager methods
+
+            Parameters
+            ----------
+            endpoint : str
+                endpoint to which the request is sent
+            requestType : RequestType
+                type of the request which is sent (get, post, put, delete, etc...)
+            headers : Optional[Dict[str, Any]]
+                headers which will be sent with request, if None default values will be used
+            query : Optional[Dict[str, Any]]
+                parameters which will be sent as query parameters
+            body : Optional[RequestBodyType]
+                parameters which will be sent as request body
+            files : Optional[RequestFormType]
+                files which will be sent as a part of form data request
+            auth : Optional[Tuple[str, str]]
+                credentials which will be send as basic auth header
+            stream : bool
+                defines if request body will be downloaded as a stream or not
+            retryCount : int
+                retry number of request - only for internal use
+
+            Returns
+            -------
+            NetworkResponse -> object containing the request response
+
+            Raises
+            ------
+            RequestFailedError -> if request failed due to connection issues
+        """
+
         if headers is None:
             headers = self._headers()
 
         url = self.serverUrl + endpoint
+
+        # Log request debug data
+        logging.getLogger("coretexpylib").debug(f">> [Coretex] Sending request to \"{url}\"")
+        logging.getLogger("coretexpylib").debug(f"\tType: {requestType}")
+        logging.getLogger("coretexpylib").debug(f"\tHeaders: {headers}")
+        logging.getLogger("coretexpylib").debug(f"\tQuery: {query}")
+        logging.getLogger("coretexpylib").debug(f"\tBody: {body}")
+        logging.getLogger("coretexpylib").debug(f"\tFiles: {logFilesData(files)}")
+        logging.getLogger("coretexpylib").debug(f"\tAuth: {auth}")
+        logging.getLogger("coretexpylib").debug(f"\tStream: {stream}")
+        logging.getLogger("coretexpylib").debug(f"\tRetry count: {retryCount}")
+
+        # If Content-Type is application/json make sure that body is converted to json
+        data: Optional[Any] = body
+        if headers.get("Content-Type") == "application/json" and data is not None:
+            data = json.dumps(body)
 
         try:
             rawResponse = self._session.request(
                 requestType.value,
                 url,
                 params = query,
-                json = body,
+                data = data,
                 auth = auth,
                 files = files,
                 headers = headers
             )
 
-            response = NetworkResponse(rawResponse, endpoint)
+            response = NetworkResponse(rawResponse)
+            if response.hasFailed():
+                logRequestFailure(endpoint, response)
+
             if self.shouldRetry(retryCount, response):
                 return self.request(endpoint, requestType, headers, query, body, files, auth, stream, retryCount + 1)
 
@@ -151,15 +205,89 @@ class NetworkManagerBase(ABC):
             raise RequestFailedError(endpoint, requestType)
 
     def post(self, endpoint: str, params: Optional[RequestBodyType] = None) -> NetworkResponse:
+        """
+            Sends post HTTP request
+
+            Parameters
+            ----------
+            endpoint : str
+                endpoint to which the request is sent
+            params : Optional[RequestBodyType]
+                body of the request
+
+            Returns
+            -------
+            NetworkResponse -> object containing the request response
+
+            Raises
+            ------
+            RequestFailedError -> if request failed due to connection issues
+        """
+
         return self.request(endpoint, RequestType.post, body = params)
 
     def get(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> NetworkResponse:
+        """
+            Sends get HTTP request
+
+            Parameters
+            ----------
+            endpoint : str
+                endpoint to which the request is sent
+            params : Optional[RequestBodyType]
+                query parameters of the request
+
+            Returns
+            -------
+            NetworkResponse -> object containing the request response
+
+            Raises
+            ------
+            RequestFailedError -> if request failed due to connection issues
+        """
+
         return self.request(endpoint, RequestType.get, query = params)
 
     def put(self, endpoint: str, params: Optional[RequestBodyType] = None) -> NetworkResponse:
+        """
+            Sends put HTTP request
+
+            Parameters
+            ----------
+            endpoint : str
+                endpoint to which the request is sent
+            params : Optional[RequestBodyType]
+                body of the request
+
+            Returns
+            -------
+            NetworkResponse -> object containing the request response
+
+            Raises
+            ------
+            RequestFailedError -> if request failed due to connection issues
+        """
+
         return self.request(endpoint, RequestType.put, body = params)
 
     def delete(self, endpoint: str) -> NetworkResponse:
+        """
+            Sends delete HTTP request
+
+            Parameters
+            ----------
+            endpoint : str
+                endpoint to which the request is sent
+
+            Returns
+            -------
+            NetworkResponse -> object containing the request response
+
+            Raises
+            ------
+            RequestFailedError -> if request failed due to connection issues
+        """
+
         return self.request(endpoint, RequestType.delete)
 
     def formData(
@@ -169,14 +297,50 @@ class NetworkManagerBase(ABC):
         files: Optional[List[FileData]] = None
     ) -> NetworkResponse:
 
+        """
+            Sends multipart/form-data request
+
+            Parameters
+            ----------
+            endpoint : str
+                endpoint to which the request is sent
+            params : Optional[Dict[str, Any]]
+                form data parameters
+            files : Optional[List[FileData]]
+                form data files
+
+            Returns
+            -------
+            NetworkResponse -> object containing the request response
+
+            Example
+            -------
+            >>> from coretex import networkManager
+            \b
+            >>> response = networkManager.formData(
+                    endpoint = "dummyObject/form",
+                    params = {
+                        "key": "value"
+                    }
+                )
+            >>> if response.hasFailed():
+                    print("Failed to send form data request")
+        """
+
         if files is None:
             files = []
 
         with ExitStack() as stack:
             filesData = [file.prepareForUpload(stack) for file in files]
 
-        headers = self._headers("multipart/form-data")
-        return self.request(endpoint, RequestType.post, headers, body = params, files = filesData)
+            headers = self._headers("multipart/form-data")
+            del headers["Content-Type"]
+
+            return self.request(endpoint, RequestType.post, headers, body = params, files = filesData)
+
+        # mypy is complaining about missing return statement but this code is unreachable
+        # see: https://github.com/python/mypy/issues/7726
+        raise RuntimeError("Unreachable")
 
     def authenticate(self, username: str, password: str, storeCredentials: bool = True) -> NetworkResponse:
         """
@@ -194,13 +358,13 @@ class NetworkManagerBase(ABC):
 
             Returns
             -------
-            NetworkResponse -> NetworkResponse object containing the full response info
+            NetworkResponse -> object containing the request response
 
             Example
             -------
             >>> from coretex.networking import networkManager
             \b
-            >>> response = networkManager.authenticate(username = "dummy@coretex.ai", password = "123456")
+            >>> response = networkManager.authenticate("dummy@coretex.ai", "123456")
             >>> if response.hasFailed():
                     print("Failed to authenticate")
         """
@@ -208,12 +372,16 @@ class NetworkManagerBase(ABC):
         # authenticate using credentials stored in requests.Session.auth
 
         response = self.request(self.loginEndpoint, RequestType.post, auth = (username, password))
+        if response.hasFailed():
+            return response
 
-        if self.apiTokenKey in response.json:
-            self._apiToken = response.json[self.apiTokenKey]
+        responseJson = response.getJson(dict)
 
-        if self.refreshTokenKey in response.json:
-            self._refreshToken = response.json[self.refreshTokenKey]
+        if self.apiTokenKey in responseJson:
+            self._apiToken = responseJson[self.apiTokenKey]
+
+        if self.refreshTokenKey in responseJson:
+            self._refreshToken = responseJson[self.refreshTokenKey]
 
         return response
 
@@ -239,7 +407,7 @@ class NetworkManagerBase(ABC):
 
             Returns
             -------
-            NetworkResponse -> NetworkResponse object containing the full response info
+            NetworkResponse -> object containing the request response
         """
 
         self._refreshToken = token
@@ -258,13 +426,13 @@ class NetworkManagerBase(ABC):
             Parameters
             ----------
             endpoint : str
-                API endpoint
+                endpoint to which the request is sent
             destination : Union[Path, str]
                 path to save file
 
             Returns
             -------
-            NetworkResponse as response content to request
+            NetworkResponse -> object containing the request response
 
             Example
             -------
@@ -286,7 +454,7 @@ class NetworkManagerBase(ABC):
             return response
 
         with destination.open("wb") as downloadedFile:
-            downloadedFile.write(response.raw.content)
+            downloadedFile.write(response.getContent())
 
         return response
 
@@ -303,7 +471,7 @@ class NetworkManagerBase(ABC):
             Parameters
             ----------
             endpoint : str
-                API endpoint
+                endpoint to which the request is sent
             destination : Union[Path, str]
                 path to save file
             retryCount : int
@@ -312,13 +480,13 @@ class NetworkManagerBase(ABC):
 
             Returns
             -------
-            NetworkResponse as response content to request
+            NetworkResponse -> object containing the request response
 
             Example
             -------
             >>> from coretex import networkManager
             \b
-            >>> response = networkManager.genericDownload(
+            >>> response = networkManager.streamDownload(
                     endpoint = "dummyObject/download",
                     destination = "path/to/destination/folder"
                 )
@@ -341,7 +509,7 @@ class NetworkManagerBase(ABC):
             destination.unlink()
 
         with destination.open("wb") as file:
-            for chunk in response.raw.iter_content():
+            for chunk in response.stream():
                 file.write(chunk)
 
         return response
@@ -352,7 +520,7 @@ class NetworkManagerBase(ABC):
 
             Returns
             -------
-            NetworkResponse -> NetworkResponse object containing the full response info
+            NetworkResponse -> object containing the request response
         """
 
         headers = self._headers()
@@ -360,13 +528,17 @@ class NetworkManagerBase(ABC):
         if self._refreshToken is not None:
             headers[self.apiTokenHeaderField] = self._refreshToken
 
-        networkResponse = self.request(self.refreshEndpoint, RequestType.post, headers = headers)
+        response = self.request(self.refreshEndpoint, RequestType.post, headers = headers)
+        if response.hasFailed():
+            return response
 
-        if self.apiTokenKey in networkResponse.json:
-            self._apiToken = networkResponse.json[self.apiTokenKey]
+        responseJson = response.getJson(dict)
+
+        if self.apiTokenKey in responseJson:
+            self._apiToken = responseJson[self.apiTokenKey]
             logging.getLogger("coretexpylib").debug(">> [Coretex] API token refresh was successful. API token updated")
 
-        return networkResponse
+        return response
 
     def shouldRetry(self, retryCount: int, response: Optional[NetworkResponse]) -> bool:
         """
@@ -382,8 +554,7 @@ class NetworkManagerBase(ABC):
 
             Returns
             -------
-            bool -> True if the function call needs to be repeated,
-            False if function was called 3 times or if request has not failed
+            bool -> True if the request should be retried, False if not
         """
 
         # Limit retry count to 3 times
@@ -397,8 +568,8 @@ class NetworkManagerBase(ABC):
                 return not refreshTokenResponse.hasFailed()
 
             return (
-                response.statusCode == HttpCode.internalServerError or
-                response.statusCode == HttpCode.serviceUnavailable
+                response.statusCode == HTTPStatus.INTERNAL_SERVER_ERROR or
+                response.statusCode == HTTPStatus.SERVICE_UNAVAILABLE
             )
 
         return True

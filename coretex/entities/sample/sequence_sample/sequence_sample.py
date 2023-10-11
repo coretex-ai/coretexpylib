@@ -99,4 +99,4 @@ class SequenceSample(NetworkSample, LocalSequenceSample):
         if isTemp:
             archivePath.unlink()
 
-        return cls.decode(response.json)
+        return cls.decode(response.getJson(dict))

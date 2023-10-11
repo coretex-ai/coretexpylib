@@ -179,7 +179,7 @@ class NetworkObject(Codable):
         if response.hasFailed():
             return None
 
-        return cls.decode(response.json)
+        return cls.decode(response.getJson(dict))
 
     @classmethod
     def fetchAll(cls, **kwargs: Any) -> List[Self]:
@@ -206,7 +206,7 @@ class NetworkObject(Codable):
 
         objects: List[Self] = []
 
-        for obj in response.json:
+        for obj in response.getJson(dict):
             objects.append(cls.decode(obj))
 
         return objects
@@ -235,8 +235,9 @@ class NetworkObject(Codable):
         if "page_size" not in kwargs:
             kwargs["page_size"] = DEFAULT_PAGE_SIZE
 
-        response = networkManager.get(cls._endpoint(), kwargs)
+        response = networkManager.get(f"{cls._endpoint()}/{objectId}", kwargs)
+
         if response.hasFailed():
             raise NetworkRequestError(response, f"Failed to fetch \"{cls.__name__}\" with ID \"{objectId}\"")
 
-        return cls.decode(response.json)
+        return cls.decode(response.getJson(dict))
