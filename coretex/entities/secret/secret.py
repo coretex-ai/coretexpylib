@@ -28,17 +28,46 @@ class Secret(NetworkObject):
         return "secret"
 
     def refresh(self, jsonObject: Optional[Dict[str, Any]] = None) -> bool:
+        """
+            Secret does not support this method
+        """
+
         return NotImplemented
 
     def update(self, parameters: Dict[str, Any]) -> bool:
+        """
+            Secret does not support this method
+        """
+
         return NotImplemented
 
     @classmethod
     def fetchById(cls, objectId: int, queryParameters: Optional[List[str]] = None) -> Self:
+        """
+            Secret does not support this method
+        """
+
         return NotImplemented
 
     @classmethod
     def fetchByName(cls, name: str) -> Self:
+        """
+            Fetches a single Secret with the matching name
+
+            Parameters
+            ----------
+            name : str
+                name of the Secret which is fetched
+
+            Returns
+            -------
+            Self -> fetched Secret
+
+            Raises
+            ------
+            NetworkRequestError -> If the request for fetching failed
+        """
+
         response = networkManager.get(f"{cls._endpoint()}/data", {
             "name": name
         })
