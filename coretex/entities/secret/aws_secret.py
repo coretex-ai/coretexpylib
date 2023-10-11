@@ -23,6 +23,17 @@ from ...codable import KeyDescriptor
 
 class AWSSecret(Secret):
 
+    """
+        Represents AWS Secret entity from Coretex.ai
+
+        Properties
+        ----------
+        key : str
+            AWS Access Key ID
+        value : str
+            AWS Secret Access Key
+    """
+
     key: str
     value: str
 

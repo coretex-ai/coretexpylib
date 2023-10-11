@@ -23,6 +23,10 @@ from ...networking import NetworkObject, networkManager, NetworkRequestError
 
 class Secret(NetworkObject):
 
+    """
+        Represents base Secret entity from Coretex.ai
+    """
+
     @classmethod
     def _endpoint(cls) -> str:
         return "secret"
