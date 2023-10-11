@@ -15,10 +15,5 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .annotation import *
-from .dataset import *
-from .model import *
-from .project import *
-from .sample import *
-from .secret import *
-from .task_run import *
+from .aws_secret import AWSSecret
+from .secret import Secret
