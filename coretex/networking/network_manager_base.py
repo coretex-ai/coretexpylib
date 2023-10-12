@@ -27,6 +27,7 @@ import json
 import logging
 import platform
 import requests
+import requests.adapters
 
 from .utils import RequestBodyType, RequestFormType, logFilesData, logRequestFailure
 from .request_type import RequestType
@@ -47,6 +48,15 @@ class NetworkManagerBase(ABC):
 
     def __init__(self) -> None:
         self._session = requests.Session()
+
+        cpuCount = os.cpu_count()
+        if cpuCount is None:
+            cpuCount = 1
+
+        # 10 is default, keep that value for machines which have <= 10 cores
+        adapter = requests.adapters.HTTPAdapter(pool_maxsize = max(10, cpuCount))
+        self._session.mount("http://", adapter)
+        self._session.mount("https://", adapter)
 
         # Override NetworkManager to update values
         self.loginEndpoint: str = "user/login"
