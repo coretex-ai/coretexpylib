@@ -23,7 +23,6 @@ from http import HTTPStatus
 from importlib.metadata import version as getLibraryVersion
 
 import os
-import io
 import json
 import logging
 import platform
