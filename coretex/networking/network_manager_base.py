@@ -30,6 +30,13 @@ from .network_response import HttpCode, NetworkResponse
 from .file_data import FileData
 
 
+def buildQuery(params: Dict[str, Any]) -> str:
+    if len(params) == 0:
+        return ""
+
+    return "?" + "&".join(f"{key}={value}" for key, value in params.items())
+
+
 class NetworkManagerBase(ABC):
 
     MAX_RETRY_COUNT = 3
@@ -526,6 +533,39 @@ class NetworkManagerBase(ABC):
         """
 
         return self.genericJSONRequest(endpoint, RequestType.post, parameters)
+
+    def get(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> NetworkResponse:
+        """
+            Sends GET http request
+
+            Parameters
+            ----------
+            endpoint : str
+                API endpoint
+            parameters : Optional[dict[str, Any]]
+                query parameters (not required)
+
+            Returns
+            -------
+            NetworkResponse -> NetworkResponse object containing the full response info
+
+            Example
+            -------
+            >>> from coretex import networkManager
+            \b
+            >>> response = networkManager.get(endpoint = "dummy/data", parameters = {
+                    "object_id": 1,
+                })
+            \b
+            >>> if response.hasFailed():
+                    print("Failed to fetch the object")
+        """
+
+        if params is None:
+            params = {}
+
+        endpoint = endpoint + buildQuery(params)
+        return self.genericJSONRequest(endpoint, RequestType.get)
 
     def refreshToken(self) -> NetworkResponse:
         """

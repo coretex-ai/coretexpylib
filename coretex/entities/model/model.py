@@ -77,6 +77,10 @@ class Model(NetworkObject):
     def path(self) -> Path:
         return folder_manager.modelsFolder / str(self.id)
 
+    @property
+    def zipPath(self) -> Path:
+        return self.path.with_suffix(".zip")
+
     @classmethod
     def modelDescriptorFileName(cls) -> str:
         """
