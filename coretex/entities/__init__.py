@@ -16,8 +16,9 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from .annotation import *
-from .sample import *
 from .dataset import *
 from .model import *
-from .task_run import *
 from .project import *
+from .sample import *
+from .secret import *
+from .task_run import *

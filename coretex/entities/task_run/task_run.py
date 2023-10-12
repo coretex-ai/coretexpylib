@@ -295,7 +295,7 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
 
         response = networkManager.post(f"{self._endpoint()}/metrics-meta", parameters)
         if response.hasFailed():
-            raise NetworkRequestError(response, ">> [Coretex] Failed to create metrics!")
+            raise NetworkRequestError(response, "Failed to create metrics")
 
         self.metrics.extend(metrics)
 

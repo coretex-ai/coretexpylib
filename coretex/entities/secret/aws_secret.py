@@ -15,7 +15,31 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .number import mathematicalRound
-from .file import guessMimeType, InvalidFileExtension
-from .date import DATE_FORMAT, TIME_ZONE
-from .hash import hashCacheName
+from typing import Dict
+
+from .secret import Secret
+from ...codable import KeyDescriptor
+
+
+class AWSSecret(Secret):
+
+    """
+        Represents AWS Secret entity from Coretex.ai
+
+        Properties
+        ----------
+        key : str
+            AWS Access Key ID
+        value : str
+            AWS Secret Access Key
+    """
+
+    key: str
+    value: str
+
+    @classmethod
+    def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
+        descriptors = super()._keyDescriptors()
+        descriptors["value"] = KeyDescriptor("secret")
+
+        return descriptors

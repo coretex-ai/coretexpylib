@@ -74,6 +74,6 @@ def chunkSampleImport(
 
     response = networkManager.formData("session/import", parameters)
     if response.hasFailed():
-        raise NetworkRequestError(response, "Failed to create sample from \"{path}\"")
+        raise NetworkRequestError(response, f"Failed to create sample from \"{filePath}\"")
 
     return response
