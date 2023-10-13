@@ -26,14 +26,35 @@ import psutil
 
 
 def getCpuUsage() -> float:
+    """
+        Returns
+        -------
+        float -> CPU usage as percentage since last call of this function
+    """
+
     return psutil.cpu_percent()
 
 
 def getRamUsage() -> float:
+    """
+        Returns
+        -------
+        float -> Used RAM memory as percentage
+    """
+
     return psutil.virtual_memory().percent
 
 
 def getGpuUsage() -> float:
+    """
+        py3nvml init must be called before calling this function
+        otherwise it will raise an exception
+
+        Returns
+        -------
+        float -> GPU usage as percentage
+    """
+
     handle = py3nvml.nvmlDeviceGetHandleByIndex(0)
     utilization = py3nvml.nvmlDeviceGetUtilizationRates(handle)
 
@@ -45,6 +66,15 @@ def getGpuUsage() -> float:
 
 
 def getGpuTemperature() -> float:
+    """
+        py3nvml init must be called before calling this function
+        otherwise it will raise an exception
+
+        Returns
+        -------
+        float -> GPU temperature
+    """
+
     handle = py3nvml.nvmlDeviceGetHandleByIndex(0)
     temperature = py3nvml.nvmlDeviceGetTemperature(handle, py3nvml.NVML_TEMPERATURE_GPU)
 
@@ -52,10 +82,22 @@ def getGpuTemperature() -> float:
 
 
 def getSwapUsage() -> float:
+    """
+        Returns
+        -------
+        float -> Used swap memory as percentage
+    """
+
     return psutil.swap_memory().percent
 
 
 def getDiskRead() -> float:
+    """
+        Returns
+        -------
+        float -> total amount of bytes read from disk
+    """
+
     counters = psutil.disk_io_counters()
 
     if counters is None:
@@ -66,6 +108,12 @@ def getDiskRead() -> float:
 
 
 def getDiskWrite() -> float:
+    """
+        Returns
+        -------
+        float -> total amount of bytes wrote to disk
+    """
+
     counters = psutil.disk_io_counters()
 
     if counters is None:
@@ -76,6 +124,12 @@ def getDiskWrite() -> float:
 
 
 def getStorageUsage() -> float:
+    """
+        Returns
+        -------
+        float -> Used storage space as percentage
+    """
+
     info = shutil.disk_usage("/")
     return info.used / info.total * 100  # 0-1 range -> 0-100 range
 
@@ -97,8 +151,20 @@ def _getNetworkUsage() -> Tuple[float, float]:
 
 
 def getDownloadSpeed() -> float:
+    """
+        Returns
+        -------
+        float -> total amount of bytes downloaded
+    """
+
     return _getNetworkUsage()[0]
 
 
 def getUploadSpeed() -> float:
+    """
+        Returns
+        -------
+        float -> total amount of bytes uploaded
+    """
+
     return _getNetworkUsage()[1]
