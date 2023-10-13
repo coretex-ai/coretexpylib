@@ -36,7 +36,7 @@ from ..project import ProjectType
 from ..model import Model
 from ... import folder_manager
 from ...codable import KeyDescriptor
-from ...networking import networkManager, NetworkObject, RequestType, NetworkRequestError, FileData
+from ...networking import networkManager, NetworkObject, NetworkRequestError, FileData
 
 
 DatasetType = TypeVar("DatasetType", bound = Dataset)
@@ -246,8 +246,8 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
                 parameters["message"] = message
 
             # TODO: Should API rename this too?
-            endpoint = "model-queue/job-status-update"
-            response = networkManager.genericJSONRequest(endpoint, RequestType.post, parameters)
+            endpoint = f"{self._endpoint()}/job-status-update"
+            response = networkManager.post(endpoint, parameters)
 
             if response.hasFailed():
                 logging.getLogger("coretexpylib").error(">> [Coretex] Error while updating TaskRun status")
@@ -293,14 +293,9 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
             "metrics": [metric.encode() for metric in metrics]
         }
 
-        response = networkManager.genericJSONRequest(
-            "model-queue/metrics-meta",
-            RequestType.post,
-            parameters
-        )
-
+        response = networkManager.post(f"{self._endpoint()}/metrics-meta", parameters)
         if response.hasFailed():
-            raise NetworkRequestError(response, ">> [Coretex] Failed to create metrics!")
+            raise NetworkRequestError(response, "Failed to create metrics")
 
         self.metrics.extend(metrics)
 
@@ -337,12 +332,7 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
             "metrics": metrics
         }
 
-        response = networkManager.genericJSONRequest(
-            "model-queue/metrics",
-            RequestType.post,
-            parameters
-        )
-
+        response = networkManager.post(f"{self._endpoint()}/metrics", parameters)
         return not response.hasFailed()
 
     def downloadTask(self) -> bool:
@@ -354,21 +344,22 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
             bool -> True if task downloaded successfully, False if task download has failed
         """
 
-        zipFilePath = f"{self.taskPath}.zip"
+        params = {
+            "model_queue_id": self.id
+        }
 
-        response = networkManager.genericDownload(
-            endpoint=f"workspace/download?model_queue_id={self.id}",
-            destination=zipFilePath
-        )
+        zipFilePath = f"{self.taskPath}.zip"
+        response = networkManager.download(f"workspace/download", zipFilePath, params)
+
+        if response.hasFailed():
+            logging.getLogger("coretexpylib").info(">> [Coretex] Task download has failed")
+            return False
 
         with ZipFile(zipFilePath) as zipFile:
             zipFile.extractall(self.taskPath)
 
         # remove zip file after extract
         os.unlink(zipFilePath)
-
-        if response.hasFailed():
-            logging.getLogger("coretexpylib").info(">> [Coretex] Task download has failed")
 
         return not response.hasFailed()
 
@@ -499,7 +490,7 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
         if parameters is None:
             parameters = []
 
-        response = networkManager.genericJSONRequest("run", RequestType.post, {
+        response = networkManager.post("run", {
             "sub_project_id": taskId,
             "service_id": nodeId,
             "name": name,
@@ -511,7 +502,8 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
         if response.hasFailed():
             raise NetworkRequestError(response, "Failed to create TaskRun")
 
-        return cls.fetchById(response.json["experiment_ids"][0])
+        responseJson = response.getJson(dict)
+        return cls.fetchById(responseJson["experiment_ids"][0])
 
     @classmethod
     def runLocal(
@@ -570,19 +562,21 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
 
             snapshotArchive.write("requirements.txt")
 
-        files = [
-            FileData.createFromPath("file", snapshotPath)
-        ]
-
-        response = networkManager.genericUpload("run", files, {
+        params = {
             "project_id": projectId,
             "name": name,
             "description": description,
             "execution_type": ExecutionType.local.value,
             "parameters": json.dumps(parameters)
-        })
+        }
 
+        files = [
+            FileData.createFromPath("file", snapshotPath)
+        ]
+
+        response = networkManager.formData("run", params, files)
         if response.hasFailed():
             raise NetworkRequestError(response, "Failed to create TaskRun")
 
-        return cls.fetchById(response.json["experiment_ids"][0])
+        responseJson = response.getJson(dict)
+        return cls.fetchById(responseJson["experiment_ids"][0])

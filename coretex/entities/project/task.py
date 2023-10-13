@@ -71,8 +71,8 @@ class Task(BaseObject):
                     print("Failed to create task")
         """
 
-        return cls.create(parameters={
-            "name": name,
-            "parent_id": projectId,
-            "description": description
-        })
+        return cls.create(
+            name = name,
+            parent_id = projectId,
+            description = description
+        )

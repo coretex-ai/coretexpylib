@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 from typing_extensions import Self
 
 from ...networking import NetworkObject, networkManager, NetworkRequestError
@@ -38,7 +38,7 @@ class Secret(NetworkObject):
 
         return NotImplemented
 
-    def update(self, parameters: Dict[str, Any]) -> bool:
+    def update(self, **kwargs: Any) -> bool:
         """
             Secret does not support this method
         """
@@ -46,7 +46,7 @@ class Secret(NetworkObject):
         return NotImplemented
 
     @classmethod
-    def fetchById(cls, objectId: int, queryParameters: Optional[List[str]] = None) -> Self:
+    def fetchById(cls, objectId: int, **kwargs: Any) -> Self:
         """
             Secret does not support this method
         """
@@ -79,4 +79,4 @@ class Secret(NetworkObject):
         if response.hasFailed():
             raise NetworkRequestError(response, "Failed to fetch secret")
 
-        return cls.decode(response.json)
+        return cls.decode(response.getJson(dict))

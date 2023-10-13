@@ -61,11 +61,11 @@ class Project(BaseObject):
                     print("Failed to create project")
         """
 
-        return cls.create(parameters={
-            "name": name,
-            "project_task": projectType.value,
-            "description": description
-        })
+        return cls.create(
+            name = name,
+            project_task = projectType,
+            description = description
+        )
 
     @classmethod
     def decode(cls, encodedObject: Dict[str, Any]) -> Self:

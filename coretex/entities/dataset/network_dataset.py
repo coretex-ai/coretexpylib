@@ -26,7 +26,7 @@ from .dataset import Dataset
 from ..sample import NetworkSample
 from ... import folder_manager
 from ...codable import KeyDescriptor
-from ...networking import NetworkObject, DEFAULT_PAGE_SIZE
+from ...networking import NetworkObject
 from ...threading import MultithreadedDataProcessor
 
 
@@ -88,18 +88,18 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
         return "dataset"
 
     @classmethod
-    def fetchById(cls, objectId: int, queryParameters: Optional[List[str]] = None) -> Self:
-        if queryParameters is None:
-            queryParameters = ["include_sessions=1"]
+    def fetchById(cls, objectId: int, **kwargs: Any) -> Self:
+        if "include_sessions" not in kwargs:
+            kwargs["include_sessions"] = 1
 
-        return super().fetchById(objectId, queryParameters)
+        return super().fetchById(objectId, **kwargs)
 
     @classmethod
-    def fetchAll(cls, queryParameters: Optional[List[str]] = None, pageSize: int = DEFAULT_PAGE_SIZE) -> List[Self]:
-        if queryParameters is None:
-            queryParameters = ["include_sessions=1"]
+    def fetchAll(cls, **kwargs: Any) -> List[Self]:
+        if "include_sessions" not in kwargs:
+            kwargs["include_sessions"] = 1
 
-        return super().fetchAll(queryParameters, pageSize)
+        return super().fetchAll(**kwargs)
 
     # Dataset methods
 
@@ -134,11 +134,11 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
                     print("Dataset created successfully")
         """
 
-        return cls.create({
-            "name": name,
-            "project_id": projectId,
-            "meta": meta
-        })
+        return cls.create(
+            name = name,
+            project_id = projectId,
+            meta = meta
+        )
 
     def download(self, ignoreCache: bool = False) -> None:
         """
@@ -180,9 +180,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
         processor.process()
 
     def rename(self, name: str) -> bool:
-        success = self.update({
-            "name": name
-        })
+        success = self.update(name = name)
 
         if success:
             return super().rename(name)

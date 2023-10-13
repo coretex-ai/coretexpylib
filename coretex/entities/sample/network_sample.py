@@ -22,14 +22,13 @@ from pathlib import Path
 
 import os
 import time
-import logging
 
 from .sample import Sample
 from ..project import ProjectType
 from ... import folder_manager
 from ...codable import KeyDescriptor
 from ...networking import NetworkObject, networkManager, FileData
-from ...utils import DATE_FORMAT, TIME_ZONE
+from ...utils import TIME_ZONE
 
 
 SampleDataType = TypeVar("SampleDataType")
@@ -113,11 +112,11 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
             FileData.createFromPath("file", filePath, mimeType = mimeType)
         ]
 
-        response = networkManager.genericUpload("session/import", files, parameters)
+        response = networkManager.formData("session/import", parameters, files)
         if response.hasFailed():
             return None
 
-        return cls.decode(response.json)
+        return cls.decode(response.getJson(dict))
 
     def modifiedSinceLastDownload(self) -> bool:
         """
@@ -136,10 +135,8 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
         if not self.zipPath.exists():
             raise FileNotFoundError(f">> [Coretex] Sample file could not be found at {self.zipPath}. Cannot check if file has been modified since last download")
 
-        lastModified = datetime.fromtimestamp(self.zipPath.stat().st_mtime).astimezone()
-        lastModifiedUtc = lastModified.astimezone(TIME_ZONE)
-
-        return self.lastModified > lastModifiedUtc
+        lastModified = datetime.fromtimestamp(self.zipPath.stat().st_mtime).astimezone(TIME_ZONE)
+        return self.lastModified > lastModified
 
     def download(self, ignoreCache: bool = False) -> bool:
         """
@@ -153,14 +150,20 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
         if self.zipPath.exists() and self.modifiedSinceLastDownload():
             ignoreCache = True
 
-        response = networkManager.sampleDownload(
-            endpoint = f"{self.__class__._endpoint()}/export?id={self.id}",
-            destination = self.zipPath,
-            ignoreCache = ignoreCache
-        )
+        if ignoreCache and self.zipPath.exists():
+            self.zipPath.unlink()
+
+        if not ignoreCache and self.zipPath.exists():
+            return True
+
+        response = networkManager.streamDownload(f"{self._endpoint()}/export", self.zipPath, {
+            "id": self.id
+        })
 
         # If sample was downloaded succesfully relink it to datasets to which it is linked
         if not response.hasFailed():
+            os.utime(self.zipPath, (os.stat(self.zipPath).st_atime, time.time()))
+
             for datasetPath in folder_manager.datasetsFolder.iterdir():
                 sampleHardLinkPath = datasetPath / self.zipPath.name
                 if not sampleHardLinkPath.exists():
@@ -168,7 +171,6 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
 
                 sampleHardLinkPath.unlink()
                 os.link(self.zipPath, sampleHardLinkPath)
-                os.utime(self.zipPath, (os.stat(self.zipPath).st_atime, time.time()))
 
         return not response.hasFailed()
 

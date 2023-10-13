@@ -15,24 +15,14 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Final
-from enum import IntEnum
-
-import logging
+from typing import Union, Type, TypeVar, Optional, Iterator, Any
+from http import HTTPStatus
 
 from requests import Response
+from requests.structures import CaseInsensitiveDict
 
 
-class HttpCode(IntEnum):
-
-    """
-        A enum class which represents code for specific http errors
-    """
-
-    unauthorized        = 401
-
-    internalServerError = 500
-    serviceUnavailable  = 503
+JsonType = TypeVar("JsonType", bound = Union[list, dict])
 
 
 class NetworkResponse:
@@ -43,37 +33,27 @@ class NetworkResponse:
         Properties
         ----------
         response : Response
-            API response
-        endpoint : endpoint
-            name of API endpoint
-        json : Any
-            response in json format
-
+            python.requests HTTP reponse
     """
 
-    def __init__(self, response: Response, endpoint: str, ignoreContent: bool = False):
-        self.raw: Final = response
-        self.headers: Final = response.headers
-
-        if ignoreContent:
-            # response.json() will start downloading the sample for streamingDownload() if the
-            # object has not been downloaded already, which happens when a local cache exists
-            self.json = {}
-        else:
-            try:
-                self.json = response.json()
-            except (ValueError, RuntimeError):
-                # RuntimeError is present here to avoid the content_consumed error
-                self.json = {}
-
-        if not response.ok:
-            logging.getLogger("coretexpylib").debug(f">> [Coretex] Request failed: (Endpoint: {endpoint}, Code: {response.status_code}, Message: {response.text})")
-
-        logging.getLogger("coretexpylib").debug(f">> [Coretex] Request response: {self.json}")
+    def __init__(self, response: Response):
+        self._raw = response
 
     @property
     def statusCode(self) -> int:
-        return self.raw.status_code
+        """
+            Status code of the HTTP response
+        """
+
+        return self._raw.status_code
+
+    @property
+    def headers(self) -> CaseInsensitiveDict:
+        """
+            HTTP Response headers
+        """
+
+        return self._raw.headers
 
     def hasFailed(self) -> bool:
         """
@@ -84,7 +64,7 @@ class NetworkResponse:
             bool -> True if request has failed, False if request has not failed
         """
 
-        return not self.raw.ok
+        return not self._raw.ok
 
     def isUnauthorized(self) -> bool:
         """
@@ -95,7 +75,65 @@ class NetworkResponse:
             bool -> True if status code is 401 and request has failed, False if not
         """
 
-        return self.statusCode == HttpCode.unauthorized and self.hasFailed()
+        return self.statusCode == HTTPStatus.UNAUTHORIZED and self.hasFailed()
+
+    def getJson(self, type_: Type[JsonType]) -> JsonType:
+        """
+            Converts HTTP response body to json
+
+            Parameters
+            ----------
+                type_: Type[JsonType]
+                    list or dict types to which the json should be cast
+
+            Returns
+            -------
+            JsonType -> Either a list or a dict object depending on type_ parameter
+
+            Raises
+            ------
+            ValueError -> If "Content-Type" header was not "application/json"
+            TypeError -> If it was not possible to convert body to type of passed "type_" parameter
+        """
+
+        if not "application/json" in self.headers.get("Content-Type", ""):
+            raise ValueError(f">> [Coretex] Trying to convert request response to json but response \"Content-Type\" was \"{self.headers.get('Content-Type')}\"")
+
+        value = self._raw.json()
+        if not isinstance(value, type_):
+            raise TypeError(f">> [Coretex] Expected json response to be of type \"{type_.__name__}\", received \"{type(value).__name__}\"")
+
+        return value
+
+    def getContent(self) -> bytes:
+        """
+            Returns
+            -------
+            bytes -> body of the request as bytes
+        """
+
+        return self._raw.content
+
+    def stream(self, chunkSize: Optional[int] = 1, decodeUnicode: bool = False) -> Iterator[Any]:
+        """
+            Downloads HTTP response in chunks and returns them as they are being downloaded
+
+            Parameters
+            ----------
+            chunkSize : Optional[int]
+                A value of None will function differently depending on the value of stream.
+                stream = True will read data as it arrives in whatever size the chunks are
+                received. If stream = False, data is returned as a single chunk.
+            decodeUnicode : bool
+                If decode_unicode is True, content will be decoded using the best
+                available encoding based on the response
+
+            Returns
+            -------
+            Iterator[Any] -> HTTP response as chunks
+        """
+
+        return self._raw.iter_content(chunkSize, decodeUnicode)
 
 
 class NetworkRequestError(Exception):
@@ -107,13 +145,15 @@ class NetworkRequestError(Exception):
 
     def __init__(self, response: NetworkResponse, message: str) -> None:
         if not response.hasFailed():
-            raise RuntimeError(">> [Coretex] Invalid request response")
+            raise ValueError(">> [Coretex] Invalid request response")
 
-        if "message" in response.json:
-            responseMessage = response.json["message"]
+        responseJson = response.getJson(dict)
+
+        if "message" in responseJson:
+            responseMessage = responseJson["message"]
         else:
-            responseMessage = response.raw.text
+            responseMessage = response._raw.content.decode()
 
         super().__init__(f">> [Coretex] {message}. Reason: {responseMessage}")
 
-        self.response: Final = response
+        self.response = response
