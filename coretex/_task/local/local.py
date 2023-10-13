@@ -32,7 +32,7 @@ def processLocal(args: Optional[List[str]] = None) -> Tuple[int, LocalTaskCallba
     parameters = LocalArgumentParser.readTaskRunConfig()
 
     parser = LocalArgumentParser(parameters)
-    parser.parse_args()
+    parser.parse_args(args)
 
     for parameter in parameters:
         parameter.value = parser.getParameter(parameter.name, parameter.value)

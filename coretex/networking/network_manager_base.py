@@ -36,6 +36,11 @@ from .file_data import FileData
 
 
 MAX_RETRY_COUNT = 3
+LOGIN_ENDPOINT = "user/login"
+REFRESH_ENDPOINT = "user/refresh"
+API_TOKEN_HEADER = "api-token"
+API_TOKEN_KEY = "token"
+REFRESH_TOKEN_KEY = "refresh_token"
 
 
 class RequestFailedError(Exception):
@@ -57,15 +62,6 @@ class NetworkManagerBase(ABC):
         adapter = requests.adapters.HTTPAdapter(pool_maxsize = max(10, cpuCount))
         self._session.mount("http://", adapter)
         self._session.mount("https://", adapter)
-
-        # Override NetworkManager to update values
-        self.loginEndpoint: str = "user/login"
-        self.refreshEndpoint: str = "user/refresh"
-
-        self.apiTokenHeaderField: str = "api-token"
-
-        self.apiTokenKey: str = "token"
-        self.refreshTokenKey: str = "refresh_token"
 
     @property
     def serverUrl(self) -> str:
@@ -109,16 +105,16 @@ class NetworkManagerBase(ABC):
         raise NotImplementedError
 
     def _headers(self, contentType: str = "application/json") -> Dict[str, str]:
-        header = {
+        headers = {
             "Content-Type": contentType,
             "Connection": "keep-alive",
             "X-User-Agent": self.userAgent
         }
 
         if self._apiToken is not None:
-            header[self.apiTokenHeaderField] = self._apiToken
+            headers[API_TOKEN_HEADER] = self._apiToken
 
-        return header
+        return headers
 
     def request(
         self,
@@ -380,17 +376,14 @@ class NetworkManagerBase(ABC):
 
         # authenticate using credentials stored in requests.Session.auth
 
-        response = self.request(self.loginEndpoint, RequestType.post, auth = (username, password))
+        response = self.request(LOGIN_ENDPOINT, RequestType.post, auth = (username, password))
         if response.hasFailed():
             return response
 
         responseJson = response.getJson(dict)
 
-        if self.apiTokenKey in responseJson:
-            self._apiToken = responseJson[self.apiTokenKey]
-
-        if self.refreshTokenKey in responseJson:
-            self._refreshToken = responseJson[self.refreshTokenKey]
+        self._apiToken = responseJson[API_TOKEN_KEY]
+        self._refreshToken = responseJson[REFRESH_TOKEN_KEY]
 
         return response
 
@@ -532,20 +525,18 @@ class NetworkManagerBase(ABC):
             NetworkResponse -> object containing the request response
         """
 
+        if self._refreshToken is None:
+            raise ValueError(f">> [Coretex] Cannot send \"{REFRESH_ENDPOINT}\" request, refreshToken is None")
+
         headers = self._headers()
+        headers[API_TOKEN_HEADER] = self._refreshToken
 
-        if self._refreshToken is not None:
-            headers[self.apiTokenHeaderField] = self._refreshToken
-
-        response = self.request(self.refreshEndpoint, RequestType.post, headers = headers)
+        response = self.request(REFRESH_ENDPOINT, RequestType.post, headers = headers)
         if response.hasFailed():
             return response
 
         responseJson = response.getJson(dict)
-
-        if self.apiTokenKey in responseJson:
-            self._apiToken = responseJson[self.apiTokenKey]
-            logging.getLogger("coretexpylib").debug(">> [Coretex] API token refresh was successful. API token updated")
+        self._apiToken = responseJson[API_TOKEN_KEY]
 
         return response
 
