@@ -16,12 +16,17 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from ..metric import Metric
-from ..utils import getNetworkUsage
+from .....statistics import getUploadSpeed
 
 
 class MetricUploadSpeed(Metric):
 
-    def extract(self) -> float:
-        _, uploadSpeed = getNetworkUsage()
+    def __init__(self) -> None:
+        self.previousValue = getUploadSpeed()
 
-        return uploadSpeed
+    def extract(self) -> float:
+        currentValue = getUploadSpeed()
+        diff = currentValue - self.previousValue
+
+        self.previousValue = currentValue
+        return diff

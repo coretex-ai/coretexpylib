@@ -15,12 +15,11 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import psutil
-
 from ..metric import Metric
+from .....statistics import getCpuUsage
 
 
 class MetricCPUUsage(Metric):
 
     def extract(self) -> float:
-        return float(psutil.cpu_percent(5))
+        return getCpuUsage()

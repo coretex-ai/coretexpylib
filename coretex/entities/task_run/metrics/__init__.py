@@ -16,5 +16,4 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from .metric import Metric
-from .utils import getNetworkUsage
 from .metric_type import MetricType

@@ -17,16 +17,15 @@
 
 import logging
 
-import psutil
-
 from ..metric import Metric
+from .....statistics import getSwapUsage
 
 
 class MetricSwapUsage(Metric):
 
     def extract(self) -> float:
-        swapPercentage = psutil.swap_memory().percent
-        if swapPercentage >= 90:
-            logging.getLogger("coretexpylib").warning(f">> [Coretex] Swap memory usage is at {swapPercentage}")
+        usage = getSwapUsage()
+        if usage >= 90:
+            logging.getLogger("coretexpylib").warning(f">> [Coretex] Swap memory usage is at {usage}")
 
-        return swapPercentage
+        return usage
