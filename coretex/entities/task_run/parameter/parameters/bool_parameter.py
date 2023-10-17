@@ -35,10 +35,11 @@ class BoolParameter(BaseParameter[bool]):
         try:
             if value.lower() == "true":
                 return True
-            elif value.lower() == "false":
+
+            if value.lower() == "false":
                 return False
-            else:
-                raise ValueError("Could not recognise parsed value as boolean. Only accepted options are \"true\" and \"false\" (case insensitive)")
+
+            raise ValueError("Could not recognise parsed value as boolean. Only accepted options are \"true\" and \"false\" (case insensitive)")
         except ValueError as e:
             logging.getLogger("coretexpylib").warning(f">> [Coretex] Failed to override boolean parameter \"{self.name}\". | {e}")
             return self.value
