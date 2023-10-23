@@ -403,12 +403,7 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
             "parameters": outputParameters
         }
 
-        response = networkManager.genericJSONRequest(
-            f"{self._endpoint()}/output-parameter",
-            RequestType.post,
-            parameters
-        )
-
+        response = networkManager.post(f"{self._endpoint()}/output-parameter", parameters)
         if response.hasFailed():
             raise NetworkRequestError(response, ">> [Coretex] Failed to submit outputs")
 
