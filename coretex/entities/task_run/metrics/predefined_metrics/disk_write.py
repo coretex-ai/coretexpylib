@@ -15,31 +15,18 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional
-
-import psutil
-
 from ..metric import Metric
+from .....statistics import getDiskWrite
 
 
 class MetricDiskWrite(Metric):
 
     def __init__(self) -> None:
-        diskIoCounters = psutil.disk_io_counters()
+        self.previousValue = getDiskWrite()
 
-        if diskIoCounters is None:
-            self.previousWrittenBytes = 0
-        else:
-            self.previousWrittenBytes = diskIoCounters.write_bytes
+    def extract(self) -> float:
+        currentValue = getDiskWrite()
+        diff = currentValue - self.previousValue
 
-    def extract(self) -> Optional[float]:
-        diskIoCounters = psutil.disk_io_counters()
-        if diskIoCounters is None:
-            return None
-
-        currentWriteBytes = diskIoCounters.write_bytes
-        writtenBytesDiff = currentWriteBytes - self.previousWrittenBytes
-
-        self.previousWrittenBytes = currentWriteBytes
-
-        return float(writtenBytesDiff)
+        self.previousValue = currentValue
+        return diff

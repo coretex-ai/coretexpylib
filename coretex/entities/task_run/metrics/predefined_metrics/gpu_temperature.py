@@ -15,15 +15,11 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from py3nvml import py3nvml
-
 from ..metric import Metric
+from .....statistics import getGpuTemperature
 
 
 class MetricGPUTemperature(Metric):
 
     def extract(self) -> float:
-        handle = py3nvml.nvmlDeviceGetHandleByIndex(0)
-        temperature = py3nvml.nvmlDeviceGetTemperature(handle, py3nvml.NVML_TEMPERATURE_GPU)
-
-        return float(temperature)
+        return getGpuTemperature()
