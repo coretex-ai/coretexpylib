@@ -15,15 +15,14 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Final, Dict
+from typing import Dict
 from typing_extensions import Self
 
 import time
-import termcolor
 
-from .log_severity import LogSeverity
-from ..utils import mathematicalRound
-from ..codable import Codable, KeyDescriptor
+from .severity import LogSeverity
+from ....utils import mathematicalRound
+from ....codable import Codable, KeyDescriptor
 
 
 class Log(Codable):
@@ -46,8 +45,8 @@ class Log(Codable):
     def __init__(self) -> None:
         super().__init__()
 
-        # type is deprecated, leaving this here until backend no longer requires it
-        self.type: Final = 1
+        # Here for backwards compatibility
+        self.type = 1
 
     @classmethod
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
@@ -78,14 +77,12 @@ class Log(Codable):
         log = cls()
 
         log.timestamp = mathematicalRound(time.time(), 6)
-        log.message = Log.__createMessage(message, severity)
+        log.message = message
         log.severity = severity
 
         return log
 
-    @staticmethod
-    def __createMessage(message: str, severity: LogSeverity) -> str:
-        message = f"{severity.prefix}: {message}"
-        message = termcolor.colored(message, severity.color)
-
-        return message
+    @classmethod
+    def coloredMessage(cls, message: str, severity: LogSeverity) -> str:
+        fmt = "\033[%dm%s\033[0m"
+        return fmt % (severity.color, message)

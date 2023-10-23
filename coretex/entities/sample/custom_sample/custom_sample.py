@@ -75,4 +75,4 @@ class CustomSample(NetworkSample[CustomSampleData], LocalCustomSample):
         """
 
         response = chunkSampleImport(name, datasetId, filePath)
-        return cls.decode(response.json)
+        return cls.decode(response.getJson(dict))

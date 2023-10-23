@@ -15,14 +15,14 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, Dict, List, Union
+from typing import Optional, Dict, List, Union, Any
 from typing_extensions import Self
 from enum import IntEnum
 from pathlib import Path
 
 from ... import folder_manager
 from ...codable import Codable, KeyDescriptor
-from ...networking import networkManager, RequestType, FileData
+from ...networking import networkManager, FileData
 from ...utils import guessMimeType
 
 
@@ -124,20 +124,20 @@ class Artifact(Codable):
             except:
                 mimeType = "application/octet-stream"
 
-        files = [
-            FileData.createFromPath("file", localFilePath, mimeType = mimeType)
-        ]
-
         parameters = {
             "model_queue_id": taskRunId,
             "path": remoteFilePath
         }
 
-        response = networkManager.genericUpload("artifact/upload-file", files, parameters)
+        files = [
+            FileData.createFromPath("file", localFilePath, mimeType = mimeType)
+        ]
+
+        response = networkManager.formData("artifact/upload-file", parameters, files)
         if response.hasFailed():
             return None
 
-        artifact = cls.decode(response.json)
+        artifact = cls.decode(response.getJson(dict))
         artifact.taskRunId = taskRunId
 
         return artifact
@@ -151,10 +151,12 @@ class Artifact(Codable):
             bool -> False if response has failed, True otherwise
         """
 
-        return not networkManager.genericDownload(
-            f"artifact/download-file?path={self.remoteFilePath}&model_queue_id={self.taskRunId}",
-            str(self.localFilePath)
-        ).hasFailed()
+        params = {
+            "model_queue_id": self.taskRunId,
+            "path": self.remoteFilePath
+        }
+
+        return not networkManager.download("artifact/download-file", str(self.localFilePath), params).hasFailed()
 
     @classmethod
     def fetchAll(cls, taskRunId: int, path: Optional[str] = None, recursive: bool = False) -> List[Self]:
@@ -171,23 +173,18 @@ class Artifact(Codable):
                 True if you want list to be sorted recursively, False otherwise
         """
 
-        queryParameters = [
-            f"model_queue_id={taskRunId}"
-        ]
+        params: Dict[str, Any] = {
+            "model_queue_id": taskRunId,
+        }
 
         if path is not None:
-            queryParameters.append(f"path={path}")
+            params["path"] = path
 
-        parameters = "&".join(queryParameters)
-        response = networkManager.genericJSONRequest(
-            f"artifact/list-contents?{parameters}",
-            RequestType.get
-        )
-
+        response = networkManager.get("artifact/list-contents", params)
         if response.hasFailed():
             return []
 
-        artifacts = [cls.decode(element) for element in response.json]
+        artifacts = [cls.decode(element) for element in response.getJson(list)]
 
         for artifact in artifacts:
             artifact.taskRunId = taskRunId

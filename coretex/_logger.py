@@ -18,7 +18,8 @@
 from datetime import datetime
 
 from . import folder_manager
-from .logging import LogSeverity, initializeLogger
+from .entities import LogSeverity
+from .logging import initializeLogger
 from .utils import DATE_FORMAT
 
 

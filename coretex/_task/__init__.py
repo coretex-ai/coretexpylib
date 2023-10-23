@@ -15,8 +15,9 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from ._local import processLocal
-from ._remote import processRemote
-from ._current_task_run import currentTaskRun
-from ._initialization import _prepareForExecution, initializeRTask
-from ._worker import TaskRunWorker
+from .local import processLocal
+from .remote import processRemote
+from .current_task_run import currentTaskRun
+from .initialization import _prepareForExecution, initializeRTask
+from .worker import TaskRunWorker
+from .logging import LoggerUploadWorker

@@ -77,6 +77,10 @@ class Model(NetworkObject):
     def path(self) -> Path:
         return folder_manager.modelsFolder / str(self.id)
 
+    @property
+    def zipPath(self) -> Path:
+        return self.path.with_suffix(".zip")
+
     @classmethod
     def modelDescriptorFileName(cls) -> str:
         """
@@ -127,12 +131,12 @@ class Model(NetworkObject):
                 )
         """
 
-        model = cls.create(parameters = {
-            "name": name,
-            "model_queue_id": taskRunId,
-            "accuracy": accuracy,
-            "meta": meta
-        })
+        model = cls.create(
+            name = name,
+            model_queue_id = taskRunId,
+            accuracy = accuracy,
+            meta = meta
+        )
 
         if model is None:
             raise ValueError(">> [Coretex] Failed to create Model entity")
@@ -201,7 +205,9 @@ class Model(NetworkObject):
             return
 
         modelZip = folder_manager.modelsFolder / f"{self.id}.zip"
-        response = networkManager.genericDownload(f"model/download?id={self.id}", modelZip)
+        response = networkManager.download(f"{self._endpoint()}/download", modelZip, {
+            "id": self.id
+        })
 
         if response.hasFailed():
             logging.getLogger("coretexpylib").info(">> [Coretex] Failed to download the model")
@@ -265,7 +271,7 @@ class Model(NetworkObject):
             "id": self.id
         }
 
-        response = networkManager.genericUpload("model/upload", files, parameters)
+        response = networkManager.formData("model/upload", parameters, files)
         if response.hasFailed():
             logging.getLogger("coretexpylib").info(">> [Coretex] Failed to upload model file")
         else:

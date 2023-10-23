@@ -1,6 +1,6 @@
 [project]
 name = "coretex"
-version = "1.0.38"
+version = "1.0.42"
 authors = [
   { name="Duško Mirković", email="dmirkovic@coretex.ai" }
 ]
@@ -30,7 +30,6 @@ dependencies = [
   "shapely",
   "protobuf~=3.19.0",
   "typed-argument-parser",
-  "termcolor",
   "typing-extensions",
   "psutil",
   "py3nvml",

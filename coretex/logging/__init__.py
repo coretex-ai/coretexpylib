@@ -15,33 +15,4 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from pathlib import Path
-
-import logging
-
-from .logger import LogHandler, LogSeverity
-
-
-def initializeLogger(severity: LogSeverity, logPath: Path) -> None:
-    formatter = logging.Formatter(
-        fmt = "%(asctime)s %(levelname)s: %(message)s",
-        datefmt= "%Y-%m-%d %H:%M:%S",
-        style = "%",
-    )
-
-    consoleHandler = LogHandler.instance()
-    consoleHandler.setLevel(severity.stdSeverity)
-    consoleHandler.setFormatter(formatter)
-
-    fileHandler = logging.FileHandler(logPath)
-    fileHandler.setLevel(logging.DEBUG)
-    fileHandler.setFormatter(formatter)
-
-    logging.basicConfig(
-        level = logging.NOTSET,
-        force = True,
-        handlers = [
-            consoleHandler,
-            fileHandler
-        ]
-    )
+from .logging import createFormatter, initializeLogger

@@ -20,9 +20,13 @@ from .float_parameter import FloatParameter
 from .str_parameter import StrParameter
 from .bool_parameter import BoolParameter
 from .dataset_parameter import DatasetParameter
+from .model_parameter import ModelParameter
 from .imu_vectors_parameter import IMUVectorsParameter
 from .enum_parameter import EnumParameter
+from .range_parameter import RangeParameter
 from .list_int_parameter import ListIntParameter
 from .list_float_parameter import ListFloatParameter
 from .list_str_parameter import ListStrParameter
+from .list_dataset_parameter import ListDatasetParameter
+from .list_model_parameter import ListModelParameter
 from .list_enum_parameter import ListEnumParameter

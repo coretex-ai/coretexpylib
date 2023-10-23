@@ -24,7 +24,7 @@ from .local_image_sample import LocalImageSample
 from .image_format import ImageFormat
 from ..network_sample import NetworkSample
 from ...annotation import CoretexImageAnnotation
-from ....networking import networkManager, RequestType
+from ....networking import networkManager
 
 
 class ImageSample(NetworkSample[AnnotatedImageSampleData], LocalImageSample):
@@ -64,12 +64,7 @@ class ImageSample(NetworkSample[AnnotatedImageSampleData], LocalImageSample):
             "data": coretexAnnotation.encode()
         }
 
-        response = networkManager.genericJSONRequest(
-            endpoint = "session/save-annotations",
-            requestType = RequestType.post,
-            parameters = parameters
-        )
-
+        response = networkManager.post("session/save-annotations", parameters)
         return not response.hasFailed()
 
     @classmethod

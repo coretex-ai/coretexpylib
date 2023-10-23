@@ -15,15 +15,15 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, List
-from threading import Thread
+from typing import List
+from threading import Thread, Event
 from concurrent.futures import ThreadPoolExecutor
 
 import time
 import logging
 
-from .log import Log
-from ..networking import networkManager, RequestType
+from ...entities import Log
+from ...networking import networkManager
 
 
 MAX_WAIT_TIME_BEFORE_UPDATE = 5
@@ -40,38 +40,46 @@ class LoggerUploadWorker(Thread):
         If the upload request fails the wait time is doubled
     """
 
-    def __init__(self) -> None:
+    def __init__(self, taskRunId: int) -> None:
         super().__init__()
 
         self.setDaemon(True)
         self.setName("LoggerUploadWorker")
 
         # Task run for which the logs are uploaded
-        self._taskRunId: Optional[int] = None
+        self.taskRunId = taskRunId
 
+        self.__stopped = Event()
         self.__queue = ThreadPoolExecutor(max_workers = 1, thread_name_prefix = "LogQueue")
         self.__waitTime = MAX_WAIT_TIME_BEFORE_UPDATE
         self.__pendingLogs: List[Log] = []
 
+    @property
+    def isStopped(self) -> bool:
+        return self.__stopped.is_set()
+
+    def stop(self) -> None:
+        self.__stopped.set()
+        self.__queue.shutdown(wait = True)
+
     def add(self, log: Log) -> None:
+        if self.isStopped:
+            return
+
         self.__queue.submit(self.__pendingLogs.append, log)
 
     def uploadLogs(self) -> bool:
+        if self.isStopped:
+            return False
+
         def worker() -> bool:
             if len(self.__pendingLogs) == 0:
                 return True
 
-            if self._taskRunId is None:
-                raise ValueError(">> [Coretex] Tried to upload logs but no Task is being executed")
-
-            response = networkManager.genericJSONRequest(
-                endpoint = "model-queue/add-console-log",
-                requestType = RequestType.post,
-                parameters = {
-                    "model_queue_id": self._taskRunId,
-                    "logs": [log.encode() for log in self.__pendingLogs]
-                }
-            )
+            response = networkManager.post("model-queue/add-console-log", {
+                "model_queue_id": self.taskRunId,
+                "logs": [log.encode() for log in self.__pendingLogs]
+            })
 
             # Only clear logs if they were successfully uploaded to coretex
             if not response.hasFailed():
@@ -89,12 +97,8 @@ class LoggerUploadWorker(Thread):
         return future.result()
 
     def run(self) -> None:
-        while True:
+        while not self.isStopped:
             time.sleep(self.__waitTime)
-
-            # Check if logger is attached to a run
-            if self._taskRunId is None:
-                continue
 
             try:
                 success = self.uploadLogs()
@@ -107,11 +111,3 @@ class LoggerUploadWorker(Thread):
             else:
                 # If upload of logs failed, double the wait time
                 self.__waitTime *= 2
-
-    def reset(self) -> None:
-        self.__queue.shutdown(wait = True)
-        self.__queue = ThreadPoolExecutor(max_workers = 1, thread_name_prefix = "LogQueue")
-
-        self._taskRunId = None
-        self.__waitTime = MAX_WAIT_TIME_BEFORE_UPDATE
-        self.__pendingLogs.clear()

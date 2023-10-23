@@ -17,15 +17,18 @@
 
 from typing import Any, TypeVar, Optional, Generic, Dict, Union
 from typing_extensions import Self
+from datetime import datetime
 from pathlib import Path
 
 import os
+import time
 
 from .sample import Sample
 from ..project import ProjectType
 from ... import folder_manager
 from ...codable import KeyDescriptor
 from ...networking import NetworkObject, networkManager, FileData
+from ...utils import TIME_ZONE
 
 
 SampleDataType = TypeVar("SampleDataType")
@@ -40,6 +43,7 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
 
     isLocked: bool
     projectType: ProjectType
+    lastModified: datetime
 
     @property
     def path(self) -> Path:
@@ -64,7 +68,9 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
     @classmethod
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
         descriptors = super()._keyDescriptors()
+
         descriptors["projectType"] = KeyDescriptor("project_task", ProjectType)
+        descriptors["lastModified"] = KeyDescriptor("storage_last_modified", datetime)
 
         return descriptors
 
@@ -106,11 +112,31 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
             FileData.createFromPath("file", filePath, mimeType = mimeType)
         ]
 
-        response = networkManager.genericUpload("session/import", files, parameters)
+        response = networkManager.formData("session/import", parameters, files)
         if response.hasFailed():
             return None
 
-        return cls.decode(response.json)
+        return cls.decode(response.getJson(dict))
+
+    def modifiedSinceLastDownload(self) -> bool:
+        """
+            Checking if sample has been modified since last download, if the sample is already
+            stored locally
+
+            Returns
+            -------
+            bool -> False if sample has not changed since last download, True otherwise
+
+            Raises
+            ------
+            FileNotFoundError -> sample file cannot be found
+        """
+
+        if not self.zipPath.exists():
+            raise FileNotFoundError(f">> [Coretex] Sample file could not be found at {self.zipPath}. Cannot check if file has been modified since last download")
+
+        lastModified = datetime.fromtimestamp(self.zipPath.stat().st_mtime).astimezone(TIME_ZONE)
+        return self.lastModified > lastModified
 
     def download(self, ignoreCache: bool = False) -> bool:
         """
@@ -121,14 +147,23 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
             bool -> False if response is failed, True otherwise
         """
 
-        response = networkManager.sampleDownload(
-            endpoint = f"{self.__class__._endpoint()}/export?id={self.id}",
-            destination = self.zipPath,
-            ignoreCache = ignoreCache
-        )
+        if self.zipPath.exists() and self.modifiedSinceLastDownload():
+            ignoreCache = True
+
+        if ignoreCache and self.zipPath.exists():
+            self.zipPath.unlink()
+
+        if not ignoreCache and self.zipPath.exists():
+            return True
+
+        response = networkManager.streamDownload(f"{self._endpoint()}/export", self.zipPath, {
+            "id": self.id
+        })
 
         # If sample was downloaded succesfully relink it to datasets to which it is linked
         if not response.hasFailed():
+            os.utime(self.zipPath, (os.stat(self.zipPath).st_atime, time.time()))
+
             for datasetPath in folder_manager.datasetsFolder.iterdir():
                 sampleHardLinkPath = datasetPath / self.zipPath.name
                 if not sampleHardLinkPath.exists():
