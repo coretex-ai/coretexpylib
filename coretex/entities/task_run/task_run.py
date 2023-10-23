@@ -403,7 +403,7 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
         }
 
         response = networkManager.genericJSONRequest(
-            f"{self._endpoint()}/submit-output-parameter",
+            f"{self._endpoint()}/output-parameter",
             RequestType.post,
             parameters
         )
