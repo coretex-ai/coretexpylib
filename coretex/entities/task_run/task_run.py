@@ -83,6 +83,7 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
     projectType: ProjectType
     taskId: int
     taskName: str
+    entryPoint: str
     createdById: str
     useCachedEnv: bool
     executionType: ExecutionType
