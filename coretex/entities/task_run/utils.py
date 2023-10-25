@@ -15,12 +15,18 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Type, Any, Optional
+from typing import Type, Any, Optional, List
+from pathlib import Path
+from zipfile import ZipFile, ZIP_DEFLATED
 
 import logging
 
+import git
+
 from ..dataset import *
 from ..project import ProjectType
+from ... import folder_manager
+from ...networking import FileData
 
 
 def getDatasetType(type_: ProjectType, isLocal: bool) -> Type[Dataset]:
@@ -59,3 +65,43 @@ def fetchDataset(datasetType: Type[Dataset], value: Any) -> Optional[Dataset]:
         return datasetType.fetchById(value)
 
     return None
+
+
+def getSnapshotFiles(dirPath: Path, ignoredFiles: List[str]) -> List[Path]:
+    snapshotFiles: List[Path] = []
+    if (dirPath / ".coretexignore").exists():
+        return []
+
+    for path in dirPath.iterdir():
+        if path.is_dir():
+            snapshotFiles.extend(getSnapshotFiles(path, ignoredFiles))
+        elif str(path) not in ignoredFiles:
+            snapshotFiles.append(path)
+
+    return snapshotFiles
+
+
+def uploadSnapshot(entryPoint: Optional[str]) -> List[FileData]:
+    defaultEntryPoints = [Path("./main.py"), Path("./main.r"), Path("./main.R")]
+    if entryPoint is None:
+        for defaultEntryPoint in defaultEntryPoints:
+            if defaultEntryPoint.exists():
+                entryPoint = defaultEntryPoint.name
+                break
+
+    if entryPoint is None or not Path(".", entryPoint).exists():
+        raise FileNotFoundError(">> [Coretex] Entry point file not found")
+
+    snapshotPath = folder_manager.temp / "snapshot.zip"
+    with ZipFile(snapshotPath, "w", ZIP_DEFLATED) as snapshotArchive:
+        repo = git.Repo("./", search_parent_directories = True)
+        ignoredFiles = repo.ignored(list(Path("./").rglob("*")))  # type: ignore
+
+        for requiredFile in [entryPoint, "requirements.txt"]:
+            snapshotArchive.write(requiredFile)
+            ignoredFiles.append(requiredFile)
+
+        for path in getSnapshotFiles(Path("./"), ignoredFiles):
+            snapshotArchive.write(path)
+
+    return [FileData.createFromPath("file", snapshotPath)]

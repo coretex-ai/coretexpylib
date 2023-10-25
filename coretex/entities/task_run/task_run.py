@@ -26,6 +26,7 @@ import logging
 import zipfile
 import json
 
+from .utils import uploadSnapshot
 from .artifact import Artifact
 from .status import TaskRunStatus
 from .metrics import Metric, MetricType
@@ -510,8 +511,10 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
     def runLocal(
         cls,
         projectId: int,
+        saveSnapshot: bool,
         name: Optional[str],
         description: Optional[str] = None,
+        entryPoint: Optional[str] = None,
         parameters: Optional[List[Dict[str, Any]]] = None
     ) -> Self:
 
@@ -544,24 +547,7 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
             parameters = []
 
         # Create snapshot
-        snapshotPath = folder_manager.temp / "snapshot.zip"
-        with ZipFile(snapshotPath, "w", ZIP_DEFLATED) as snapshotArchive:
-            optionalFiles = [
-                Path("./main.py"),
-                Path("./main.r"),
-                Path("./main.R"),
-                Path("./experiment.config"),
-                Path("./environment.yml"),
-                Path("./environment-osx.yml")
-            ]
-
-            for optionalFile in optionalFiles:
-                if not optionalFile.exists():
-                    continue
-
-                snapshotArchive.write(optionalFile, optionalFile.name)
-
-            snapshotArchive.write("requirements.txt")
+        files = uploadSnapshot(entryPoint) if saveSnapshot else None
 
         params = {
             "project_id": projectId,
@@ -570,10 +556,6 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
             "execution_type": ExecutionType.local.value,
             "parameters": json.dumps(parameters)
         }
-
-        files = [
-            FileData.createFromPath("file", snapshotPath)
-        ]
 
         response = networkManager.formData("run", params, files)
         if response.hasFailed():

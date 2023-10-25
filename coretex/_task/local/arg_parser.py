@@ -37,6 +37,9 @@ class LocalArgumentParser(Tap):
     name: Optional[str]
     description: Optional[str]
 
+    saveSnapshot: bool
+    entryPoint: Optional[str]
+
     def __init__(self, parameters: List[BaseParameter]) -> None:
         self.parameters = parameters
         for parameter in parameters:
@@ -53,6 +56,9 @@ class LocalArgumentParser(Tap):
         self.add_argument("--projectId", type = int)
         self.add_argument("--name", nargs = "?", type = str, default = None)
         self.add_argument("--description", nargs = "?", type = str, default = None)
+
+        self.add_argument("--saveSnapshot", action = 'store_const', const = True, default = False)
+        self.add_argument("--entryPoint", nargs = "?", type = str, default = None)
 
         for parameter in self.parameters:
             if parameter.dataType in [ParameterType.dataset, ParameterType.enum, ParameterType.enumList, ParameterType.imuVectors, ParameterType.range, ParameterType.boolean]:
