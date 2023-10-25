@@ -34,7 +34,7 @@ dependencies = [
   "psutil",
   "py3nvml",
   "gitpython",
-  ]
+]
 
 [project.urls]
 "Homepage" = "https://coretex.ai"

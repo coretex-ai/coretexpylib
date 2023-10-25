@@ -26,7 +26,7 @@ import logging
 import zipfile
 import json
 
-from .utils import uploadSnapshot
+from .utils import createSnapshot
 from .artifact import Artifact
 from .status import TaskRunStatus
 from .metrics import Metric, MetricType
@@ -546,9 +546,6 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
         if parameters is None:
             parameters = []
 
-        # Create snapshot
-        files = uploadSnapshot(entryPoint) if saveSnapshot else None
-
         params = {
             "project_id": projectId,
             "name": name,
@@ -556,6 +553,8 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
             "execution_type": ExecutionType.local.value,
             "parameters": json.dumps(parameters)
         }
+        # Create snapshot
+        files = [FileData.createFromPath("file", createSnapshot(entryPoint))] if saveSnapshot else None
 
         response = networkManager.formData("run", params, files)
         if response.hasFailed():

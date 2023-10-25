@@ -69,7 +69,7 @@ def fetchDataset(datasetType: Type[Dataset], value: Any) -> Optional[Dataset]:
 
 def getSnapshotFiles(dirPath: Path, ignoredFiles: List[str]) -> List[Path]:
     snapshotFiles: List[Path] = []
-    if (dirPath / ".coretexignore").exists():
+    if dirPath.joinpath(".coretexignore").exists():
         return []
 
     for path in dirPath.iterdir():
@@ -81,13 +81,17 @@ def getSnapshotFiles(dirPath: Path, ignoredFiles: List[str]) -> List[Path]:
     return snapshotFiles
 
 
-def uploadSnapshot(entryPoint: Optional[str]) -> List[FileData]:
-    defaultEntryPoints = [Path("./main.py"), Path("./main.r"), Path("./main.R")]
+def getDefaultEntryPoint() -> Optional[str]:
+    for defaultEntryPoint in [Path("./main.py"), Path("./main.r"), Path("./main.R")]:
+        if defaultEntryPoint.exists():
+            return defaultEntryPoint.name
+
+    return None
+
+
+def createSnapshot(entryPoint: Optional[str]) -> Path:
     if entryPoint is None:
-        for defaultEntryPoint in defaultEntryPoints:
-            if defaultEntryPoint.exists():
-                entryPoint = defaultEntryPoint.name
-                break
+        entryPoint = getDefaultEntryPoint()
 
     if entryPoint is None or not Path(".", entryPoint).exists():
         raise FileNotFoundError(">> [Coretex] Entry point file not found")
@@ -104,4 +108,4 @@ def uploadSnapshot(entryPoint: Optional[str]) -> List[FileData]:
         for path in getSnapshotFiles(Path("./"), ignoredFiles):
             snapshotArchive.write(path)
 
-    return [FileData.createFromPath("file", snapshotPath)]
+    return snapshotPath
