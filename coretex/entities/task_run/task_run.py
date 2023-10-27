@@ -337,6 +337,78 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
         response = networkManager.post(f"{self._endpoint()}/metrics", parameters)
         return not response.hasFailed()
 
+    def submitOutput(self, parameterName: str, value: Any) -> None:
+        """
+            Submit an output of this task to act as a parameter in tasks
+            downstream in the Workflow
+
+            Parameters
+            ----------
+            parameterName : str
+                name of the parameter
+            value : Any
+                value that will be sent (id of the object will be sent
+                in case Coretex objects like CustomDataset, Model etc. is submited)
+
+            Raises
+            ------
+            NetworkRequestError -> if the request failed
+
+            Example
+            -------
+            >>> from coretex import TaskRun
+            \b
+            >>> ExecutingTaskRun.current().submitOutputParameter(
+                    parameterName = "outputDataset"
+                    value = outputDataset
+                )
+        """
+
+        self.submitOutputs({parameterName: value})
+
+    def submitOutputs(self, outputs: Dict[str, Any]) -> None:
+        """
+            Submit multiple outputs of this task to act as parameters in tasks
+            downstream in the Workflow
+
+            Parameters
+            ----------
+            outputs : Dict[str, Any]
+                dictionary with outputs, with key being the name of the parameter
+                (id of the object will be sent in case Coretex objects like
+                CustomDataset, Model etc. is submited)
+
+            Raises
+            ------
+            NetworkRequestError -> if the request failed
+
+            Example
+            -------
+            >>> from coretex import TaskRun
+            \b
+            >>> result = ExecutingTaskRun.current().submitOutputParameters({
+                    "outputDataset": outputDataset,
+                    "numbers": 123
+                })
+        """
+
+        outputParameters: List[Dict[str, Any]] = []
+
+        for key, value in outputs.items():
+            if isinstance(value, NetworkObject):
+                value = value.id
+
+            outputParameters.append({key: value})
+
+        parameters: Dict[str, Any] = {
+            "id": self.id,
+            "parameters": outputParameters
+        }
+
+        response = networkManager.post(f"{self._endpoint()}/output-parameter", parameters)
+        if response.hasFailed():
+            raise NetworkRequestError(response, ">> [Coretex] Failed to submit outputs")
+
     def downloadTask(self) -> bool:
         """
             Downloads task snapshot linked to the TaskRun
