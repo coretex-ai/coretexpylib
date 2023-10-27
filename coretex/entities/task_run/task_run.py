@@ -348,16 +348,18 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
                 value that will be sent (id of the object will be sent
                 in case Coretex objects like CustomDataset, Model etc. is submited)
 
+            Raises
+            ------
+            NetworkRequestError -> if the request failed
+
             Example
             -------
             >>> from coretex import TaskRun
             \b
-            >>> result = ExecutingTaskRun.current().submitOutputParameter(
+            >>> ExecutingTaskRun.current().submitOutputParameter(
                     parameterName = "outputDataset"
                     value = outputDataset
                 )
-            >>> print(result)
-            True
         """
 
         self.submitOutputs({parameterName: value})
@@ -386,8 +388,6 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
                     "outputDataset": outputDataset,
                     "numbers": 123
                 })
-            >>> print(result)
-            True
         """
 
         outputParameters: List[Dict[str, Any]] = []
