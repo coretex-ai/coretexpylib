@@ -66,22 +66,3 @@ def logRequestFailure(endpoint: str, response: NetworkResponse) -> None:
             logging.getLogger("coretexpylib").debug(f"\tResponse: {responseJson}")
     except (ValueError, TypeError):
         logging.getLogger("coretexpylib").debug(f"\tResponse: {response.getContent()!r}")
-
-
-def badRequest(error: str) -> Dict[str, Any]:
-    return {
-        "code": 400,
-        "body": {
-            "error": error
-        }
-    }
-
-
-def success(data: Optional[Any] = None) -> Dict[str, Any]:
-    if data is None:
-        data = {}
-
-    return {
-        "code": 200,
-        "body": data
-    }
