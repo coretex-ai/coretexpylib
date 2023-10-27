@@ -554,7 +554,10 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
             "parameters": json.dumps(parameters)
         }
         # Create snapshot
-        files = [FileData.createFromPath("file", createSnapshot(entryPoint))] if saveSnapshot else None
+        if saveSnapshot:
+            files = [FileData.createFromPath("file", createSnapshot(entryPoint))]
+        else:
+            files = None
 
         response = networkManager.formData("run", params, files)
         if response.hasFailed():

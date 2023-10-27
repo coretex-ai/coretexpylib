@@ -69,6 +69,7 @@ def fetchDataset(datasetType: Type[Dataset], value: Any) -> Optional[Dataset]:
 
 def getSnapshotFiles(dirPath: Path, ignoredFiles: List[str]) -> List[Path]:
     snapshotFiles: List[Path] = []
+
     if dirPath.joinpath(".coretexignore").exists():
         return []
 
@@ -82,7 +83,7 @@ def getSnapshotFiles(dirPath: Path, ignoredFiles: List[str]) -> List[Path]:
 
 
 def getDefaultEntryPoint() -> Optional[str]:
-    for defaultEntryPoint in [Path("./main.py"), Path("./main.r"), Path("./main.R")]:
+    for defaultEntryPoint in [Path(".", "main.py"), Path(".", "main.r"), Path(".", "main.R")]:
         if defaultEntryPoint.exists():
             return defaultEntryPoint.name
 
@@ -98,14 +99,13 @@ def createSnapshot(entryPoint: Optional[str]) -> Path:
 
     snapshotPath = folder_manager.temp / "snapshot.zip"
     with ZipFile(snapshotPath, "w", ZIP_DEFLATED) as snapshotArchive:
-        repo = git.Repo("./", search_parent_directories = True)
-        ignoredFiles = repo.ignored(list(Path("./").rglob("*")))  # type: ignore
+        repo = git.Repo(Path.cwd(), search_parent_directories = True)
+        ignoredFiles = repo.ignored(list(Path.cwd().rglob("*")))  # type: ignore
 
-        for requiredFile in [entryPoint, "requirements.txt"]:
-            snapshotArchive.write(requiredFile)
-            ignoredFiles.append(requiredFile)
+        if not Path(entryPoint).exists() or not Path("requirements.txt").exists():
+            raise FileNotFoundError(f">> [Coretex] Required files \"{entryPoint}\" and \"requirements.txt\"")
 
-        for path in getSnapshotFiles(Path("./"), ignoredFiles):
+        for path in getSnapshotFiles(Path.cwd(), ignoredFiles):
             snapshotArchive.write(path)
 
     return snapshotPath
