@@ -23,6 +23,7 @@ import logging
 
 from watchdog.events import FileSystemEventHandler, DirCreatedEvent, FileCreatedEvent
 from watchdog.observers import Observer
+from watchdog.observers.api import BaseObserver
 
 from ...entities import TaskRun
 
@@ -47,7 +48,7 @@ class FileEventHandler(FileSystemEventHandler):
             logging.getLogger("coretexpylib").debug(f">> [Coretex] Failed to create artifact from \"{filePath}\"")
 
 
-def startTracking(taskRun: TaskRun) -> None:
+def startTracking(taskRun: TaskRun) -> BaseObserver:
     observer = Observer()
     observer.setName("ArtifactTracker")
 
@@ -58,3 +59,4 @@ def startTracking(taskRun: TaskRun) -> None:
     )  # type: ignore[no-untyped-call]
 
     observer.start()  # type: ignore[no-untyped-call]
+    return observer

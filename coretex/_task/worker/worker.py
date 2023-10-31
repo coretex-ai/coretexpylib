@@ -17,7 +17,7 @@
 
 from typing import Optional, Type
 from typing_extensions import Self
-from types import TracebackType
+from types import TracebackType, FrameType
 from multiprocessing.connection import Connection
 
 import time
@@ -25,6 +25,7 @@ import timeit
 import os
 import logging
 import multiprocessing
+import signal
 
 import psutil
 
@@ -42,6 +43,16 @@ def _update(taskRun: TaskRun) -> None:
 
 
 def _taskRunWorker(output: Connection, refreshToken: str, taskRunId: int, parentId: int) -> None:
+    isStopped = False
+
+    def handleTerminateSignal(signum: int, frame: Optional[FrameType]) -> None:
+        if signum != signal.SIGTERM:
+            return
+
+        nonlocal isStopped
+        isStopped = True
+
+    signal.signal(signal.SIGTERM, handleTerminateSignal)
     utils.initializeLogger(taskRunId)
 
     response = networkManager.authenticateWithRefreshToken(refreshToken)
@@ -67,9 +78,9 @@ def _taskRunWorker(output: Connection, refreshToken: str, taskRunId: int, parent
     current = psutil.Process(os.getpid())
 
     # Start tracking files which are created inside current working directory
-    artifacts.startTracking(taskRun)
+    tracker = artifacts.startTracking(taskRun)
 
-    while parent.is_running():
+    while parent.is_running() and not isStopped:
         logging.getLogger("coretexpylib").debug(f">> [Coretex] Worker process id {current.pid}, parent process id {parent.pid}")
 
         # Measure elapsed time to calculate for how long should the process sleep
@@ -82,6 +93,8 @@ def _taskRunWorker(output: Connection, refreshToken: str, taskRunId: int, parent
             sleepTime = 5 - diff
             logging.getLogger("coretexpylib").debug(f">> [Coretex] Sleeping for {sleepTime}s")
             time.sleep(sleepTime)
+
+    tracker.stop()  # type: ignore
 
 
 class TaskRunWorker:
@@ -112,7 +125,7 @@ class TaskRunWorker:
     def stop(self) -> None:
         logging.getLogger("coretexpylib").debug(">> [Coretex] Stopping the worker process")
 
-        self.__process.kill()
+        self.__process.terminate()
         self.__process.join()
 
     def __enter__(self) -> Self:

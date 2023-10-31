@@ -37,6 +37,8 @@ class LocalTaskCallback(TaskCallback):
         super().__init__(taskRun, self._interceptor)
 
     def _onTaskRunFinished(self, status: TaskRunStatus) -> None:
+        self._worker.stop()
+
         self._interceptor.flushLogs()
         self._interceptor.stop()
 
@@ -77,8 +79,3 @@ class LocalTaskCallback(TaskCallback):
             process.wait()
 
         self._onTaskRunFinished(TaskRunStatus.stopped)
-
-    def onCleanUp(self) -> None:
-        self._worker.stop()
-
-        super().onCleanUp()
