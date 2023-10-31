@@ -32,7 +32,7 @@ def processLocal(args: Optional[List[str]] = None) -> Tuple[int, LocalTaskCallba
     parameters = LocalArgumentParser.readTaskRunConfig()
 
     parser = LocalArgumentParser(parameters)
-    parser.parse_args(args)
+    namespace, _ = parser.parse_known_args(args)
 
     for parameter in parameters:
         parameter.value = parser.getParameter(parameter.name, parameter.value)
@@ -43,9 +43,9 @@ def processLocal(args: Optional[List[str]] = None) -> Tuple[int, LocalTaskCallba
         sys.exit(1)
 
     # Authenticate
-    if parser.username is not None and parser.password is not None:
+    if namespace.username is not None and namespace.password is not None:
         logging.getLogger("coretexpylib").info(">> [Coretex] Logging in with provided credentials")
-        response = networkManager.authenticate(parser.username, parser.password)
+        response = networkManager.authenticate(namespace.username, namespace.password)
     elif networkManager.hasStoredCredentials:
         logging.getLogger("coretexpylib").info(">> [Coretex] Logging in with stored credentials")
         response = networkManager.authenticateWithStoredCredentials()
@@ -62,9 +62,9 @@ def processLocal(args: Optional[List[str]] = None) -> Tuple[int, LocalTaskCallba
 
     # Create TaskRun
     taskRun: TaskRun = TaskRun.runLocal(
-        parser.projectId,
-        parser.name,
-        parser.description,
+        namespace.projectId,
+        namespace.name,
+        namespace.description,
         [parameter.encode() for parameter in parameters]
     )
 
