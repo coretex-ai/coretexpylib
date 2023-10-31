@@ -33,6 +33,7 @@ dependencies = [
   "typing-extensions",
   "psutil",
   "py3nvml",
+  "watchdog"
 ]
 
 [project.urls]
