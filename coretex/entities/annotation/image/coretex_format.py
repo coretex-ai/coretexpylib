@@ -121,7 +121,7 @@ class CoretexSegmentationInstance(Codable):
             draw = ImageDraw.Draw(image)
             draw.polygon(toPoly(segmentation), fill = 1)
 
-        return np.asarray(image)
+        return np.array(image)
 
     def extractBinaryMask(self, width: int, height: int) -> np.ndarray:
         """
@@ -156,10 +156,10 @@ class CoretexSegmentationInstance(Codable):
 
         flattenedSegmentations = [element for sublist in self.segmentations for element in sublist]
 
-        listCX = [value for index, value in enumerate(flattenedSegmentations) if index % 2 == 0]
+        listCX = [value for index, value in enumerate(flattenedSegmentations) if index % 2 == 0 and index < 8]
         centerX = sum(listCX) // len(listCX)
 
-        listCY = [value for index, value in enumerate(flattenedSegmentations) if index % 2 != 0]
+        listCY = [value for index, value in enumerate(flattenedSegmentations) if index % 2 != 0 and index < 8]
         centerY = sum(listCY) // len(listCY)
 
         return centerX, centerY
