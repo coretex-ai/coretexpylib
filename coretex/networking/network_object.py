@@ -206,7 +206,7 @@ class NetworkObject(Codable):
 
         objects: List[Self] = []
 
-        for obj in response.getJson(dict):
+        for obj in response.getJson(list):
             objects.append(cls.decode(obj))
 
         return objects
