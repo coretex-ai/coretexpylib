@@ -154,12 +154,13 @@ class CoretexSegmentationInstance(Codable):
             Tuple[int, int] -> x, y coordinates of centroid
         """
 
-        flattenedSegmentations = [element for sublist in self.segmentations for element in sublist]
+        flattenedSegmentations = [element for sublist in self.segmentations for i,  element in enumerate(sublist)\
+                                  if i < len(sublist - 2)]
 
-        listCX = [value for index, value in enumerate(flattenedSegmentations) if index % 2 == 0 and index < 8]
+        listCX = [value for index, value in enumerate(flattenedSegmentations) if index % 2 == 0]
         centerX = sum(listCX) // len(listCX)
 
-        listCY = [value for index, value in enumerate(flattenedSegmentations) if index % 2 != 0 and index < 8]
+        listCY = [value for index, value in enumerate(flattenedSegmentations) if index % 2 != 0]
         centerY = sum(listCY) // len(listCY)
 
         return centerX, centerY
