@@ -73,8 +73,6 @@ class TaskCallback:
         pass
 
     def onNetworkConnectionLost(self) -> None:
-        folder_manager.clearTempFiles()
-
         sys.exit(1)
 
     def onCleanUp(self) -> None:
@@ -84,5 +82,4 @@ class TaskCallback:
         except:
             pass
 
-        folder_manager.clearTempFiles()
         setCurrentTaskRun(None)

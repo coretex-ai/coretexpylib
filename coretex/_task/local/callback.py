@@ -79,3 +79,8 @@ class LocalTaskCallback(TaskCallback):
             process.wait()
 
         self._onTaskRunFinished(TaskRunStatus.stopped)
+
+    def onCleanUp(self) -> None:
+        folder_manager.clearTempFiles()
+
+        super().onCleanUp()
