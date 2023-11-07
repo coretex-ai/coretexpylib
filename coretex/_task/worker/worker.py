@@ -49,6 +49,8 @@ def _taskRunWorker(output: Connection, refreshToken: str, taskRunId: int, parent
         if signum != signal.SIGTERM:
             return
 
+        logging.getLogger("coretexpylib").debug(">> [Coretex] Received terminate signal. Terminating...")
+
         nonlocal isStopped
         isStopped = True
 
@@ -95,6 +97,9 @@ def _taskRunWorker(output: Connection, refreshToken: str, taskRunId: int, parent
             time.sleep(sleepTime)
 
     tracker.stop()  # type: ignore
+    tracker.join()
+
+    logging.getLogger("coretexpylib").debug(">> [Coretex] Finished")
 
 
 class TaskRunWorker:

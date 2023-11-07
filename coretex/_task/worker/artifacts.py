@@ -28,6 +28,9 @@ from watchdog.observers.api import BaseObserver
 from ...entities import TaskRun
 
 
+IGNORED_FILES = ["_coretex.py"]
+
+
 class FileEventHandler(FileSystemEventHandler):
 
     def __init__(self, taskRun: TaskRun, root: Path) -> None:
@@ -41,9 +44,18 @@ class FileEventHandler(FileSystemEventHandler):
             return
 
         filePath = Path(event.src_path)
-        relativePath = filePath.relative_to(self.root)
 
+        if filePath.parent.joinpath(".coretexignore").exists():
+            return
+
+        if filePath.name in IGNORED_FILES:
+            return
+
+        logging.getLogger("coretex").debug(f">> [Coretex] File created at path \"{filePath}\"")
+
+        relativePath = filePath.relative_to(self.root)
         artifact = self.taskRun.createArtifact(filePath, str(relativePath))
+
         if artifact is None:
             logging.getLogger("coretexpylib").debug(f">> [Coretex] Failed to create artifact from \"{filePath}\"")
 
@@ -52,9 +64,13 @@ def startTracking(taskRun: TaskRun) -> BaseObserver:
     observer = Observer()
     observer.setName("ArtifactTracker")
 
+    # If local use current working dir, else use task path
+    path = Path.cwd() if taskRun.isLocal else taskRun.taskPath
+    logging.getLogger("coretexpylib").debug(f">> [Coretex] Tracking files created inside \"{path}\"")
+
     observer.schedule(
-        FileEventHandler(taskRun, Path.cwd()),
-        Path.cwd(),
+        FileEventHandler(taskRun, path),
+        path,
         recursive = True
     )  # type: ignore[no-untyped-call]
 
