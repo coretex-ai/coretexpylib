@@ -622,7 +622,7 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
                 Path("./main.py"),
                 Path("./main.r"),
                 Path("./main.R"),
-                Path("./experiment.config"),
+                Path("./task.yaml"),
                 Path("./environment.yml"),
                 Path("./environment-osx.yml")
             ]
