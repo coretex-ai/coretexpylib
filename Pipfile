@@ -16,6 +16,7 @@ typing-extensions = "*"
 psutil = "*"
 py3nvml = "*"
 gitpython = "*"
+pyyaml = "*"
 
 [dev-packages]
 mypy = "*"

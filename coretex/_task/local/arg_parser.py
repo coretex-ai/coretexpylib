@@ -15,17 +15,11 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, List, Dict, Any
-from pathlib import Path
-
-import json
+from typing import Optional, List, Any
 
 from tap import Tap
 
-from ...entities import BaseParameter, BaseListParameter, parameter_factory, ParameterType
-
-
-EXPERIMENT_CONGIF_PATH = Path(".", "experiment.config")
+from ...entities import BaseParameter, BaseListParameter, ParameterType
 
 
 class LocalArgumentParser(Tap):
@@ -77,23 +71,3 @@ class LocalArgumentParser(Tap):
             return default
 
         return parsedParameter
-
-    @classmethod
-    def readTaskRunConfig(cls) -> List[BaseParameter]:
-        parameters: List[BaseParameter] = []
-
-        if not EXPERIMENT_CONGIF_PATH.exists():
-            return []
-
-        with EXPERIMENT_CONGIF_PATH.open() as configFile:
-            configContent: Dict[str, Any] = json.load(configFile)
-            parametersJson = configContent["parameters"]
-
-            if not isinstance(parametersJson, list):
-                raise ValueError(">> [Coretex] Invalid experiment.config file. Property 'parameters' must be an array")
-
-            for parameterJson in parametersJson:
-                parameter = parameter_factory.create(parameterJson)
-                parameters.append(parameter)
-
-        return parameters

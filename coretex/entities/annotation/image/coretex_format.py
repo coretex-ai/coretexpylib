@@ -121,7 +121,7 @@ class CoretexSegmentationInstance(Codable):
             draw = ImageDraw.Draw(image)
             draw.polygon(toPoly(segmentation), fill = 1)
 
-        return np.asarray(image)
+        return np.array(image)
 
     def extractBinaryMask(self, width: int, height: int) -> np.ndarray:
         """
