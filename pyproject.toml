@@ -33,7 +33,7 @@ dependencies = [
   "typing-extensions",
   "psutil",
   "py3nvml",
-  "pyyaml"
+  "pyyaml==6.0.1"
 ]
 
 [project.urls]
