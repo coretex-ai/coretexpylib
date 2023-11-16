@@ -90,17 +90,15 @@ def getDefaultEntryPoint() -> Optional[str]:
     return None
 
 
-def createSnapshot(entryPoint: Optional[str]) -> Path:
-    if entryPoint is None:
-        entryPoint = getDefaultEntryPoint()
-
+def createSnapshot() -> Path:
+    entryPoint = getDefaultEntryPoint()
     if entryPoint is None or not Path(".", entryPoint).exists():
         raise FileNotFoundError(">> [Coretex] Entry point file not found")
 
     snapshotPath = folder_manager.temp / "snapshot.zip"
     with ZipFile(snapshotPath, "w", ZIP_DEFLATED) as snapshotArchive:
         repo = git.Repo(Path.cwd(), search_parent_directories = True)
-        ignoredFiles = repo.ignored(list(Path.cwd().rglob("*")))  # type: ignore
+        ignoredFiles = repo.ignored(*list(Path.cwd().rglob("*")))
 
         if not Path(entryPoint).exists() or not Path("requirements.txt").exists():
             raise FileNotFoundError(f">> [Coretex] Required files \"{entryPoint}\" and \"requirements.txt\"")

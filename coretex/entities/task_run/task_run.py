@@ -586,7 +586,6 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
         saveSnapshot: bool,
         name: Optional[str],
         description: Optional[str] = None,
-        entryPoint: Optional[str] = None,
         parameters: Optional[List[Dict[str, Any]]] = None
     ) -> Self:
 
@@ -599,6 +598,8 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
             ----------
             projectId : int
                 id of project that is being used for starting TaskRun
+            saveSnapshot : bool
+                true if snapshot of local files will be saved to Coretex
             name : Optional[str]
                 name of TaskRun (not required)
             description : Optional[str]
@@ -627,7 +628,7 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
         }
         # Create snapshot
         if saveSnapshot:
-            files = [FileData.createFromPath("file", createSnapshot(entryPoint))]
+            files = [FileData.createFromPath("file", createSnapshot())]
         else:
             files = None
 

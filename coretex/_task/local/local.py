@@ -66,7 +66,6 @@ def processLocal(args: Optional[List[str]] = None) -> Tuple[int, LocalTaskCallba
         parser.saveSnapshot,
         parser.name,
         parser.description,
-        parser.entryPoint,
         [parameter.encode() for parameter in parameters]
     )
 
