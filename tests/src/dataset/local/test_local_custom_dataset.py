@@ -20,7 +20,7 @@ from pathlib import Path
 
 import unittest
 
-from coretex import LocalCustomSample, LocalCustomDataset, SpaceTask
+from coretex import LocalCustomSample, LocalCustomDataset, ProjectType
 
 from ..base_dataset_test import BaseDatasetTest
 from ...utils import createLocalEnvironmentFor
@@ -31,7 +31,7 @@ class TestLocalCustomDataset(BaseDatasetTest.Base[LocalCustomDataset]):
     def setUp(self) -> None:
         super().setUp()
 
-        self.dataset = createLocalEnvironmentFor(SpaceTask.other, LocalCustomDataset)
+        self.dataset = createLocalEnvironmentFor(ProjectType.other, LocalCustomDataset)
         self.sampleType = LocalCustomSample
 
     def test_loadDefault(self) -> None:

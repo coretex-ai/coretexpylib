@@ -20,7 +20,6 @@ from typing_extensions import Self
 
 import inflection
 
-from .request_type import RequestType
 from .network_manager import networkManager
 from .network_response import NetworkRequestError
 from ..codable import Codable
@@ -126,13 +125,13 @@ class NetworkObject(Codable):
 
         return True
 
-    def update(self, parameters: Dict[str, Any]) -> bool:
+    def update(self, **kwargs: Any) -> bool:
         """
             Sends a PUT request to Coretex backend
 
             Parameters
             ----------
-            parameters : Dict[str, Any]
+            **kwargs : Dict[str, Any]
                 parameters which will be sent as request body
 
             Returns
@@ -143,11 +142,8 @@ class NetworkObject(Codable):
         if self.isDeleted:
             return False
 
-        return not networkManager.genericJSONRequest(
-            endpoint = f"{self.__class__._endpoint()}/{self.id}",
-            requestType = RequestType.put,
-            parameters = parameters
-        ).hasFailed()
+        endpoint = f"{self._endpoint()}/{self.id}"
+        return not networkManager.put(endpoint, kwargs).hasFailed()
 
     def delete(self) -> bool:
         """
@@ -161,18 +157,17 @@ class NetworkObject(Codable):
         if self.isDeleted:
             return False
 
-        return not networkManager.genericDelete(
-            f"{self.__class__._endpoint()}/{self.id}"
-        ).hasFailed()
+        endpoint = f"{self._endpoint()}/{self.id}"
+        return not networkManager.delete(endpoint).hasFailed()
 
     @classmethod
-    def create(cls, parameters: Dict[str, Any]) -> Optional[Self]:
+    def create(cls, **kwargs: Any) -> Optional[Self]:
         """
             Creates the entity linked to this class on Coretex backend
 
             Parameters
             ----------
-            parameters : Dict[str, Any]
+            **kwargs : Dict[str, Any]
                 parameters which will be sent as request body
 
             Returns
@@ -180,80 +175,77 @@ class NetworkObject(Codable):
             Optional[Self] -> created object if request was successful, None otherwise
         """
 
-        response = networkManager.genericJSONRequest(
-            endpoint=cls._endpoint(),
-            requestType=RequestType.post,
-            parameters=parameters
-        )
-
+        response = networkManager.post(cls._endpoint(), kwargs)
         if response.hasFailed():
             return None
 
-        return cls.decode(response.json)
+        return cls.decode(response.getJson(dict))
 
     @classmethod
-    def fetchAll(cls, queryParameters: Optional[List[str]] = None, pageSize: int = DEFAULT_PAGE_SIZE) -> List[Self]:
+    def fetchAll(cls, **kwargs: Any) -> List[Self]:
         """
             Fetches all entities from Coretex backend which match
             the given predicate
 
             Parameters
             ----------
-            queryParameters : Optional[List[str]]
-                query parameters (predicate) which will be appended to URL (Not required)
-            pageSize : int
-                Specified page size (entity count) which will be fetched, default = 100
+            **kwargs : Optional[Dict[str, Any]]
+                query parameters (predicate) which will be appended to URL
 
             Returns
             -------
             List[Self] -> list of all fetched entities
+
+            Raises
+            ------
+            NetworkRequestError -> If the request for fetching failed
         """
 
-        if queryParameters is None:
-            queryParameters = [f"page_size={pageSize}"]
-        else:
-            queryParameters.append(f"page_size={pageSize}")
+        if "page_size" not in kwargs:
+            kwargs["page_size"] = DEFAULT_PAGE_SIZE
 
-        formattedQueryParameters = "&".join(queryParameters)
-        endpoint = f"{cls._endpoint()}?{formattedQueryParameters}"
-
-        response = networkManager.genericJSONRequest(endpoint, RequestType.get)
-
+        response = networkManager.get(cls._endpoint(), kwargs)
         if response.hasFailed():
-            return []
+            raise NetworkRequestError(response, f"Failed to fetch \"{cls.__name__}\" with parameters \"{kwargs}\"")
 
         objects: List[Self] = []
 
-        for obj in response.json:
+        for obj in response.getJson(list):
             objects.append(cls.decode(obj))
 
         return objects
 
     @classmethod
-    def fetchOne(cls, queryParameters: Optional[List[str]] = None) -> Self:
+    def fetchOne(cls, **kwargs: Any) -> Self:
         """
             Fetches one entity from Coretex backend which matches
             the given predicate
 
             Parameters
             ----------
-            queryParameters : Optional[List[str]]
-                query parameters (predicate) which will be appended to URL (Not required)
+            **kwargs : Optional[Dict[str, Any]]
+                query parameters (predicate) which will be appended to URL
 
             Returns
             -------
             Self -> fetched entity
+
+            Raises
+            ------
+            NetworkRequestError -> If the request for fetching failed
+            ValueError -> If no object was fetched
         """
 
-        result = cls.fetchAll(queryParameters, pageSize = 1)
-        print(len(result))
+        kwargs["page_size"] = 1
+        result = cls.fetchAll(**kwargs)
+
         if len(result) == 0:
-            raise ValueError(f"Failed to fetch \"{cls.__name__}\" with parameters \"{queryParameters}\"")
+            raise ValueError(f"Failed to fetch \"{cls.__name__}\" with parameters \"{kwargs}\"")
 
         return result[0]
 
     @classmethod
-    def fetchById(cls, objectId: int, queryParameters: Optional[List[str]] = None) -> Self:
+    def fetchById(cls, objectId: int, **kwargs: Any) -> Self:
         """
             Fetches a single entity with the matching id
 
@@ -261,8 +253,8 @@ class NetworkObject(Codable):
             ----------
             objectId : int
                 id of the object which is fetched
-            queryParameters : Optional[List[str]]
-                query parameters (predicate) which will be appended to URL (Not required)
+            **kwargs : Optional[Dict[str, Any]]
+                query parameters (predicate) which will be appended to URL
 
             Returns
             -------
@@ -273,13 +265,12 @@ class NetworkObject(Codable):
             NetworkRequestError -> If the request for fetching failed
         """
 
-        endpoint = f"{cls._endpoint()}/{objectId}"
-        if queryParameters is not None:
-            formattedQueryParameters = "&".join(queryParameters)
-            endpoint = f"{endpoint}?{formattedQueryParameters}"
+        if "page_size" not in kwargs:
+            kwargs["page_size"] = DEFAULT_PAGE_SIZE
 
-        response = networkManager.genericJSONRequest(endpoint, RequestType.get)
+        response = networkManager.get(f"{cls._endpoint()}/{objectId}", kwargs)
+
         if response.hasFailed():
             raise NetworkRequestError(response, f"Failed to fetch \"{cls.__name__}\" with ID \"{objectId}\"")
 
-        return cls.decode(response.json)
+        return cls.decode(response.getJson(dict))

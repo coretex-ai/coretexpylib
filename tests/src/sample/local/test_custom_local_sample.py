@@ -17,7 +17,7 @@
 
 import unittest
 
-from coretex import LocalCustomSample, LocalCustomDataset, SpaceTask
+from coretex import LocalCustomSample, LocalCustomDataset, ProjectType
 
 from ..base_sample_test import BaseSampleTest
 from ...utils import createLocalEnvironmentFor
@@ -31,7 +31,7 @@ class TestCustomLocalSample(BaseSampleTest.Base):
     def setUpClass(cls) -> None:
         super().setUpClass()
 
-        dataset = createLocalEnvironmentFor(SpaceTask.other, LocalCustomDataset)
+        dataset = createLocalEnvironmentFor(ProjectType.other, LocalCustomDataset)
         cls.sample = dataset.samples[0]
 
 

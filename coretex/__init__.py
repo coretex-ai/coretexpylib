@@ -20,9 +20,11 @@ from ._configuration import _syncConfigWithEnv
 _syncConfigWithEnv()
 
 
+# Internal - not for outside use
 from ._logger import _initializeDefaultLogger
 _initializeDefaultLogger()
 
 
 # Use this only
-from .coretex import *
+from .entities import *
+from ._task import currentTaskRun, initializeRTask, TaskRunWorker
