@@ -25,7 +25,7 @@ import hashlib
 
 import requests
 
-from .. import folder_manager
+from . import folder_manager
 
 
 class CacheException(Exception):
