@@ -33,6 +33,7 @@ dependencies = [
   "typing-extensions",
   "psutil",
   "py3nvml",
+  "gitpython",
   "pyyaml==6.0.1"
 ]
 

@@ -15,6 +15,7 @@ typed-argument-parser = "*"
 typing-extensions = "*"
 psutil = "*"
 py3nvml = "*"
+gitpython = "*"
 pyyaml = "*"
 
 [dev-packages]
