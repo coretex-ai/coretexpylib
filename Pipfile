@@ -16,6 +16,8 @@ typing-extensions = "*"
 psutil = "*"
 py3nvml = "*"
 pyyaml = "*"
+click = "*"
+tabulate = "*"
 
 [dev-packages]
 mypy = "*"
