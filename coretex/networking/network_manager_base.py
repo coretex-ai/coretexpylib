@@ -200,11 +200,17 @@ class NetworkManagerBase(ABC):
                 logRequestFailure(endpoint, response)
 
             if self.shouldRetry(retryCount, response):
+                if self._apiToken is not None:
+                    headers[API_TOKEN_HEADER] = self._apiToken
+
                 return self.request(endpoint, requestType, headers, query, body, files, auth, stream, retryCount + 1)
 
             return response
         except:
             if self.shouldRetry(retryCount, None):
+                if self._apiToken is not None:
+                    headers[API_TOKEN_HEADER] = self._apiToken
+
                 return self.request(endpoint, requestType, headers, query, body, files, auth, stream, retryCount + 1)
 
             raise RequestFailedError(endpoint, requestType)
