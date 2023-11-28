@@ -61,4 +61,7 @@ def validateRangeStructure(name: str, value: Dict[str, Any], required: bool) -> 
         elementTypes = ", ".join({type(element).__name__ for element in value.values()})
         return False, f"Elements of range parameter \"{name}\" have invalid type. Expected \"int\" got \"{elementTypes}\""
 
+    if any(type(element) is float for element in value.values()):
+        return False, "Range parameter does not support float values"
+
     return True, None
