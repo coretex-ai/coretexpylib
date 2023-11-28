@@ -64,6 +64,7 @@ def processLocal(args: Optional[List[str]] = None) -> Tuple[int, LocalTaskCallba
     # Create TaskRun
     taskRun: TaskRun = TaskRun.runLocal(
         parser.projectId,
+        parser.saveSnapshot,
         parser.name,
         parser.description,
         [parameter.encode() for parameter in parameters]

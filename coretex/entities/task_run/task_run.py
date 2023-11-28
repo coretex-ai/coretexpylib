@@ -26,6 +26,7 @@ import logging
 import zipfile
 import json
 
+from .utils import createSnapshot
 from .artifact import Artifact
 from .status import TaskRunStatus
 from .metrics import Metric, MetricType
@@ -582,6 +583,7 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
     def runLocal(
         cls,
         projectId: int,
+        saveSnapshot: bool,
         name: Optional[str],
         description: Optional[str] = None,
         parameters: Optional[List[Dict[str, Any]]] = None
@@ -596,6 +598,8 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
             ----------
             projectId : int
                 id of project that is being used for starting TaskRun
+            saveSnapshot : bool
+                true if snapshot of local files will be saved to Coretex
             name : Optional[str]
                 name of TaskRun (not required)
             description : Optional[str]
@@ -615,26 +619,6 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
         if parameters is None:
             parameters = []
 
-        # Create snapshot
-        snapshotPath = folder_manager.temp / "snapshot.zip"
-        with ZipFile(snapshotPath, "w", ZIP_DEFLATED) as snapshotArchive:
-            optionalFiles = [
-                Path("./main.py"),
-                Path("./main.r"),
-                Path("./main.R"),
-                Path("./task.yaml"),
-                Path("./environment.yml"),
-                Path("./environment-osx.yml")
-            ]
-
-            for optionalFile in optionalFiles:
-                if not optionalFile.exists():
-                    continue
-
-                snapshotArchive.write(optionalFile, optionalFile.name)
-
-            snapshotArchive.write("requirements.txt")
-
         params = {
             "project_id": projectId,
             "name": name,
@@ -642,10 +626,11 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
             "execution_type": ExecutionType.local.value,
             "parameters": json.dumps(parameters)
         }
-
-        files = [
-            FileData.createFromPath("file", snapshotPath)
-        ]
+        # Create snapshot
+        if saveSnapshot:
+            files = [FileData.createFromPath("file", createSnapshot())]
+        else:
+            files = None
 
         response = networkManager.formData("run", params, files)
         if response.hasFailed():
