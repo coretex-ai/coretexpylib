@@ -195,7 +195,7 @@ class NetworkManagerBase(ABC):
                 headers = headers
             )
 
-            response = NetworkResponse(rawResponse)
+            response = NetworkResponse(rawResponse, endpoint)
             if response.hasFailed():
                 logRequestFailure(endpoint, response)
 
@@ -569,7 +569,8 @@ class NetworkManagerBase(ABC):
 
         if response is not None:
             # If we get unauthorized maybe API token is expired
-            if response.isUnauthorized():
+            # If refresh endpoint failed with unauthorized do not retry
+            if response.isUnauthorized() and response.endpoint != REFRESH_ENDPOINT:
                 refreshTokenResponse = self.refreshToken()
                 return not refreshTokenResponse.hasFailed()
 
