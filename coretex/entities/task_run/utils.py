@@ -74,6 +74,9 @@ def getSnapshotFiles(dirPath: Path, ignoredFiles: List[str]) -> List[Path]:
         return []
 
     for path in dirPath.iterdir():
+        if path.name == "venv":
+            continue
+
         if path.is_dir():
             snapshotFiles.extend(getSnapshotFiles(path, ignoredFiles))
         elif str(path) not in ignoredFiles:
@@ -98,12 +101,13 @@ def createSnapshot() -> Path:
     snapshotPath = folder_manager.temp / "snapshot.zip"
     with ZipFile(snapshotPath, "w", ZIP_DEFLATED) as snapshotArchive:
         repo = git.Repo(Path.cwd(), search_parent_directories = True)
-        ignoredFiles = repo.ignored(*list(Path.cwd().rglob("*")))
+        paths = [path for path in Path.cwd().rglob("*") if "venv" not in path.parts]
+        ignoredFiles = repo.ignored(*paths)
 
         if not Path(entryPoint).exists() or not Path("requirements.txt").exists():
             raise FileNotFoundError(f">> [Coretex] Required files \"{entryPoint}\" and \"requirements.txt\"")
 
         for path in getSnapshotFiles(Path.cwd(), ignoredFiles):
-            snapshotArchive.write(path)
+            snapshotArchive.write(path.relative_to(Path.cwd()))
 
     return snapshotPath
