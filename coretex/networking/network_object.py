@@ -195,6 +195,10 @@ class NetworkObject(Codable):
             Returns
             -------
             List[Self] -> list of all fetched entities
+
+            Raises
+            ------
+            NetworkRequestError -> If the request for fetching failed
         """
 
         if "page_size" not in kwargs:
@@ -202,14 +206,43 @@ class NetworkObject(Codable):
 
         response = networkManager.get(cls._endpoint(), kwargs)
         if response.hasFailed():
-            return []
+            raise NetworkRequestError(response, f"Failed to fetch \"{cls.__name__}\" with parameters \"{kwargs}\"")
 
         objects: List[Self] = []
 
-        for obj in response.getJson(dict):
+        for obj in response.getJson(list):
             objects.append(cls.decode(obj))
 
         return objects
+
+    @classmethod
+    def fetchOne(cls, **kwargs: Any) -> Self:
+        """
+            Fetches one entity from Coretex backend which matches
+            the given predicate
+
+            Parameters
+            ----------
+            **kwargs : Optional[Dict[str, Any]]
+                query parameters (predicate) which will be appended to URL
+
+            Returns
+            -------
+            Self -> fetched entity
+
+            Raises
+            ------
+            NetworkRequestError -> If the request for fetching failed
+            ValueError -> If no object was fetched
+        """
+
+        kwargs["page_size"] = 1
+        result = cls.fetchAll(**kwargs)
+
+        if len(result) == 0:
+            raise ValueError(f"Failed to fetch \"{cls.__name__}\" with parameters \"{kwargs}\"")
+
+        return result[0]
 
     @classmethod
     def fetchById(cls, objectId: int, **kwargs: Any) -> Self:

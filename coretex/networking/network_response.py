@@ -34,10 +34,13 @@ class NetworkResponse:
         ----------
         response : Response
             python.requests HTTP reponse
+        endpoint : str
+            endpoint to which the request was sent
     """
 
-    def __init__(self, response: Response):
+    def __init__(self, response: Response, endpoint: str):
         self._raw = response
+        self.endpoint = endpoint
 
     @property
     def statusCode(self) -> int:

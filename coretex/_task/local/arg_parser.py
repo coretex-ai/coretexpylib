@@ -15,17 +15,11 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, List, Dict, Any
-from pathlib import Path
-
-import json
+from typing import Optional, List, Any
 
 from tap import Tap
 
-from ...entities import BaseParameter, BaseListParameter, parameter_factory, ParameterType
-
-
-EXPERIMENT_CONGIF_PATH = Path(".", "experiment.config")
+from ...entities import BaseParameter, BaseListParameter, ParameterType
 
 
 class LocalArgumentParser(Tap):
@@ -36,6 +30,8 @@ class LocalArgumentParser(Tap):
     projectId: int
     name: Optional[str]
     description: Optional[str]
+
+    saveSnapshot: bool
 
     def __init__(self, parameters: List[BaseParameter]) -> None:
         self.parameters = parameters
@@ -53,6 +49,8 @@ class LocalArgumentParser(Tap):
         self.add_argument("--projectId", type = int)
         self.add_argument("--name", nargs = "?", type = str, default = None)
         self.add_argument("--description", nargs = "?", type = str, default = None)
+
+        self.add_argument("--saveSnapshot", action = 'store_const', const = True, default = False)
 
         for parameter in self.parameters:
             if parameter.dataType in [ParameterType.dataset, ParameterType.enum, ParameterType.enumList, ParameterType.imuVectors, ParameterType.range, ParameterType.boolean]:
@@ -73,23 +71,3 @@ class LocalArgumentParser(Tap):
             return default
 
         return parsedParameter
-
-    @classmethod
-    def readTaskRunConfig(cls) -> List[BaseParameter]:
-        parameters: List[BaseParameter] = []
-
-        if not EXPERIMENT_CONGIF_PATH.exists():
-            return []
-
-        with EXPERIMENT_CONGIF_PATH.open() as configFile:
-            configContent: Dict[str, Any] = json.load(configFile)
-            parametersJson = configContent["parameters"]
-
-            if not isinstance(parametersJson, list):
-                raise ValueError(">> [Coretex] Invalid experiment.config file. Property 'parameters' must be an array")
-
-            for parameterJson in parametersJson:
-                parameter = parameter_factory.create(parameterJson)
-                parameters.append(parameter)
-
-        return parameters

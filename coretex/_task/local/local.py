@@ -23,13 +23,14 @@ import sys
 
 from .callback import LocalTaskCallback
 from .arg_parser import LocalArgumentParser
+from .task_config import readTaskConfig
 from ...entities import TaskRun, TaskRunStatus, validateParameters
 from ...networking import networkManager
 
 
 def processLocal(args: Optional[List[str]] = None) -> Tuple[int, LocalTaskCallback]:
     # Parse and validate task parameters
-    parameters = LocalArgumentParser.readTaskRunConfig()
+    parameters = readTaskConfig()
 
     parser = LocalArgumentParser(parameters)
     namespace, _ = parser.parse_known_args(args)
@@ -63,6 +64,7 @@ def processLocal(args: Optional[List[str]] = None) -> Tuple[int, LocalTaskCallba
     # Create TaskRun
     taskRun: TaskRun = TaskRun.runLocal(
         namespace.projectId,
+        namespace.saveSnapshot,
         namespace.name,
         namespace.description,
         [parameter.encode() for parameter in parameters]

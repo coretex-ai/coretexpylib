@@ -20,6 +20,8 @@ from typing_extensions import Self
 from datetime import datetime
 from pathlib import Path
 
+import hashlib
+import base64
 import logging
 
 from .dataset import Dataset
@@ -31,6 +33,14 @@ from ...threading import MultithreadedDataProcessor
 
 
 SampleType = TypeVar("SampleType", bound = "NetworkSample")
+MAX_DATASET_NAME_LENGTH = 50
+
+
+def _hashDependencies(dependencies: List[str]) -> str:
+    hash = hashlib.md5()
+    hash.update("".join(sorted(dependencies)).encode())
+
+    return base64.b64encode(hash.digest()).decode("ascii").replace("+", "0")
 
 
 class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
@@ -101,6 +111,30 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
 
         return super().fetchAll(**kwargs)
 
+    @classmethod
+    def fetchCachedDataset(cls, dependencies: List[str]) -> Self:
+        """
+            Fetches cached dataset if it exists
+
+            Parameters
+            ----------
+            dependencies : List[str]
+                Parameters on which the cached dataset depends
+
+            Returns
+            -------
+            Self -> Fetched dataset object
+
+            Raises
+            ------
+            ValueError -> If dataset doesn't exist
+        """
+
+        return super().fetchOne(
+            name = _hashDependencies(dependencies),
+            include_sessions = 1
+        )
+
     # Dataset methods
 
     @classmethod
@@ -139,6 +173,56 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
             project_id = projectId,
             meta = meta
         )
+
+    @classmethod
+    def generateCacheName(cls, prefix: str, dependencies: List[str]) -> str:
+        """
+            Generated dataset name based on the dependencies
+
+            Parameters
+            ----------
+            prefix : str
+                prefix to which the dependency hash will be appended
+            dependencies : List[str]
+                parameters which affect the contents of the cache
+
+            Returns
+            -------
+            str -> prefix with hash generated based on dependencies appended
+        """
+
+        if MAX_DATASET_NAME_LENGTH - len(prefix) < 8:
+            raise ValueError(f"Dataset prefix \"{prefix}\" is too long. Max allowed size is \"{MAX_DATASET_NAME_LENGTH - 8}\".")
+
+        suffix = _hashDependencies(dependencies)
+        name = f"{prefix} - {suffix}"
+
+        if len(name) > MAX_DATASET_NAME_LENGTH:
+            name = name[:MAX_DATASET_NAME_LENGTH]
+
+        return name
+
+    @classmethod
+    def createCacheDataset(cls, prefix: str, dependencies: List[str], projectId: int) -> Self:
+        """
+            Creates a dataset used for caching results of tasks
+            Used to avoid repeating expensive and long calculations
+
+            Parameters
+            ----------
+            prefix : str
+                prefix of the cache dataset
+            dependencies : List[str]
+                parameters which affect the contents of the cache
+            projectId : int
+                project for which the dataset will be created
+        """
+
+        dataset = cls.createDataset(cls.generateCacheName(prefix, dependencies), projectId)
+        if dataset is None:
+            raise ValueError(f"Failed to create cache dataset with prefix \"{prefix}\"")
+
+        return dataset
 
     def download(self, ignoreCache: bool = False) -> None:
         """

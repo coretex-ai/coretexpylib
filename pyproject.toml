@@ -1,6 +1,6 @@
 [project]
 name = "coretex"
-version = "1.0.43"
+version = "1.0.48"
 authors = [
   { name="Duško Mirković", email="dmirkovic@coretex.ai" }
 ]
@@ -34,6 +34,8 @@ dependencies = [
   "psutil",
   "py3nvml",
   "watchdog"
+  "gitpython",
+  "pyyaml==6.0.1"
 ]
 
 [project.urls]
