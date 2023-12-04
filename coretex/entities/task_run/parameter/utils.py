@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, Any, Tuple, Dict
+from typing import Optional, Any, Tuple, Dict, List
 
 from .base_parameter import ParameterType
 
@@ -68,35 +68,35 @@ def validateRangeStructure(name: str, value: Dict[str, Any], required: bool) -> 
 
     return True, None
 
-def getDatasetTypeByValueType(value: Any) -> str:
+def getParamTypeByValueType(value: Any, name: str) -> ParameterType:
     if isinstance(value, int):
-        return ParameterType("int")
+        return ParameterType.integer
 
-    elif isinstance(value, float):
-        return ParameterType("float")
+    if isinstance(value, float):
+        return ParameterType.floatingPoint
 
-    elif isinstance(value, bool):
-        return ParameterType("bool")
+    if isinstance(value, bool):
+        return ParameterType.boolean
 
-    elif isinstance(value, str):
-        return ParameterType("str")
+    if isinstance(value, str):
+        return ParameterType.string
 
-    elif isinstance(value, list):
-        if all(isinstance(item, int) for item in value):
-            return ParameterType("list[int]")
+    if isinstance(value, list):
+        return getParamTypeByListValueType(value, name)
 
-        elif all(isinstance(item, float) for item in value):
-            return ParameterType("list[float]")
+    supportedTypes = [type_.name for type_ in ParameterType]
 
-        elif all(isinstance(item, str) for item in value):
-            return ParameterType("list[str]")
+    raise RuntimeError(f">> [Coretex] Parameter \"{name}\" has invalid type. Expected \"{supportedTypes}\", got \"{type(value)}\".")
 
-        # else:
-        #     inner_types = {type(item).__name__ for item in value}
-        #     if len(inner_types) == 1:
-        #         return f'list[{value[0].__class__.__name__}]'
-        #     else:
-        #         return ParameterType.l THINK ABOUT THIS...
+def getParamTypeByListValueType(value: List[Any], name: str) -> ParameterType:
+    if all(isinstance(item, int) for item in value):
+        return ParameterType.intList
 
-    # else:
-    #     return type(value).__name__ ????
+    if all(isinstance(item, float) for item in value):
+        return ParameterType.floatList
+
+    if all(isinstance(item, str) for item in value):
+        return ParameterType.strList
+
+    types_found = ", ".join({type(item).__name__ for item in value})
+    raise RuntimeError(f">> [Coretex] Parameter \"{name}\" cannot contain multiple value type: \"{types_found}\".")

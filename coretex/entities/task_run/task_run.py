@@ -183,8 +183,6 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
         if not isinstance(self.meta["parameters"], list):
             raise ValueError(">> [Coretex] Invalid parameters")
 
-
-        print('this -> crap')
         parameters = [parameter_factory.create(value) for value in self.meta["parameters"]]
 
         parameterValidationResults = validateParameters(parameters, verbose = True)

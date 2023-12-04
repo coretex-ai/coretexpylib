@@ -17,29 +17,29 @@
 
 from typing import Dict, Any
 
-from .utils import getDatasetTypeByValueType
+from .utils import getParamTypeByValueType
 from .base_parameter import BaseParameter
 from .parameter_type import ParameterType
 from .parameters import *
 
 
 def create(value: Dict[str, Any]) -> BaseParameter:
+    dataName = value.get("name")
     dataType = value.get("data_type")
     dataValue = value.get("value")
 
     if dataType is None and dataValue is not None:
-        dataType = getDatasetTypeByValueType(dataValue)
+        parameterType = getParamTypeByValueType(dataValue, dataName)
 
-    elif dataType is None and dataValue is None:
-        print('here???????/')
-        dataType = 'str'
+    if dataType is None and dataValue is None:
+        parameterType = ParameterType.string
 
-    print(f'dataType xD: {dataType}')
+    else:
+        if not isinstance(dataType, str):
+            raise ValueError("\"data_type\" is not of type \"str\"")
 
-    if not isinstance(dataType, str):
-        raise ValueError("\"data_type\" is not of type \"str\"")
+        parameterType = ParameterType(dataType)
 
-    parameterType = ParameterType(dataType)
 
     if parameterType == ParameterType.integer:
         return IntParameter.decode(value)
