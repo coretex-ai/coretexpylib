@@ -18,7 +18,7 @@
 from typing import Dict, List, Optional, Union
 from typing_extensions import Self
 
-from .metric_type import MetricType, createMetricType
+from .metric_type import MetricType
 from ....codable import Codable, KeyDescriptor
 
 
@@ -69,10 +69,10 @@ class Metric(Codable):
         """
 
         if isinstance(xType, int):
-            xType = createMetricType(xType)
+            xType = MetricType(xType)
 
         if isinstance(yType, int):
-            yType = createMetricType(yType)
+            yType = MetricType(yType)
 
         obj = cls()
 

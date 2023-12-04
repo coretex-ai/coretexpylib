@@ -30,25 +30,3 @@ class MetricType(IntEnum):
     interval = 4
     bytes = 5
     percent = 6
-
-
-def createMetricType(index: int) -> MetricType:
-    if index == 1:
-        return MetricType.int
-
-    if index == 2:
-        return MetricType.float
-
-    if index == 3:
-        return MetricType.timestamp
-
-    if index == 4:
-        return MetricType.interval
-
-    if index == 5:
-        return MetricType.bytes
-
-    if index == 6:
-        return MetricType.percent
-
-    raise ValueError(f"[Coretex] Enum index does not exist ({index}). Max: 6")
