@@ -17,6 +17,7 @@
 
 from typing import Dict, Any
 
+from .utils import getDatasetTypeByValueType
 from .base_parameter import BaseParameter
 from .parameter_type import ParameterType
 from .parameters import *
@@ -24,8 +25,16 @@ from .parameters import *
 
 def create(value: Dict[str, Any]) -> BaseParameter:
     dataType = value.get("data_type")
-    if dataType is None:
-        raise ValueError(f"\"data_type\" missing in {value}")
+    dataValue = value.get("value")
+
+    if dataType is None and dataValue is not None:
+        dataType = getDatasetTypeByValueType(dataValue)
+
+    elif dataType is None and dataValue is None:
+        print('here???????/')
+        dataType = 'str'
+
+    print(f'dataType xD: {dataType}')
 
     if not isinstance(dataType, str):
         raise ValueError("\"data_type\" is not of type \"str\"")

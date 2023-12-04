@@ -96,7 +96,9 @@ class Codable:
 
     @classmethod
     def __keyDescriptorByPythonName(cls, pythonName: str) -> Optional[KeyDescriptor]:
+        print(f'pythoNName: {pythonName}')
         if not pythonName in cls._keyDescriptors().keys():
+            print('return none here')
             return None
 
         return cls._keyDescriptors()[pythonName]
@@ -172,6 +174,7 @@ class Codable:
         encodedObject: Dict[str, Any] = {}
 
         for key, value in self.__dict__.items():
+            print(key, value)
             descriptor = self.__class__.__keyDescriptorByPythonName(key)
 
             # skip ignored fields for encoding

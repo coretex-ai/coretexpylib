@@ -21,6 +21,7 @@ from abc import ABC, abstractmethod
 import logging
 
 from .parameter_type import ParameterType
+from .utils import getDatasetTypeByValueType
 from ...project import ProjectType
 from ....codable import Codable, KeyDescriptor
 
@@ -47,6 +48,19 @@ class BaseParameter(ABC, Codable, Generic[T]):
         descriptors["dataType"] = KeyDescriptor("data_type", ParameterType)
 
         return descriptors
+
+    def onDecode(self) -> None:
+        super().onDecode()
+        print(f'dataType in BP: {self.dataType}')
+        print(f'value in BP: {self.value}')
+
+        if not self.dataType:
+            if not self.value:
+                self.dataType = ParameterType.string
+            else:
+                print('enter here')
+                self.dataType = getDatasetTypeByValueType(self.value)
+                print(f'datatype after change: {self.dataType}')
 
     def makeExceptionMessage(self) -> str:
         expected = self.dataType.value

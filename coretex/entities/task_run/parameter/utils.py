@@ -17,6 +17,8 @@
 
 from typing import Optional, Any, Tuple, Dict
 
+from .base_parameter import ParameterType
+
 
 def validateEnumStructure(name: str, value: Optional[Any], required: bool) -> Tuple[bool, Optional[str]]:
     if not isinstance(value, dict):
@@ -65,3 +67,36 @@ def validateRangeStructure(name: str, value: Dict[str, Any], required: bool) -> 
         return False, "Range parameter does not support float values"
 
     return True, None
+
+def getDatasetTypeByValueType(value: Any) -> str:
+    if isinstance(value, int):
+        return ParameterType("int")
+
+    elif isinstance(value, float):
+        return ParameterType("float")
+
+    elif isinstance(value, bool):
+        return ParameterType("bool")
+
+    elif isinstance(value, str):
+        return ParameterType("str")
+
+    elif isinstance(value, list):
+        if all(isinstance(item, int) for item in value):
+            return ParameterType("list[int]")
+
+        elif all(isinstance(item, float) for item in value):
+            return ParameterType("list[float]")
+
+        elif all(isinstance(item, str) for item in value):
+            return ParameterType("list[str]")
+
+        # else:
+        #     inner_types = {type(item).__name__ for item in value}
+        #     if len(inner_types) == 1:
+        #         return f'list[{value[0].__class__.__name__}]'
+        #     else:
+        #         return ParameterType.l THINK ABOUT THIS...
+
+    # else:
+    #     return type(value).__name__ ????
