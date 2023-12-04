@@ -58,9 +58,8 @@ class BaseParameter(ABC, Codable, Generic[T]):
         if not self.dataType:
             if self.value is not None:
                 self.dataType = getParamTypeByValueType(self.value, self.name)
+
             if self.value is None:
-                self.dataType = ParameterType.string
-            else:
                 self.dataType = ParameterType.string
 
         if not self.required:
