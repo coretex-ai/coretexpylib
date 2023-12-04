@@ -15,10 +15,10 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 from typing_extensions import Self
 
-from .metric_type import MetricType
+from .metric_type import MetricType, createMetricType
 from ....codable import Codable, KeyDescriptor
 
 
@@ -44,9 +44,9 @@ class Metric(Codable):
         cls,
         name: str,
         xLabel: str,
-        xType: MetricType,
+        xType: Union[MetricType, int],
         yLabel: str,
-        yType: MetricType,
+        yType: Union[MetricType, int],
         xRange: Optional[List[float]] = None,
         yRange: Optional[List[float]] = None
     ) -> Self:
@@ -67,6 +67,12 @@ class Metric(Codable):
             yRange : Optional[List[float]]
                 range in which values will be displayed for y axis
         """
+
+        if isinstance(xType, int):
+            xType = createMetricType(xType)
+
+        if isinstance(yType, int):
+            yType = createMetricType(yType)
 
         obj = cls()
 
