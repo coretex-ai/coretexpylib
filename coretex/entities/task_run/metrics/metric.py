@@ -56,11 +56,11 @@ class Metric(Codable):
                 name of Metric
             xLabel : str
                 label of x axis which will be displayed
-            xType : MetricType
+            xType : Union[MetricType, int]
                 type of x axis which will be displayed
             yLabel : str
                 label of y axis which will be displayed
-            yType : MetricType
+            yType : Union[MetricType, int]
                 type of y axis which will be displayed
             xRange : Optional[List[float]]
                 range in which values will be displayed for x axis
