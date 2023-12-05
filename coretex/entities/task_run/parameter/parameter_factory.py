@@ -24,7 +24,7 @@ from .parameters import *
 
 
 def create(value: Dict[str, Any]) -> BaseParameter:
-    dataName = value.get("name")
+    dataName = str(value.get("name"))
     dataType = value.get("data_type")
     dataValue = value.get("value")
 
