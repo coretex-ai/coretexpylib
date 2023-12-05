@@ -49,22 +49,6 @@ class BaseParameter(ABC, Codable, Generic[T]):
 
         return descriptors
 
-    def onDecode(self) -> None:
-        super().onDecode()
-
-        if not self.value:
-            self.value = None
-
-        if not self.dataType:
-            if self.value is not None:
-                self.dataType = getParamTypeByValueType(self.value, self.name)
-
-            if self.value is None:
-                self.dataType = ParameterType.string
-
-        if not self.required:
-            self.required = False
-
     def makeExceptionMessage(self) -> str:
         expected = self.dataType.value
         received = self.generateTypeDescription()

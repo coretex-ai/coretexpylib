@@ -23,23 +23,36 @@ from .parameter_type import ParameterType
 from .parameters import *
 
 
-def create(value: Dict[str, Any]) -> BaseParameter:
-    dataName = str(value.get("name"))
-    dataType = value.get("data_type")
-    dataValue = value.get("value")
+def cleanParamDict(value: Dict[str, Any]) -> None:
+    if not "data_type" in value:
+        value["data_type"] = None
 
-    if dataType is None and dataValue is not None:
-        parameterType = getParamTypeByValueType(dataValue, dataName)
+    if not "value" in value:
+        value["value"] = None
+
+    if not "required" in value:
+        value["required"] = False
+
+    dataName: str = value["name"]
+    dataType = value["data_type"]
+    dataValue = value["value"]
 
     if dataType is None and dataValue is None:
-        parameterType = ParameterType.string
+        value["data_type"] = ParameterType.string.value
 
-    else:
-        if not isinstance(dataType, str):
-            raise ValueError("\"data_type\" is not of type \"str\"")
+    if dataType is None and dataValue is not None:
+        value["data_type"] = getParamTypeByValueType(dataValue, dataName).value
 
-        parameterType = ParameterType(dataType)
+    return value
 
+def create(value: Dict[str, Any]) -> BaseParameter:
+    cleanParamDict(value)
+    dataType = value.get("data_type")
+
+    if not isinstance(dataType, str):
+        raise ValueError("\"data_type\" is not of type \"str\"")
+
+    parameterType = ParameterType(dataType)
 
     if parameterType == ParameterType.integer:
         return IntParameter.decode(value)

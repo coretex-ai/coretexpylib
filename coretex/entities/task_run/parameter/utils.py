@@ -69,14 +69,14 @@ def validateRangeStructure(name: str, value: Dict[str, Any], required: bool) -> 
     return True, None
 
 def getParamTypeByValueType(value: Any, name: str) -> ParameterType:
+    if isinstance(value, bool):
+        return ParameterType.boolean
+
     if isinstance(value, int):
         return ParameterType.integer
 
     if isinstance(value, float):
         return ParameterType.floatingPoint
-
-    if isinstance(value, bool):
-        return ParameterType.boolean
 
     if isinstance(value, str):
         return ParameterType.string
@@ -86,7 +86,7 @@ def getParamTypeByValueType(value: Any, name: str) -> ParameterType:
 
     supportedTypes = [type_.name for type_ in ParameterType]
 
-    raise RuntimeError(f">> [Coretex] Parameter \"{name}\" has invalid type. Expected \"{supportedTypes}\", got \"{type(value)}\".")
+    raise ValueError(f">> [Coretex] Parameter \"{name}\" has invalid type. Expected \"{supportedTypes}\", got \"{type(value)}\".")
 
 def getParamTypeByListValueType(value: List[Any], name: str) -> ParameterType:
     if all(isinstance(item, int) for item in value):
@@ -98,5 +98,5 @@ def getParamTypeByListValueType(value: List[Any], name: str) -> ParameterType:
     if all(isinstance(item, str) for item in value):
         return ParameterType.strList
 
-    types_found = ", ".join({type(item).__name__ for item in value})
-    raise RuntimeError(f">> [Coretex] Parameter \"{name}\" cannot contain multiple value type: \"{types_found}\".")
+    typesFound = ", ".join([type(item).__name__ for item in value])
+    raise ValueError(f">> [Coretex] Parameter \"{name}\" cannot contain multiple value type: \"{typesFound}\".")
