@@ -20,15 +20,18 @@ from typing_extensions import Self
 from datetime import datetime
 from pathlib import Path
 
+from contextlib import contextmanager
+
 import hashlib
 import base64
 import logging
 
 from .dataset import Dataset
+from .dataset_state import DatasetState
 from ..sample import NetworkSample
 from ... import folder_manager
 from ...codable import KeyDescriptor
-from ...networking import NetworkObject
+from ...networking import NetworkObject, networkManager
 from ...threading import MultithreadedDataProcessor
 
 
@@ -138,6 +141,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
     # Dataset methods
 
     @classmethod
+    @contextmanager
     def createDataset(
         cls,
         name: str,
@@ -168,11 +172,14 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
                     print("Dataset created successfully")
         """
 
-        return cls.create(
-            name = name,
-            project_id = projectId,
-            meta = meta
-        )
+        try:
+            yield cls.create(
+                name=name,
+                project_id=projectId,
+                meta=meta
+            )
+        finally:
+            cls.updateDatasetState(DatasetState.final)
 
     @classmethod
     def generateCacheName(cls, prefix: str, dependencies: List[str]) -> str:
@@ -223,6 +230,15 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
             raise ValueError(f"Failed to create cache dataset with prefix \"{prefix}\"")
 
         return dataset
+
+    @classmethod
+    def updateDatasetState(self, state: DatasetState) -> None:
+        parameters = {
+            "name": self.name,
+            "state": state
+        }
+
+        networkManager.put(f"dataset/:{self.id}", parameters)
 
     def download(self, ignoreCache: bool = False) -> None:
         """
