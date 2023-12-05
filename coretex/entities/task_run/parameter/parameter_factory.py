@@ -23,7 +23,7 @@ from .parameter_type import ParameterType
 from .parameters import *
 
 
-def cleanParamDict(value: Dict[str, Any]) -> None:
+def cleanParamDict(value: Dict[str, Any]) -> Dict[str, Any]:
     if not "data_type" in value:
         value["data_type"] = None
 
