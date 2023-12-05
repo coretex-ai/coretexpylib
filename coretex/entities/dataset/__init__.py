@@ -21,5 +21,5 @@ from .image_segmentation_dataset import ImageSegmentationDataset, LocalImageSegm
 from .computer_vision_dataset import ComputerVisionDataset, LocalComputerVisionDataset
 from .dataset import Dataset
 from .local_dataset import LocalDataset
-from .network_dataset import NetworkDataset
+from .network_dataset import NetworkDataset, DatasetState
 from .sequence_dataset import SequenceDataset, LocalSequenceDataset

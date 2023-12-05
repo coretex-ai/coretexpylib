@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, TypeVar, Generic, List, Dict, Any
+from typing import Optional, TypeVar, Generic, List, Dict, Any, Iterator
 from typing_extensions import Self
 from datetime import datetime
 from pathlib import Path
@@ -33,6 +33,14 @@ from ... import folder_manager
 from ...codable import KeyDescriptor
 from ...networking import NetworkObject, networkManager
 from ...threading import MultithreadedDataProcessor
+
+class EntityNotCreated(Exception):
+
+    """
+        Exception which is raised due to any unexpected behaviour with dataset creation
+    """
+
+    pass
 
 
 SampleType = TypeVar("SampleType", bound = "NetworkSample")
@@ -147,7 +155,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
         name: str,
         projectId: int,
         meta: Optional[Dict[str, Any]] = None
-    ) -> Optional[Self]:
+    ) -> Iterator[Self]:
 
         """
             Creates a new dataset with the provided name and type
@@ -179,7 +187,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
                 meta=meta)
 
             if dataset is None:
-                raise Exception(f">> [Coretex] Failed to create dataset with name: {name}")
+                raise EntityNotCreated(f">> [Coretex] Failed to create dataset with name: {name}")
 
             yield dataset
         finally:
@@ -236,10 +244,10 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
         return dataset
 
     @classmethod
-    def updateDatasetState(self, state: DatasetState) -> None:
+    def finalizeDatasetState(self) -> None:
         parameters = {
             "name": self.name,
-            "state": state
+            "state": DatasetState.final
         }
 
         networkManager.put(f"dataset/:{self.id}", parameters)
