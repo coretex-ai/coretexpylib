@@ -173,11 +173,15 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
         """
 
         try:
-            yield cls.create(
+            dataset = cls.create(
                 name=name,
                 project_id=projectId,
-                meta=meta
-            )
+                meta=meta)
+
+            if dataset is None:
+                raise Exception(f">> [Coretex] Failed to create dataset with name: {name}")
+
+            yield dataset
         finally:
             cls.updateDatasetState(DatasetState.final)
 
