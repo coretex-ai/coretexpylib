@@ -17,7 +17,7 @@
 
 from typing import Dict, Any
 
-from .utils import getParamTypeByValueType
+from .utils import getValueParamType
 from .base_parameter import BaseParameter
 from .parameter_type import ParameterType
 from .parameters import *
@@ -41,7 +41,7 @@ def cleanParamDict(value: Dict[str, Any]) -> Dict[str, Any]:
         value["data_type"] = ParameterType.string.value
 
     if dataType is None and dataValue is not None:
-        value["data_type"] = getParamTypeByValueType(dataValue, dataName).value
+        value["data_type"] = getValueParamType(dataValue, dataName).value
 
     return value
 

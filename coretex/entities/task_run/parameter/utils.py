@@ -68,7 +68,7 @@ def validateRangeStructure(name: str, value: Dict[str, Any], required: bool) -> 
 
     return True, None
 
-def getParamTypeByValueType(value: Any, name: str) -> ParameterType:
+def getValueParamType(value: Any, name: str) -> ParameterType:
     if isinstance(value, bool):
         return ParameterType.boolean
 
