@@ -80,24 +80,20 @@ def _taskRunWorker(output: Connection, refreshToken: str, taskRunId: int, parent
     current = psutil.Process(os.getpid())
 
     # Start tracking files which are created inside current working directory
-    tracker = artifacts.startTracking(taskRun)
+    with artifacts.track(taskRun):
+        while parent.is_running() and not isStopped:
+            logging.getLogger("coretexpylib").debug(f">> [Coretex] Worker process id {current.pid}, parent process id {parent.pid}")
 
-    while parent.is_running() and not isStopped:
-        logging.getLogger("coretexpylib").debug(f">> [Coretex] Worker process id {current.pid}, parent process id {parent.pid}")
+            # Measure elapsed time to calculate for how long should the process sleep
+            start = timeit.default_timer()
+            _update(taskRun)
+            diff = timeit.default_timer() - start
 
-        # Measure elapsed time to calculate for how long should the process sleep
-        start = timeit.default_timer()
-        _update(taskRun)
-        diff = timeit.default_timer() - start
-
-        # Make sure that metrics and heartbeat are sent every 5 seconds
-        if diff < 5:
-            sleepTime = 5 - diff
-            logging.getLogger("coretexpylib").debug(f">> [Coretex] Sleeping for {sleepTime}s")
-            time.sleep(sleepTime)
-
-    tracker.stop()  # type: ignore
-    tracker.join()
+            # Make sure that metrics and heartbeat are sent every 5 seconds
+            if diff < 5:
+                sleepTime = 5 - diff
+                logging.getLogger("coretexpylib").debug(f">> [Coretex] Sleeping for {sleepTime}s")
+                time.sleep(sleepTime)
 
     logging.getLogger("coretexpylib").debug(">> [Coretex] Finished")
 

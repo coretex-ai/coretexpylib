@@ -16,14 +16,14 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-from typing import Union
+from typing import Union, List, Iterator
 from pathlib import Path
+from contextlib import contextmanager
 
 import logging
 
 from watchdog.events import FileSystemEventHandler, DirCreatedEvent, FileCreatedEvent
 from watchdog.observers import Observer
-from watchdog.observers.api import BaseObserver
 
 from ...entities import TaskRun
 
@@ -33,11 +33,10 @@ IGNORED_FILES = ["_coretex.py"]
 
 class FileEventHandler(FileSystemEventHandler):
 
-    def __init__(self, taskRun: TaskRun, root: Path) -> None:
+    def __init__(self) -> None:
         super().__init__()
 
-        self.taskRun = taskRun
-        self.root = root
+        self.artifactPaths: List[Path] = []
 
     def on_created(self, event: Union[DirCreatedEvent, FileCreatedEvent]) -> None:
         if event.is_directory:
@@ -51,28 +50,34 @@ class FileEventHandler(FileSystemEventHandler):
         if filePath.name in IGNORED_FILES:
             return
 
-        logging.getLogger("coretex").debug(f">> [Coretex] File created at path \"{filePath}\"")
-
-        relativePath = filePath.relative_to(self.root)
-        artifact = self.taskRun.createArtifact(filePath, str(relativePath))
-
-        if artifact is None:
-            logging.getLogger("coretexpylib").debug(f">> [Coretex] Failed to create artifact from \"{filePath}\"")
+        logging.getLogger("coretex").debug(f">> [Coretex] File created at path \"{filePath}\", adding to artifacts list")
+        self.artifactPaths.append(filePath)
 
 
-def startTracking(taskRun: TaskRun) -> BaseObserver:
-    observer = Observer()
-    observer.setName("ArtifactTracker")
-
+@contextmanager
+def track(taskRun: TaskRun) -> Iterator[FileEventHandler]:
     # If local use current working dir, else use task path
-    path = Path.cwd() if taskRun.isLocal else taskRun.taskPath
-    logging.getLogger("coretexpylib").debug(f">> [Coretex] Tracking files created inside \"{path}\"")
+    root = Path.cwd() if taskRun.isLocal else taskRun.taskPath
 
-    observer.schedule(
-        FileEventHandler(taskRun, path),
-        path,
-        recursive = True
-    )  # type: ignore[no-untyped-call]
+    try:
+        observer = Observer()
+        observer.setName("ArtifactTracker")
 
-    observer.start()  # type: ignore[no-untyped-call]
-    return observer
+        logging.getLogger("coretexpylib").debug(f">> [Coretex] Tracking files created inside \"{root}\"")
+
+        eventHandler = FileEventHandler()
+        observer.schedule(eventHandler, root, recursive = True)  # type: ignore[no-untyped-call]
+        observer.start()  # type: ignore[no-untyped-call]
+        yield eventHandler
+    finally:
+        observer.stop()  # type: ignore[no-untyped-call]
+        observer.join()
+
+        for index, artifactPath in enumerate(eventHandler.artifactPaths):
+            logging.getLogger("coretexpylib").debug(f">> [Coretex] Uploading {index + 1}/{len(eventHandler.artifactPaths)} - \"{artifactPath}\"")
+            artifact = taskRun.createArtifact(artifactPath, str(artifactPath.relative_to(root)))
+
+            if artifact is not None:
+                logging.getLogger("coretexpylib").debug(f"\tSuccessfully uploaded artifact")
+            else:
+                logging.getLogger("coretexpylib").debug(f"\tFailed to upload artifact")
