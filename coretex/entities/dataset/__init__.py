@@ -20,6 +20,7 @@ from .image_dataset import ImageDataset, LocalImageDataset, augmentDataset
 from .image_segmentation_dataset import ImageSegmentationDataset, LocalImageSegmentationDataset
 from .computer_vision_dataset import ComputerVisionDataset, LocalComputerVisionDataset
 from .dataset import Dataset
+from .utils import createDataset
 from .local_dataset import LocalDataset
 from .network_dataset import NetworkDataset, DatasetState
 from .sequence_dataset import SequenceDataset, LocalSequenceDataset

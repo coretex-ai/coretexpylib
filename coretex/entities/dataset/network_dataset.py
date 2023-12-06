@@ -27,7 +27,7 @@ import base64
 import logging
 
 from .dataset import Dataset
-from .dataset_state import DatasetState
+from .state import DatasetState
 from ..sample import NetworkSample
 from ... import folder_manager
 from ...codable import KeyDescriptor
@@ -149,13 +149,12 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
     # Dataset methods
 
     @classmethod
-    @contextmanager
     def createDataset(
         cls,
         name: str,
         projectId: int,
         meta: Optional[Dict[str, Any]] = None
-    ) -> Iterator[Self]:
+    ) -> Optional[Self]:
 
         """
             Creates a new dataset with the provided name and type
@@ -180,18 +179,16 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
                     print("Dataset created successfully")
         """
 
-        try:
-            dataset = cls.create(
-                name=name,
-                project_id=projectId,
-                meta=meta)
+        dataset = cls.create(
+            name = name,
+            project_id = projectId,
+            meta = meta
+        )
 
-            if dataset is None:
-                raise EntityNotCreated(f">> [Coretex] Failed to create dataset with name: {name}")
+        if dataset is None:
+            raise EntityNotCreated(f">> [Coretex] Failed to create dataset with name: {name}")
 
-            yield dataset
-        finally:
-            cls.updateDatasetState(DatasetState.final)
+        return dataset
 
     @classmethod
     def generateCacheName(cls, prefix: str, dependencies: List[str]) -> str:
