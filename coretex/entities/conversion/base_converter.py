@@ -64,12 +64,11 @@ class BaseConverter(ABC):
     """
 
     def __init__(self, datasetName: str, projectId: int, datasetPath: str) -> None:
-        dataset: Optional[ImageDatasetType] = ImageDataset.createDataset(datasetName, projectId)
+        dataset: ImageDatasetType = ImageDataset.createDataset(datasetName, projectId)
 
         self._dataset: Final = dataset
         self._datasetPath: Final = datasetPath
-
-        dataset.finalizeDatasetState() # solve this
+        dataset.finalizeState()
 
     def _saveImageAnnotationPair(self, imagePath: str, annotation: CoretexImageAnnotation) -> None:
         # Create sample

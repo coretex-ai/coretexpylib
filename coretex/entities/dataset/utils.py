@@ -34,10 +34,13 @@ def createDataset(
 ) -> Iterator[T]:
 
     """
-        Creates a new sequence dataset with the provided name and metadata
+        Creates a new dataset with the provided name and type
+        and finalizes its state in data base
 
         Parameters
         ----------
+        type_ : Type[T]
+            type of dataset which will be created
         name : str
             dataset name
         projectId : int
@@ -51,22 +54,19 @@ def createDataset(
 
         Example
         -------
-        >>> from coretex import SequenceDataset
+        >>> from coretex import createDataset
         \b
-        >>> dummyDataset = SequenceDataset.createSequenceDataset("dummyDataset", 123, pathToMetadata)
-        >>> if dummyDataset is not None:
-                print("Dataset created successfully")
+        >>> with createDataset("dummyDataset", 123, pathToMetadata) as dataset:
+        >>>     pass
     """
 
-    try:
-        dataset = type_.create(
-            name=name,
-            project_id=projectId,
-            meta=meta)
+    dataset = type_.create(
+        name=name,
+        project_id=projectId,
+        meta=meta)
 
-        if dataset is None:
-            raise EntityNotCreated(f">> [Coretex] Failed to create dataset with name: {name}")
+    if dataset is None:
+        raise EntityNotCreated(f">> [Coretex] Failed to create dataset with name: {name}")
 
-        yield dataset
-    finally:
-        type_.finalizeDatasetState()
+    yield dataset
+    dataset.finalizeState()

@@ -154,7 +154,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
         name: str,
         projectId: int,
         meta: Optional[Dict[str, Any]] = None
-    ) -> Optional[Self]:
+    ) -> Self:
 
         """
             Creates a new dataset with the provided name and type
@@ -170,13 +170,15 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
             -------
             The created dataset object or None if creation failed
 
+            Raises
+            ------
+            EntityNotCreated -> If dataset creation failed
+
             Example
             -------
             >>> from coretex import NetworkDataset
             \b
             >>> dummyDataset = NetworkDataset.createDataset("dummyDataset", 123)
-            >>> if dummyDataset is not None:
-                    print("Dataset created successfully")
         """
 
         dataset = cls.create(
@@ -240,8 +242,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
 
         return dataset
 
-    @classmethod
-    def finalizeDatasetState(self) -> None:
+    def finalizeState(self) -> None:
         parameters = {
             "name": self.name,
             "state": DatasetState.final
