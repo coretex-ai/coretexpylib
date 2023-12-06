@@ -82,13 +82,13 @@ def getValueParamType(value: Any, name: str) -> ParameterType:
         return ParameterType.string
 
     if isinstance(value, list):
-        return getParamTypeByListValueType(value, name)
+        return getListParamType(value, name)
 
     supportedTypes = [type_.name for type_ in ParameterType]
 
     raise ValueError(f">> [Coretex] Parameter \"{name}\" has invalid type. Expected \"{supportedTypes}\", got \"{type(value)}\".")
 
-def getParamTypeByListValueType(value: List[Any], name: str) -> ParameterType:
+def getListParamType(value: List[Any], name: str) -> ParameterType:
     if all(isinstance(item, int) for item in value):
         return ParameterType.intList
 
