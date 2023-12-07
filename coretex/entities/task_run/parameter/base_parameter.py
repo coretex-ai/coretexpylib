@@ -21,6 +21,7 @@ from abc import ABC, abstractmethod
 import logging
 
 from .parameter_type import ParameterType
+from .utils import getValueParamType
 from ...project import ProjectType
 from ....codable import Codable, KeyDescriptor
 

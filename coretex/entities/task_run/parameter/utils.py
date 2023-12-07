@@ -15,7 +15,9 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, Any, Tuple, Dict
+from typing import Optional, Any, Tuple, Dict, List
+
+from .base_parameter import ParameterType
 
 
 def validateEnumStructure(name: str, value: Optional[Any], required: bool) -> Tuple[bool, Optional[str]]:
@@ -65,3 +67,36 @@ def validateRangeStructure(name: str, value: Dict[str, Any], required: bool) -> 
         return False, "Range parameter does not support float values"
 
     return True, None
+
+def getValueParamType(value: Any, name: str) -> ParameterType:
+    if isinstance(value, bool):
+        return ParameterType.boolean
+
+    if isinstance(value, int):
+        return ParameterType.integer
+
+    if isinstance(value, float):
+        return ParameterType.floatingPoint
+
+    if isinstance(value, str):
+        return ParameterType.string
+
+    if isinstance(value, list):
+        return getListParamType(value, name)
+
+    supportedTypes = [type_.name for type_ in ParameterType]
+
+    raise ValueError(f">> [Coretex] Parameter \"{name}\" has invalid type. Expected \"{supportedTypes}\", got \"{type(value)}\".")
+
+def getListParamType(value: List[Any], name: str) -> ParameterType:
+    if all(isinstance(item, int) for item in value):
+        return ParameterType.intList
+
+    if all(isinstance(item, float) for item in value):
+        return ParameterType.floatList
+
+    if all(isinstance(item, str) for item in value):
+        return ParameterType.strList
+
+    typesFound = ", ".join([type(item).__name__ for item in value])
+    raise ValueError(f">> [Coretex] Parameter \"{name}\" cannot contain multiple value type: \"{typesFound}\".")
