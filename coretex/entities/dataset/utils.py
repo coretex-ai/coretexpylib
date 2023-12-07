@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Type, TypeVar, Optional, Iterator, Callable, Dict, Any
+from typing import Type, TypeVar, Optional, Iterator, Dict, Any
 from contextlib import contextmanager
 
 from .state import DatasetState
