@@ -120,4 +120,7 @@ class BaseConverter(ABC):
             message = "Converting dataset..."
         ).process()
 
+        if not self._dataset.finalize():
+            raise ValueError(f"Failed to finalize dataset \"{self._dataset.name}\"")
+
         return self._dataset
