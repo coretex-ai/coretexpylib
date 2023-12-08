@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Type, Any, Optional, List
+from typing import Type, Any, Optional, List, Generator
 from pathlib import Path
 from zipfile import ZipFile, ZIP_DEFLATED
 
@@ -90,7 +90,7 @@ def getDefaultEntryPoint() -> Optional[str]:
     return None
 
 
-def chunks(lst: list, n: int) -> list:
+def chunks(lst: List, n: int) -> Generator[List, None, None]:
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
@@ -100,7 +100,7 @@ def createSnapshot() -> Path:
     if entryPoint is None or not Path(".", entryPoint).exists():
         raise FileNotFoundError(">> [Coretex] Entry point file not found")
 
-    ignoredFiles: list[Path] = []
+    ignoredFiles: List[str] = []
 
     snapshotPath = folder_manager.temp / "snapshot.zip"
     with ZipFile(snapshotPath, "w", ZIP_DEFLATED) as snapshotArchive:
