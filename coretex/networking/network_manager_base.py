@@ -206,7 +206,9 @@ class NetworkManagerBase(ABC):
                 return self.request(endpoint, requestType, headers, query, body, files, auth, stream, retryCount + 1)
 
             return response
-        except:
+        except BaseException as exception:
+            logging.getLogger("coretexpylib").debug(f">> [Coretex] Request failed. Reason \"{exception}\"", exc_info = exception)
+
             if self.shouldRetry(retryCount, None):
                 if self._apiToken is not None:
                     headers[API_TOKEN_HEADER] = self._apiToken
