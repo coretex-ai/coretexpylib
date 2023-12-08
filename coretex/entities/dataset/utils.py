@@ -60,9 +60,10 @@ def createDataset(
     """
 
     dataset = type_.create(
-        name=name,
-        project_id=projectId,
-        meta=meta)
+        name = name,
+        project_id = projectId,
+        meta = meta
+    )
 
     if dataset is None:
         raise EntityNotCreated(f">> [Coretex] Failed to create dataset with name \"{name}\" ")

@@ -20,7 +20,7 @@ from enum import IntEnum
 class DatasetState(IntEnum):
 
     """
-        State of Coretex dataset within Workflow
+        State of Coretex dataset
     """
 
     uploading = 1
