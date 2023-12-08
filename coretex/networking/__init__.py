@@ -17,7 +17,7 @@
 
 from .network_manager_base import NetworkManagerBase, RequestFailedError
 from .network_manager import networkManager
-from .network_object import NetworkObject, DEFAULT_PAGE_SIZE
+from .network_object import NetworkObject, DEFAULT_PAGE_SIZE, EntityNotCreated
 from .network_response import NetworkResponse, NetworkRequestError
 from .request_type import RequestType
 from .chunk_upload_session import ChunkUploadSession, MAX_CHUNK_SIZE

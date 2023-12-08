@@ -18,5 +18,10 @@
 from enum import IntEnum
 
 class DatasetState(IntEnum):
+
+    """
+        State of Coretex dataset within Workflow
+    """
+
     uploading = 1
     final     = 2

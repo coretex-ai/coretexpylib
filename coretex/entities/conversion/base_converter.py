@@ -68,7 +68,6 @@ class BaseConverter(ABC):
 
         self._dataset: Final = dataset
         self._datasetPath: Final = datasetPath
-        dataset.finalizeState()
 
     def _saveImageAnnotationPair(self, imagePath: str, annotation: CoretexImageAnnotation) -> None:
         # Create sample

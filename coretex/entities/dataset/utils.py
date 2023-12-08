@@ -18,7 +18,6 @@
 from typing import Type, TypeVar, Optional, Iterator, Dict, Any
 from contextlib import contextmanager
 
-from .state import DatasetState
 from .network_dataset import EntityNotCreated, NetworkDataset
 
 
@@ -57,7 +56,7 @@ def createDataset(
         >>> from coretex import createDataset
         \b
         >>> with createDataset("dummyDataset", 123, pathToMetadata) as dataset:
-        >>>     pass
+        >>>     print(f"Dataset with id \"{dataset.id}\" and name \"{dataset.name}\" created")
     """
 
     dataset = type_.create(
@@ -66,7 +65,8 @@ def createDataset(
         meta=meta)
 
     if dataset is None:
-        raise EntityNotCreated(f">> [Coretex] Failed to create dataset with name: {name}")
+        raise EntityNotCreated(f">> [Coretex] Failed to create dataset with name \"{name}\" ")
 
     yield dataset
-    dataset.finalizeState()
+    if not dataset.finalize():
+        raise ValueError(">> [Coretex] Failed to finalize dataset")

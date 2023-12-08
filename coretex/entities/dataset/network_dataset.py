@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, TypeVar, Generic, List, Dict, Any, Iterator
+from typing import Optional, TypeVar, Generic, List, Dict, Any
 from typing_extensions import Self
 from datetime import datetime
 from pathlib import Path
@@ -29,16 +29,8 @@ from .state import DatasetState
 from ..sample import NetworkSample
 from ... import folder_manager
 from ...codable import KeyDescriptor
-from ...networking import NetworkObject, networkManager
+from ...networking import EntityNotCreated, NetworkObject, networkManager
 from ...threading import MultithreadedDataProcessor
-
-class EntityNotCreated(Exception):
-
-    """
-        Exception which is raised due to any unexpected behaviour with dataset creation
-    """
-
-    pass
 
 
 SampleType = TypeVar("SampleType", bound = "NetworkSample")
@@ -240,13 +232,19 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
 
         return dataset
 
-    def finalizeState(self) -> None:
-        parameters = {
-            "name": self.name,
-            "state": DatasetState.final
-        }
+    def finalize(self) -> bool:
+        """
+            Finalizes state of Coretex dataset
 
-        networkManager.put(f"dataset/:{self.id}", parameters)
+            Example
+            -------
+            >>> from coretex import CustomDataset
+            \b
+            >>> dummyDataset = CustomDataset.createDataset("dummyDataset", 123)
+            >>> dummyDataset.finalize()
+        """
+
+        return self.update(name = self.name, state = DatasetState.final)
 
     def download(self, ignoreCache: bool = False) -> None:
         """
