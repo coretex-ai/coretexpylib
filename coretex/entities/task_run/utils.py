@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Type, Any, Optional, List
+from typing import Type, Any, Optional, List, Generator
 from pathlib import Path
 from zipfile import ZipFile, ZIP_DEFLATED
 
@@ -90,20 +90,28 @@ def getDefaultEntryPoint() -> Optional[str]:
     return None
 
 
+def chunks(lst: List, n: int) -> Generator[List, None, None]:
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
+
 def createSnapshot() -> Path:
     entryPoint = getDefaultEntryPoint()
     if entryPoint is None or not Path(".", entryPoint).exists():
         raise FileNotFoundError(">> [Coretex] Entry point file not found")
 
+    ignoredFiles: List[str] = []
+
     snapshotPath = folder_manager.temp / "snapshot.zip"
     with ZipFile(snapshotPath, "w", ZIP_DEFLATED) as snapshotArchive:
         repo = git.Repo(Path.cwd(), search_parent_directories = True)
-        ignoredFiles = repo.ignored(*list(Path.cwd().rglob("*")))
+        for paths in chunks(list(Path.cwd().rglob("*")), 256):
+            ignoredFiles.extend(repo.ignored(*paths))
 
         if not Path(entryPoint).exists() or not Path("requirements.txt").exists():
             raise FileNotFoundError(f">> [Coretex] Required files \"{entryPoint}\" and \"requirements.txt\"")
 
         for path in getSnapshotFiles(Path.cwd(), ignoredFiles):
-            snapshotArchive.write(path)
+            snapshotArchive.write(path.relative_to(Path.cwd()))
 
     return snapshotPath
