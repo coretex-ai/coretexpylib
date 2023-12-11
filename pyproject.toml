@@ -36,7 +36,8 @@ dependencies = [
   "gitpython",
   "pyyaml==6.0.1",
   "click",
-  "tabulate"
+  "tabulate",
+  "inquirer"
 ]
 
 [project.urls]

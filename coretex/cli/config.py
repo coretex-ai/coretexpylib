@@ -8,7 +8,7 @@ import click
 
 from .utils import arrowPrompt
 from ..configuration import loadConfig, saveConfig, isUserConfigured, isNodeConfigured, getNodeAccessToken
-from ..statistics import getAvilableRamMemory
+from ..statistics import getAvailableRamMemory
 from ..networking import networkManager
 
 
@@ -95,8 +95,8 @@ def configNode() -> None:
 
     image = arrowPrompt(["gpu", "cpu"])
 
-    ram = click.prompt("Node RAM memory limit in GB (press enter to use default)", type = int, default = getAvilableRamMemory())
-    swap = click.prompt("Node swap memory limit in GB, make sure it is larger then mem limit (press enter to use default)", type = int, default = getAvilableRamMemory() * 2)
+    ram = click.prompt("Node RAM memory limit in GB (press enter to use default)", type = int, default = getAvailableRamMemory())
+    swap = click.prompt("Node swap memory limit in GB, make sure it is larger then mem limit (press enter to use default)", type = int, default = getAvailableRamMemory() * 2)
     sharedMemory = click.prompt("Node POSIX shared memory limit in GB (press enter to use default)", type = int, default = 2)
 
     config["nodeName"] = nodeName
