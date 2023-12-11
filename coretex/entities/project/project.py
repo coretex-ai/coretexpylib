@@ -18,6 +18,8 @@
 from typing import Optional, Any, List, Dict
 from typing_extensions import Self
 
+from coretex.networking import EntityNotCreated
+
 from .base import BaseObject
 from .task import Task
 from .project_type import ProjectType
@@ -33,7 +35,7 @@ class Project(BaseObject):
     tasks: List[Task]
 
     @classmethod
-    def createProject(cls, name: str, projectType: ProjectType, description: Optional[str] = None) -> Optional[Self]:
+    def createProject(cls, name: str, projectType: ProjectType, description: Optional[str] = None) -> Self:
         """
             Creates a new project with the provided name and description
 
@@ -61,11 +63,16 @@ class Project(BaseObject):
                     print("Failed to create project")
         """
 
-        return cls.create(
+        project = cls.create(
             name = name,
             project_task = projectType,
             description = description
         )
+
+        if project is None:
+            raise EntityNotCreated(f"Failed to create project with name \"{name}\"")
+
+        return project
 
     @classmethod
     def decode(cls, encodedObject: Dict[str, Any]) -> Self:

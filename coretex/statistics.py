@@ -45,6 +45,11 @@ def getRamUsage() -> float:
     return psutil.virtual_memory().percent
 
 
+def getAvilableRamMemory() -> int:
+    memory = psutil.virtual_memory()
+    return int(memory.total / (1024 ** 3))
+
+
 def getGpuUsage() -> float:
     """
         py3nvml init must be called before calling this function
