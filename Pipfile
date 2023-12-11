@@ -17,6 +17,8 @@ psutil = "*"
 py3nvml = "*"
 gitpython = "*"
 pyyaml = "*"
+click = "*"
+tabulate = "*"
 
 [dev-packages]
 mypy = "*"
