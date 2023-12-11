@@ -6,14 +6,10 @@ from tabulate import tabulate
 
 import click
 
-from ..configuration import loadConfig, saveConfig, isUserConfigured, isNodeConfigured
+from .utils import arrowPrompt
+from ..configuration import loadConfig, saveConfig, isUserConfigured, isNodeConfigured, getNodeAccessToken
 from ..statistics import getAvilableRamMemory
 from ..networking import networkManager
-
-
-SERVER_URL = "dev.biomechservices.com"
-NODE_PORT = 5443
-CORETEX_CONFIG_DIR = Path.home() / ".config" / "coretex"
 
 
 def configUser() -> None:
@@ -92,11 +88,12 @@ def configNode() -> None:
     click.echo("[Node Configuration]")
 
     nodeName = click.prompt("Machine name", type = str)
+    nodeAccessToken = getNodeAccessToken(nodeName)
 
     click.echo("Storage path should be the same as (if) used during --user config")
     storagePath = click.prompt("Storage path (press enter to use default)", Path.home() / ".coretex", type = str)
 
-    image = click.prompt("Select an image to use for Coretex Node", type = click.Choice(["gpu", "cpu"]), show_choices = True)
+    image = arrowPrompt(["gpu", "cpu"])
 
     ram = click.prompt("Node RAM memory limit in GB (press enter to use default)", type = int, default = getAvilableRamMemory())
     swap = click.prompt("Node swap memory limit in GB, make sure it is larger then mem limit (press enter to use default)", type = int, default = getAvilableRamMemory() * 2)
@@ -105,6 +102,7 @@ def configNode() -> None:
     config["nodeName"] = nodeName
     config["storagePath"] = storagePath
     config["image"] = image
+    config["nodeAccessToken"] = nodeAccessToken
 
     saveConfig(config)
 
@@ -121,8 +119,8 @@ def config(user: bool, node: bool) -> None:
     if not user and not node:
         raise click.UsageError("Please use either --user or --node")
 
-    if user:
+    if user is not None:
         configUser()
 
-    if node:
+    if node is not None:
         configNode()

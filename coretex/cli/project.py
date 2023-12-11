@@ -1,39 +1,36 @@
 from typing import Optional
 
 import click
-from ..configuration import loadConfig, saveConfig, selectProject
+from .utils import arrowPrompt
+from ..configuration import loadConfig, saveConfig
 from .. import Project, ProjectType
 
 
-def selectProjectType() -> Optional[ProjectType]:
-    for i in range(3):
-        click.echo("Specify type of project that you wish to create")
-        for projectType in ProjectType:
-            click.echo(f"\t{projectType.name.ljust(25)} - {projectType.value}")
+def selectProject(projectId: int) -> None:
+    config = loadConfig()
+    config["projectId"] = projectId
+    saveConfig(config)
 
-        choice = click.prompt("Enter the number corresponding to the project type", type=int)
-        try:
-            selectedProjectType = ProjectType(choice)
-            click.echo(f"You've chosen: {selectedProjectType.name}")
-            return selectedProjectType
 
-        except ValueError:
-            click.echo("Invalid choice. Please try again.")
+def selectProjectType() -> ProjectType:
+    choices = [project_type.name for project_type in ProjectType]
 
-    return None
+    click.echo("Specify type of project that you wish to create")
+    selectedChoice = arrowPrompt(choices)
+
+    selectedProjectType = ProjectType[selectedChoice]
+    click.echo(f"You've chosen: {selectedProjectType.name}")
+    return selectedProjectType
 
 
 def createProject(name: str) -> Optional[Project]:
     selectedProjectType = selectProjectType()
-    if selectedProjectType is not None:
-        try:
-            newProject = Project.createProject(name, selectedProjectType)
-            click.echo(f"Project with name {name} successfully created.")
-            return newProject
-        except:
-            click.echo("Failed to create the project.")
-            return None
-    else:
+    try:
+        newProject = Project.createProject(name, selectedProjectType)
+        click.echo(f"Project with name {name} successfully created.")
+        return newProject
+    except:
+        click.echo("Failed to create the project.")
         return None
 
 
@@ -44,7 +41,7 @@ def select(name: Optional[str], id: Optional[int]) -> None:
     if name is None and id is None:
         raise click.UsageError("Please use either --name / -n (for project name) or --id (for project ID)")
 
-    if name:
+    if name is not None:
         click.echo("Checking project name")
         try:
             project = Project.fetchOne(name = name)
@@ -63,7 +60,7 @@ def select(name: Optional[str], id: Optional[int]) -> None:
                     click.echo("Failed to select project. Please try again.")
                     return
 
-    if id:
+    if id is not None:
         click.echo ("Checking project id")
         try:
             project = Project.fetchById(id)

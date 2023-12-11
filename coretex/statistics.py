@@ -45,7 +45,13 @@ def getRamUsage() -> float:
     return psutil.virtual_memory().percent
 
 
-def getAvilableRamMemory() -> int:
+def getAvailableRamMemory() -> int:
+    """
+        Returns
+        -------
+        int -> total RAM memory as int
+    """
+
     memory = psutil.virtual_memory()
     return int(memory.total / (1024 ** 3))
 

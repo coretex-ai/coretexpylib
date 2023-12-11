@@ -22,6 +22,7 @@ import os
 import json
 import sys
 
+from .networking import networkManager
 
 def getEnvVar(key: str, default: str) -> str:
     if os.environ.get(key) is None:
@@ -115,7 +116,10 @@ def isNodeConfigured(config: Dict[str, Any]) -> bool:
            config.get("organizationID") is not None
 
 
-def selectProject(projectId: int) -> None:
-    config = loadConfig()
-    config["projectId"] = projectId
-    saveConfig(config)
+def getNodeAccessToken(machineName: str) -> str:
+    params = {
+        "machine_name": machineName
+    }
+    response = networkManager.post('service', params = params).getJson(dict)
+
+    return str(response["access_token"])
