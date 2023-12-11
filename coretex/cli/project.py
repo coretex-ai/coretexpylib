@@ -1,50 +1,47 @@
 from typing import Optional
 
 import click
-
-from .utils import readConfig, saveConfig
-from .. import Project
-
-
-def promptSelect() -> None:
-    click.echo("No project selected")
-    projectName = click.prompt("Enter project name", type = int)
-
-    projects = Project.fetchAll(name = projectName, include_sessions = 1)
-    if len(projects) > 0:
-        select(id = projects[0].id)
-        return
-
-    click.echo("Could not find poject")
-    if not click.prompt("Do you want to create a project by that name?", type = bool, default = True):
-        return
-
-    newProject = Project.createProject(projectName, 8)
-    if newProject is not None:
-        select(id = newProject.id)
-        return
-
-    click.echo("Failed to create project")
+from ..configuration import loadConfig, saveConfig
+from .. import Project, ProjectType
 
 
-click.command()
+def createProject(name: str) -> None:
+    try:
+        new_project = Project.createProject(name, ProjectType.other)
+        if new_project is not None:
+            config = loadConfig()
+            config["projectId"] = new_project.id
+            saveConfig(config)
+    except Exception as e:
+        raise click.ClickException(f"Failed to create project: {e}")
+
+
+@click.command()
 @click.option("--name", "-n", type = str, help = "Project name")
 @click.option("--id", type = int, help = "Project ID")
 def select(name: Optional[str], id: Optional[int]) -> None:
-    if not (name ^ id):
+    if name is None and id is None:
         raise click.UsageError("Please use either --name / -n (for project name) or --id (for project ID)")
 
-    if name is not None:
+    if name:
         click.echo("Checking project name")
-
         projects = Project.fetchAll(name = name, include_sessions = 1)
-        if len(projects) == 0:
-            click.echo("Could not find project by that name", err = True)
-            return
+        if not projects:
+            click.echo(f"Could not find project with name \"{name}\"", err = True)
+            if click.confirm("Do you want to create a project by that name?", default = True):
+                createProject(name)
+        else:
+            click.echo(f"Project \"{name}\" selected successfully!")
 
-        id = projects[0].id
+    if id:
+        click.echo("Checking project id")
+        project = Project.fetchById(id)
+        if project:
+            click.echo(f"Project with id \"{id}\" fetched successfully. Project name \"{project.name}\"")
+        else:
+            click.echo(f"Failed to fetch project with provided id \"{id}\"")
 
-    config = readConfig()
+    config = loadConfig()
     config["projectId"] = id
     saveConfig(config)
 
@@ -54,4 +51,4 @@ def project() -> None:
     pass
 
 
-project.add_command(select,"select")
+project.add_command(select, "select")

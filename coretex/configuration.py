@@ -29,6 +29,7 @@ def getEnvVar(key: str, default: str) -> str:
 
     return os.environ[key]
 
+DEFAULT_CONFIG_PATH = Path.home() / ".config/coretex/config.json"
 
 DEFAULT_CONFIG = {
     # os.environ used directly here since we don't wanna
@@ -83,3 +84,32 @@ def _syncConfigWithEnv() -> None:
 
     os.environ["CTX_API_URL"] = config["serverUrl"]
     os.environ["CTX_STORAGE_PATH"] = config["storagePath"]
+
+
+def loadConfig() -> Dict[str, Any]:
+    with DEFAULT_CONFIG_PATH.open("r") as configFile:
+        config: Dict[str, Any] = json.load(configFile)
+
+    if not _verifyConfiguration(config):
+        raise RuntimeError(">> [Coretex] Invalid configuration")
+
+    return config
+
+
+def saveConfig(config: Dict[str, Any]) -> None:
+    configPath = DEFAULT_CONFIG_PATH.expanduser()
+    with configPath.open("w+") as configFile:
+        json.dump(config, configFile)
+
+
+def isUserConfigured(config: Dict[str, Any]) -> bool:
+    return config.get("username") is not None and \
+           config.get("password") is not None and \
+           config.get("storagePath") is not None
+
+
+def isNodeConfigured(config: Dict[str, Any]) -> bool:
+    return config.get("nodeName") is not None and \
+           config.get("storagePath") is not None and \
+           config.get("image") is not None and \
+           config.get("organizationID") is not None

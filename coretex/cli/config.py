@@ -1,4 +1,3 @@
-from typing import Dict, Any
 from pathlib import Path
 
 import os
@@ -7,7 +6,7 @@ from tabulate import tabulate
 
 import click
 
-from .utils import readConfig, saveConfig
+from ..configuration import loadConfig, saveConfig, isUserConfigured, isNodeConfigured
 from ..networking.network_manager import NetworkManager
 
 
@@ -16,21 +15,8 @@ NODE_PORT = 5443
 CORETEX_CONFIG_DIR = Path.home() / ".config" / "coretex"
 
 
-def isUserConfigured(config: Dict[str, Any]) -> bool:
-    return config.get("username") is not None and \
-           config.get("password") is not None and \
-           config.get("storagePath") is not None
-
-
-def isNodeConfigured(config: Dict[str, Any]) -> bool:
-    return config.get("nodeName") is not None and \
-           config.get("storagePath") is not None and \
-           config.get("image") is not None and \
-           config.get("organizationID") is not None
-
-
 def configUser() -> None:
-    config = readConfig()
+    config = loadConfig()
     if isUserConfigured(config):
         headers = ["username", "server", "storage path"]
 
@@ -137,8 +123,8 @@ networks:
         dockerFile.write(dockerComposeContent)
 
 
-def configNode():
-    config = readConfig()
+def configNode() -> None:
+    config = loadConfig()
     if not isUserConfigured(config):
         click.echo("User not configured. Run \'coretex config --user\'", err = True)
         return

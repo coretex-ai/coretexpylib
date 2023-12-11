@@ -16,7 +16,7 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Internal - not for outside use
-from ._configuration import _syncConfigWithEnv
+from .configuration import _syncConfigWithEnv
 _syncConfigWithEnv()
 
 
