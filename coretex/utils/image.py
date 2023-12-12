@@ -22,23 +22,45 @@ from PIL import Image
 import numpy as np
 
 
-def resizeWithPadding(
-    image: np.ndarray,
-    newShape: Tuple[int, int]
-) -> Tuple[np.ndarray, Tuple[int, int]]:
+def resizeWithPadding(image: np.ndarray, width: int, height: int) -> Tuple[np.ndarray, int, int]:
+    """
+        Resizes the image while maintaining original aspect ratio,
+        and filling the remaining space with symmetrical padding so
+        that the original image is in the center
 
-    originalShape = (image.shape[1], image.shape[0])
-    ratio = max(newShape) / max(originalShape)
-    newSize = tuple([int(x * ratio) for x in originalShape])
-    resizedImage = Image.fromarray(image).resize(newSize)
+        Parameters
+        ----------
+        image : np.ndarray
+            Input image as an array
+        width : int
+            Width of the output image
+        height : int
+            Height of the output image
 
-    deltaW = newShape[0] - newSize[0]
-    deltaH = newShape[1] - newSize[1]
+        Returns
+        -------
+        Tuple[np.ndarray, int, int] -> Output image as numpy array,
+        number of pixels of padding from top/bottom and number of pixels
+        of padding from left/right
+    """
+
+    originalWidth = image.shape[1]
+    originalHeight = image.shape[0]
+
+    ratio = max(width, height) / max(originalWidth, originalHeight)
+
+    newWidth = int(originalWidth * ratio)
+    newHeight = int(originalHeight * ratio)
+
+    resizedImage = Image.fromarray(image).resize((newWidth, newHeight))
+
+    deltaW = width - newWidth
+    deltaH = height - newHeight
 
     top = deltaH // 2
     left = deltaW // 2
 
-    paddedImage = Image.new(resizedImage.mode, (newShape[1], newShape[0]), 0)
+    paddedImage = Image.new(resizedImage.mode, (width, height), 0)
     paddedImage.paste(resizedImage, (left, top))
 
-    return np.array(paddedImage), (top, left)
+    return np.array(paddedImage), top, left
