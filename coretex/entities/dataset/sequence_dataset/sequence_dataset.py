@@ -22,6 +22,7 @@ from pathlib import Path
 import logging
 
 from .base import BaseSequenceDataset
+from ..utils import createDataset
 from ..network_dataset import NetworkDataset
 from ..custom_dataset import CustomDataset
 from ...sample import SequenceSample, CustomSample
@@ -92,18 +93,15 @@ class SequenceDataset(BaseSequenceDataset, NetworkDataset[SequenceSample]):
         if isinstance(metadataPath, str):
             metadataPath = Path(metadataPath)
 
-        dataset = CustomDataset.createDataset(name, projectId, meta)
-        if dataset is None:
-            return None
+        with createDataset(CustomDataset, name, projectId, meta) as dataset:
+            if CustomSample.createCustomSample(
+                "_metadata",
+                dataset.id,
+                metadataPath
+            ) is None:
 
-        if CustomSample.createCustomSample(
-            "_metadata",
-            dataset.id,
-            metadataPath
-        ) is None:
-
-            logging.getLogger("coretexpylib").warning(">> [Coretex] Failed to create _metadata sample")
-            return None
+                logging.getLogger("coretexpylib").warning(">> [Coretex] Failed to create _metadata sample")
+                return None
 
         return cls.fetchById(dataset.id)
 

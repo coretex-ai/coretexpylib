@@ -15,12 +15,13 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .custom_dataset import CustomDataset, LocalCustomDataset
-from .image_dataset import ImageDataset, LocalImageDataset, augmentDataset
-from .image_segmentation_dataset import ImageSegmentationDataset, LocalImageSegmentationDataset
-from .computer_vision_dataset import ComputerVisionDataset, LocalComputerVisionDataset
-from .dataset import Dataset
-from .utils import createDataset
-from .local_dataset import LocalDataset
-from .network_dataset import NetworkDataset, DatasetState
-from .sequence_dataset import SequenceDataset, LocalSequenceDataset
+from enum import IntEnum
+
+class DatasetState(IntEnum):
+
+    """
+        State of Coretex dataset
+    """
+
+    uploading = 1
+    final     = 2

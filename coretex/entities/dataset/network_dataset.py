@@ -25,10 +25,11 @@ import base64
 import logging
 
 from .dataset import Dataset
+from .state import DatasetState
 from ..sample import NetworkSample
 from ... import folder_manager
 from ...codable import KeyDescriptor
-from ...networking import NetworkObject
+from ...networking import EntityNotCreated, NetworkObject, networkManager
 from ...threading import MultithreadedDataProcessor
 
 
@@ -143,7 +144,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
         name: str,
         projectId: int,
         meta: Optional[Dict[str, Any]] = None
-    ) -> Optional[Self]:
+    ) -> Self:
 
         """
             Creates a new dataset with the provided name and type
@@ -159,20 +160,27 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
             -------
             The created dataset object or None if creation failed
 
+            Raises
+            ------
+            EntityNotCreated -> If dataset creation failed
+
             Example
             -------
             >>> from coretex import NetworkDataset
             \b
             >>> dummyDataset = NetworkDataset.createDataset("dummyDataset", 123)
-            >>> if dummyDataset is not None:
-                    print("Dataset created successfully")
         """
 
-        return cls.create(
+        dataset = cls.create(
             name = name,
             project_id = projectId,
             meta = meta
         )
+
+        if dataset is None:
+            raise EntityNotCreated(f">> [Coretex] Failed to create dataset with name: {name}")
+
+        return dataset
 
     @classmethod
     def generateCacheName(cls, prefix: str, dependencies: List[str]) -> str:
@@ -223,6 +231,20 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
             raise ValueError(f"Failed to create cache dataset with prefix \"{prefix}\"")
 
         return dataset
+
+    def finalize(self) -> bool:
+        """
+            Finalizes state of Coretex dataset
+
+            Example
+            -------
+            >>> from coretex import CustomDataset
+            \b
+            >>> dummyDataset = CustomDataset.createDataset("dummyDataset", 123)
+            >>> dummyDataset.finalize()
+        """
+
+        return self.update(name = self.name, state = DatasetState.final)
 
     def download(self, ignoreCache: bool = False) -> None:
         """

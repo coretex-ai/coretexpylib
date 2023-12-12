@@ -64,9 +64,7 @@ class BaseConverter(ABC):
     """
 
     def __init__(self, datasetName: str, projectId: int, datasetPath: str) -> None:
-        dataset: Optional[ImageDatasetType] = ImageDataset.createDataset(datasetName, projectId)
-        if dataset is None:
-            raise ValueError(">> [Coretex] Failed to create dataset")
+        dataset: ImageDatasetType = ImageDataset.createDataset(datasetName, projectId)
 
         self._dataset: Final = dataset
         self._datasetPath: Final = datasetPath
@@ -121,5 +119,8 @@ class BaseConverter(ABC):
             self._extractSingleAnnotation,
             message = "Converting dataset..."
         ).process()
+
+        if not self._dataset.finalize():
+            raise ValueError(f"Failed to finalize dataset \"{self._dataset.name}\"")
 
         return self._dataset

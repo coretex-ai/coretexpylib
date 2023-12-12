@@ -53,28 +53,25 @@ def createRemoteEnvironmentFor(Type_: ProjectType, datasetType: Type[RemoteDatas
     if project is None:
         raise ValueError(">> [Coretex] Failed to create project")
 
-    dataset = datasetType.createDataset(generateUniqueName(), project.id)
-    if dataset is None:
-        raise ValueError(">> [Coretex] Failed to create dataset")
+    with createDataset(datasetType, generateUniqueName(), project.id) as dataset:
+        datasetPath = getDatasetPathForType(Type_)
+        for path in datasetPath.iterdir():
+            # Gotta check this because macos creates .DS_store files
+            if not zipfile.is_zipfile(path):
+                continue
 
-    datasetPath = getDatasetPathForType(Type_)
-    for path in datasetPath.iterdir():
-        # Gotta check this because macos creates .DS_store files
-        if not zipfile.is_zipfile(path):
-            continue
+            sample = _createSampleFor(Type_, dataset.id, path)
+            if sample is None:
+                raise ValueError(">> [Coretex] Failed to create sample")
 
-        sample = _createSampleFor(Type_, dataset.id, path)
-        if sample is None:
-            raise ValueError(">> [Coretex] Failed to create sample")
+        if isinstance(dataset, ComputerVisionDataset):
+            with datasetPath.joinpath("classes.json").open("r") as classFile:
+                classes = ImageDatasetClasses(
+                    [ImageDatasetClass.decode(element) for element in json.load(classFile)]
+                )
 
-    if isinstance(dataset, ComputerVisionDataset):
-        with datasetPath.joinpath("classes.json").open("r") as classFile:
-            classes = ImageDatasetClasses(
-                [ImageDatasetClass.decode(element) for element in json.load(classFile)]
-            )
-
-            if not dataset.saveClasses(classes):
-                raise RuntimeError(">> [Coretex] Failed to create classes for ComputerVision dataset")
+                if not dataset.saveClasses(classes):
+                    raise RuntimeError(">> [Coretex] Failed to create classes for ComputerVision dataset")
 
     if not dataset.refresh():
         raise RuntimeError(">> [Coretex] Failed to fetch dataset")
