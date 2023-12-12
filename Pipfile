@@ -18,6 +18,9 @@ py3nvml = "*"
 watchdog = "*"
 gitpython = "*"
 pyyaml = "*"
+click = "*"
+tabulate = "*"
+inquirer = "*"
 
 [dev-packages]
 mypy = "*"
