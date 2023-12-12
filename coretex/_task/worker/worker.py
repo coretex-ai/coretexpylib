@@ -15,9 +15,9 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Tuple, Dict, Optional, Type, List
+from typing import Optional, Type
 from typing_extensions import Self
-from types import TracebackType
+from types import TracebackType, FrameType
 from multiprocessing.connection import Connection
 
 import time
@@ -25,64 +25,36 @@ import timeit
 import os
 import logging
 import multiprocessing
+import signal
 
 import psutil
 
-from . import utils
-from ...entities import MetricType, TaskRun, Metric
+from . import utils, metrics, artifacts
+from ...entities import TaskRun
 from ...networking import networkManager, NetworkRequestError
-from ...entities.task_run.metrics import metric_factory
 
 
-def _getMetrics() -> List[Metric]:
-    metrics = [
-        metric_factory.createMetric("cpu_usage", "time (s)", MetricType.interval, "usage (%)", MetricType.percent, None, [0, 100]),
-        metric_factory.createMetric("ram_usage", "time (s)", MetricType.interval, "usage (%)", MetricType.percent, None, [0, 100]),
-        metric_factory.createMetric("swap_usage", "time (s)", MetricType.interval, "usage (%)", MetricType.percent, None, [0, 100]),
-        metric_factory.createMetric("download_speed", "time (s)", MetricType.interval, "bytes", MetricType.bytes),
-        metric_factory.createMetric("upload_speed", "time (s)", MetricType.interval, "bytes", MetricType.bytes),
-        metric_factory.createMetric("disk_read", "time (s)", MetricType.interval, "bytes", MetricType.bytes),
-        metric_factory.createMetric("disk_write", "time (s)", MetricType.interval, "bytes", MetricType.bytes)
-    ]
+def _update(taskRun: TaskRun) -> None:
+    logging.getLogger("coretexpylib").debug(">> [Coretex] Heartbeat")
+    taskRun.updateStatus()  # updateStatus without params is considered heartbeat
 
-    # If GPU exists add GPU related metrics to the list
-    try:
-        from py3nvml import py3nvml
-
-        # Do not shutdown otherwise when extracting gpu metrics it will throw error
-        py3nvml.nvmlInit()
-
-        metrics.extend([
-            metric_factory.createMetric("gpu_usage", "time (s)", MetricType.interval, "usage (%)", MetricType.percent, None, [0, 100]),
-            metric_factory.createMetric("gpu_temperature", "time (s)", MetricType.interval, "usage (%)", MetricType.percent)
-        ])
-
-        logging.getLogger("coretexpylib").debug(">> [Coretex] Initialized GPU metrics")
-    except:
-        logging.getLogger("coretexpylib").debug(">> [Coretex] Failed to initialize GPU metrics")
-
-    return metrics
-
-
-def _heartbeat(taskRun: TaskRun) -> None:
-    # Update status without parameters is considered run hearbeat
-    taskRun.updateStatus()
-
-
-def _uploadMetrics(taskRun: TaskRun) -> None:
-    x = time.time()
-    metricValues: Dict[str, Tuple[float, float]] = {}
-
-    for metric in taskRun.metrics:
-        metricValue = metric.extract()
-
-        if metricValue is not None:
-            metricValues[metric.name] = x, metricValue
-
-    taskRun.submitMetrics(metricValues)
+    logging.getLogger("coretexpylib").debug(">> [Coretex] Uploading metrics")
+    metrics.upload(taskRun)
 
 
 def _taskRunWorker(output: Connection, refreshToken: str, taskRunId: int, parentId: int) -> None:
+    isStopped = False
+
+    def handleTerminateSignal(signum: int, frame: Optional[FrameType]) -> None:
+        if signum != signal.SIGTERM:
+            return
+
+        logging.getLogger("coretexpylib").debug(">> [Coretex] Received terminate signal. Terminating...")
+
+        nonlocal isStopped
+        isStopped = True
+
+    signal.signal(signal.SIGTERM, handleTerminateSignal)
     utils.initializeLogger(taskRunId)
 
     response = networkManager.authenticateWithRefreshToken(refreshToken)
@@ -97,7 +69,7 @@ def _taskRunWorker(output: Connection, refreshToken: str, taskRunId: int, parent
         return
 
     try:
-        taskRun.createMetrics(_getMetrics())
+        metrics.create(taskRun)
     except NetworkRequestError:
         utils.sendFailure(output, "Failed to create metrics")
         return
@@ -107,23 +79,23 @@ def _taskRunWorker(output: Connection, refreshToken: str, taskRunId: int, parent
     parent = psutil.Process(parentId)
     current = psutil.Process(os.getpid())
 
-    while parent.is_running():
-        logging.getLogger("coretexpylib").debug(f">> [Coretex] Worker process id {current.pid}, parent process id {parent.pid}")
+    # Start tracking files which are created inside current working directory
+    with artifacts.track(taskRun):
+        while parent.is_running() and not isStopped:
+            logging.getLogger("coretexpylib").debug(f">> [Coretex] Worker process id {current.pid}, parent process id {parent.pid}")
 
-        # Measure elapsed time to calculate for how long should the process sleep
-        start = timeit.default_timer()
-        logging.getLogger("coretexpylib").debug(">> [Coretex] Heartbeat")
-        _heartbeat(taskRun)
+            # Measure elapsed time to calculate for how long should the process sleep
+            start = timeit.default_timer()
+            _update(taskRun)
+            diff = timeit.default_timer() - start
 
-        logging.getLogger("coretexpylib").debug(">> [Coretex] Uploading metrics")
-        _uploadMetrics(taskRun)
-        diff = timeit.default_timer() - start
+            # Make sure that metrics and heartbeat are sent every 5 seconds
+            if diff < 5:
+                sleepTime = 5 - diff
+                logging.getLogger("coretexpylib").debug(f">> [Coretex] Sleeping for {sleepTime}s")
+                time.sleep(sleepTime)
 
-        # Make sure that metrics and heartbeat are sent every 5 seconds
-        if diff < 5:
-            sleepTime = 5 - diff
-            logging.getLogger("coretexpylib").debug(f">> [Coretex] Sleeping for {sleepTime}s")
-            time.sleep(sleepTime)
+    logging.getLogger("coretexpylib").debug(">> [Coretex] Finished")
 
 
 class TaskRunWorker:
@@ -154,7 +126,7 @@ class TaskRunWorker:
     def stop(self) -> None:
         logging.getLogger("coretexpylib").debug(">> [Coretex] Stopping the worker process")
 
-        self.__process.kill()
+        self.__process.terminate()
         self.__process.join()
 
     def __enter__(self) -> Self:

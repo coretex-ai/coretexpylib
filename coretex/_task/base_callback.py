@@ -58,12 +58,12 @@ class TaskCallback:
         )
 
     def onSuccess(self) -> None:
-        logging.getLogger("coretexpylib").info("TaskRun finished successfully")
+        logging.getLogger("coretexpylib").info(">> [Coretex] TaskRun finished successfully")
 
         self._restoreStreams()
 
     def onException(self, exception: BaseException) -> None:
-        logging.getLogger("coretexpylib").critical("TaskRun failed to finish due to an error")
+        logging.getLogger("coretexpylib").critical(">> [Coretex] TaskRun failed to finish due to an error")
         logging.getLogger("coretexpylib").debug(exception, exc_info = True)
         logging.getLogger("coretexpylib").critical(str(exception))
 
@@ -73,8 +73,6 @@ class TaskCallback:
         pass
 
     def onNetworkConnectionLost(self) -> None:
-        folder_manager.clearTempFiles()
-
         sys.exit(1)
 
     def onCleanUp(self) -> None:
@@ -84,5 +82,4 @@ class TaskCallback:
         except:
             pass
 
-        folder_manager.clearTempFiles()
         setCurrentTaskRun(None)
