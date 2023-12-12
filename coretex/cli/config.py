@@ -13,7 +13,7 @@ from ..configuration import loadConfig, saveConfig, isUserConfigured, isNodeConf
 
 def authenticate(retryCount: int = 0) -> Tuple[str, str, str, str]:
     if retryCount >= 3:
-        raise click.ClickException("") #raise errror
+        raise Exception("Failed to authenticate. Terminating...")
 
     username = click.prompt("Email", type = str)
     password = click.prompt("Password", type = str, hide_input = True)
@@ -36,12 +36,11 @@ def registerNode(name: str) -> Optional[str]:
     response = networkManager.post("service", params)
 
     if response.hasFailed():
-        click.echo("Failed to configure node. Please try again...")
-        return None
+        raise Exception("Failed to configure node. Please try again...")
 
     accessToken = response.getJson(dict).get("access_token")
 
-    if not isinstance(accessToken, str) and accessToken is not None:
+    if not isinstance(accessToken, str):
         raise TypeError("Something went wrong. Please try again...")
 
     return accessToken
@@ -70,7 +69,7 @@ def configUser() -> None:
     click.echo("Configuring user...")
     username = click.prompt("Email", type = str)
     password = click.prompt("Password", type = str, hide_input = True)
-    username, password, token, refreshToken = authenticate(retryCount = 2)
+    username, password, token, refreshToken = authenticate()
 
     click.echo("Storage path should be the same as (if) used during --node config")
     storagePath = click.prompt("Storage path (press enter to use default)", Path.home() / ".coretex", type = str)
@@ -89,7 +88,7 @@ def configUser() -> None:
 def configNode() -> None:
     config = loadConfig()
     if not isUserConfigured(config):
-        click.echo("User not configured. Run \'coretex config --user\'", err = True)
+        click.echo("User not configured. Run \"coretex config --user\"", err = True)
         return
 
     if isNodeConfigured(config):

@@ -48,11 +48,11 @@ class Project(BaseObject):
 
             Returns
             -------
-            Optional[Self] -> The created project object
+            Self -> The created project object
 
             Raises
             ------
-            EntityNotCreated -> if project creation failed
+            EntityNotCreated -> If project creation failed
 
             Example
             -------

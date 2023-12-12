@@ -40,7 +40,7 @@ def select(name: Optional[str], id: Optional[int]) -> None:
         raise click.UsageError("Please use either --name / -n (for project name) or --id (for project ID)")
 
     if name is not None:
-        click.echo("Checking project name")
+        click.echo("Validating project...")
         try:
             project = Project.fetchOne(name = name)
             click.echo(f"Project \"{name}\" selected successfully!")
@@ -59,15 +59,15 @@ def select(name: Optional[str], id: Optional[int]) -> None:
                     return
 
     if id is not None:
-        click.echo ("Checking project id")
+        click.echo ("Validating project...")
         try:
             project = Project.fetchById(id)
             click.echo(f"Project with id \"{id}\" fetched successfully. Project name \"{project.name}\"")
+            selectProject(project.id)
+
         except NetworkRequestError:
             click.echo(f"Failed to fetch project with provided id \"{id}\"")
-            return
 
-        selectProject(project.id)
 
 
 @click.group()

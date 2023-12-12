@@ -13,4 +13,4 @@ def arrowPrompt(choices: List[Any]) -> Any:
         )
     ])
 
-    return answers['option']
+    return answers["option"]

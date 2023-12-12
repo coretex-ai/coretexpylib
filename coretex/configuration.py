@@ -100,7 +100,7 @@ def loadConfig() -> Dict[str, Any]:
 def saveConfig(config: Dict[str, Any]) -> None:
     configPath = DEFAULT_CONFIG_PATH.expanduser()
     with configPath.open("w+") as configFile:
-        json.dump(config, configFile)
+        json.dump(config, configFile, indent = 4)
 
 
 def isUserConfigured(config: Dict[str, Any]) -> bool:
