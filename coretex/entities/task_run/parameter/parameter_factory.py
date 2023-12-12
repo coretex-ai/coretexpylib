@@ -17,15 +17,37 @@
 
 from typing import Dict, Any
 
+from .utils import getValueParamType
 from .base_parameter import BaseParameter
 from .parameter_type import ParameterType
 from .parameters import *
 
 
+def cleanParamDict(value: Dict[str, Any]) -> Dict[str, Any]:
+    if not "data_type" in value:
+        value["data_type"] = None
+
+    if not "value" in value:
+        value["value"] = None
+
+    if not "required" in value:
+        value["required"] = False
+
+    dataName: str = value["name"]
+    dataType = value["data_type"]
+    dataValue = value["value"]
+
+    if dataType is None and dataValue is None:
+        value["data_type"] = ParameterType.string.value
+
+    if dataType is None and dataValue is not None:
+        value["data_type"] = getValueParamType(dataValue, dataName).value
+
+    return value
+
 def create(value: Dict[str, Any]) -> BaseParameter:
+    cleanParamDict(value)
     dataType = value.get("data_type")
-    if dataType is None:
-        raise ValueError(f"\"data_type\" missing in {value}")
 
     if not isinstance(dataType, str):
         raise ValueError("\"data_type\" is not of type \"str\"")
