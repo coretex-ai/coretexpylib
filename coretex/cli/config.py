@@ -1,15 +1,45 @@
+from typing import Optional, Tuple
 from pathlib import Path
-
-import os
 
 from tabulate import tabulate
 
 import click
 
 from .utils import arrowPrompt
-from ..configuration import loadConfig, saveConfig, isUserConfigured, isNodeConfigured, getNodeAccessToken
-from ..statistics import getAvailableRamMemory
 from ..networking import networkManager
+from ..statistics import getAvailableRamMemory
+from ..configuration import loadConfig, saveConfig, isUserConfigured, isNodeConfigured
+
+
+def authenticate(retryCount: int = 0) -> Tuple[str, str, str, str]:
+    if retryCount >= 3:
+        raise click.ClickException("") #raise errror
+
+    username = click.prompt("Email", type = str)
+    password = click.prompt("Password", type = str, hide_input = True)
+
+    response = networkManager.authenticate(username, password, False)
+
+    if response.hasFailed():
+        click.echo("Failed to authenticate. Please try again...")
+        return authenticate(retryCount + 1)
+
+    jsonResponse = response.getJson(dict)
+
+    return username, password, jsonResponse["token"], jsonResponse["refreshToken"]
+
+
+def registerNode(name: str) -> Optional[str]:
+    params = {
+        "machine_name": name
+    }
+    response = networkManager.post('service', params = params)
+
+    if response.hasFailed():
+        click.echo("Failed to configure node. Please try again...")
+        return None
+
+    return str(response.getJson(dict)["access_token"])
 
 
 def configUser() -> None:
@@ -33,26 +63,18 @@ def configUser() -> None:
             return
 
     click.echo("Configuring user...")
-    for i in range(3):
-        username = click.prompt("Email", type = str)
-        password = click.prompt("Password", type = str, hide_input = True)
-        response = networkManager.authenticate(username, password, False)
-        if not response.hasFailed():
-            click.echo("Authentification successful")
-            break
-
-        click.echo("Failed to authenticate. Try again")
+    username = click.prompt("Email", type=str)
+    password = click.prompt("Password", type=str, hide_input=True)
+    username, password, token, refreshToken = authenticate(retryCount = 2)
 
     click.echo("Storage path should be the same as (if) used during --node config")
     storagePath = click.prompt("Storage path (press enter to use default)", Path.home() / ".coretex", type = str)
 
-    jsonResponse = response.getJson(dict)
-
     config["username"] = username
     config["password"] = password
     config["storagePath"] = storagePath
-    config["token"] = jsonResponse.get("token")
-    config["refreshToken"] = jsonResponse.get("refresh_token")
+    config["token"] = token
+    config["refreshToken"] = refreshToken
 
     saveConfig(config)
 
@@ -88,7 +110,10 @@ def configNode() -> None:
     click.echo("[Node Configuration]")
 
     nodeName = click.prompt("Machine name", type = str)
-    nodeAccessToken = getNodeAccessToken(nodeName)
+    nodeAccessToken = registerNode(nodeName)
+
+    if nodeAccessToken is None:
+        return
 
     click.echo("Storage path should be the same as (if) used during --user config")
     storagePath = click.prompt("Storage path (press enter to use default)", Path.home() / ".coretex", type = str)
@@ -119,8 +144,8 @@ def config(user: bool, node: bool) -> None:
     if not user and not node:
         raise click.UsageError("Please use either --user or --node")
 
-    if user is not None:
+    if user:
         configUser()
 
-    if node is not None:
+    if node:
         configNode()

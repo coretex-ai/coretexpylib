@@ -49,7 +49,7 @@ def getAvailableRamMemory() -> int:
     """
         Returns
         -------
-        int -> total RAM memory as int
+        int -> total RAM memory in GB as int
     """
 
     memory = psutil.virtual_memory()

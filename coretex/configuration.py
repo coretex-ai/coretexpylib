@@ -22,13 +22,13 @@ import os
 import json
 import sys
 
-from .networking import networkManager
 
 def getEnvVar(key: str, default: str) -> str:
     if os.environ.get(key) is None:
         os.environ[key] = default
 
     return os.environ[key]
+
 
 DEFAULT_CONFIG_PATH = Path.home().joinpath(".config", "coretex", "config.json")
 
@@ -104,22 +104,16 @@ def saveConfig(config: Dict[str, Any]) -> None:
 
 
 def isUserConfigured(config: Dict[str, Any]) -> bool:
-    return config.get("username") is not None and \
-           config.get("password") is not None and \
-           config.get("storagePath") is not None
-
+    return (
+        config.get("username") is not None and
+        config.get("password") is not None and
+        config.get("storagePath") is not None
+    )
 
 def isNodeConfigured(config: Dict[str, Any]) -> bool:
-    return config.get("nodeName") is not None and \
-           config.get("storagePath") is not None and \
-           config.get("image") is not None and \
-           config.get("organizationID") is not None
-
-
-def getNodeAccessToken(machineName: str) -> str:
-    params = {
-        "machine_name": machineName
-    }
-    response = networkManager.post('service', params = params).getJson(dict)
-
-    return str(response["access_token"])
+    return (
+        config.get("nodeName") is not None and
+        config.get("storagePath") is not None and
+        config.get("image") is not None and
+        config.get("organizationID") is not None
+    )
