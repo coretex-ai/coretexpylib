@@ -28,7 +28,7 @@ def selectProjectType() -> ProjectType:
     selectedChoice = arrowPrompt(choices)
 
     selectedProjectType = availableProjectTypes[selectedChoice]
-    click.echo(f"You've chosen: {selectedProjectType.name}")
+    click.echo(f"You've chosen: {selectedChoice}")
     return selectedProjectType
 
 

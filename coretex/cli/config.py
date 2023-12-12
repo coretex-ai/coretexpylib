@@ -111,7 +111,7 @@ def configNode() -> None:
     click.echo("[Setting up coretex environment]")
     click.echo("[Node Configuration]")
 
-    nodeName = click.prompt("Node name:", type = str)
+    nodeName = click.prompt("Node name", type = str)
     nodeAccessToken = registerNode(nodeName)
 
     click.echo("Storage path should be the same as (if) used during --user config")
