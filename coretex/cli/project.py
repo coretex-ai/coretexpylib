@@ -1,6 +1,8 @@
 from typing import Optional
 
 import click
+
+from ..networking import NetworkRequestError
 from .utils import arrowPrompt
 from ..configuration import loadConfig, saveConfig
 from .. import Project, ProjectType
@@ -61,7 +63,7 @@ def select(name: Optional[str], id: Optional[int]) -> None:
         try:
             project = Project.fetchById(id)
             click.echo(f"Project with id \"{id}\" fetched successfully. Project name \"{project.name}\"")
-        except:
+        except NetworkRequestError:
             click.echo(f"Failed to fetch project with provided id \"{id}\"")
             return
 

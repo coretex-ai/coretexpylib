@@ -39,7 +39,12 @@ def registerNode(name: str) -> Optional[str]:
         click.echo("Failed to configure node. Please try again...")
         return None
 
-    return str(response.getJson(dict)["access_token"])
+    accessToken = response.getJson(dict).get("access_token")
+
+    if not isinstance(accessToken, str) and accessToken is not None:
+        raise TypeError("Something went wrong. Please try again...")
+
+    return accessToken
 
 
 def configUser() -> None:
