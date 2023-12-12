@@ -38,7 +38,7 @@ def select(name: Optional[str], id: Optional[int]) -> None:
             project = Project.fetchOne(name = name)
             click.echo(f"Project \"{name}\" selected successfully!")
             selectProject(project.id)
-        except NetworkRequestError:
+        except ValueError:
             click.echo(f"Could not find project with name \"{name}\"", err = True)
             if click.confirm("Do you want to create a project by that name?", default = True):
                 selectedProjectType = selectProjectType()

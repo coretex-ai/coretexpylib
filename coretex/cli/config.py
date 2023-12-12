@@ -26,7 +26,7 @@ def authenticate(retryCount: int = 0) -> Tuple[str, str, str, str]:
 
     jsonResponse = response.getJson(dict)
 
-    return username, password, jsonResponse["token"], jsonResponse["refreshToken"]
+    return username, password, jsonResponse["token"], jsonResponse["refresh_token"]
 
 
 def registerNode(name: str) -> Optional[str]:
@@ -67,8 +67,6 @@ def configUser() -> None:
             return
 
     click.echo("Configuring user...")
-    username = click.prompt("Email", type = str)
-    password = click.prompt("Password", type = str, hide_input = True)
     username, password, token, refreshToken = authenticate()
 
     click.echo("Storage path should be the same as (if) used during --node config")
