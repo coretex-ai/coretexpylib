@@ -29,7 +29,7 @@ def authenticate(retryCount: int = 0) -> Tuple[str, str, str, str]:
     return username, password, jsonResponse["token"], jsonResponse["refresh_token"]
 
 
-def registerNode(name: str) -> Optional[str]:
+def registerNode(name: str) -> str:
     params = {
         "machine_name": name
     }
@@ -111,11 +111,8 @@ def configNode() -> None:
     click.echo("[Setting up coretex environment]")
     click.echo("[Node Configuration]")
 
-    nodeName = click.prompt("Machine name", type = str)
+    nodeName = click.prompt("Node name:", type = str)
     nodeAccessToken = registerNode(nodeName)
-
-    if nodeAccessToken is None:
-        return
 
     click.echo("Storage path should be the same as (if) used during --user config")
     storagePath = click.prompt("Storage path (press enter to use default)", Path.home() / ".coretex", type = str)
@@ -126,10 +123,13 @@ def configNode() -> None:
     swap = click.prompt("Node swap memory limit in GB, make sure it is larger then mem limit (press enter to use default)", type = int, default = getAvailableRamMemory() * 2)
     sharedMemory = click.prompt("Node POSIX shared memory limit in GB (press enter to use default)", type = int, default = 2)
 
-    config["nodeName"] = nodeName
     config["storagePath"] = storagePath
-    config["image"] = image
+    config["nodeName"] = nodeName
+    config["nodeImage"] = image
     config["nodeAccessToken"] = nodeAccessToken
+    config["nodeRam"] = ram
+    config["nodeSwap"] = swap
+    config["nodeSharedMemory"] = sharedMemory
 
     saveConfig(config)
 

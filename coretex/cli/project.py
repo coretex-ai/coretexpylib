@@ -15,12 +15,19 @@ def selectProject(projectId: int) -> None:
 
 
 def selectProjectType() -> ProjectType:
-    choices = [projectType.name for projectType in ProjectType]
+    availableProjectTypes = {
+        "Computer Vision": ProjectType.computerVision,
+        "Motion Recognition": ProjectType.motionRecognition,
+        "Bioinformatics": ProjectType.bioInformatics,
+        "Other": ProjectType.other
+    }
+
+    choices = list(availableProjectTypes.keys())
 
     click.echo("Specify type of project that you wish to create")
     selectedChoice = arrowPrompt(choices)
 
-    selectedProjectType = ProjectType[selectedChoice]
+    selectedProjectType = availableProjectTypes[selectedChoice]
     click.echo(f"You've chosen: {selectedProjectType.name}")
     return selectedProjectType
 
@@ -40,13 +47,12 @@ def select(name: Optional[str], id: Optional[int]) -> None:
             selectProject(project.id)
         except ValueError:
             click.echo(f"Could not find project with name \"{name}\"", err = True)
-            if click.confirm("Do you want to create a project by that name?", default = True):
+            if click.confirm("Do you want to create a project with that name?", default = True):
                 selectedProjectType = selectProjectType()
                 newProject = Project.createProject(name, selectedProjectType)
 
-                click.echo(f"Project with name {name} successfully created.")
+                click.echo(f"Project with name \"{name}\" successfully created and selected.")
                 selectProject(newProject.id)
-                click.echo(f"Project \"{name}\" selected successfully!")
 
     if id is not None:
         click.echo ("Validating project...")
