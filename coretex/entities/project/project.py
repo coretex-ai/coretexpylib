@@ -50,17 +50,22 @@ class Project(BaseObject):
             -------
             Optional[Self] -> The created project object
 
+            Raises
+            ------
+            EntityNotCreated -> if project creation failed
+
             Example
             -------
             >>> from coretex import Project, ProjectType
             \b
-            >>> dummyProject = Project.createProject(
-                    name = "dummyProject",
-                    projectType = ProjectType.other,
-                    description = "This is dummy Coretex Project"
-                )
-            >>> if dummyProject is None:
-                    print("Failed to create project")
+            >>> try:
+            >>>     dummyProject = Project.createProject(
+                        name = "dummyProject",
+                        projectType = ProjectType.other,
+                        description = "This is dummy Coretex Project"
+                    )
+                except:
+                    print("Failed to create project.")
         """
 
         project = cls.create(

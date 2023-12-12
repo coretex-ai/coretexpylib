@@ -13,7 +13,7 @@ def selectProject(projectId: int) -> None:
 
 
 def selectProjectType() -> ProjectType:
-    choices = [project_type.name for project_type in ProjectType]
+    choices = [projectType.name for projectType in ProjectType]
 
     click.echo("Specify type of project that you wish to create")
     selectedChoice = arrowPrompt(choices)
@@ -25,13 +25,9 @@ def selectProjectType() -> ProjectType:
 
 def createProject(name: str) -> Optional[Project]:
     selectedProjectType = selectProjectType()
-    try:
-        newProject = Project.createProject(name, selectedProjectType)
-        click.echo(f"Project with name {name} successfully created.")
-        return newProject
-    except:
-        click.echo("Failed to create the project.")
-        return None
+    newProject = Project.createProject(name, selectedProjectType)
+    click.echo(f"Project with name {name} successfully created.")
+    return newProject
 
 
 @click.command()

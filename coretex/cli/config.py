@@ -33,7 +33,7 @@ def registerNode(name: str) -> Optional[str]:
     params = {
         "machine_name": name
     }
-    response = networkManager.post('service', params = params)
+    response = networkManager.post("service", params)
 
     if response.hasFailed():
         click.echo("Failed to configure node. Please try again...")
@@ -63,8 +63,8 @@ def configUser() -> None:
             return
 
     click.echo("Configuring user...")
-    username = click.prompt("Email", type=str)
-    password = click.prompt("Password", type=str, hide_input=True)
+    username = click.prompt("Email", type = str)
+    password = click.prompt("Password", type = str, hide_input = True)
     username, password, token, refreshToken = authenticate(retryCount = 2)
 
     click.echo("Storage path should be the same as (if) used during --node config")
