@@ -136,8 +136,6 @@ def configNode() -> None:
     saveConfig(config)
 
     click.echo("[Node Setup Done] Type \"coretex --help\" for additional information")
-    click.echo("Important Information for Coretex Node service (command \"coretex node\"): [for using coretex node service you need to have Docker (https://www.docker.com/) installed and set up on your machine]")
-    click.echo("For automatic updates, if not already, make sure \"atd\" daemon is enabled. Either with \"ps -ef | grep atd\" or \"systemctl -a | grep atd\"")
     click.echo("For additional help visit our documentation at https://docs.coretex.ai/v1/advanced/coretex-cli/troubleshooting")
 
 

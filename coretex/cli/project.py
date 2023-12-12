@@ -25,13 +25,6 @@ def selectProjectType() -> ProjectType:
     return selectedProjectType
 
 
-def createProject(name: str) -> Optional[Project]:
-    selectedProjectType = selectProjectType()
-    newProject = Project.createProject(name, selectedProjectType)
-    click.echo(f"Project with name {name} successfully created.")
-    return newProject
-
-
 @click.command()
 @click.option("--name", "-n", type = str, help = "Project name")
 @click.option("--id", type = int, help = "Project ID")
@@ -45,18 +38,15 @@ def select(name: Optional[str], id: Optional[int]) -> None:
             project = Project.fetchOne(name = name)
             click.echo(f"Project \"{name}\" selected successfully!")
             selectProject(project.id)
-
-        except:
+        except NetworkRequestError:
             click.echo(f"Could not find project with name \"{name}\"", err = True)
             if click.confirm("Do you want to create a project by that name?", default = True):
-                newProject = createProject(name)
+                selectedProjectType = selectProjectType()
+                newProject = Project.createProject(name, selectedProjectType)
 
-                if newProject is not None:
-                    selectProject(newProject.id)
-                    click.echo(f"Project \"{name}\" selected successfully!")
-                else:
-                    click.echo("Failed to select project. Please try again.")
-                    return
+                click.echo(f"Project with name {name} successfully created.")
+                selectProject(newProject.id)
+                click.echo(f"Project \"{name}\" selected successfully!")
 
     if id is not None:
         click.echo ("Validating project...")
@@ -64,10 +54,8 @@ def select(name: Optional[str], id: Optional[int]) -> None:
             project = Project.fetchById(id)
             click.echo(f"Project with id \"{id}\" fetched successfully. Project name \"{project.name}\"")
             selectProject(project.id)
-
         except NetworkRequestError:
             click.echo(f"Failed to fetch project with provided id \"{id}\"")
-
 
 
 @click.group()
