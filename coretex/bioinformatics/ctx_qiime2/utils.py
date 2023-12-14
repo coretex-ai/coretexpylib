@@ -58,7 +58,13 @@ def sampleNumber(sample: CustomSample) -> int:
 def isFastqMPSample(sample: CustomSample) -> bool:
     sample.unzip()
 
-    return sample.joinPath("forward.fastq").exists() and sample.joinPath("barcodes.fastq").exists()
+    sequenceFileNames = ["forward.fastq", "forward.fastq.gz", "sequences.fastq", "sequences.fastq.gz"]
+    barcodesFileNames = ["barcodes.fastq", "barcodes.fastq.gz"]
+
+    sequenceFilePresent = any([path.name in sequenceFileNames for path in sample.load().folderContent])
+    barcodesFilePresent = any([path.name in barcodesFileNames for path in sample.load().folderContent])
+
+    return sequenceFilePresent and barcodesFilePresent
 
 
 def isFastqDPSample(sample: CustomSample) -> bool:
