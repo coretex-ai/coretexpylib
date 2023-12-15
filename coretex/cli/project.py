@@ -2,10 +2,10 @@ from typing import Optional
 
 import click
 
-from ..networking import NetworkRequestError
 from .utils import arrowPrompt
-from ..configuration import loadConfig, saveConfig
 from .. import Project, ProjectType
+from ..networking import NetworkRequestError
+from ..configuration import loadConfig, saveConfig
 
 
 def selectProject(projectId: int) -> None:

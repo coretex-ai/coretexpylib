@@ -1,17 +1,59 @@
-from typing import Optional, Tuple
+from typing import Tuple
 from pathlib import Path
 
 from tabulate import tabulate
+from datetime import datetime, timedelta
 
 import click
 
-from .utils import arrowPrompt
+from .utils import arrowPrompt, checkIfGPUExists
+from ..utils import decodeDate
 from ..networking import networkManager
 from ..statistics import getAvailableRamMemory
 from ..configuration import loadConfig, saveConfig, isUserConfigured, isNodeConfigured
 
 
-def authenticate(retryCount: int = 0) -> Tuple[str, str, str, str]:
+API_EXPIRE_SEC = 3600
+REFRESH_EXPIRE_SEC = 86400
+
+
+def checkIfExpired(expirationDate: datetime, expirationTimeSec: int) -> bool:
+    expirationTime = expirationDate + timedelta(seconds = expirationTimeSec)
+    currentTime = datetime.utcnow().replace(tzinfo = expirationDate.tzinfo)
+    if currentTime >= expirationTime:
+        return True
+
+    return False
+
+
+def refresh() -> None:
+    print('refresh')
+    config = loadConfig()
+    apiExpirationDate = decodeDate(config["apiTokenExpireDate"])
+    refreshExpirationDate = decodeDate(config["refreshTokenExpireDate"])
+    isApiExpired = checkIfExpired(apiExpirationDate, 10)
+
+    if isApiExpired:
+        isRefreshExpired = checkIfExpired(refreshExpirationDate, REFRESH_EXPIRE_SEC)
+
+        if isRefreshExpired:
+            username = config["username"]
+            password = config["password"]
+
+            response = networkManager.authenticate(username, password, False)
+            if response.hasFailed():
+                raise RuntimeError("Something went wrong. Try configuring user again...")
+        else:
+            refreshToken = config["refreshToken"]
+            response = networkManager.authenticateWithRefreshToken(refreshToken)
+
+        jsonResponse = response.getJson(dict)
+        config["token"] = jsonResponse["token"]
+        config["expiresOn"] = jsonResponse["expires_on"]
+        saveConfig(config)
+
+
+def authenticate(retryCount: int = 0, refresh: bool = False) -> Tuple[str, str, str, str, str, str]:
     if retryCount >= 3:
         raise Exception("Failed to authenticate. Terminating...")
 
@@ -26,7 +68,14 @@ def authenticate(retryCount: int = 0) -> Tuple[str, str, str, str]:
 
     jsonResponse = response.getJson(dict)
 
-    return username, password, jsonResponse["token"], jsonResponse["refresh_token"]
+    return (
+        username,
+        password,
+        jsonResponse["token"],
+        jsonResponse["expires_on"],
+        jsonResponse["refresh_token"],
+        jsonResponse['refresh_expires_on']
+    )
 
 
 def registerNode(name: str) -> str:
@@ -44,7 +93,6 @@ def registerNode(name: str) -> str:
         raise TypeError("Something went wrong. Please try again...")
 
     return accessToken
-
 
 def configUser() -> None:
     config = loadConfig()
@@ -67,16 +115,18 @@ def configUser() -> None:
             return
 
     click.echo("Configuring user...")
-    username, password, token, refreshToken = authenticate()
+    username, password, token, tokenExpireDate, refreshToken, refreshTokenExpireDate = authenticate()
 
     click.echo("Storage path should be the same as (if) used during --node config")
     storagePath = click.prompt("Storage path (press enter to use default)", Path.home() / ".coretex", type = str)
 
+    config["token"] = token
     config["username"] = username
     config["password"] = password
     config["storagePath"] = storagePath
-    config["token"] = token
     config["refreshToken"] = refreshToken
+    config["apiTokenExpireDate"] = tokenExpireDate
+    config["refreshTokenExpireDate"] = refreshTokenExpireDate
 
     saveConfig(config)
 
@@ -117,19 +167,23 @@ def configNode() -> None:
     click.echo("Storage path should be the same as (if) used during --user config")
     storagePath = click.prompt("Storage path (press enter to use default)", Path.home() / ".coretex", type = str)
 
-    image = arrowPrompt(["gpu", "cpu"])
+    gpuExists = checkIfGPUExists()
+    if gpuExists:
+        image = arrowPrompt(["gpu", "cpu"])
+    else:
+        image = "cpu"
 
     ram = click.prompt("Node RAM memory limit in GB (press enter to use default)", type = int, default = getAvailableRamMemory())
     swap = click.prompt("Node swap memory limit in GB, make sure it is larger then mem limit (press enter to use default)", type = int, default = getAvailableRamMemory() * 2)
     sharedMemory = click.prompt("Node POSIX shared memory limit in GB (press enter to use default)", type = int, default = 2)
 
-    config["storagePath"] = storagePath
-    config["nodeName"] = nodeName
     config["nodeImage"] = image
+    config["nodeName"] = nodeName
+    config["nodeRam"] = f"{ram}gb"
+    config["nodeSwap"] = f"{swap}gb"
+    config["storagePath"] = storagePath
     config["nodeAccessToken"] = nodeAccessToken
-    config["nodeRam"] = ram
-    config["nodeSwap"] = swap
-    config["nodeSharedMemory"] = sharedMemory
+    config["nodeSharedMemory"] = f"{sharedMemory}gb"
 
     saveConfig(config)
 

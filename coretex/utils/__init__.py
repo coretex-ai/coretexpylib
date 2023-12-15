@@ -17,6 +17,6 @@
 
 from .number import mathematicalRound
 from .file import guessMimeType, InvalidFileExtension
-from .date import DATE_FORMAT, TIME_ZONE
+from .date import DATE_FORMAT, TIME_ZONE, decodeDate
 from .hash import hashCacheName
 from .image import resizeWithPadding
