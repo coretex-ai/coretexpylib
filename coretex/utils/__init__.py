@@ -16,7 +16,7 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from .number import mathematicalRound
-from .file import guessMimeType, InvalidFileExtension
+from .file import guessMimeType, InvalidFileExtension, ipynb2py
 from .date import DATE_FORMAT, TIME_ZONE
 from .hash import hashCacheName
 from .image import resizeWithPadding

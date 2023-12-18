@@ -26,6 +26,10 @@ import gzip
 import shutil
 import logging
 
+from nbconvert import PythonExporter
+
+from .. import folder_manager
+
 
 class InvalidFileExtension(Exception):
 
@@ -235,3 +239,15 @@ def recursiveUnzip(entryPoint: Path, destination: Optional[Path] = None, remove:
     for path in walk(destination):
         if isArchive(path) or isGzip(path):
             recursiveUnzip(path, remove = True)
+
+
+def ipynb2py(ipynbPath: str) -> str:
+    exporter = PythonExporter()
+    with open(ipynbPath, "r") as ipynb:
+        body, resources  = exporter.from_file(ipynb)
+
+    outputPath = folder_manager.temp / f"{Path(ipynbPath).stem}.py"
+    with open(outputPath, "w") as pythonFile:
+        pythonFile.write(body)
+
+    return outputPath
