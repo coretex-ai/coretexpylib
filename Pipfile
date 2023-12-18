@@ -21,6 +21,7 @@ pyyaml = "*"
 click = "*"
 tabulate = "*"
 inquirer = "*"
+nbconvert = "*"
 
 [dev-packages]
 mypy = "*"
