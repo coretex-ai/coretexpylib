@@ -28,8 +28,6 @@ import logging
 
 from nbconvert import PythonExporter
 
-from .. import folder_manager
-
 
 class InvalidFileExtension(Exception):
 
@@ -241,13 +239,28 @@ def recursiveUnzip(entryPoint: Path, destination: Optional[Path] = None, remove:
             recursiveUnzip(path, remove = True)
 
 
-def ipynb2py(ipynbPath: str) -> str:
-    exporter = PythonExporter()
-    with open(ipynbPath, "r") as ipynb:
-        body, resources  = exporter.from_file(ipynb)
+def ipynb2py(notebookPath: Union[Path, str], destinationPath: Union[Path, str]) -> Path:
+    """
+        Converts Python Notebook (ipynb) to Python Script (py)
 
-    outputPath = folder_manager.temp / f"{Path(ipynbPath).stem}.py"
-    with open(outputPath, "w") as pythonFile:
-        pythonFile.write(body)
+        Returns
+        -------
+        Path -> path to converted script
+    """
 
-    return outputPath
+    if isinstance(notebookPath, str):
+        notebookPath = Path(notebookPath)
+
+    if isinstance(destinationPath, str):
+        destinationPath = Path(destinationPath)
+
+    exporter = PythonExporter()  # type: ignore[no-untyped-call]
+
+    with notebookPath.open("r") as file:
+        body, resources = exporter.from_file(file)
+        body = "\n".join(line for line in body.split("\n") if not line.startswith("%"))
+
+    with destinationPath.open("w") as file:
+        file.write(body)
+
+    return destinationPath

@@ -39,7 +39,8 @@ dependencies = [
   "click",
   "tabulate",
   "inquirer",
-  "nbconvert"
+  "nbconvert",
+  "ipython"
 ]
 
 [project.urls]
