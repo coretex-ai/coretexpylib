@@ -61,8 +61,10 @@ def isFastqMPSample(sample: CustomSample) -> bool:
     sequenceFileNames = ["forward.fastq", "forward.fastq.gz", "sequences.fastq", "sequences.fastq.gz"]
     barcodesFileNames = ["barcodes.fastq", "barcodes.fastq.gz"]
 
-    sequenceFilePresent = any([path.name in sequenceFileNames for path in sample.path.iterdir()])
-    barcodesFilePresent = any([path.name in barcodesFileNames for path in sample.path.iterdir()])
+    folderContent = list(sample.load().folderContent)
+
+    sequenceFilePresent = any([path.name in sequenceFileNames for path in folderContent])
+    barcodesFilePresent = any([path.name in barcodesFileNames for path in folderContent])
 
     return sequenceFilePresent and barcodesFilePresent
 
