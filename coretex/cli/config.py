@@ -1,59 +1,64 @@
-from typing import Tuple
 from pathlib import Path
 
 from tabulate import tabulate
-from datetime import datetime, timedelta
+from datetime import datetime, timezone
 
 import click
 
-from .utils import arrowPrompt, checkIfGPUExists
+from .utils import arrowPrompt, isGPUAvailable
 from ..utils import decodeDate
 from ..networking import networkManager
 from ..statistics import getAvailableRamMemory
-from ..configuration import loadConfig, saveConfig, isUserConfigured, isNodeConfigured
+from ..configuration import Configuration, isUserConfigured, isNodeConfigured
 
 
-API_EXPIRE_SEC = 3600
-REFRESH_EXPIRE_SEC = 86400
+class LoginInfo:
+    def __init__(self, username: str, password: str, token: str, tokenExpirationDate: str, refreshToken: str, refreshTokenExpirationDate: str):
+        self.username = username
+        self.password = password
+        self.token = token
+        self.tokenExpirationDate = tokenExpirationDate
+        self.refreshToken = refreshToken
+        self.refreshTokenExpirationDate = refreshTokenExpirationDate
 
 
-def checkIfExpired(expirationDate: datetime, expirationTimeSec: int) -> bool:
-    expirationTime = expirationDate + timedelta(seconds = expirationTimeSec)
-    currentTime = datetime.utcnow().replace(tzinfo = expirationDate.tzinfo)
-    if currentTime >= expirationTime:
+def checkIfExpired(expirationDate: datetime) -> bool:
+    currentTime = datetime.utcnow().replace(tzinfo=timezone.utc)
+    if currentTime >= expirationDate:
         return True
-
     return False
 
 
 def refresh() -> None:
-    print('refresh')
-    config = loadConfig()
-    apiExpirationDate = decodeDate(config["apiTokenExpireDate"])
-    refreshExpirationDate = decodeDate(config["refreshTokenExpireDate"])
-    isApiExpired = checkIfExpired(apiExpirationDate, 10)
+    print('lala')
+    config = Configuration.load()
+    apiExpirationDate = decodeDate(config.tokenExpirationDate)
+    refreshExpirationDate = decodeDate(config.refreshTokenExpirationDate)
+    isApiExpired = checkIfExpired(apiExpirationDate)
 
-    if isApiExpired:
-        isRefreshExpired = checkIfExpired(refreshExpirationDate, REFRESH_EXPIRE_SEC)
+    if not isApiExpired:
+        return None
 
-        if isRefreshExpired:
-            username = config["username"]
-            password = config["password"]
+    isRefreshExpired = checkIfExpired(refreshExpirationDate)
+    if not isRefreshExpired:
+        refreshToken = config.refreshToken
+        response = networkManager.authenticateWithRefreshToken(refreshToken)
+    else:
+        username = config.username
+        password = config.password
 
-            response = networkManager.authenticate(username, password, False)
-            if response.hasFailed():
-                raise RuntimeError("Something went wrong. Try configuring user again...")
-        else:
-            refreshToken = config["refreshToken"]
-            response = networkManager.authenticateWithRefreshToken(refreshToken)
+        response = networkManager.authenticate(username, password, False)
+        if response.hasFailed():
+            # check for codes user/server failure
+            raise RuntimeError("Something went wrong. Try configuring user again...")
 
-        jsonResponse = response.getJson(dict)
-        config["token"] = jsonResponse["token"]
-        config["expiresOn"] = jsonResponse["expires_on"]
-        saveConfig(config)
+    jsonResponse = response.getJson(dict)
+    config.token = jsonResponse["token"]
+    config.tokenExpirationDate = jsonResponse["expires_on"]
+    config.save()
 
 
-def authenticate(retryCount: int = 0, refresh: bool = False) -> Tuple[str, str, str, str, str, str]:
+def authenticate(retryCount: int = 0, refresh: bool = False) -> LoginInfo:
     if retryCount >= 3:
         raise Exception("Failed to authenticate. Terminating...")
 
@@ -68,7 +73,7 @@ def authenticate(retryCount: int = 0, refresh: bool = False) -> Tuple[str, str, 
 
     jsonResponse = response.getJson(dict)
 
-    return (
+    return LoginInfo(
         username,
         password,
         jsonResponse["token"],
@@ -95,15 +100,16 @@ def registerNode(name: str) -> str:
     return accessToken
 
 def configUser() -> None:
-    config = loadConfig()
+    config = Configuration.load()
+    print(config)
     if isUserConfigured(config):
         headers = ["username", "server", "storage path"]
 
         click.echo(click.style("Current Configuration:", fg = "blue"))
         click.echo(tabulate([[
-            config.get("username"),
-            config.get("serverUrl"),
-            config.get("storagePath")
+            config.username,
+            config.serverUrl,
+            config.storagePath
         ]], headers = headers))
 
         if not click.prompt(
@@ -115,26 +121,26 @@ def configUser() -> None:
             return
 
     click.echo("Configuring user...")
-    username, password, token, tokenExpireDate, refreshToken, refreshTokenExpireDate = authenticate()
+    loginInfo = authenticate()
 
     click.echo("Storage path should be the same as (if) used during --node config")
     storagePath = click.prompt("Storage path (press enter to use default)", Path.home() / ".coretex", type = str)
 
-    config["token"] = token
-    config["username"] = username
-    config["password"] = password
-    config["storagePath"] = storagePath
-    config["refreshToken"] = refreshToken
-    config["apiTokenExpireDate"] = tokenExpireDate
-    config["refreshTokenExpireDate"] = refreshTokenExpireDate
+    config.token = loginInfo.token
+    config.username = loginInfo.username
+    config.password = loginInfo.password
+    config.storagePath = storagePath
+    config.refreshToken = loginInfo.refreshToken
+    config.tokenExpirationDate = loginInfo.tokenExpirationDate
+    config.refreshTokenExpirationDate = loginInfo.refreshTokenExpirationDate
 
-    saveConfig(config)
+    config.save()
 
     click.echo("User successfuly configured")
 
 
 def configNode() -> None:
-    config = loadConfig()
+    config = Configuration.load()
     if not isUserConfigured(config):
         click.echo("User not configured. Run \"coretex config --user\"", err = True)
         return
@@ -144,10 +150,10 @@ def configNode() -> None:
 
         click.echo(click.style("Current Configuration:", fg = "blue"))
         click.echo(tabulate([[
-            config.get("nodeName"),
-            config.get("serverUrl"),
-            config.get("storagePath"),
-            config.get("image")
+            config.nodeName,
+            config.serverUrl,
+            config.storagePath,
+            config.image
         ]], headers = headers))
 
         if not click.prompt(
@@ -167,7 +173,7 @@ def configNode() -> None:
     click.echo("Storage path should be the same as (if) used during --user config")
     storagePath = click.prompt("Storage path (press enter to use default)", Path.home() / ".coretex", type = str)
 
-    gpuExists = checkIfGPUExists()
+    gpuExists = isGPUAvailable()
     if gpuExists:
         image = arrowPrompt(["gpu", "cpu"])
     else:
@@ -177,15 +183,15 @@ def configNode() -> None:
     swap = click.prompt("Node swap memory limit in GB, make sure it is larger then mem limit (press enter to use default)", type = int, default = getAvailableRamMemory() * 2)
     sharedMemory = click.prompt("Node POSIX shared memory limit in GB (press enter to use default)", type = int, default = 2)
 
-    config["nodeImage"] = image
-    config["nodeName"] = nodeName
-    config["nodeRam"] = f"{ram}gb"
-    config["nodeSwap"] = f"{swap}gb"
-    config["storagePath"] = storagePath
-    config["nodeAccessToken"] = nodeAccessToken
-    config["nodeSharedMemory"] = f"{sharedMemory}gb"
+    config.image = image
+    config.nodeName = nodeName
+    config.nodeRam = f"{ram}gb"
+    config.nodeSwap = f"{swap}gb"
+    config.storagePath = storagePath
+    config.nodeAccessToken = nodeAccessToken
+    config.nodeSharedMemory = f"{sharedMemory}gb"
 
-    saveConfig(config)
+    config.save()
 
     click.echo("[Node Setup Done] Type \"coretex --help\" for additional information")
     click.echo("For additional help visit our documentation at https://docs.coretex.ai/v1/advanced/coretex-cli/troubleshooting")

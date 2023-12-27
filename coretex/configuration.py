@@ -16,11 +16,15 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import Dict, Any
+from typing_extensions import Self
+
 from pathlib import Path
 
 import os
 import json
 import sys
+
+from .codable import Codable, KeyDescriptor
 
 
 def getEnvVar(key: str, default: str) -> str:
@@ -44,6 +48,55 @@ DEFAULT_CONFIG = {
     "serverUrl": getEnvVar("CTX_API_URL", "https://devext.biomechservices.com:29007/"),
     "storagePath": getEnvVar("CTX_STORAGE_PATH", "~/.coretex"),
 }
+
+
+class Configuration(Codable):
+
+    def __init__(self) -> None:
+        self.username = None
+        self.password = None
+        self.nodeName = None
+        self.serverURL = DEFAULT_CONFIG["serverUrl"]
+        self.storagePath = None
+        self.token = None
+        self.refreshToken = None
+        self.nodeAccessToken = None
+        self.tokenExpirationDate = None
+        self.refreshTokenExpirationDate = None
+        self.image = "cpu"
+        self.nodeRam = None
+        self.nodeSwap = None
+        self.nodeSharedMemory = None
+
+    @classmethod
+    def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
+        descriptors = super()._keyDescriptors()
+
+        descriptors["nodeName"] = KeyDescriptor("nodeName")
+        descriptors["refreshToken"] = KeyDescriptor("refreshToken")
+        descriptors["serverUrl"] = KeyDescriptor("serverUrl")
+        descriptors["storagePath"] = KeyDescriptor("storagePath")
+        descriptors["nodeAccessToken"] = KeyDescriptor("nodeAccessToken")
+        descriptors["tokenExpirationDate"] = KeyDescriptor("tokenExpirationDate")
+        descriptors["refreshTokenExpirationDate"] = KeyDescriptor("refreshTokenExpirationDate")
+        descriptors["nodeRam"] = KeyDescriptor("nodeRam")
+        descriptors["nodeSwap"] = KeyDescriptor("nodeSwap")
+        descriptors["nodeSharedMemory"] = KeyDescriptor("nodeSharedMemory")
+
+        return descriptors
+
+    @classmethod
+    def load(cls) -> Self:
+        with open(DEFAULT_CONFIG_PATH, 'r') as configFile:
+            configData = json.load(configFile)
+            config = cls.decode(configData)
+            return config
+
+    def save(self) -> None:
+        configData = self.encode() # not sure should it be done like this xD
+
+        with open(DEFAULT_CONFIG_PATH, 'w') as configFile:
+            json.dump(configData, configFile, indent = 4)
 
 
 def _verifyConfiguration(config: Dict[str, Any]) -> bool:
@@ -97,23 +150,23 @@ def loadConfig() -> Dict[str, Any]:
     return config
 
 
-def saveConfig(config: Dict[str, Any]) -> None:
+def saveConfig(config: Configuration) -> None:
     configPath = DEFAULT_CONFIG_PATH.expanduser()
+    content = config.encode()
     with configPath.open("w+") as configFile:
-        json.dump(config, configFile, indent = 4)
+        json.dump(content, configFile, indent = 4)
 
 
-def isUserConfigured(config: Dict[str, Any]) -> bool:
+def isUserConfigured(config: Configuration) -> bool:
     return (
-        config.get("username") is not None and
-        config.get("password") is not None and
-        config.get("storagePath") is not None
+        config.username is not None and
+        config.password is not None and
+        config.storagePath is not None
     )
 
-def isNodeConfigured(config: Dict[str, Any]) -> bool:
+def isNodeConfigured(config: Configuration) -> bool:
     return (
-        config.get("nodeName") is not None and
-        config.get("storagePath") is not None and
-        config.get("image") is not None and
-        config.get("organizationID") is not None
+        config.nodeName is not None and
+        config.storagePath is not None and
+        config.image is not None
     )
