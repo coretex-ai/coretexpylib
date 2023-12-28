@@ -1,3 +1,4 @@
+from typing import Dict
 from docker.errors import DockerException, NotFound, APIError
 
 import click
@@ -6,7 +7,7 @@ import docker
 from ..configuration import loadConfig
 
 
-SERVICE_CONFIG = {
+SERVICE_CONFIG: Dict = {
     "image": "dev.biomechservices.com:5443/coretex-node-dev:latest",
     "environment": {
         "CTX_NODE_NAME": "Neureka",
