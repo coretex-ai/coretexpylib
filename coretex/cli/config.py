@@ -4,7 +4,7 @@ from tabulate import tabulate
 
 import click
 
-from .utils import arrowPrompt, isGPUAvailable, validate_refresh_token
+from .utils import arrowPrompt, isGPUAvailable, validate
 from ..networking import networkManager
 from ..statistics import getAvailableRamMemory
 from ..configuration import loadConfig, saveConfig, isUserConfigured, isNodeConfigured
@@ -161,7 +161,7 @@ def configNode() -> None:
 @click.command()
 @click.option("--user", is_flag = True, help = "Configure user settings")
 @click.option("--node", is_flag = True, help = "Configure node settings")
-@validate_refresh_token(exclude_options = ["user"])
+@validate(exclude_options = ["user"])
 def config(user: bool, node: bool) -> None:
     if not user and not node:
         raise click.UsageError("Please use either --user or --node")

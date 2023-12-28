@@ -44,7 +44,6 @@ def checkIfExpired(expirationDate: datetime) -> bool:
 
 
 def refresh() -> None:
-    print('lala')
     config = loadConfig()
     apiExpirationDate = decodeDate(config["tokenExpirationDate"])
     refreshExpirationDate = decodeDate(config["refreshTokenExpirationDate"])
@@ -72,7 +71,7 @@ def refresh() -> None:
     saveConfig(config)
 
 
-def validate_refresh_token(exclude_options: Optional[List[str]]) -> Any:
+def validate(exclude_options: Optional[List[str]]) -> Any:
     if exclude_options is None:
         exclude_options = []
 
