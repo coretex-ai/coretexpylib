@@ -2,7 +2,7 @@ import click
 
 from .node import node
 from .project import project
-from .config import config, refresh
+from .config import config
 
 
 @click.group()

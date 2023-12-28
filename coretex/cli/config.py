@@ -1,15 +1,13 @@
 from pathlib import Path
 
 from tabulate import tabulate
-from datetime import datetime, timezone
 
 import click
 
-from .utils import arrowPrompt, isGPUAvailable
-from ..utils import decodeDate
+from .utils import arrowPrompt, isGPUAvailable, validate_refresh_token
 from ..networking import networkManager
 from ..statistics import getAvailableRamMemory
-from ..configuration import Configuration, isUserConfigured, isNodeConfigured
+from ..configuration import loadConfig, saveConfig, isUserConfigured, isNodeConfigured
 
 
 class LoginInfo:
@@ -20,42 +18,6 @@ class LoginInfo:
         self.tokenExpirationDate = tokenExpirationDate
         self.refreshToken = refreshToken
         self.refreshTokenExpirationDate = refreshTokenExpirationDate
-
-
-def checkIfExpired(expirationDate: datetime) -> bool:
-    currentTime = datetime.utcnow().replace(tzinfo=timezone.utc)
-    if currentTime >= expirationDate:
-        return True
-    return False
-
-
-def refresh() -> None:
-    print('lala')
-    config = Configuration.load()
-    apiExpirationDate = decodeDate(config.tokenExpirationDate)
-    refreshExpirationDate = decodeDate(config.refreshTokenExpirationDate)
-    isApiExpired = checkIfExpired(apiExpirationDate)
-
-    if not isApiExpired:
-        return None
-
-    isRefreshExpired = checkIfExpired(refreshExpirationDate)
-    if not isRefreshExpired:
-        refreshToken = config.refreshToken
-        response = networkManager.authenticateWithRefreshToken(refreshToken)
-    else:
-        username = config.username
-        password = config.password
-
-        response = networkManager.authenticate(username, password, False)
-        if response.hasFailed():
-            # check for codes user/server failure
-            raise RuntimeError("Something went wrong. Try configuring user again...")
-
-    jsonResponse = response.getJson(dict)
-    config.token = jsonResponse["token"]
-    config.tokenExpirationDate = jsonResponse["expires_on"]
-    config.save()
 
 
 def authenticate(retryCount: int = 0, refresh: bool = False) -> LoginInfo:
@@ -100,16 +62,15 @@ def registerNode(name: str) -> str:
     return accessToken
 
 def configUser() -> None:
-    config = Configuration.load()
-    print(config)
+    config = loadConfig()
     if isUserConfigured(config):
         headers = ["username", "server", "storage path"]
 
         click.echo(click.style("Current Configuration:", fg = "blue"))
         click.echo(tabulate([[
-            config.username,
-            config.serverUrl,
-            config.storagePath
+            config["username"],
+            config["serverUrl"],
+            config["storagePath"]
         ]], headers = headers))
 
         if not click.prompt(
@@ -126,21 +87,21 @@ def configUser() -> None:
     click.echo("Storage path should be the same as (if) used during --node config")
     storagePath = click.prompt("Storage path (press enter to use default)", Path.home() / ".coretex", type = str)
 
-    config.token = loginInfo.token
-    config.username = loginInfo.username
-    config.password = loginInfo.password
-    config.storagePath = storagePath
-    config.refreshToken = loginInfo.refreshToken
-    config.tokenExpirationDate = loginInfo.tokenExpirationDate
-    config.refreshTokenExpirationDate = loginInfo.refreshTokenExpirationDate
+    config["token"] = loginInfo.token
+    config["username"] = loginInfo.username
+    config["password"] = loginInfo.password
+    config["storagePath"] = storagePath
+    config["refreshToken"] = loginInfo.refreshToken
+    config["tokenExpirationDate"] = loginInfo.tokenExpirationDate
+    config["refreshTokenExpirationDate"] = loginInfo.refreshTokenExpirationDate
 
-    config.save()
+    saveConfig(config)
 
     click.echo("User successfuly configured")
 
 
 def configNode() -> None:
-    config = Configuration.load()
+    config = loadConfig()
     if not isUserConfigured(config):
         click.echo("User not configured. Run \"coretex config --user\"", err = True)
         return
@@ -150,10 +111,10 @@ def configNode() -> None:
 
         click.echo(click.style("Current Configuration:", fg = "blue"))
         click.echo(tabulate([[
-            config.nodeName,
-            config.serverUrl,
-            config.storagePath,
-            config.image
+            config["nodeName"],
+            config["serverUrl"],
+            config["storagePath"],
+            config["image"]
         ]], headers = headers))
 
         if not click.prompt(
@@ -183,15 +144,15 @@ def configNode() -> None:
     swap = click.prompt("Node swap memory limit in GB, make sure it is larger then mem limit (press enter to use default)", type = int, default = getAvailableRamMemory() * 2)
     sharedMemory = click.prompt("Node POSIX shared memory limit in GB (press enter to use default)", type = int, default = 2)
 
-    config.image = image
-    config.nodeName = nodeName
-    config.nodeRam = f"{ram}gb"
-    config.nodeSwap = f"{swap}gb"
-    config.storagePath = storagePath
-    config.nodeAccessToken = nodeAccessToken
-    config.nodeSharedMemory = f"{sharedMemory}gb"
+    config["image"] = image
+    config["nodeName"] = nodeName
+    config["nodeRam"] = f"{ram}gb"
+    config["nodeSwap"] = f"{swap}gb"
+    config["storagePath"] = storagePath
+    config["nodeAccessToken"] = nodeAccessToken
+    config["nodeSharedMemory"] = f"{sharedMemory}gb"
 
-    config.save()
+    saveConfig(config)
 
     click.echo("[Node Setup Done] Type \"coretex --help\" for additional information")
     click.echo("For additional help visit our documentation at https://docs.coretex.ai/v1/advanced/coretex-cli/troubleshooting")
@@ -200,6 +161,7 @@ def configNode() -> None:
 @click.command()
 @click.option("--user", is_flag = True, help = "Configure user settings")
 @click.option("--node", is_flag = True, help = "Configure node settings")
+@validate_refresh_token(exclude_options = ["user"])
 def config(user: bool, node: bool) -> None:
     if not user and not node:
         raise click.UsageError("Please use either --user or --node")

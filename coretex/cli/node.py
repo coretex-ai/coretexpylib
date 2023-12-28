@@ -3,7 +3,7 @@ from docker.errors import DockerException, NotFound, APIError
 import click
 import docker
 
-from ..configuration import Configuration
+from ..configuration import loadConfig
 
 
 SERVICE_CONFIG = {
@@ -26,7 +26,6 @@ SERVICE_CONFIG = {
     "shm_size": "8gb"
 }
 
-
 @click.command()
 def start() -> None:
     try:
@@ -35,17 +34,17 @@ def start() -> None:
         click.echo("Please make sure you have docker installed on your machine and it is up and running. If that's the case (troubleshoot?)")
         return
 
-    config = Configuration.load()
+    config = loadConfig()
 
-    if config.image == "gpu":
+    if config["image"] == "gpu":
         SERVICE_CONFIG["runtime"] = "nvidia"
 
-    SERVICE_CONFIG["environment"]["CTX_NODE_NAME"] = config.nodeName
-    SERVICE_CONFIG["environment"]["CTX_STORAGE_PATH"] = config.storagePath
-    SERVICE_CONFIG["environment"]["CTX_NODE_ACCESS_TOKEN"] = config.nodeAccessToken
-    SERVICE_CONFIG["mem_limit"] = config.nodeRam
-    SERVICE_CONFIG["memswap_limit"] = config.nodeSwap
-    SERVICE_CONFIG["shm_size"] = config.nodeSharedMemory
+    SERVICE_CONFIG["environment"]["CTX_NODE_NAME"] = config["nodeName"]
+    SERVICE_CONFIG["environment"]["CTX_STORAGE_PATH"] = config["storagePath"]
+    SERVICE_CONFIG["environment"]["CTX_NODE_ACCESS_TOKEN"] = config["nodeAccessToken"]
+    SERVICE_CONFIG["mem_limit"] = config["nodeRam"]
+    SERVICE_CONFIG["memswap_limit"] = config["nodeSwap"]
+    SERVICE_CONFIG["shm_size"] = config["nodeSharedMemory"]
 
     SERVICE_CONFIG["image"] = client.images.pull(SERVICE_CONFIG["image"])
 
@@ -63,7 +62,6 @@ def start() -> None:
     else:
         click.echo("Something went wrong...")
         return
-
 
 @click.command()
 def stop() -> None:

@@ -68,5 +68,4 @@ def select(name: Optional[str], id: Optional[int]) -> None:
 def project() -> None:
     pass
 
-
 project.add_command(select, "select")
