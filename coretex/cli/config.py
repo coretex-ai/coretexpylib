@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from pathlib import Path
 
 from tabulate import tabulate
@@ -10,17 +11,17 @@ from ..statistics import getAvailableRamMemory
 from ..configuration import loadConfig, saveConfig, isUserConfigured, isNodeConfigured
 
 
+@dataclass
 class LoginInfo:
-    def __init__(self, username: str, password: str, token: str, tokenExpirationDate: str, refreshToken: str, refreshTokenExpirationDate: str):
-        self.username = username
-        self.password = password
-        self.token = token
-        self.tokenExpirationDate = tokenExpirationDate
-        self.refreshToken = refreshToken
-        self.refreshTokenExpirationDate = refreshTokenExpirationDate
+    username: str
+    password: str
+    token: str
+    tokenExpirationDate: str
+    refreshToken: str
+    refreshTokenExpirationDate: str
 
 
-def authenticate(retryCount: int = 0, refresh: bool = False) -> LoginInfo:
+def authenticate(retryCount: int = 0) -> LoginInfo:
     if retryCount >= 3:
         raise Exception("Failed to authenticate. Terminating...")
 
@@ -41,7 +42,7 @@ def authenticate(retryCount: int = 0, refresh: bool = False) -> LoginInfo:
         jsonResponse["token"],
         jsonResponse["expires_on"],
         jsonResponse["refresh_token"],
-        jsonResponse['refresh_expires_on']
+        jsonResponse["refresh_expires_on"]
     )
 
 
@@ -134,8 +135,7 @@ def configNode() -> None:
     click.echo("Storage path should be the same as (if) used during --user config")
     storagePath = click.prompt("Storage path (press enter to use default)", Path.home() / ".coretex", type = str)
 
-    gpuExists = isGPUAvailable()
-    if gpuExists:
+    if isGPUAvailable():
         image = arrowPrompt(["gpu", "cpu"])
     else:
         image = "cpu"
@@ -161,7 +161,7 @@ def configNode() -> None:
 @click.command()
 @click.option("--user", is_flag = True, help = "Configure user settings")
 @click.option("--node", is_flag = True, help = "Configure node settings")
-@validate(exclude_options = ["user"])
+@validate(excludeOptions = ["user"])
 def config(user: bool, node: bool) -> None:
     if not user and not node:
         raise click.UsageError("Please use either --user or --node")

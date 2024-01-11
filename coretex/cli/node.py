@@ -15,7 +15,7 @@ SERVICE_CONFIG: Dict = {
         "CTX_STORAGE_PATH": "/root/.coretex",
         "CTX_NODE_ACCESS_TOKEN": "800eefbdc8b46c2583475d0699a50c2dbf52ad9e577be2f45e411f664d2dd7a037a8b4e70aed102fa8b6039ec9c4071df7ce628d0bbdbbd3c807d34b57caffbb"
     },
-    "name": 'coretex_node',
+    "name": "coretex_node",
     "mem_limit": "16G",
     "restart_policy": {"Name": "always"},
     "ports": {"21000": "21000"},
@@ -62,7 +62,6 @@ def start() -> None:
         return
     else:
         click.echo("Something went wrong...")
-        return
 
 @click.command()
 def stop() -> None:
@@ -77,11 +76,9 @@ def stop() -> None:
         container.remove()
         click.echo(f"Container {containerName} stopped successfully.")
         return
-
     except NotFound as e:
         click.echo(f"Container {containerName} not found: {e}")
         return
-
     except APIError as e:
         click.echo(f"Error occurred while stopping container {containerName}: {e}")
         return

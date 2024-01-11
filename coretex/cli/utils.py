@@ -1,4 +1,4 @@
-from typing import List, Any, Optional
+from typing import List, Any, Optional, Callable
 from datetime import datetime, timezone
 
 import click
@@ -36,34 +36,35 @@ def arrowPrompt(choices: List[Any]) -> Any:
     return answers["option"]
 
 
-def checkIfExpired(expirationDate: datetime) -> bool:
-    currentTime = datetime.utcnow().replace(tzinfo=timezone.utc)
-    if currentTime >= expirationDate:
-        return True
-    return False
-
-
 def refresh() -> None:
+    print('refresh sda')
     config = loadConfig()
-    apiExpirationDate = decodeDate(config["tokenExpirationDate"])
-    refreshExpirationDate = decodeDate(config["refreshTokenExpirationDate"])
-    isApiExpired = checkIfExpired(apiExpirationDate)
+    tokenExpirationDate = decodeDate(config["tokenExpirationDate"])
+    refreshTokenExpirationDate = decodeDate(config["refreshTokenExpirationDate"])
 
-    if not isApiExpired:
+    if datetime.utcnow().replace(tzinfo = timezone.utc) < tokenExpirationDate:
         return None
 
-    isRefreshExpired = checkIfExpired(refreshExpirationDate)
-    if not isRefreshExpired:
+    if datetime.utcnow().replace(tzinfo = timezone.utc) < refreshTokenExpirationDate:
         refreshToken = config["refreshToken"]
         response = networkManager.authenticateWithRefreshToken(refreshToken)
+        if response.hasFailed():
+            if str(response.statusCode)[0] == 5:
+                raise RuntimeError("Something went wrong on server side. Please try again later.")
+
+            if str(response.statusCode)[0] == 4:
+                raise RuntimeError("Something went wrong. Please try again...")
     else:
         username = config["username"]
         password = config["password"]
 
         response = networkManager.authenticate(username, password, False)
         if response.hasFailed():
-            # check for codes user/server failure
-            raise RuntimeError("Something went wrong. Try configuring user again...")
+            if str(response.statusCode)[0] == 5:
+                raise RuntimeError("Something went wrong on server side. Please try again later.")
+
+            if str(response.statusCode)[0] == 4:
+                raise RuntimeError("Something went wrong. Please try again...")
 
     jsonResponse = response.getJson(dict)
     config["token"] = jsonResponse["token"]
@@ -71,16 +72,16 @@ def refresh() -> None:
     saveConfig(config)
 
 
-def validate(exclude_options: Optional[List[str]]) -> Any:
-    if exclude_options is None:
-        exclude_options = []
+def validate(excludeOptions: Optional[List[str]]) -> Any:
+    if excludeOptions is None:
+        excludeOptions = []
 
-    def decorator(f: Any) -> Any:
+    def decorator(f: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(f)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             for key, value in click.get_current_context().params.items():
-                if key in exclude_options:
-                    if value == True:
+                if key in excludeOptions:
+                    if value:
                         return f(*args, **kwargs)
 
             refresh()
