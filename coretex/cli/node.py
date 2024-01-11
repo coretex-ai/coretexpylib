@@ -88,5 +88,6 @@ def stop() -> None:
 def node() -> None:
     pass
 
+
 node.add_command(start, "start")
 node.add_command(stop, "stop")

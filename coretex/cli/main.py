@@ -9,6 +9,7 @@ from .config import config
 def cli() -> None:
     pass
 
+
 cli.add_command(config)
 cli.add_command(project)
 cli.add_command(node)
