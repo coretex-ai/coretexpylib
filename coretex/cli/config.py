@@ -13,6 +13,7 @@ from ..configuration import loadConfig, saveConfig, isUserConfigured, isNodeConf
 
 @dataclass
 class LoginInfo:
+
     username: str
     password: str
     token: str
@@ -62,6 +63,7 @@ def registerNode(name: str) -> str:
 
     return accessToken
 
+
 def configUser() -> None:
     config = loadConfig()
     if isUserConfigured(config):
@@ -88,11 +90,11 @@ def configUser() -> None:
     click.echo("Storage path should be the same as (if) used during --node config")
     storagePath = click.prompt("Storage path (press enter to use default)", Path.home() / ".coretex", type = str)
 
-    config["token"] = loginInfo.token
     config["username"] = loginInfo.username
     config["password"] = loginInfo.password
-    config["storagePath"] = storagePath
+    config["token"] = loginInfo.token
     config["refreshToken"] = loginInfo.refreshToken
+    config["storagePath"] = storagePath
     config["tokenExpirationDate"] = loginInfo.tokenExpirationDate
     config["refreshTokenExpirationDate"] = loginInfo.refreshTokenExpirationDate
 
@@ -138,18 +140,19 @@ def configNode() -> None:
     if isGPUAvailable():
         image = arrowPrompt(["gpu", "cpu"])
     else:
+        click.echo("NVIDIA GPU not found, CPU image will be used.")
         image = "cpu"
 
     ram = click.prompt("Node RAM memory limit in GB (press enter to use default)", type = int, default = getAvailableRamMemory())
     swap = click.prompt("Node swap memory limit in GB, make sure it is larger then mem limit (press enter to use default)", type = int, default = getAvailableRamMemory() * 2)
     sharedMemory = click.prompt("Node POSIX shared memory limit in GB (press enter to use default)", type = int, default = 2)
 
-    config["image"] = image
+    config["storagePath"] = storagePath
     config["nodeName"] = nodeName
+    config["image"] = image
+    config["nodeAccessToken"] = nodeAccessToken
     config["nodeRam"] = f"{ram}gb"
     config["nodeSwap"] = f"{swap}gb"
-    config["storagePath"] = storagePath
-    config["nodeAccessToken"] = nodeAccessToken
     config["nodeSharedMemory"] = f"{sharedMemory}gb"
 
     saveConfig(config)

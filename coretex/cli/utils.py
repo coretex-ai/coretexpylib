@@ -1,10 +1,11 @@
 from typing import List, Any, Optional, Callable
 from datetime import datetime, timezone
+from functools import wraps
 
 import click
 import inquirer
 
-from functools import wraps
+from py3nvml import py3nvml
 
 from ..utils import decodeDate
 from ..configuration import loadConfig, saveConfig
@@ -13,13 +14,10 @@ from ..networking import networkManager
 
 def isGPUAvailable() -> bool:
     try:
-        from py3nvml import py3nvml
-
         py3nvml.nvmlInit()
         py3nvml.nvmlShutdown()
         return True
     except:
-        click.echo("This machine cannot utilize gpu image since it doesn't posses GPU.\bCPU image will be selected automatically")
         return False
 
 
@@ -36,35 +34,36 @@ def arrowPrompt(choices: List[Any]) -> Any:
     return answers["option"]
 
 
-def refresh() -> None:
-    print('refresh sda')
+def authenticateUser(username: str, password: str) -> None:
+    response = networkManager.authenticate(username, password, False)
+
+    if response.hasFailed():
+        if response.statusCode >= 500:
+            raise RuntimeError("Something went wrong, please try again later.")
+
+        if response.statusCode >= 400:
+            raise RuntimeError("User credentials invalid, please try configuring them again.")
+
+
+def initializeUserSession() -> None:
     config = loadConfig()
     tokenExpirationDate = decodeDate(config["tokenExpirationDate"])
     refreshTokenExpirationDate = decodeDate(config["refreshTokenExpirationDate"])
 
     if datetime.utcnow().replace(tzinfo = timezone.utc) < tokenExpirationDate:
-        return None
+        return
 
     if datetime.utcnow().replace(tzinfo = timezone.utc) < refreshTokenExpirationDate:
         refreshToken = config["refreshToken"]
         response = networkManager.authenticateWithRefreshToken(refreshToken)
         if response.hasFailed():
-            if str(response.statusCode)[0] == 5:
-                raise RuntimeError("Something went wrong on server side. Please try again later.")
+            if response.statusCode >= 500:
+                raise RuntimeError("Something went wrong, please try again later.")
 
-            if str(response.statusCode)[0] == 4:
-                raise RuntimeError("Something went wrong. Please try again...")
+            if response.statusCode >= 400:
+                authenticateUser(config["username"], config["password"])
     else:
-        username = config["username"]
-        password = config["password"]
-
-        response = networkManager.authenticate(username, password, False)
-        if response.hasFailed():
-            if str(response.statusCode)[0] == 5:
-                raise RuntimeError("Something went wrong on server side. Please try again later.")
-
-            if str(response.statusCode)[0] == 4:
-                raise RuntimeError("Something went wrong. Please try again...")
+        authenticateUser(config["username"], config["password"])
 
     jsonResponse = response.getJson(dict)
     config["token"] = jsonResponse["token"]
@@ -72,7 +71,7 @@ def refresh() -> None:
     saveConfig(config)
 
 
-def validate(excludeOptions: Optional[List[str]]) -> Any:
+def validate(excludeOptions: Optional[List[str]] = None) -> Any:
     if excludeOptions is None:
         excludeOptions = []
 
@@ -84,7 +83,7 @@ def validate(excludeOptions: Optional[List[str]]) -> Any:
                     if value:
                         return f(*args, **kwargs)
 
-            refresh()
+            initializeUserSession()
             return f(*args, **kwargs)
         return wrapper
     return decorator
