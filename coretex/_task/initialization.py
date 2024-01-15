@@ -44,7 +44,7 @@ def _initializeLogger(taskRun: TaskRun) -> None:
         includeLevel = taskRun.isLocal
     ))
 
-    taskRunLogs = folder_manager.logs / "runs" / str(taskRun)
+    taskRunLogs = folder_manager.logs / "runs" / str(taskRun.id)
     taskRunLogs.mkdir(parents = True, exist_ok = True)
 
     logPath = taskRunLogs / "run.log"
