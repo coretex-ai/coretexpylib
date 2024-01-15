@@ -54,19 +54,19 @@ class TaskRunStatus(IntEnum):
         """
 
         if self == TaskRunStatus.preparingToStart:
-            return "Preparing to start the run."
+            return "Preparing to start the Task Run."
 
         if self == TaskRunStatus.completedWithSuccess:
-            return "TaskRun completed successfully."
+            return "Task Run completed successfully."
 
         if self == TaskRunStatus.completedWithError:
-            return "TaskRun execution was interrupted due to an error. View run console for more details."
+            return "Task Run failed due to an error. View console output for more details."
 
         if self == TaskRunStatus.stopped:
-            return "TaskRun execution was stopped by request from the user."
+            return "User stopped the Task Run."
 
         if self == TaskRunStatus.stopping:
-            return "Stopping the run."
+            return "Stopping the Task Run."
 
         raise ValueError(f">> [Coretex] {self.name} has no default message")
 
