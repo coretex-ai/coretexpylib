@@ -71,8 +71,8 @@ def initializeUserSession() -> None:
     jsonResponse = response.getJson(dict)
     config["token"] = jsonResponse["token"]
     config["tokenExpirationDate"] = jsonResponse["expires_on"]
-    config["refreshToken"] = jsonResponse["refresh_token"]
-    config["refreshTokenExpirationDate"] = jsonResponse["refresh_expires_on"]
+    config["refreshToken"] = jsonResponse.get("refresh_token", config["refreshToken"])
+    config["refreshTokenExpirationDate"] = jsonResponse.get("refresh_expires_on", config["refreshTokenExpirationDate"])
     saveConfig(config)
 
 
@@ -85,7 +85,7 @@ def validate(excludeOptions: Optional[List[str]] = None) -> Any:
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             for key, value in click.get_current_context().params.items():
                 if key in excludeOptions and value:
-                        return f(*args, **kwargs)
+                    return f(*args, **kwargs)
 
             initializeUserSession()
             return f(*args, **kwargs)
