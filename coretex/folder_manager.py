@@ -68,6 +68,8 @@ environments     = _createFolder("environments")
 temp             = _createFolder("temp")
 _artifactsFolder = _createFolder("artifacts")
 
+runsLogDirectory = logs / "runs"
+
 
 def createTempFolder(name: str) -> Path:
     """
