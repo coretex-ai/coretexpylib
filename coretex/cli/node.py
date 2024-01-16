@@ -1,4 +1,3 @@
-from typing import Dict
 from docker.errors import DockerException, NotFound, APIError
 
 import click

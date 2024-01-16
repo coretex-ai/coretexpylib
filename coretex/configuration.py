@@ -16,7 +16,6 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import Dict, Any
-
 from pathlib import Path
 
 import os
