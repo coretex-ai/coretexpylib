@@ -1,9 +1,7 @@
-from docker.errors import DockerException, NotFound, APIError
-
 import click
-import docker
 
 from ..configuration import loadConfig
+from .docker import runNode, stopNode, createNetwork
 
 
 DOCKER_CONTAINER_NAME = "coretex_node"
@@ -12,72 +10,46 @@ DOCKER_CONTAINER_NETWORK = "coretex_node"
 
 @click.command()
 def start() -> None:
-    try:
-        client = docker.from_env()
-    except DockerException:
-        click.echo("Please make sure you have docker installed on your machine and it is up and running. If that's the case (troubleshoot?)")
-        return
-
+    dockerImage = "coretexai/coretex-node:latest-cpu"
     config = loadConfig()
 
-    dockerImage = client.images.pull("coretexai/coretex-node:latest-cpu")
+    createNetwork(DOCKER_CONTAINER_NETWORK)
+
     dockerContainerConfig = {
-        "name": DOCKER_CONTAINER_NAME,
-        "environment": {
-            "CTX_API_URL": config["serverUrl"],
-            "CTX_STORAGE_PATH": config["storagePath"],
-            "CTX_NODE_ACCESS_TOKEN": config["nodeAccessToken"]
-        },
-        "restart_policy": {
-            "Name": "always"
-        },
-        "ports": {
-            "21000": "21000"
-        },
-        "cap_add": [
-            "SYS_PTRACE"
-        ],
-        "network": DOCKER_CONTAINER_NETWORK,
-        "mem_limit": config["nodeRam"],
-        "memswap_limit": config["nodeSwap"],
-        "shm_size": config["nodeSharedMemory"]
+        "restart_policy": "always",
+        "ports": "21000:21000",
+        "cap_add": "SYS_PTRACE"
     }
 
-    if config["image"] == "gpu":
-        dockerContainerConfig["runtime"] = "nvidia"
+    nodeRunning = runNode(
+        DOCKER_CONTAINER_NAME,
+        dockerImage,
+        config["image"],
+        config["serverUrl"],
+        config["storagePath"],
+        config["nodeAccessToken"],
+        config["nodeRam"],
+        config["nodeSwap"],
+        config["nodeSharedMemory"],
+        dockerContainerConfig["restart_policy"],
+        dockerContainerConfig["ports"],
+        dockerContainerConfig["cap_add"]
+    )
 
-    try:
-        client.networks.create(dockerContainerConfig["network"], driver = "bridge")
-        click.echo(f"Successfully created {dockerContainerConfig['network']} network for container.")
-    except APIError as e:
-        click.echo(f"Error while creating {dockerContainerConfig['network']} network for container.")
-        return
-
-    container = client.containers.run(detach = True, image = dockerImage,  **dockerContainerConfig)
-    if container is not None:
-        click.echo(f"Node with name {container.name} started successfully.")
+    if nodeRunning:
+        click.echo(f"Node {config['nodeName']} started successfully.")
     else:
-        click.echo("Failed to start container.")
+        click.echo(f"Node {config['nodeName']} failed to start.")
 
 
 @click.command()
 def stop() -> None:
-    client = docker.from_env()
-    try:
-        network = client.networks.get(DOCKER_CONTAINER_NETWORK)
-        container = client.containers.get(DOCKER_CONTAINER_NAME)
+    success = stopNode(DOCKER_CONTAINER_NAME, DOCKER_CONTAINER_NETWORK)
 
-        network.disconnect(container)
-        container.stop()
-
-        network.remove()
-        container.remove()
-
+    if success:
         click.echo(f"Container {DOCKER_CONTAINER_NAME} stopped successfully.")
-    except NotFound:
-        click.echo(f"Container {DOCKER_CONTAINER_NAME} not found.")
-    except APIError:
-        click.echo(f"Error occurred while stopping container {DOCKER_CONTAINER_NAME}.")
+    else:
+        click.echo(f"Failed to stop container {DOCKER_CONTAINER_NAME}.")
 
 
 @click.group()
