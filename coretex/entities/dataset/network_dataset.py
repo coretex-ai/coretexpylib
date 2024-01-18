@@ -267,9 +267,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
         self.path.mkdir(exist_ok = True)
 
         def sampleDownloader(sample: SampleType) -> None:
-            downloadSuccess = sample.download(ignoreCache)
-            if not downloadSuccess:
-                raise RuntimeError(f">> [Coretex] Failed to download sample \"{sample.name}\"")
+            sample.download(ignoreCache)
 
             sampleHardLinkPath = self.path / sample.zipPath.name
             if not sampleHardLinkPath.exists():

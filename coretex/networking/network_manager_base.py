@@ -26,6 +26,9 @@ import os
 import json
 import logging
 import platform
+import random
+import time
+
 import requests
 import requests.adapters
 
@@ -41,6 +44,22 @@ REFRESH_ENDPOINT = "user/refresh"
 API_TOKEN_HEADER = "api-token"
 API_TOKEN_KEY = "token"
 REFRESH_TOKEN_KEY = "refresh_token"
+
+RETRY_STATUS_CODES = [
+    HTTPStatus.TOO_MANY_REQUESTS,
+    HTTPStatus.INTERNAL_SERVER_ERROR,
+    HTTPStatus.SERVICE_UNAVAILABLE
+]
+
+
+def getDelayBeforeRetry(retryCount: int) -> int:
+    # retryCount starts from 0 so we add +1/+2 to start/end
+    # to make it have proper delay
+
+    start = (retryCount + 1) ** 2
+    end   = (retryCount + 2) ** 2
+
+    return random.randint(start, end)
 
 
 class RequestFailedError(Exception):
@@ -115,6 +134,38 @@ class NetworkManagerBase(ABC):
             headers[API_TOKEN_HEADER] = self._apiToken
 
         return headers
+
+    def shouldRetry(self, retryCount: int, response: Optional[NetworkResponse]) -> bool:
+        """
+            Checks if network request should be repeated based on the number of repetitions
+            as well as the response from previous repetition
+
+            Parameters
+            ----------
+            retryCount : int
+                number of repeated function calls
+            response : Optional[NetworkResponse]
+                response of the request which is pending for retry
+
+            Returns
+            -------
+            bool -> True if the request should be retried, False if not
+        """
+
+        # Limit retry count to 3 times
+        if retryCount >= MAX_RETRY_COUNT:
+            return False
+
+        if response is not None:
+            # If we get unauthorized maybe API token is expired
+            # If refresh endpoint failed with unauthorized do not retry
+            if response.isUnauthorized() and response.endpoint != REFRESH_ENDPOINT:
+                refreshTokenResponse = self.refreshToken()
+                return not refreshTokenResponse.hasFailed()
+
+            return response.statusCode in RETRY_STATUS_CODES
+
+        return True
 
     def request(
         self,
@@ -202,6 +253,13 @@ class NetworkManagerBase(ABC):
             if self.shouldRetry(retryCount, response):
                 if self._apiToken is not None:
                     headers[API_TOKEN_HEADER] = self._apiToken
+
+                # If we hit rate limiter sleep before retrying the request
+                if response.statusCode == HTTPStatus.TOO_MANY_REQUESTS:
+                    delay = getDelayBeforeRetry(retryCount)
+                    logging.getLogger("coretexpylib").debug(f">> [Coretex] Waiting for {delay} seconds before retrying failed \"{endpoint}\" request")
+
+                    time.sleep(delay)
 
                 return self.request(endpoint, requestType, headers, query, body, files, auth, stream, retryCount + 1)
 
@@ -547,41 +605,6 @@ class NetworkManagerBase(ABC):
         self._apiToken = responseJson[API_TOKEN_KEY]
 
         return response
-
-    def shouldRetry(self, retryCount: int, response: Optional[NetworkResponse]) -> bool:
-        """
-            Checks if network request should be repeated based on the number of repetitions
-            as well as the response from previous repetition
-
-            Parameters
-            ----------
-            retryCount : int
-                number of repeated function calls
-            response : Optional[NetworkResponse]
-                response of the request which is pending for retry
-
-            Returns
-            -------
-            bool -> True if the request should be retried, False if not
-        """
-
-        # Limit retry count to 3 times
-        if retryCount == MAX_RETRY_COUNT:
-            return False
-
-        if response is not None:
-            # If we get unauthorized maybe API token is expired
-            # If refresh endpoint failed with unauthorized do not retry
-            if response.isUnauthorized() and response.endpoint != REFRESH_ENDPOINT:
-                refreshTokenResponse = self.refreshToken()
-                return not refreshTokenResponse.hasFailed()
-
-            return (
-                response.statusCode == HTTPStatus.INTERNAL_SERVER_ERROR or
-                response.statusCode == HTTPStatus.SERVICE_UNAVAILABLE
-            )
-
-        return True
 
     def reset(self) -> None:
         """

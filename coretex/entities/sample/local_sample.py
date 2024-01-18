@@ -67,9 +67,8 @@ class LocalSample(Generic[SampleDataType], Sample[SampleDataType]):
 
         return self._path
 
-    def download(self, ignoreCache: bool = False) -> bool:
+    def download(self, ignoreCache: bool = False) -> None:
         logging.getLogger("coretexpylib").warning(">> [Coretex] Local sample cannot be downloaded")
-        return True
 
     def load(self) -> SampleDataType:
         return super().load()  # type: ignore

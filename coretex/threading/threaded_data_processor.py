@@ -22,6 +22,9 @@ import logging
 import os
 
 
+MAX_WORKER_COUNT = 8
+
+
 class MultithreadedDataProcessor:
 
     """
@@ -34,8 +37,8 @@ class MultithreadedDataProcessor:
         singleElementProcessor: Callable[[Any], None]
             function which will be called for a single element from the provided list
         threadCount: Optional[int]
-            number of threads which will be used for processing, if None
-            it will use all cpu cores
+            number of threads which will be used for processing (maximum is 8), if None
+            it will use min(cpuCores, 8)
         title: Optional[str]
             message which is displayed when the processing starts
 
@@ -84,7 +87,12 @@ class MultithreadedDataProcessor:
             if cpuCount is None:
                 cpuCount = 1
 
-            workerCount = cpuCount
+            workerCount = min(MAX_WORKER_COUNT, cpuCount)
+        else:
+            if workerCount > MAX_WORKER_COUNT:
+                logging.warning(f">> [Coretex] \"workerCount\" value: {workerCount} is higher than maximum allowed: {MAX_WORKER_COUNT}. Using {MAX_WORKER_COUNT} workers")
+
+            workerCount = min(MAX_WORKER_COUNT, workerCount)
 
         self.__data = data
         self.__singleElementProcessor = singleElementProcessor
