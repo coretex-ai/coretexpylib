@@ -69,6 +69,7 @@ temp             = _createFolder("temp")
 _artifactsFolder = _createFolder("artifacts")
 
 runsLogDirectory = logs / "runs"
+runsLogDirectory.mkdir(parents = True, exist_ok = True)
 
 
 def createTempFolder(name: str) -> Path:
