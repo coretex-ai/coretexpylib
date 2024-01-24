@@ -43,10 +43,7 @@ def initializeLogger(taskRunId: int) -> None:
         style = "%",
     )
 
-    taskRunLogs = folder_manager.runsLogDirectory / str(taskRunId)
-    taskRunLogs.mkdir(parents = True, exist_ok = True)
-
-    workerLogPath = taskRunLogs / "worker.log"
+    workerLogPath = folder_manager.getRunLogsDir(taskRunId) / "worker.log"
     fileHandler = logging.FileHandler(workerLogPath)
 
     fileHandler.setLevel(logging.DEBUG)

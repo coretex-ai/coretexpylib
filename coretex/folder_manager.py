@@ -69,7 +69,10 @@ temp             = _createFolder("temp")
 _artifactsFolder = _createFolder("artifacts")
 
 runsLogDirectory = logs / "runs"
-runsLogDirectory.mkdir(parents = True, exist_ok = True)
+runsLogDirectory.mkdir(exist_ok = True)
+
+coretexpylibLogs = logs / "coretexpylib"
+coretexpylibLogs.mkdir(exist_ok = True)
 
 
 def createTempFolder(name: str) -> Path:
@@ -151,3 +154,10 @@ def clearTempFiles() -> None:
 
     clearDirectory(temp)
     clearDirectory(_artifactsFolder)
+
+
+def getRunLogsDir(taskRunId: int) -> Path:
+    taskRunLogsDir = runsLogDirectory / str(taskRunId)
+    taskRunLogsDir.mkdir(parents = True, exist_ok = True)
+
+    return taskRunLogsDir

@@ -50,10 +50,8 @@ class TaskCallback:
         # Call "kill -30 task_run_process_id" to dump current stack trace of the TaskRun into the file
         # 30 == signal.SIGUSR1
         # Only works on *nix systems
-        taskRunLogs = folder_manager.runsLogDirectory / str(self._taskRun.id)
-        taskRunLogs.mkdir(parents = True, exist_ok = True)
 
-        faultHandlerPath = taskRunLogs / "stacktrace.log"
+        faultHandlerPath = folder_manager.getRunLogsDir(self._taskRun.id) / "stacktrace.log"
         faulthandler.register(
             signal.SIGUSR1,
             file = faultHandlerPath.open("w"),
