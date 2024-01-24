@@ -1,15 +1,6 @@
 from ..utils import command
 
 
-class DockerException(Exception):
-
-    """
-        Exception which is raised due to any unexpected behaviour with docker module
-    """
-
-    pass
-
-
 def createNetwork(name: str) -> None:
     command(["docker", "network", "create", "--driver", "bridge", name])
 
