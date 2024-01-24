@@ -24,5 +24,5 @@ from .utils import DATE_FORMAT
 
 
 def _initializeDefaultLogger() -> None:
-    logPath = folder_manager.logs / f"coretexpylib_{datetime.now().strftime(DATE_FORMAT)}.log"
+    logPath = folder_manager.coretexpylibLogs / f"{datetime.now().strftime(DATE_FORMAT)}.log"
     initializeLogger(LogSeverity.info, logPath)
