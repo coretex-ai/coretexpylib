@@ -19,12 +19,7 @@ def start() -> None:
         click.echo(f"Network {DOCKER_CONTAINER_NETWORK} successfully created.")
     except CommandException:
         click.echo(f"Failed to create network: {DOCKER_CONTAINER_NETWORK}")
-
-    dockerContainerConfig = {
-        "restart_policy": "always",
-        "ports": "21000:21000",
-        "cap_add": "SYS_PTRACE"
-    }
+        return
 
     try:
         runNode(
@@ -36,10 +31,7 @@ def start() -> None:
             config["nodeAccessToken"],
             config["nodeRam"],
             config["nodeSwap"],
-            config["nodeSharedMemory"],
-            dockerContainerConfig["restart_policy"],
-            dockerContainerConfig["ports"],
-            dockerContainerConfig["cap_add"]
+            config["nodeSharedMemory"]
         )
         click.echo(f"Node {config['nodeName']} started successfully.")
     except CommandException:

@@ -19,9 +19,6 @@ def runNode(
     nodeRam: str,
     nodeSwap: str,
     nodeSharedMemory: str,
-    restartPolicy: str,
-    ports: str,
-    capAdd: str,
 ) -> None:
 
     runCommand = [
@@ -29,9 +26,9 @@ def runNode(
         "--env", f"CTX_API_URL={serverUrl}",
         "--env", f"CTX_STORAGE_PATH={storagePath}",
         "--env", f"CTX_NODE_ACCESS_TOKEN={nodeAccessToken}",
-        "--restart", restartPolicy,
-        "-p", ports,
-        "--cap-add", capAdd,
+        "--restart", 'always',
+        "-p", "21000:21000",
+        "--cap-add", "SYS_PTRACE",
         "--network", name,
         "--memory", nodeRam,
         "--memory-swap", nodeSwap,
