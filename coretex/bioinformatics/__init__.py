@@ -18,7 +18,7 @@
 from typing import Optional, Union, List
 from pathlib import Path
 
-from .utils import command
+from ..utils import command
 from ..entities import CustomDataset
 
 

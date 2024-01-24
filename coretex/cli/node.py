@@ -1,6 +1,7 @@
 import click
 
 from ..configuration import loadConfig
+from ..utils import CommandException
 from .docker import runNode, stopNode, createNetwork
 
 
@@ -13,7 +14,11 @@ def start() -> None:
     dockerImage = "coretexai/coretex-node:latest-cpu"
     config = loadConfig()
 
-    createNetwork(DOCKER_CONTAINER_NETWORK)
+    try:
+        createNetwork(DOCKER_CONTAINER_NETWORK)
+        click.echo(f"Network {DOCKER_CONTAINER_NETWORK} successfully created.")
+    except CommandException:
+        click.echo(f"Failed to create network: {DOCKER_CONTAINER_NETWORK}")
 
     dockerContainerConfig = {
         "restart_policy": "always",
@@ -21,34 +26,32 @@ def start() -> None:
         "cap_add": "SYS_PTRACE"
     }
 
-    nodeRunning = runNode(
-        DOCKER_CONTAINER_NAME,
-        dockerImage,
-        config["image"],
-        config["serverUrl"],
-        config["storagePath"],
-        config["nodeAccessToken"],
-        config["nodeRam"],
-        config["nodeSwap"],
-        config["nodeSharedMemory"],
-        dockerContainerConfig["restart_policy"],
-        dockerContainerConfig["ports"],
-        dockerContainerConfig["cap_add"]
-    )
-
-    if nodeRunning:
+    try:
+        runNode(
+            DOCKER_CONTAINER_NAME,
+            dockerImage,
+            config["image"],
+            config["serverUrl"],
+            config["storagePath"],
+            config["nodeAccessToken"],
+            config["nodeRam"],
+            config["nodeSwap"],
+            config["nodeSharedMemory"],
+            dockerContainerConfig["restart_policy"],
+            dockerContainerConfig["ports"],
+            dockerContainerConfig["cap_add"]
+        )
         click.echo(f"Node {config['nodeName']} started successfully.")
-    else:
+    except CommandException:
         click.echo(f"Node {config['nodeName']} failed to start.")
 
 
 @click.command()
 def stop() -> None:
-    success = stopNode(DOCKER_CONTAINER_NAME, DOCKER_CONTAINER_NETWORK)
-
-    if success:
+    try:
+        stopNode(DOCKER_CONTAINER_NAME, DOCKER_CONTAINER_NETWORK)
         click.echo(f"Container {DOCKER_CONTAINER_NAME} stopped successfully.")
-    else:
+    except CommandException:
         click.echo(f"Failed to stop container {DOCKER_CONTAINER_NAME}.")
 
 

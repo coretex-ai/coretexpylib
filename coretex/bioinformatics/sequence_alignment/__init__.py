@@ -21,7 +21,7 @@ from pathlib import Path
 import subprocess
 import os
 
-from ..utils import command, logProcessOutput, CommandException
+from ...utils import command, logProcessOutput, CommandException
 from ...entities import CustomDataset, LogSeverity
 
 
