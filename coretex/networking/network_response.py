@@ -150,11 +150,16 @@ class NetworkRequestError(Exception):
         if not response.hasFailed():
             raise ValueError(">> [Coretex] Invalid request response")
 
-        responseJson = response.getJson(dict)
+        try:
+            # This will raise ValueError if response is not of type application/json
+            # which is the case for response (mostly errors) returned by nginx which are html
+            responseJson = response.getJson(dict)
 
-        if "message" in responseJson:
-            responseMessage = responseJson["message"]
-        else:
+            if "message" in responseJson:
+                responseMessage = responseJson["message"]
+            else:
+                responseMessage = response._raw.content.decode()
+        except ValueError:
             responseMessage = response._raw.content.decode()
 
         super().__init__(f">> [Coretex] {message}. Reason: {responseMessage}")

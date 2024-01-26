@@ -47,15 +47,10 @@ class Sample(ABC, Generic[SampleDataType]):
         pass
 
     @abstractmethod
-    def download(self, ignoreCache: bool = False) -> bool:
+    def download(self, ignoreCache: bool = False) -> None:
         """
             Downloads the Sample if it is an instance or a subclass of NetworkSample
             Ignored for instances and subclasses of LocalSample
-
-            Returns
-            -------
-            bool -> True if Sample has been downloaded successfully,
-            False if something went wrong, in LocalSample case True is always returned
         """
         pass
 

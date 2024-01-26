@@ -81,6 +81,10 @@ class BBox(Codable):
             self.minX, self.minY   # top left
         ]
 
+    @property
+    def area(self) -> int:
+        return self.width * self.height
+
     @classmethod
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
         descriptors = super()._keyDescriptors()
@@ -150,3 +154,25 @@ class BBox(Codable):
                 y.append(value)
 
         return cls.create(min(x), min(y), max(x), max(y))
+
+    def iou(self, other: 'BBox') -> float:
+        """
+            Calculate Intersection over Union (IoU) between two bounding boxes
+
+            Parameters:
+            other : BBox
+                bounding box for which the IoU will be calculated
+
+            Returns
+            float -> IoU score
+        """
+
+        x1 = max(self.minX, other.minX)
+        y1 = max(self.minY, other.minY)
+        x2 = min(self.maxX, other.maxX)
+        y2 = min(self.maxY, other.maxY)
+
+        intersectionArea = max(0, x2 - x1) * max(0, y2 - y1)
+
+        unionArea = self.area + other.area - intersectionArea
+        return intersectionArea / unionArea if unionArea > 0 else 0.0

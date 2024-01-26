@@ -27,7 +27,7 @@ from .sample import Sample
 from ..project import ProjectType
 from ... import folder_manager
 from ...codable import KeyDescriptor
-from ...networking import NetworkObject, networkManager, FileData
+from ...networking import NetworkObject, networkManager, FileData, NetworkRequestError
 from ...utils import TIME_ZONE
 
 
@@ -138,13 +138,14 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
         lastModified = datetime.fromtimestamp(self.zipPath.stat().st_mtime).astimezone(TIME_ZONE)
         return self.lastModified > lastModified
 
-    def download(self, ignoreCache: bool = False) -> bool:
+    def download(self, ignoreCache: bool = False) -> None:
         """
             Downloads sample from Coretex.ai
 
-            Returns
-            -------
-            bool -> False if response is failed, True otherwise
+            Raises
+            ------
+            NetworkRequestError -> if some kind of error happened during
+            the download process
         """
 
         if self.zipPath.exists() and self.modifiedSinceLastDownload():
@@ -154,25 +155,25 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
             self.zipPath.unlink()
 
         if not ignoreCache and self.zipPath.exists():
-            return True
+            return
 
         response = networkManager.streamDownload(f"{self._endpoint()}/export", self.zipPath, {
             "id": self.id
         })
 
+        if response.hasFailed():
+            raise NetworkRequestError(response, f"Failed to download Sample \"{self.name}\"")
+
         # If sample was downloaded succesfully relink it to datasets to which it is linked
-        if not response.hasFailed():
-            os.utime(self.zipPath, (os.stat(self.zipPath).st_atime, time.time()))
+        os.utime(self.zipPath, (os.stat(self.zipPath).st_atime, time.time()))
 
-            for datasetPath in folder_manager.datasetsFolder.iterdir():
-                sampleHardLinkPath = datasetPath / self.zipPath.name
-                if not sampleHardLinkPath.exists():
-                    continue
+        for datasetPath in folder_manager.datasetsFolder.iterdir():
+            sampleHardLinkPath = datasetPath / self.zipPath.name
+            if not sampleHardLinkPath.exists():
+                continue
 
-                sampleHardLinkPath.unlink()
-                os.link(self.zipPath, sampleHardLinkPath)
-
-        return not response.hasFailed()
+            sampleHardLinkPath.unlink()
+            os.link(self.zipPath, sampleHardLinkPath)
 
     def load(self) -> SampleDataType:
         return super().load()  # type: ignore

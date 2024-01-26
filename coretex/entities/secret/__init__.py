@@ -16,4 +16,5 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from .aws_secret import AWSSecret
+from .credentials import CredentialsSecret
 from .secret import Secret
