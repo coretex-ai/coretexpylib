@@ -1,8 +1,8 @@
 import click
 
-from .node import node
-from .project import project
-from .config import config
+from .commands.node import node
+from .commands.project import project
+from .commands.config import config
 
 
 @click.group()

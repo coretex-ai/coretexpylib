@@ -30,7 +30,9 @@ def getEnvVar(key: str, default: str) -> str:
     return os.environ[key]
 
 
-DEFAULT_CONFIG_PATH = Path.home().joinpath(".config", "coretex", "config.json")
+CONFIG_DIR = Path.home().joinpath(".config", "coretex")
+DEFAULT_CONFIG_PATH = CONFIG_DIR / "config.json"
+
 
 DEFAULT_CONFIG = {
     # os.environ used directly here since we don't wanna
@@ -115,5 +117,6 @@ def isNodeConfigured(config: Dict[str, Any]) -> bool:
         config.get("nodeName") is not None and
         config.get("storagePath") is not None and
         config.get("image") is not None and
-        config.get("organizationID") is not None
+        config.get("serverUrl") is not None and
+        config.get("isHTTPS") is not None
     )

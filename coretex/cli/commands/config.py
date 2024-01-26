@@ -5,10 +5,10 @@ from tabulate import tabulate
 
 import click
 
-from .utils import arrowPrompt, isGPUAvailable, validate
-from ..networking import networkManager
-from ..statistics import getAvailableRamMemory
-from ..configuration import loadConfig, saveConfig, isUserConfigured, isNodeConfigured
+from ..modules.utils import arrowPrompt, isGPUAvailable, validate
+from ...networking import networkManager
+from ...statistics import getAvailableRamMemory
+from ...configuration import loadConfig, saveConfig, isUserConfigured, isNodeConfigured
 
 
 @dataclass
@@ -143,6 +143,8 @@ def configNode() -> None:
         click.echo("NVIDIA GPU not found, CPU image will be used.")
         image = "cpu"
 
+    isHTTPS = click.prompt("Use HTTPS (Will prompt for certificates)? (Y/n)?", type = bool, default = True, show_default = False)
+
     ram = click.prompt("Node RAM memory limit in GB (press enter to use default)", type = int, default = getAvailableRamMemory())
     swap = click.prompt("Node swap memory limit in GB, make sure it is larger then mem limit (press enter to use default)", type = int, default = getAvailableRamMemory() * 2)
     sharedMemory = click.prompt("Node POSIX shared memory limit in GB (press enter to use default)", type = int, default = 2)
@@ -150,10 +152,11 @@ def configNode() -> None:
     config["storagePath"] = storagePath
     config["nodeName"] = nodeName
     config["image"] = image
+    config["isHTTPS"] = isHTTPS
     config["nodeAccessToken"] = nodeAccessToken
-    config["nodeRam"] = f"{ram}gb"
-    config["nodeSwap"] = f"{swap}gb"
-    config["nodeSharedMemory"] = f"{sharedMemory}gb"
+    config["nodeRam"] = ram
+    config["nodeSwap"] = swap
+    config["nodeSharedMemory"] = sharedMemory
 
     saveConfig(config)
 

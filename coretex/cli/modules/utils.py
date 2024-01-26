@@ -7,9 +7,9 @@ import inquirer
 
 from py3nvml import py3nvml
 
-from ..utils import decodeDate
-from ..configuration import loadConfig, saveConfig
-from ..networking import networkManager, NetworkResponse
+from ...utils import decodeDate
+from ...configuration import loadConfig, saveConfig
+from ...networking import networkManager, NetworkResponse
 
 
 def isGPUAvailable() -> bool:

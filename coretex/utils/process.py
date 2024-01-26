@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from pathlib import Path
 
 import logging
@@ -40,37 +40,47 @@ class CommandException(Exception):
     pass
 
 
-def command(args: List[str], ignoreOutput: bool = False, shell: bool = False) -> None:
+def command(args: List[str], ignoreStdout: bool = False, ignoreStderr: bool = False, shell: bool = False, check: bool = True) -> Tuple[int, Optional[str], Optional[str]]:
     process = subprocess.Popen(
         args,
-        shell = shell,
-        cwd = Path(__file__).parent,
-        stdout = None if ignoreOutput else subprocess.PIPE,
-        stderr = None if ignoreOutput else subprocess.PIPE
+        shell=shell,
+        cwd=Path(__file__).parent,
+        stdout=None if ignoreStdout else subprocess.PIPE,
+        stderr=None if ignoreStderr else subprocess.PIPE
     )
+
+    stdOutStr: Optional[str] = None
+    stdErrStr: Optional[str] = None
 
     returnCode: Optional[int] = None
 
-    if ignoreOutput:
+    if ignoreStdout and ignoreStderr:
         returnCode = process.wait()
     else:
         stdout = process.stdout
+        stderr = process.stderr
+
         if stdout is None:
             commandArgs = " ".join(args)
             raise ValueError(f">> [Coretex] Something went wrong while trying to execute \"{commandArgs}\"")
 
         while (returnCode := process.poll()) is None:
-            lines = stdout.readlines()
-            logProcessOutput(b"".join(lines), LogSeverity.info)
+            if not ignoreStdout:
+                lines = stdout.readlines()
+                stdOutStr = b"".join(lines).decode("utf-8")
+                logProcessOutput(b"".join(lines), LogSeverity.info)
 
-        stderr = process.stderr
-        if stderr is None:
+        if stderr is None and not ignoreStderr:
             commandArgs = " ".join(args)
             raise ValueError(f">> [Coretex] Something went wrong while trying to execute \"{commandArgs}\"")
 
-        lines = stderr.readlines()
-        logProcessOutput(b"".join(lines), LogSeverity.warning if returnCode == 0 else LogSeverity.fatal)
+        if stderr is not None and not ignoreStderr:
+            lines = stderr.readlines()
+            stdErrStr = b"".join(lines).decode("utf-8")
+            logProcessOutput(b"".join(lines), LogSeverity.warning if returnCode == 0 else LogSeverity.fatal)
 
-    if returnCode != 0:
+    if returnCode != 0 and check:
         commandArgs = " ".join(args)
-        raise CommandException(f">> [Coretex] Falied to execute command \"{commandArgs}\". Exit code \"{returnCode}\"")
+        raise CommandException(f">> [Coretex] Failed to execute command \"{commandArgs}\". Exit code \"{returnCode}\"") # can i remove this?
+
+    return returnCode, stdOutStr, stdErrStr

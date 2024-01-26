@@ -1,15 +1,33 @@
-from ..utils import command
+from ...utils import command
+
+
+def networkExists(name: str) -> bool:
+    try:
+        _, output, error = command(["docker", "network", "inspect", name], ignoreStdout = True, ignoreStderr = True)
+        print(f"o, e : {output, error}")
+        return True
+    except:
+        return False
 
 
 def createNetwork(name: str) -> None:
+    if networkExists(name):
+        removeNetwork(name)
+
     command(["docker", "network", "create", "--driver", "bridge", name])
+
+    # do we handle the case where we have lets say 10 networks with same name but different ids?
 
 
 def removeNetwork(name: str) -> None:
     command(["docker", "network", "rm", name])
 
 
-def runNode(
+def imagePull(image: str) -> None:
+    command(["docker", "image", "pull", image])
+
+
+def start(
     name: str,
     dockerImage: str,
     imageType: str,
@@ -30,9 +48,9 @@ def runNode(
         "-p", "21000:21000",
         "--cap-add", "SYS_PTRACE",
         "--network", name,
-        "--memory", nodeRam,
-        "--memory-swap", nodeSwap,
-        "--shm-size", nodeSharedMemory,
+        "--memory", f"{nodeRam}G",
+        "--memory-swap", f"{nodeSwap}G",
+        "--shm-size", f"{nodeSharedMemory}G",
         "--name", name,
     ]
 
@@ -48,6 +66,6 @@ def stopContainer(name: str) -> None:
     command(["docker", "rm", name])
 
 
-def stopNode(name: str, networkName: str) -> None:
+def stop(name: str, networkName: str) -> None:
     stopContainer(name)
     removeNetwork(networkName)
