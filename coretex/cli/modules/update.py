@@ -20,7 +20,7 @@ class NodeStatus(IntEnum):
     reconnecting = 5
 
 
-def generateUpdateScript(isHTTPS: bool) -> str:
+def generateUpdateScript() -> str:
     _, coretexPath, _ = command(["which", "coretex"], ignoreStdout = True, ignoreStderr = True)
 
     bashScriptTemplate = '''#!/bin/bash
@@ -59,23 +59,22 @@ run_update
     )
 
 
-def dumpScript(updateScriptPath: Path, isHTTPS: bool) -> None:
+def dumpScript(updateScriptPath: Path) -> None:
     with updateScriptPath.open("w") as scriptFile:
-        scriptFile.write(generateUpdateScript(isHTTPS))
+        scriptFile.write(generateUpdateScript())
 
     command(["chmod", "+x", str(updateScriptPath)], ignoreStdout = True)
 
 
-def activateAutoUpdate(configDir: Path, isHTTPS: bool) -> None:
+def activateAutoUpdate(configDir: Path) -> None:
     updateScriptPath = CONFIG_DIR / UPDATE_SCRIPT_NAME
-    dumpScript(updateScriptPath, isHTTPS)
+    dumpScript(updateScriptPath)
 
     if not jobExists(UPDATE_SCRIPT_NAME):
         scheduleJob(configDir, UPDATE_SCRIPT_NAME)
 
 
-def getNodeStatus(isHTTPS: bool) -> NodeStatus:
-    protocol = "https" if isHTTPS else "http"
-    response = requests.get(f"{protocol}://localhost:21000/status", timeout = 1)
+def getNodeStatus() -> NodeStatus:
+    response = requests.get(f"http://localhost:21000/status", timeout = 1)
     status = response.json()["status"]
     return NodeStatus(status)

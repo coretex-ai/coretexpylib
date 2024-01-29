@@ -10,7 +10,6 @@ from ...configuration import loadConfig, CONFIG_DIR
 @click.command()
 def start() -> None:
     config = loadConfig()
-    isHTTPS = config.get("isHTTPS", False)
     dockerImage = f"coretexai/coretex-node:latest-{config['image']}"
 
     click.echo("Fetching latest node version...")
@@ -21,7 +20,7 @@ def start() -> None:
     node_module.start(dockerImage, config)
     click.echo("Successfully started Coretex Node.")
 
-    activateAutoUpdate(CONFIG_DIR, isHTTPS)
+    activateAutoUpdate(CONFIG_DIR)
 
 
 @click.command()
@@ -35,10 +34,9 @@ def stop() -> None:
 def update() -> None:
     config = loadConfig()
     dockerImage = f"coretexai/coretex-node:latest-{config['image']}"
-    isHTTPS = config.get("isHTTPS", False)
-    activateAutoUpdate(CONFIG_DIR, isHTTPS)
+    activateAutoUpdate(CONFIG_DIR)
 
-    nodeStatus = getNodeStatus(isHTTPS)
+    nodeStatus = getNodeStatus()
     if nodeStatus == NodeStatus.active:
         click.echo("Stopping Coretex Node...")
         node_module.stop()

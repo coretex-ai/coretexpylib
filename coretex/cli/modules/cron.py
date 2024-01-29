@@ -25,7 +25,7 @@ def scheduleJob(configDir: Path, script: str) -> None:
 
     existingLines = getExisting()
 
-    cronEntry = f"*/30 * * * * {configDir / script}"
+    cronEntry = f"*/30 * * * * {configDir / script}\n"
 
     existingLines.append(cronEntry)
 

@@ -41,12 +41,12 @@ class CommandException(Exception):
 
 
 def command(
-        args: List[str],
-        ignoreStdout: bool = False,
-        ignoreStderr: bool = False,
-        shell: bool = False,
-        check: bool = True
-    ) -> Tuple[int, str, str]:
+    args: List[str],
+    ignoreStdout: bool = False,
+    ignoreStderr: bool = False,
+    shell: bool = False,
+    check: bool = True
+) -> Tuple[int, str, str]:
 
     process = subprocess.Popen(
         args,
