@@ -43,10 +43,10 @@ class CommandException(Exception):
 def command(args: List[str], ignoreStdout: bool = False, ignoreStderr: bool = False, shell: bool = False, check: bool = True) -> Tuple[int, Optional[str], Optional[str]]:
     process = subprocess.Popen(
         args,
-        shell=shell,
-        cwd=Path(__file__).parent,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+        shell = shell,
+        cwd = Path(__file__).parent,
+        stdout = subprocess.PIPE,
+        stderr = subprocess.PIPE
     )
 
     stdOutStr: Optional[str] = None
