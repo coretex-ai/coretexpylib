@@ -1,4 +1,5 @@
 from enum import IntEnum
+from pathlib import Path
 
 import requests
 
@@ -8,19 +9,18 @@ from ...configuration import CONFIG_DIR
 
 
 UPDATE_SCRIPT_NAME = "ctx_node_update.sh"
-IS_SSL = False
 
 
 class NodeStatus(IntEnum):
 
-    Inactive = 1
-    Active = 2
-    Busy = 3
-    Deleted = 4
-    Reconnecting = 5
+    inactive     = 1
+    active       = 2
+    busy         = 3
+    deleted      = 4
+    reconnecting = 5
 
 
-def generateUpdateScript() -> str:
+def generateUpdateScript(isHTTPS: bool) -> str:
     _, coretexPath, _ = command(["which", "coretex"], ignoreStdout = True, ignoreStderr = True)
 
     bashScriptTemplate = '''#!/bin/bash
@@ -56,33 +56,29 @@ run_update
 '''
 
     # Replace placeholders with actual values
-    bashScript = bashScriptTemplate.format(
+    return bashScriptTemplate.format(
         coretexPath = coretexPath,
-        protocol = "https" if IS_SSL else "http"
+        protocol = "https" if isHTTPS else "http"
     )
 
-    return bashScript
+
+def dumpScript(updateScriptPath: Path, isHTTPS: bool) -> None:
+    with updateScriptPath.open("w") as scriptFile:
+        scriptFile.write(generateUpdateScript(isHTTPS))
+
+    command(["chmod", "+x", str(updateScriptPath)], ignoreStdout = True)
 
 
-def dumpScript(updateScriptPath: str) -> None:
-    with open(updateScriptPath, "w+") as scriptFile:
-        scriptFile.write(generateUpdateScript())
+def activateAutoUpdate(configDir: Path, isHTTPS: bool) -> None:
+    updateScriptPath = CONFIG_DIR / UPDATE_SCRIPT_NAME
+    dumpScript(updateScriptPath, isHTTPS)
 
-    command(["chmod", "+x", updateScriptPath], ignoreStdout = True)
-
-
-def activateAutoUpdate(configDir: str, isHTTPS: bool) -> None:
-    IS_SSL = isHTTPS
-
-    updateScriptPath = str(CONFIG_DIR / UPDATE_SCRIPT_NAME)
-    dumpScript(updateScriptPath)
-
-    if (not jobExists(UPDATE_SCRIPT_NAME)):
+    if not jobExists(UPDATE_SCRIPT_NAME):
         scheduleJob(configDir, UPDATE_SCRIPT_NAME)
 
 
-def getNodeStatus() -> NodeStatus:
-    protocol = "https" if IS_SSL else "http"
+def getNodeStatus(isHTTPS: bool) -> NodeStatus:
+    protocol = "https" if isHTTPS else "http"
     response = requests.get(f"{protocol}://localhost:21000/status", timeout = 1)
     status = response.json()["status"]
     return NodeStatus(status)

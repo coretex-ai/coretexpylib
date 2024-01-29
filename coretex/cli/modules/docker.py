@@ -1,22 +1,20 @@
 from ...utils import command, CommandException
 
 
-def checkDockerAvailability() -> None:
+def isDockerAvailable() -> None:
     try:
         # Run the command to check if Docker exists and is available
         command(["docker", "ps"], ignoreStdout = True)
-    except CommandException as ex:
-        if "not found" in str(ex):
-            raise RuntimeError("It seems that Docker is not installed on your machine or it is not configured properly. Please make sure Docker is installed and properly configured to proceed.")
-
-        if "docker ps" in str(ex):
-            raise RuntimeError("It seems that Docker isn't running on your machine right now. Please ensure Docker is up and running to proceed.")
-
-        else:
-            raise RuntimeError(f"Something went wrong. {ex}")
+    except CommandException:
+        raise RuntimeError("Docker not available. Please check that it is properly installed and running on your system.")
 
 
 def networkExists(name: str) -> bool:
+    # This function inspects the specified Docker network using the
+    # 'docker network inspect' command. If the command exits with a return code
+    # of 0, indicating success, the function returns True, meaning the network exists.
+    # If the command exits with a non-zero return code, indicating failure,
+    # the function returns False, meaning the network doesn't exist.
     try:
         command(["docker", "network", "inspect", name], ignoreStdout = True, ignoreStderr = True)
         return True
@@ -29,8 +27,6 @@ def createNetwork(name: str) -> None:
         removeNetwork(name)
 
     command(["docker", "network", "create", "--driver", "bridge", name], ignoreStdout = True)
-
-    # do we handle the case where we have lets say 10 networks with same name but different ids?
 
 
 def removeNetwork(name: str) -> None:

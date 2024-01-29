@@ -40,7 +40,14 @@ class CommandException(Exception):
     pass
 
 
-def command(args: List[str], ignoreStdout: bool = False, ignoreStderr: bool = False, shell: bool = False, check: bool = True) -> Tuple[int, Optional[str], Optional[str]]:
+def command(
+        args: List[str],
+        ignoreStdout: bool = False,
+        ignoreStderr: bool = False,
+        shell: bool = False,
+        check: bool = True
+    ) -> Tuple[int, str, str]:
+
     process = subprocess.Popen(
         args,
         shell = shell,
@@ -49,8 +56,8 @@ def command(args: List[str], ignoreStdout: bool = False, ignoreStderr: bool = Fa
         stderr = subprocess.PIPE
     )
 
-    stdOutStr: Optional[str] = None
-    stdErrStr: Optional[str] = None
+    stdOutStr: str = ''
+    stdErrStr: str = ''
 
     returnCode: Optional[int] = None
 
@@ -63,10 +70,10 @@ def command(args: List[str], ignoreStdout: bool = False, ignoreStderr: bool = Fa
 
     while (returnCode := process.poll()) is None:
         if stdout is not None:
-            lines = stdout.readlines()
-            stdOutStr = b"".join(lines).decode("utf-8")
+            line = stdout.readline()
+            stdOutStr = "\n".join([stdOutStr, line.decode("utf-8")])
             if not ignoreStdout:
-                logProcessOutput(b"".join(lines), LogSeverity.info)
+                logProcessOutput(line, LogSeverity.info)
 
     if stderr is None and not ignoreStderr:
         commandArgs = " ".join(args)

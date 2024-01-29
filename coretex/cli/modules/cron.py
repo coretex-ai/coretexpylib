@@ -1,7 +1,5 @@
 from typing import List
-
-import os
-import subprocess
+from pathlib import Path
 
 from ...utils import command
 
@@ -21,19 +19,20 @@ def jobExists(script: str) -> bool:
     return any(line.endswith(script) for line in existingLines)
 
 
-def scheduleJob(configDir: str, script: str) -> None:
+def scheduleJob(configDir: Path, script: str) -> None:
     if jobExists(script):
         return
 
     existingLines = getExisting()
 
-    cronEntry = f"*/30 * * * * {os.path.join(configDir, script)}"
+    cronEntry = f"*/30 * * * * {configDir / script}"
+    print(cronEntry)
 
     existingLines.append(cronEntry)
 
-    tempCronFilePath = os.path.join(configDir, "temp.cron")
-    with open(tempCronFilePath, "w") as tempCronFile:
+    tempCronFilePath = configDir / "temp.cron"
+    with tempCronFilePath.open("w") as tempCronFile:
         tempCronFile.write("\n".join(existingLines))
 
-    subprocess.run(["crontab", tempCronFilePath], check=True)
-    os.remove(tempCronFilePath)
+    command(["crontab", str(tempCronFilePath)])
+    Path.unlink(tempCronFilePath)

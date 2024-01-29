@@ -3,14 +3,14 @@ import click
 from ..modules import node as node_module
 from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate
 from ..modules.utils import onBeforeCommandExecute
-from ..modules.docker import checkDockerAvailability
+from ..modules.docker import isDockerAvailable
 from ...configuration import loadConfig, CONFIG_DIR
 
 
 @click.command()
 def start() -> None:
     config = loadConfig()
-    isHTTPS = True if config["isHTTPS"] else False
+    isHTTPS = config.get("isHTTPS", False)
     dockerImage = f"coretexai/coretex-node:latest-{config['image']}"
 
     click.echo("Fetching latest node version...")
@@ -21,7 +21,7 @@ def start() -> None:
     node_module.start(dockerImage, config)
     click.echo("Successfully started Coretex Node.")
 
-    activateAutoUpdate(str(CONFIG_DIR), isHTTPS)
+    activateAutoUpdate(CONFIG_DIR, isHTTPS)
 
 
 @click.command()
@@ -35,11 +35,11 @@ def stop() -> None:
 def update() -> None:
     config = loadConfig()
     dockerImage = f"coretexai/coretex-node:latest-{config['image']}"
-    isHTTPS = True if config["isHTTPS"] else False
-    activateAutoUpdate(str(CONFIG_DIR), isHTTPS)
+    isHTTPS = config.get("isHTTPS", False)
+    activateAutoUpdate(CONFIG_DIR, isHTTPS)
 
-    nodeStatus = getNodeStatus()
-    if nodeStatus == NodeStatus.Active:
+    nodeStatus = getNodeStatus(isHTTPS)
+    if nodeStatus == NodeStatus.active:
         click.echo("Stopping Coretex Node...")
         node_module.stop()
         click.echo("Successfully stopped Coretex Node.")
@@ -54,7 +54,7 @@ def update() -> None:
 
 
 @click.group()
-@onBeforeCommandExecute(checkDockerAvailability)
+@onBeforeCommandExecute(isDockerAvailable)
 def node() -> None:
     pass
 
