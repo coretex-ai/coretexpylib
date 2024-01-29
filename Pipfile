@@ -21,6 +21,7 @@ pyyaml = "*"
 click = "*"
 tabulate = "*"
 inquirer = "*"
+docker = "*"
 
 [dev-packages]
 mypy = "*"

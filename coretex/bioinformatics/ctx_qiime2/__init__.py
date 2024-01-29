@@ -23,7 +23,7 @@ from .utils import compressGzip, createSample, getDemuxSamples, getDenoisedSampl
     isDemultiplexedSample, isDenoisedSample, isFastqDPSample, isFastqMPSample, \
     isImportedSample, isPhylogeneticTreeSample, sampleNumber, isPairedEnd
 
-from ..utils import command
+from ...utils import command
 
 
 def toolsImport(
