@@ -62,10 +62,11 @@ def command(args: List[str], ignoreStdout: bool = False, ignoreStderr: bool = Fa
         raise ValueError(f">> [Coretex] Something went wrong while trying to execute \"{commandArgs}\"")
 
     while (returnCode := process.poll()) is None:
-        lines = stdout.readlines()
-        stdOutStr = b"".join(lines).decode("utf-8")
-        if not ignoreStdout:
-            logProcessOutput(b"".join(lines), LogSeverity.info)
+        if stdout is not None:
+            lines = stdout.readlines()
+            stdOutStr = b"".join(lines).decode("utf-8")
+            if not ignoreStdout:
+                logProcessOutput(b"".join(lines), LogSeverity.info)
 
     if stderr is None and not ignoreStderr:
         commandArgs = " ".join(args)
