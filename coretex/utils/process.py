@@ -45,8 +45,8 @@ def command(args: List[str], ignoreStdout: bool = False, ignoreStderr: bool = Fa
         args,
         shell=shell,
         cwd=Path(__file__).parent,
-        stdout=None if ignoreStdout else subprocess.PIPE,
-        stderr=None if ignoreStderr else subprocess.PIPE
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
     )
 
     stdOutStr: Optional[str] = None
@@ -54,33 +54,31 @@ def command(args: List[str], ignoreStdout: bool = False, ignoreStderr: bool = Fa
 
     returnCode: Optional[int] = None
 
-    if ignoreStdout and ignoreStderr:
-        returnCode = process.wait()
-    else:
-        stdout = process.stdout
-        stderr = process.stderr
+    stdout = process.stdout
+    stderr = process.stderr
 
-        if stdout is None:
-            commandArgs = " ".join(args)
-            raise ValueError(f">> [Coretex] Something went wrong while trying to execute \"{commandArgs}\"")
+    if stdout is None and not ignoreStdout:
+        commandArgs = " ".join(args)
+        raise ValueError(f">> [Coretex] Something went wrong while trying to execute \"{commandArgs}\"")
 
-        while (returnCode := process.poll()) is None:
-            if not ignoreStdout:
-                lines = stdout.readlines()
-                stdOutStr = b"".join(lines).decode("utf-8")
-                logProcessOutput(b"".join(lines), LogSeverity.info)
+    while (returnCode := process.poll()) is None:
+        lines = stdout.readlines()
+        stdOutStr = b"".join(lines).decode("utf-8")
+        if not ignoreStdout:
+            logProcessOutput(b"".join(lines), LogSeverity.info)
 
-        if stderr is None and not ignoreStderr:
-            commandArgs = " ".join(args)
-            raise ValueError(f">> [Coretex] Something went wrong while trying to execute \"{commandArgs}\"")
+    if stderr is None and not ignoreStderr:
+        commandArgs = " ".join(args)
+        raise ValueError(f">> [Coretex] Something went wrong while trying to execute \"{commandArgs}\"")
 
-        if stderr is not None and not ignoreStderr:
-            lines = stderr.readlines()
-            stdErrStr = b"".join(lines).decode("utf-8")
+    if stderr is not None:
+        lines = stderr.readlines()
+        stdErrStr = b"".join(lines).decode("utf-8")
+        if not ignoreStderr:
             logProcessOutput(b"".join(lines), LogSeverity.warning if returnCode == 0 else LogSeverity.fatal)
 
     if returnCode != 0 and check:
         commandArgs = " ".join(args)
-        raise CommandException(f">> [Coretex] Failed to execute command \"{commandArgs}\". Exit code \"{returnCode}\"") # can i remove this?
+        raise CommandException(f">> [Coretex] Failed to execute command \"{commandArgs}\". Exit code \"{returnCode}\"")
 
     return returnCode, stdOutStr, stdErrStr

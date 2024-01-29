@@ -2,10 +2,9 @@ from enum import IntEnum
 
 import requests
 
+from .cron import jobExists, scheduleJob
 from ...utils import command
 from ...configuration import CONFIG_DIR
-
-from .cron import jobExists, scheduleJob
 
 
 UPDATE_SCRIPT_NAME = "ctx_node_update.sh"
@@ -22,7 +21,7 @@ class NodeStatus(IntEnum):
 
 
 def generateUpdateScript() -> str:
-    _, coretexPath, _ = command(["which", "coretex"], ignoreStderr = True)
+    _, coretexPath, _ = command(["which", "coretex"], ignoreStdout = True, ignoreStderr = True)
 
     bashScriptTemplate = '''#!/bin/bash
 
@@ -69,7 +68,7 @@ def dumpScript(updateScriptPath: str) -> None:
     with open(updateScriptPath, "w+") as scriptFile:
         scriptFile.write(generateUpdateScript())
 
-    command(["chmod", "+x", updateScriptPath])
+    command(["chmod", "+x", updateScriptPath], ignoreStdout = True)
 
 
 def activateAutoUpdate(configDir: str, isHTTPS: bool) -> None:
@@ -83,6 +82,7 @@ def activateAutoUpdate(configDir: str, isHTTPS: bool) -> None:
 
 
 def getNodeStatus() -> NodeStatus:
-    protocol = 'https' if IS_SSL else 'http'
-    result = requests.get(f"{protocol}://localhost:21000/status", timeout = 1)
-    return NodeStatus.Active
+    protocol = "https" if IS_SSL else "http"
+    response = requests.get(f"{protocol}://localhost:21000/status", timeout = 1)
+    status = response.json()["status"]
+    return NodeStatus(status)

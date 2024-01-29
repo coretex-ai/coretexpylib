@@ -2,10 +2,10 @@ from typing import List, Any, Optional, Callable
 from datetime import datetime, timezone
 from functools import wraps
 
+from py3nvml import py3nvml
+
 import click
 import inquirer
-
-from py3nvml import py3nvml
 
 from ...utils import decodeDate
 from ...configuration import loadConfig, saveConfig
@@ -76,7 +76,7 @@ def initializeUserSession() -> None:
     saveConfig(config)
 
 
-def validate(excludeOptions: Optional[List[str]] = None) -> Any:
+def onBeforeCommandExecute(fun: Callable[..., Any], excludeOptions: Optional[List[str]] = None) -> Any:
     if excludeOptions is None:
         excludeOptions = []
 
@@ -87,7 +87,7 @@ def validate(excludeOptions: Optional[List[str]] = None) -> Any:
                 if key in excludeOptions and value:
                     return f(*args, **kwargs)
 
-            initializeUserSession()
+            fun()
             return f(*args, **kwargs)
         return wrapper
     return decorator

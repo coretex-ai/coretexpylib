@@ -1,10 +1,24 @@
 from ...utils import command
 
 
+def checkDockerAvailability() -> None:
+    try:
+        # Run the command to check if Docker existing and running
+        command(["docker", "ps"], ignoreStdout = True)
+    except Exception as ex:
+        if "not found" in str(ex):
+            raise RuntimeError("It seems that Docker is not installed on your machine or it is not configured properly. Please make sure Docker is installed and properly configured to proceed.")
+
+        if "docker ps" in str(ex):
+            raise RuntimeError("It seems that Docker isn't running on your machine right now. Please ensure Docker is up and running to proceed.")
+
+        else:
+            raise RuntimeError(f"Something went wrong. {ex}")
+
+
 def networkExists(name: str) -> bool:
     try:
-        _, output, error = command(["docker", "network", "inspect", name], ignoreStdout = True, ignoreStderr = True)
-        print(f"o, e : {output, error}")
+        command(["docker", "network", "inspect", name], ignoreStdout = True, ignoreStderr = True)
         return True
     except:
         return False
@@ -14,17 +28,17 @@ def createNetwork(name: str) -> None:
     if networkExists(name):
         removeNetwork(name)
 
-    command(["docker", "network", "create", "--driver", "bridge", name])
+    command(["docker", "network", "create", "--driver", "bridge", name], ignoreStdout = True)
 
     # do we handle the case where we have lets say 10 networks with same name but different ids?
 
 
 def removeNetwork(name: str) -> None:
-    command(["docker", "network", "rm", name])
+    command(["docker", "network", "rm", name], ignoreStdout = True, ignoreStderr = True)
 
 
 def imagePull(image: str) -> None:
-    command(["docker", "image", "pull", image])
+    command(["docker", "image", "pull", image], ignoreStdout = True)
 
 
 def start(
@@ -58,12 +72,12 @@ def start(
         runCommand.extend(["--gpus", "all"])
 
     runCommand.append(dockerImage)
-    command(runCommand)
+    command(runCommand, ignoreStdout = True)
 
 
 def stopContainer(name: str) -> None:
-    command(["docker", "stop", name])
-    command(["docker", "rm", name])
+    command(["docker", "stop", name], ignoreStdout = True)
+    command(["docker", "rm", name], ignoreStdout = True)
 
 
 def stop(name: str, networkName: str) -> None:

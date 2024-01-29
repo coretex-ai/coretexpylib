@@ -5,7 +5,7 @@ from tabulate import tabulate
 
 import click
 
-from ..modules.utils import arrowPrompt, isGPUAvailable, validate
+from ..modules.utils import arrowPrompt, isGPUAvailable, onBeforeCommandExecute, initializeUserSession
 from ...networking import networkManager
 from ...statistics import getAvailableRamMemory
 from ...configuration import loadConfig, saveConfig, isUserConfigured, isNodeConfigured
@@ -87,7 +87,6 @@ def configUser() -> None:
     click.echo("Configuring user...")
     loginInfo = authenticate()
 
-    click.echo("Storage path should be the same as (if) used during --node config")
     storagePath = click.prompt("Storage path (press enter to use default)", Path.home() / ".coretex", type = str)
 
     config["username"] = loginInfo.username
@@ -134,7 +133,6 @@ def configNode() -> None:
     nodeName = click.prompt("Node name", type = str)
     nodeAccessToken = registerNode(nodeName)
 
-    click.echo("Storage path should be the same as (if) used during --user config")
     storagePath = click.prompt("Storage path (press enter to use default)", Path.home() / ".coretex", type = str)
 
     if isGPUAvailable():
@@ -167,7 +165,7 @@ def configNode() -> None:
 @click.command()
 @click.option("--user", is_flag = True, help = "Configure user settings")
 @click.option("--node", is_flag = True, help = "Configure node settings")
-@validate(excludeOptions = ["user"])
+@onBeforeCommandExecute(initializeUserSession, excludeOptions = ["user"])
 def config(user: bool, node: bool) -> None:
     if not user and not node:
         raise click.UsageError("Please use either --user or --node")
