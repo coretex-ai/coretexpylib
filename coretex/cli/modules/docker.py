@@ -44,9 +44,9 @@ def start(
     serverUrl: str,
     storagePath: str,
     nodeAccessToken: str,
-    nodeRam: str,
-    nodeSwap: str,
-    nodeSharedMemory: str,
+    nodeRam: int,
+    nodeSwap: int,
+    nodeSharedMemory: int,
 ) -> None:
 
     runCommand = [

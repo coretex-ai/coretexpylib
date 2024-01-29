@@ -56,8 +56,8 @@ def command(
         stderr = subprocess.PIPE
     )
 
-    stdOutStr: str = ''
-    stdErrStr: str = ''
+    stdOutStr = ""
+    stdErrStr = ""
 
     returnCode: Optional[int] = None
 

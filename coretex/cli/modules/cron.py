@@ -34,4 +34,4 @@ def scheduleJob(configDir: Path, script: str) -> None:
         tempCronFile.write("\n".join(existingLines))
 
     command(["crontab", str(tempCronFilePath)])
-    Path.unlink(tempCronFilePath)
+    tempCronFilePath.unlink()
