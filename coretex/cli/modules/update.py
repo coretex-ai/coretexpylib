@@ -24,9 +24,7 @@ def generateUpdateScript(isHTTPS: bool) -> str:
     _, coretexPath, _ = command(["which", "coretex"], ignoreStdout = True, ignoreStderr = True)
 
     bashScriptTemplate = '''#!/bin/bash
-
 NODE_UPDATE_COMMAND="{coretexPath} node update"
-
 # Dump logs to CLI directory
 OUTPUT_DIR="$HOME/.config/coretex"
 mkdir -p "$OUTPUT_DIR"
@@ -57,8 +55,7 @@ run_update
 
     # Replace placeholders with actual values
     return bashScriptTemplate.format(
-        coretexPath = coretexPath,
-        protocol = "https" if isHTTPS else "http"
+        coretexPath = coretexPath.strip(),
     )
 
 

@@ -5,7 +5,7 @@ from ...utils import command
 
 
 def getExisting() -> List[str]:
-    _, output, error = command(["crontab", "-l"], ignoreStdout = True)
+    _, output, error = command(["crontab", "-l"], ignoreStdout = True, ignoreStderr = True, check = False)
     if error is not None and "no crontab for" in error:
         return []
     if output is not None:
