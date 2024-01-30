@@ -57,7 +57,9 @@ class ImageSample(NetworkSample[AnnotatedImageSampleData], LocalImageSample):
         return Path(self.path) / "annotations.json"
 
     def saveAnnotation(self, coretexAnnotation: CoretexImageAnnotation) -> bool:
-        super().saveAnnotation(coretexAnnotation)
+        # Only save annotation locally if it is downloaded
+        if self.zipPath.exists() and self.path.exists():
+            super().saveAnnotation(coretexAnnotation)
 
         parameters = {
             "id": self.id,
