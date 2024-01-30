@@ -13,9 +13,9 @@ class NodeException(Exception):
     pass
 
 
-def pull(image: str) -> None:
+def pull(repository: str, tag: str) -> None:
     try:
-        docker.imagePull(image)
+        docker.imagePull(f"{repository}:{tag}")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to fetch latest node version")
@@ -49,3 +49,17 @@ def stop() -> None:
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to stop Coretex Node.")
+
+
+def shouldUpdate(repository: str, tag: str) -> bool:
+    try:
+        imageJson = docker.imageInspect(repository, tag)
+        manifestJson = docker.manifestInspect(repository, tag)
+
+        for digest in imageJson["RepoDigests"]:
+            if repository in digest:
+                if manifestJson["Descriptor"]["digest"] in digest:
+                    return False
+        return True
+    except:
+        return False

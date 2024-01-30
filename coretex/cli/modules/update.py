@@ -32,7 +32,8 @@ def generateUpdateScript(config: Dict[str, Any]) -> str:
 
     return bashScriptTemplate.format(
         dockerPath = dockerPath.strip(),
-        image = f"coretexai/coretex-node:latest-{config['image']}",
+        repository = "coretexai/coretex-node",
+        tag = f"latest-{config['image']}",
         serverUrl = config["serverUrl"],
         storagePath = config["storagePath"],
         nodeAccessToken = config["nodeAccessToken"],

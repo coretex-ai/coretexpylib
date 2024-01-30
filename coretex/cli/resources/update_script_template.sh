@@ -2,12 +2,15 @@
 
 # Define Docker-related variables
 DOCKER_PATH={dockerPath}
-IMAGE={image}
+REPOSITORY={repository}
+TAG={tag}
+IMAGE={repository}:{tag}
 SERVER_URL={serverUrl}
 STORAGE_PATH={storagePath}
 NODE_ACCESS_TOKEN={nodeAccessToken}
 CONTAINER_NAME={containerName}
 NETWORK_NAME={networkName}
+
 
 # Define function to stop and remove the container
 function stop_and_remove_container {{
@@ -19,6 +22,29 @@ function stop_and_remove_container {{
 function remove_network {{
     echo "Removing the network: $NETWORK_NAME"
     $DOCKER_PATH network rm "$NETWORK_NAME"
+}}
+
+function check_version {{
+    echo "Checking node version..."
+
+    # Get latest image digest from docker hub
+    manifest_output=$($DOCKER_PATH manifest inspect coretexai/coretex-node:latest-cpu --verbose)
+
+    # get digest from docker hub
+    digest_line=$(echo "$manifest_output" | grep -o '"digest": ".*"' | head -n 1)
+    latest_digest=$(echo "$digest_line" | cut -d '"' -f 4)
+
+    # get digest from local container 
+    current_digest=$($DOCKER_PATH image ls --digests | grep "coretexai/coretex-node" | grep "latest-cpu" | awk '{{print $3}}')
+    current_digest=$(echo "$current_digest" | awk '{{$1=$1;print}}')
+
+    # Compare digests
+    if [[ $latest_digest != $current_digest ]]; then
+        return 1 # Return False since there is new image to be pulled from docker hub
+    else
+        echo "Node version is up to date."
+        exit 0
+    fi
 }}
 
 # Define function to pull the latest image
@@ -54,11 +80,13 @@ function start_node {{
 # Define function to update node
 function update_node {{
     echo "Updating node"
-    stop_and_remove_container
-    remove_network
-    pull_latest_image
-    create_network
-    start_node
+    if ! check_version; then
+        stop_and_remove_container
+        remove_network
+        pull_latest_image
+        create_network
+        start_node
+    fi
 }}
 
 # Main execution

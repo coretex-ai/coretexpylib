@@ -1,3 +1,7 @@
+from typing import Dict, Any
+
+import json
+
 from ...utils import command, CommandException
 
 
@@ -79,3 +83,15 @@ def stopContainer(name: str) -> None:
 def stop(name: str, networkName: str) -> None:
     stopContainer(name)
     removeNetwork(networkName)
+
+
+def manifestInspect(repository: str, tag: str) -> Dict[str, Any]:
+    _, output, _ = command(["docker", "manifest", "inspect", f"{repository}:{tag}", "--verbose"], ignoreStdout = True)
+    jsonOutput: Dict[str, Any] = json.loads(output)
+    return jsonOutput
+
+
+def imageInspect(repository: str, tag: str) -> Dict[str, Any]:
+    _, output, _ = command(["docker", "image", "inspect", f"{repository}:{tag}"], ignoreStdout = True)
+    jsonOutput: Dict[str, Any] = json.loads(output)
+    return jsonOutput

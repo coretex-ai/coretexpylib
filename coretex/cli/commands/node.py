@@ -10,14 +10,16 @@ from ...configuration import loadConfig, CONFIG_DIR
 @click.command()
 def start() -> None:
     config = loadConfig()
-    dockerImage = f"coretexai/coretex-node:latest-{config['image']}"
+    repository = "coretexai/coretex-node"
+    tag = f"latest-{config['image']}"
 
-    click.echo("Fetching latest node version...")
-    node_module.pull(dockerImage)
-    click.echo("Latest node version successfully fetched.")
+    if node_module.shouldUpdate(repository, tag):
+        click.echo("Fetching latest node version...")
+        node_module.pull("coretexai/coretex-node", f"latest-{config['image']}")
+        click.echo("Latest node version successfully fetched.")
 
     click.echo("Starting Coretex Node...")
-    node_module.start(dockerImage, config)
+    node_module.start(f"{repository}:{tag}", config)
     click.echo("Successfully started Coretex Node.")
 
     activateAutoUpdate(CONFIG_DIR, config)
@@ -33,22 +35,28 @@ def stop() -> None:
 @click.command()
 def update() -> None:
     config = loadConfig()
-    dockerImage = f"coretexai/coretex-node:latest-{config['image']}"
-    activateAutoUpdate(CONFIG_DIR, config)
+    repository = "coretexai/coretex-node"
+    tag = f"latest-{config['image']}"
 
-    nodeStatus = getNodeStatus()
-    if nodeStatus == NodeStatus.active:
-        click.echo("Stopping Coretex Node...")
-        node_module.stop()
-        click.echo("Successfully stopped Coretex Node.")
+    if getNodeStatus() != NodeStatus.active:
+        click.echo("Node status is inactive. Make sure node is up and running.")
+        return
 
-        click.echo("Fetching latest node version.")
-        node_module.pull(dockerImage)
-        click.echo("Latest version successfully fetched.")
+    if not node_module.shouldUpdate(repository, tag):
+        click.echo("Node version is up to date.")
+        return
 
-        click.echo("Starting Coretex Node...")
-        node_module.start(dockerImage, config)
-        click.echo("Successfully started Coretex Node.")
+    click.echo("Fetching latest node version.")
+    node_module.pull(repository, tag)
+    click.echo("Latest version successfully fetched.")
+
+    click.echo("Stopping Coretex Node...")
+    node_module.stop()
+    click.echo("Successfully stopped Coretex Node.")
+
+    click.echo("Starting Coretex Node...")
+    node_module.start(f"{repository}:{tag}", config)
+    click.echo("Successfully started Coretex Node.")
 
 
 @click.group()
