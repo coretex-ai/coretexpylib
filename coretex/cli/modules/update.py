@@ -1,9 +1,12 @@
+from typing import Dict, Any
 from enum import IntEnum
 from pathlib import Path
 
 import requests
 
 from .cron import jobExists, scheduleJob
+from .node import DOCKER_CONTAINER_NAME, DOCKER_CONTAINER_NETWORK
+from ..resources import RESOURCES_DIR
 from ...utils import command
 from ...configuration import CONFIG_DIR
 
@@ -20,55 +23,34 @@ class NodeStatus(IntEnum):
     reconnecting = 5
 
 
-def generateUpdateScript() -> str:
-    _, coretexPath, _ = command(["which", "coretex"], ignoreStdout = True, ignoreStderr = True)
+def generateUpdateScript(config: Dict[str, Any]) -> str:
+    _, dockerPath, _ = command(["which", "docker"], ignoreStdout = True, ignoreStderr = True)
+    bashScriptTemplatePath = RESOURCES_DIR / "update_script_template.sh"
 
-    bashScriptTemplate = '''#!/bin/bash
-NODE_UPDATE_COMMAND="{coretexPath} node update"
-# Dump logs to CLI directory
-OUTPUT_DIR="$HOME/.config/coretex"
-mkdir -p "$OUTPUT_DIR"
-# Generate the output filename based on the current Unix timestamp
-OUTPUT_FILE="$OUTPUT_DIR/ctx_autoupdate.log"
-# Redirect all output to the file
-exec >>"$OUTPUT_FILE" 2>&1
+    with bashScriptTemplatePath.open("r") as scriptFile:
+        bashScriptTemplate = scriptFile.read()
 
-function run_node_update {{
-    echo "Running command: $NODE_UPDATE_COMMAND"
-    $NODE_UPDATE_COMMAND
-
-    local exit_code=$?
-    if [ "$exit_code" -eq 0 ]; then
-        echo "Node update finished successfully"
-    else
-        echo "Node failed to update with exit code $exit_code"
-    fi
-}}
-
-function run_update {{
-    run_node_update
-}}
-
-# Main execution
-run_update
-'''
-
-    # Replace placeholders with actual values
     return bashScriptTemplate.format(
-        coretexPath = coretexPath.strip(),
+        dockerPath = dockerPath.strip(),
+        image = f"coretexai/coretex-node:latest-{config['image']}",
+        serverUrl = config["serverUrl"],
+        storagePath = config["storagePath"],
+        nodeAccessToken = config["nodeAccessToken"],
+        containerName = DOCKER_CONTAINER_NAME,
+        networkName = DOCKER_CONTAINER_NETWORK
     )
 
 
-def dumpScript(updateScriptPath: Path) -> None:
+def dumpScript(updateScriptPath: Path, config: Dict[str, Any]) -> None:
     with updateScriptPath.open("w") as scriptFile:
-        scriptFile.write(generateUpdateScript())
+        scriptFile.write(generateUpdateScript(config))
 
     command(["chmod", "+x", str(updateScriptPath)], ignoreStdout = True)
 
 
-def activateAutoUpdate(configDir: Path) -> None:
+def activateAutoUpdate(configDir: Path, config: Dict[str, Any]) -> None:
     updateScriptPath = CONFIG_DIR / UPDATE_SCRIPT_NAME
-    dumpScript(updateScriptPath)
+    dumpScript(updateScriptPath, config)
 
     if not jobExists(UPDATE_SCRIPT_NAME):
         scheduleJob(configDir, UPDATE_SCRIPT_NAME)

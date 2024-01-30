@@ -4,7 +4,7 @@ from ...utils import command, CommandException
 def isDockerAvailable() -> None:
     try:
         # Run the command to check if Docker exists and is available
-        command(["docker", "ps"], ignoreStdout = True, ignoreStderr = True, shell = True)
+        command(["docker", "ps"], ignoreStdout = True, ignoreStderr = True)
     except CommandException:
         raise RuntimeError("Docker not available. Please check that it is properly installed and running on your system.")
 

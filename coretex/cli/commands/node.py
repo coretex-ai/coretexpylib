@@ -20,7 +20,7 @@ def start() -> None:
     node_module.start(dockerImage, config)
     click.echo("Successfully started Coretex Node.")
 
-    activateAutoUpdate(CONFIG_DIR)
+    activateAutoUpdate(CONFIG_DIR, config)
 
 
 @click.command()
@@ -34,7 +34,7 @@ def stop() -> None:
 def update() -> None:
     config = loadConfig()
     dockerImage = f"coretexai/coretex-node:latest-{config['image']}"
-    activateAutoUpdate(CONFIG_DIR)
+    activateAutoUpdate(CONFIG_DIR, config)
 
     nodeStatus = getNodeStatus()
     if nodeStatus == NodeStatus.active:
