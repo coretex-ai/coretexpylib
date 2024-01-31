@@ -17,9 +17,6 @@ RAM_MEMORY={ramMemory}G
 SWAP_MEMORY={swapMemory}G
 SHARED_MEMORY={sharedMemory}G
 
-# Main execution
-NODE_UPDATE_COMMAND="update_node"
-
 NODE_STATUS_ENDPOINT="http://localhost:21000/status"
 
 # Dump logs to CLI directory
@@ -31,6 +28,12 @@ OUTPUT_FILE="$OUTPUT_DIR/ctx_autoupdate.log"
 
 # Redirect all output to the file
 exec >>"$OUTPUT_FILE" 2>&1
+
+function fetch_node_status {{
+    local api_response=$(curl -s "$NODE_STATUS_ENDPOINT")
+    local status=$(echo "$api_response" | sed -n 's/.*"status":\([^,}}]*\).*/\1/p')
+    echo "$status"
+}}
 
 function should_update {{
     local api_response=$(curl -s "$NODE_STATUS_ENDPOINT")
@@ -74,14 +77,6 @@ function pull_image {{
 
 # Define function to stop and remove the container
 function stop_node {{
-    local api_response=$(curl -s "$NODE_STATUS_ENDPOINT")
-    local status=$(echo "$api_response" | sed -n 's/.*"status":\([^,}}]*\).*/\1/p')
-
-    if [ "$status" -eq 3 ]; then
-        echo "Node is busy, stopping node update."
-        return 1
-    fi
-
     echo "Stopping and removing the container: $CONTAINER_NAME"
     $DOCKER_PATH stop "$CONTAINER_NAME" && $DOCKER_PATH rm "$CONTAINER_NAME"
 
@@ -109,20 +104,33 @@ function start_node {{
 
 # Define function to update node
 function update_node {{
-    echo "Updating node"
-    if should_update; then
-        if pull_image; then
-            if stop_node; then
-                start_node
-            fi
-        fi
+    local status=$(fetch_node_status)
+
+    if [ "$status" -eq 3 ]; then
+        echo "Node is busy, stopping node update."
+        return 1
     fi
+
+    echo "Updating node"
+    if ! should_update; then
+        return
+    fi
+
+    if ! pull_image; then
+        return
+    fi
+
+    if ! stop_node; then
+        return
+    fi
+
+    start_node
 }}
 
 # Function to run node update
 function run_node_update {{
-    echo "Running command: $NODE_UPDATE_COMMAND"
-    $NODE_UPDATE_COMMAND
+    echo "Running command: update_node"
+    update_node
 
     local exit_code=$?
     if [ "$exit_code" -eq 0 ]; then
