@@ -1,10 +1,14 @@
+from pathlib import Path
+
 import click
 
+from .login import login
 from ..modules import node as node_module
-from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate
-from ..modules.utils import onBeforeCommandExecute, initializeUserSession
+from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate, dumpScript, UPDATE_SCRIPT_NAME
+from ..modules.utils import onBeforeCommandExecute, initializeUserSession, isGPUAvailable, initializeNodeConfiguration
 from ..modules.docker import isDockerAvailable
-from ...configuration import loadConfig, CONFIG_DIR
+from ...configuration import loadConfig, saveConfig, CONFIG_DIR, isUserConfigured, isNodeConfigured
+from ...statistics import getAvailableRamMemory
 
 
 @click.command()
@@ -73,14 +77,67 @@ def update() -> None:
 
 
 @click.command()
-@onBeforeCommandExecute(initializeUserSession)
-def config() -> None:
-    # node configuration
-    return
+@click.option("--verbose", is_flag = True, help = "Configure node settings manually.")
+def config(verbose: bool) -> None:
+    if node_module.isRunning():
+        if click.prompt("Node is already running. Do you wish to stop the Node? (Y/n)",
+            type = bool,
+            default = True,
+            show_default = False):
+            stop()
+        else:
+            click.echo("If you wish to reconfigure your node, use coretex node stop commands first.")
+            return
+
+    config = loadConfig()
+    if not isUserConfigured(config):
+        login()
+        return
+
+    if isNodeConfigured(config):
+        if not click.prompt(
+            "Node configuration already exists. Would you like to update (Y/n)?",
+            type = bool,
+            default = True,
+            show_default = False
+        ):
+            return
+
+    click.echo("[Node Configuration]")
+
+    config["storagePath"] = str(Path.home() / ".coretex")
+    config["nodeName"] = click.prompt("Node name", type = str)
+    config["nodeAccessToken"] = node_module.registerNode(config["nodeName"])
+
+    if isGPUAvailable():
+        isGPU = click.prompt("Would you like to allow access to GPU on your node (Y/n)?", type = bool, default = True)
+        config["image"] = "gpu" if isGPU else "cpu"
+    else:
+        config["image"] = "cpu"
+
+    if not verbose:
+        config["nodeRam"] = node_module.DEFAULT_RAM_MEMORY
+        config["nodeSwap"] = node_module.DEFAULT_SWAP_MEMORY
+        config["nodeSharedMemory"] = node_module.DEFAULT_SHARED_MEMORY
+
+        click.echo("To configure node manually run coretex node config with --verbose flag.")
+    else:
+        config["nodeRam"] = click.prompt("Node RAM memory limit in GB (press enter to use default)", type = int, default = getAvailableRamMemory())
+        config["nodeSwap"] = click.prompt("Node swap memory limit in GB, make sure it is larger then mem limit (press enter to use default)", type = int, default = getAvailableRamMemory() * 2)
+        config["nodeSharedMemory"] = click.prompt("Node POSIX shared memory limit in GB (press enter to use default)", type = int, default = 2)
+
+    saveConfig(config)
+
+    # updating node autoupdate script since configuration is changed
+    dumpScript(CONFIG_DIR / UPDATE_SCRIPT_NAME, config)
+
+    click.echo("Node successfully configured.")
 
 
 @click.group()
 @onBeforeCommandExecute(isDockerAvailable)
+@onBeforeCommandExecute(initializeUserSession)
+@onBeforeCommandExecute(initializeNodeConfiguration, excludeOptions = ['config', 'stop'])
 def node() -> None:
     pass
 

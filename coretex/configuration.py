@@ -80,8 +80,8 @@ def _syncConfigWithEnv() -> None:
         config = _loadConfiguration(configPath)
     except BaseException as ex:
         print(">> [Coretex] Configuration is invalid")
-        print(">> [Coretex] To configure user use \"coretex config --user\" command")
-        print(">> [Coretex] To configure node use \"coretex config --node\" command")
+        print(">> [Coretex] To configure user use \"coretex login\" command")
+        print(">> [Coretex] To configure node use \"coretex node config\" command")
 
         sys.exit(1)
 

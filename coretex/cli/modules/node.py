@@ -5,10 +5,15 @@ import logging
 from . import docker
 
 from ...networking import networkManager
+from ...statistics import getAvailableRamMemory
+from ...configuration import loadConfig, saveConfig
 
 
 DOCKER_CONTAINER_NAME = "coretex_node"
 DOCKER_CONTAINER_NETWORK = "coretex_node"
+DEFAULT_RAM_MEMORY = getAvailableRamMemory()
+DEFAULT_SWAP_MEMORY = DEFAULT_RAM_MEMORY * 2
+DEFAULT_SHARED_MEMORY = 2
 
 
 class NodeException(Exception):
