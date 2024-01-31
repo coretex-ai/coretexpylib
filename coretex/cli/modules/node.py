@@ -4,6 +4,8 @@ import logging
 
 from . import docker
 
+from ...networking import networkManager
+
 
 DOCKER_CONTAINER_NAME = "coretex_node"
 DOCKER_CONTAINER_NETWORK = "coretex_node"
@@ -64,3 +66,20 @@ def shouldUpdate(repository: str, tag: str) -> bool:
         return True
     except:
         return False
+
+
+def registerNode(name: str) -> str:
+    params = {
+        "machine_name": name
+    }
+    response = networkManager.post("service", params)
+
+    if response.hasFailed():
+        raise Exception("Failed to configure node. Please try again...")
+
+    accessToken = response.getJson(dict).get("access_token")
+
+    if not isinstance(accessToken, str):
+        raise TypeError("Something went wrong. Please try again...")
+
+    return accessToken

@@ -12,59 +12,6 @@ from ...statistics import getAvailableRamMemory
 from ...configuration import loadConfig, saveConfig, isUserConfigured, isNodeConfigured, CONFIG_DIR
 
 
-@dataclass
-class LoginInfo:
-
-    username: str
-    password: str
-    token: str
-    tokenExpirationDate: str
-    refreshToken: str
-    refreshTokenExpirationDate: str
-
-
-def authenticate(retryCount: int = 0) -> LoginInfo:
-    if retryCount >= 3:
-        raise Exception("Failed to authenticate. Terminating...")
-
-    username = click.prompt("Email", type = str)
-    password = click.prompt("Password", type = str, hide_input = True)
-
-    response = networkManager.authenticate(username, password, False)
-
-    if response.hasFailed():
-        click.echo("Failed to authenticate. Please try again...")
-        return authenticate(retryCount + 1)
-
-    jsonResponse = response.getJson(dict)
-
-    return LoginInfo(
-        username,
-        password,
-        jsonResponse["token"],
-        jsonResponse["expires_on"],
-        jsonResponse["refresh_token"],
-        jsonResponse["refresh_expires_on"]
-    )
-
-
-def registerNode(name: str) -> str:
-    params = {
-        "machine_name": name
-    }
-    response = networkManager.post("service", params)
-
-    if response.hasFailed():
-        raise Exception("Failed to configure node. Please try again...")
-
-    accessToken = response.getJson(dict).get("access_token")
-
-    if not isinstance(accessToken, str):
-        raise TypeError("Something went wrong. Please try again...")
-
-    return accessToken
-
-
 def configUser() -> None:
     config = loadConfig()
     if isUserConfigured(config):
@@ -88,7 +35,7 @@ def configUser() -> None:
     click.echo("Configuring user...")
     loginInfo = authenticate()
 
-    storagePath = click.prompt("Storage path (press enter to use default)", Path.home() / ".coretex", type = str)
+    storagePath = Path.home() / ".coretex"
 
     config["username"] = loginInfo.username
     config["password"] = loginInfo.password

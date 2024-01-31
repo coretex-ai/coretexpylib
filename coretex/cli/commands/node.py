@@ -2,7 +2,7 @@ import click
 
 from ..modules import node as node_module
 from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate
-from ..modules.utils import onBeforeCommandExecute
+from ..modules.utils import onBeforeCommandExecute, initializeUserSession
 from ..modules.docker import isDockerAvailable
 from ...configuration import loadConfig, CONFIG_DIR
 
@@ -72,6 +72,13 @@ def update() -> None:
     click.echo("Successfully started Coretex Node.")
 
 
+@click.command()
+@onBeforeCommandExecute(initializeUserSession)
+def config() -> None:
+    # node configuration
+    return
+
+
 @click.group()
 @onBeforeCommandExecute(isDockerAvailable)
 def node() -> None:
@@ -81,3 +88,4 @@ def node() -> None:
 node.add_command(start, "start")
 node.add_command(stop, "stop")
 node.add_command(update, "update")
+node.add_command(config, "config")
