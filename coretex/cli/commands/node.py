@@ -15,7 +15,7 @@ def start() -> None:
 
     if node_module.isRunning():
         if not click.prompt(
-            "Node is already running do you wish to restart node (Y/n)?",
+            "Node is already running. Do you wish to restart the Node? (Y/n)",
             type = bool,
             default = True,
             show_default = False
@@ -52,11 +52,11 @@ def update() -> None:
     tag = f"latest-{config['image']}"
 
     if getNodeStatus() != NodeStatus.active:
-        click.echo("Node status is inactive. Make sure node is up and running.")
+        click.echo("Node is not running. To update Node you need to start it first.")
         return
 
     if not node_module.shouldUpdate(repository, tag):
-        click.echo("Node version is up to date.")
+        click.echo("Node is already up to date.")
         return
 
     click.echo("Fetching latest node version.")

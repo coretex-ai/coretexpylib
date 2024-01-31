@@ -51,28 +51,37 @@ function should_update {{
 
         # Compare digests
         if [[ $latest_digest != $current_digest ]]; then
-            return 1 # Return False since there is new image to be pulled from docker hub
+            return 0 # Return True since there is new image to be pulled from docker hub
         else
+            echo "Node version is up to date."
             return 1
-            # echo "Node version is up to date."
-            # exit 0
         fi
     else
         echo "Node is not active."
-        exit 0
+        return 1
     fi
 }}
 
 function pull_image {{
-    if $DOCKER_PATH image pull "$IMAGE" >/dev/null; then
+    if $DOCKER_PATH image pull "$IMAGE"; then
         echo "Image pulled successfully: $IMAGE"
+        return 0
     else
         echo "Failed to pull image: $IMAGE"
+        return 1
     fi
 }}
 
 # Define function to stop and remove the container
 function stop_node {{
+    local api_response=$(curl -s "$NODE_STATUS_ENDPOINT")
+    local status=$(echo "$api_response" | sed -n 's/.*"status":\([^,}}]*\).*/\1/p')
+
+    if [ "$status" -eq 3 ]; then
+        echo "Node is busy, stopping node update."
+        return 1
+    fi
+
     echo "Stopping and removing the container: $CONTAINER_NAME"
     $DOCKER_PATH stop "$CONTAINER_NAME" && $DOCKER_PATH rm "$CONTAINER_NAME"
 
@@ -101,10 +110,12 @@ function start_node {{
 # Define function to update node
 function update_node {{
     echo "Updating node"
-    if ! should_update; then
-        pull_image
-        stop_node
-        start_node
+    if should_update; then
+        if pull_image; then
+            if stop_node; then
+                start_node
+            fi
+        fi
     fi
 }}
 

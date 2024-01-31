@@ -29,9 +29,7 @@ def networkExists(name: str) -> bool:
 def containerExists(name: str) -> bool:
     try:
         _, output, _ = command(["docker", "ps", "--format", "{{.Names}}"], ignoreStderr = True, ignoreStdout = True)
-        if name in output:
-            return True
-        return False
+        return name in output
     except:
         return False
 
@@ -99,7 +97,7 @@ def manifestInspect(repository: str, tag: str) -> Dict[str, Any]:
     _, output, _ = command(["docker", "manifest", "inspect", f"{repository}:{tag}", "--verbose"], ignoreStdout = True)
     jsonOutput = json.loads(output)
     if not isinstance(jsonOutput, dict):
-        raise TypeError(f"Invalid function result type \"{type(json.loads(output))}\". Expected: \"dict\"")
+        raise TypeError(f"Invalid function result type \"{type(jsonOutput)}\". Expected: \"dict\"")
 
     return jsonOutput
 
@@ -108,6 +106,6 @@ def imageInspect(repository: str, tag: str) -> Dict[str, Any]:
     _, output, _ = command(["docker", "image", "inspect", f"{repository}:{tag}"], ignoreStdout = True)
     jsonOutput = json.loads(output)
     if not isinstance(jsonOutput, dict):
-        raise TypeError(f"Invalid function result type \"{type(json.loads(output))}\". Expected: \"dict\"")
+        raise TypeError(f"Invalid function result type \"{type(jsonOutput)}\". Expected: \"dict\"")
 
     return jsonOutput
