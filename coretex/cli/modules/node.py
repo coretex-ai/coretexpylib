@@ -1,12 +1,16 @@
 from typing import Any, Dict
+from pathlib import Path
 
 import logging
 
+import click
+
 from . import docker
 
+from .utils import isGPUAvailable
 from ...networking import networkManager
 from ...statistics import getAvailableRamMemory
-from ...configuration import loadConfig, saveConfig
+from ...configuration import loadConfig, saveConfig, isNodeConfigured
 
 
 DOCKER_CONTAINER_NAME = "coretex_node"
@@ -88,3 +92,26 @@ def registerNode(name: str) -> str:
         raise TypeError("Something went wrong. Please try again...")
 
     return accessToken
+
+
+def initializeNodeConfiguration() -> None:
+    print('why this???')
+    config = loadConfig()
+    if not isNodeConfigured(config):
+        click.echo("Node configuration not found.")
+        click.echo("[Node Configuration]")
+
+        config["nodeName"] = click.prompt("Node name", type = str)
+        config["nodeAccessToken"] = registerNode(config["nodeName"])
+
+        if isGPUAvailable():
+            isGPU = click.prompt("Would you like to allow access to GPU on your node (Y/n)?", type = bool, default = True)
+            config["image"] = "gpu" if isGPU else "cpu"
+        else:
+            config["image"] = "cpu"
+
+        config["nodeRam"] = DEFAULT_RAM_MEMORY
+        config["nodeSwap"] = DEFAULT_SWAP_MEMORY
+        config["nodeSharedMemory"] = DEFAULT_SHARED_MEMORY
+
+        saveConfig(config)

@@ -69,7 +69,6 @@ def _syncConfigWithEnv() -> None:
 
     # If configuration does not exist create default one
     if not configPath.exists():
-        print(">> [Coretex] Configuration not found, creating default one")
         configPath.parent.mkdir(parents = True, exist_ok = True)
 
         with configPath.open("w") as configFile:

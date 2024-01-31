@@ -5,13 +5,15 @@ import click
 from .login import login
 from ..modules import node as node_module
 from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate, dumpScript, UPDATE_SCRIPT_NAME
-from ..modules.utils import onBeforeCommandExecute, initializeUserSession, isGPUAvailable, initializeNodeConfiguration
+from ..modules.utils import onBeforeCommandExecute, isGPUAvailable
+from ..modules.user import initializeUserSession
 from ..modules.docker import isDockerAvailable
 from ...configuration import loadConfig, saveConfig, CONFIG_DIR, isUserConfigured, isNodeConfigured
 from ...statistics import getAvailableRamMemory
 
 
 @click.command()
+@onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def start() -> None:
     config = loadConfig()
     repository = "coretexai/coretex-node"
@@ -50,6 +52,7 @@ def stop() -> None:
 
 
 @click.command()
+@onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def update() -> None:
     config = loadConfig()
     repository = "coretexai/coretex-node"
@@ -84,10 +87,10 @@ def config(verbose: bool) -> None:
             type = bool,
             default = True,
             show_default = False):
-            stop()
-        else:
-            click.echo("If you wish to reconfigure your node, use coretex node stop commands first.")
-            return
+            node_module.stop()
+
+        click.echo("If you wish to reconfigure your node, use coretex node stop commands first.")
+        return
 
     config = loadConfig()
     if not isUserConfigured(config):
@@ -105,7 +108,6 @@ def config(verbose: bool) -> None:
 
     click.echo("[Node Configuration]")
 
-    config["storagePath"] = str(Path.home() / ".coretex")
     config["nodeName"] = click.prompt("Node name", type = str)
     config["nodeAccessToken"] = node_module.registerNode(config["nodeName"])
 
@@ -122,6 +124,7 @@ def config(verbose: bool) -> None:
 
         click.echo("To configure node manually run coretex node config with --verbose flag.")
     else:
+        config["storagepath"] = click.prompt("Storage path (press enter to use default)", Path.home() / ".coretex", type = str)
         config["nodeRam"] = click.prompt("Node RAM memory limit in GB (press enter to use default)", type = int, default = getAvailableRamMemory())
         config["nodeSwap"] = click.prompt("Node swap memory limit in GB, make sure it is larger then mem limit (press enter to use default)", type = int, default = getAvailableRamMemory() * 2)
         config["nodeSharedMemory"] = click.prompt("Node POSIX shared memory limit in GB (press enter to use default)", type = int, default = 2)
@@ -137,7 +140,6 @@ def config(verbose: bool) -> None:
 @click.group()
 @onBeforeCommandExecute(isDockerAvailable)
 @onBeforeCommandExecute(initializeUserSession)
-@onBeforeCommandExecute(initializeNodeConfiguration, excludeOptions = ['config', 'stop'])
 def node() -> None:
     pass
 
