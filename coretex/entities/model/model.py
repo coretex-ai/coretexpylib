@@ -25,7 +25,7 @@ import json
 import logging
 
 from ... import folder_manager
-from ...networking import networkManager, NetworkObject, FileData
+from ...networking import networkManager, NetworkObject, ChunkUploadSession, MAX_CHUNK_SIZE
 from ...codable import KeyDescriptor
 
 
@@ -263,15 +263,15 @@ class Model(NetworkObject):
 
                 zipFile.write(value, value.relative_to(path))
 
-        files = [
-            FileData.createFromPath("file", zipPath)
-        ]
+        uploadSession = ChunkUploadSession(MAX_CHUNK_SIZE, zipPath)
+        uploadId = uploadSession.run()
 
         parameters = {
-            "id": self.id
+            "id": self.id,
+            "file_id": uploadId
         }
 
-        response = networkManager.formData("model/upload", parameters, files)
+        response = networkManager.formData("model/upload", parameters)
         if response.hasFailed():
             logging.getLogger("coretexpylib").info(">> [Coretex] Failed to upload model file")
         else:
