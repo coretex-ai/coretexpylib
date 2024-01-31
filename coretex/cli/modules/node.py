@@ -21,9 +21,11 @@ def pull(repository: str, tag: str) -> None:
         raise NodeException("Failed to fetch latest node version")
 
 
-def start(dockerImage: str, config: Dict[str, Any]) -> None:
-    dockerImage = f"coretexai/coretex-node:latest-{config['image']}"
+def isRunning() -> bool:
+    return docker.containerExists(DOCKER_CONTAINER_NAME)
 
+
+def start(dockerImage: str, config: Dict[str, Any]) -> None:
     try:
         docker.createNetwork(DOCKER_CONTAINER_NETWORK)
 
@@ -57,9 +59,8 @@ def shouldUpdate(repository: str, tag: str) -> bool:
         manifestJson = docker.manifestInspect(repository, tag)
 
         for digest in imageJson["RepoDigests"]:
-            if repository in digest:
-                if manifestJson["Descriptor"]["digest"] in digest:
-                    return False
+            if repository in digest and manifestJson["Descriptor"]["digest"] in digest:
+                return False
         return True
     except:
         return False

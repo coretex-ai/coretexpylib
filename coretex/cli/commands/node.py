@@ -13,6 +13,15 @@ def start() -> None:
     repository = "coretexai/coretex-node"
     tag = f"latest-{config['image']}"
 
+    if node_module.isRunning():
+        if not click.prompt(
+            "Node is already running do you wish to restart node (Y/n)?",
+            type = bool,
+            default = True,
+            show_default = False
+        ):
+            return
+
     if node_module.shouldUpdate(repository, tag):
         click.echo("Fetching latest node version...")
         node_module.pull("coretexai/coretex-node", f"latest-{config['image']}")
@@ -27,6 +36,10 @@ def start() -> None:
 
 @click.command()
 def stop() -> None:
+    if not node_module.isRunning():
+        click.echo("Node is already offline.")
+        return
+
     click.echo("Stopping Coretex Node...")
     node_module.stop()
     click.echo("Successfully stopped Coretex Node.")

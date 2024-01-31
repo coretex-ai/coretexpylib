@@ -38,7 +38,13 @@ def generateUpdateScript(config: Dict[str, Any]) -> str:
         storagePath = config["storagePath"],
         nodeAccessToken = config["nodeAccessToken"],
         containerName = DOCKER_CONTAINER_NAME,
-        networkName = DOCKER_CONTAINER_NETWORK
+        networkName = DOCKER_CONTAINER_NETWORK,
+        restartPolicy = "always",
+        ports = "21000:21000",
+        capAdd = "SYS_PTRACE",
+        ramMemory = config["nodeRam"],
+        swapMemory = config["nodeSwap"],
+        sharedMemory = config["nodeSharedMemory"]
     )
 
 
@@ -58,6 +64,9 @@ def activateAutoUpdate(configDir: Path, config: Dict[str, Any]) -> None:
 
 
 def getNodeStatus() -> NodeStatus:
-    response = requests.get(f"http://localhost:21000/status", timeout = 1)
-    status = response.json()["status"]
-    return NodeStatus(status)
+    try:
+        response = requests.get(f"http://localhost:21000/status", timeout = 1)
+        status = response.json()["status"]
+        return NodeStatus(status)
+    except:
+        return NodeStatus.inactive

@@ -6,9 +6,10 @@ from tabulate import tabulate
 import click
 
 from ..modules.utils import arrowPrompt, isGPUAvailable, onBeforeCommandExecute, initializeUserSession
+from ..modules.update import dumpScript, UPDATE_SCRIPT_NAME
 from ...networking import networkManager
 from ...statistics import getAvailableRamMemory
-from ...configuration import loadConfig, saveConfig, isUserConfigured, isNodeConfigured
+from ...configuration import loadConfig, saveConfig, isUserConfigured, isNodeConfigured, CONFIG_DIR
 
 
 @dataclass
@@ -154,6 +155,9 @@ def configNode() -> None:
     config["nodeSharedMemory"] = sharedMemory
 
     saveConfig(config)
+
+    # updating node autoupdate script since configuration is changed
+    dumpScript(CONFIG_DIR / UPDATE_SCRIPT_NAME, config)
 
     click.echo("[Node Setup Done] Type \"coretex --help\" for additional information")
     click.echo("For additional help visit our documentation at https://docs.coretex.ai/v1/advanced/coretex-cli/troubleshooting")

@@ -117,5 +117,9 @@ def isNodeConfigured(config: Dict[str, Any]) -> bool:
         config.get("nodeName") is not None and
         config.get("storagePath") is not None and
         config.get("image") is not None and
-        config.get("serverUrl") is not None
+        config.get("serverUrl") is not None and
+        config.get("nodeAccessToken") is not None and
+        config.get("nodeRam") is not None and
+        config.get("nodeSwap") is not None and
+        config.get("nodeSharedMemory") is not None
     )

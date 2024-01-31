@@ -22,7 +22,6 @@ click = "*"
 tabulate = "*"
 inquirer = "*"
 docker = "*"
-coretex = {file = ".", editable = true}
 
 [dev-packages]
 mypy = "*"
