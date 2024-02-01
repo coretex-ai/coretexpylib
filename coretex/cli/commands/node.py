@@ -28,6 +28,11 @@ def start() -> None:
         ):
             return
 
+        click.echo("Stopping Coretex Node...")
+        node_module.stop()
+        click.echo("Successfully stopped Coretex Node.")
+
+
     if node_module.shouldUpdate(repository, tag):
         click.echo("Fetching latest node version...")
         node_module.pull("coretexai/coretex-node", f"latest-{config['image']}")
@@ -58,9 +63,26 @@ def update() -> None:
     repository = "coretexai/coretex-node"
     tag = f"latest-{config['image']}"
 
-    if getNodeStatus() != NodeStatus.active:
+    nodeStatus = getNodeStatus()
+
+    if nodeStatus == NodeStatus.inactive:
         click.echo("Node is not running. To update Node you need to start it first.")
         return
+
+    if nodeStatus == NodeStatus.reconnecting:
+        click.echo("Node is reconnecting. Cannot update now.")
+
+    if nodeStatus == NodeStatus.busy:
+        if not click.prompt("Node is currently busy. Do you wish to terminate current process to perform update? (Y/n)",
+            type = bool,
+            default = True,
+            show_default = False
+        ):
+            return
+
+        click.echo("Stopping Coretex Node...")
+        node_module.stop()
+        click.echo("Successfully stopped Coretex Node.")
 
     if not node_module.shouldUpdate(repository, tag):
         click.echo("Node is already up to date.")
