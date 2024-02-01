@@ -23,9 +23,15 @@ def arrowPrompt(choices: List[Any]) -> Any:
 
 
 def previewConfig(config: Dict[str, Any]) -> None:
-    headers = ["Node name", "Server URL", "Storage path", "RAM memory in GB's", "SWAP memory", "POSIX shared memory"]
-    table = [[config["nodeName"], config["serverUrl"], config["storagePath"], f"{config['nodeRam']}GB", f"{config['nodeSwap']}GB", f"{config['nodeSharedMemory']}GB"]]
-    stdEcho(tabulate(table, headers = headers, tablefmt = "grid"))
+    table = [
+        ["Node name", config["nodeName"]],
+        ["Server URL", config["serverUrl"]],
+        ["Storage path", config["storagePath"]],
+        ["RAM", f"{config['nodeRam']}GB"],
+        ["SWAP memory", f"{config['nodeSwap']}GB"],
+        ["POSIX shared memory", f"{config['nodeSharedMemory']}GB"]
+    ]
+    stdEcho(tabulate(table, tablefmt = "grid"))
 
 
 def stdEcho(text: str) -> None:

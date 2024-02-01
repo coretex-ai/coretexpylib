@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 import click
 
-from .user_interface import clickPrompt, errorEcho
+from .user_interface import clickPrompt, errorEcho, progressEcho
 from ...utils import decodeDate
 from ...networking import networkManager, NetworkResponse
 from ...configuration import loadConfig, saveConfig
@@ -52,6 +52,7 @@ def authenticate(retryCount: int = 0) -> LoginInfo:
     username = clickPrompt("Email", type = str)
     password = clickPrompt("Password", type = str, hide_input = True)
 
+    progressEcho("Authenticating...")
     response = networkManager.authenticate(username, password, False)
 
     if response.hasFailed():
