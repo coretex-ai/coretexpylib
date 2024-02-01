@@ -36,8 +36,7 @@ function fetch_node_status {{
 }}
 
 function should_update {{
-    local api_response=$(curl -s "$NODE_STATUS_ENDPOINT")
-    local status=$(echo "$api_response" | sed -n 's/.*"status":\([^,}}]*\).*/\1/p')
+    local status=$(fetch_node_status)
 
     if [ "$status" -eq 2 ]; then
         echo "Checking node version..."

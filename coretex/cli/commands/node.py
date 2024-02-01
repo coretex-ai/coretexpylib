@@ -2,7 +2,6 @@ from pathlib import Path
 
 import click
 
-
 from .login import login
 from ..modules import node as node_module
 from ..modules.user_interface import clickPrompt, successEcho, progressEcho, highlightEcho, errorEcho, previewConfig, stdEcho
@@ -30,7 +29,9 @@ def start() -> None:
         ):
             return
 
+        progressEcho("Stopping Coretex Node...")
         node_module.stop()
+        successEcho("Successfully stopped Coretex Node.")
 
     if node_module.shouldUpdate(repository, tag):
         progressEcho("Fetching latest node version...")
@@ -62,9 +63,27 @@ def update() -> None:
     repository = "coretexai/coretex-node"
     tag = f"latest-{config['image']}"
 
-    if getNodeStatus() != NodeStatus.active:
+    nodeStatus = getNodeStatus()
+
+    if nodeStatus == NodeStatus.inactive:
         errorEcho("Node is not running. To update Node you need to start it first.")
         return
+
+    if nodeStatus == NodeStatus.reconnecting:
+        errorEcho("Node is reconnecting. Cannot update now.")
+        return
+
+    if nodeStatus == NodeStatus.busy:
+        if not click.prompt("Node is busy, do you wish to terminate the current execution to perform the update?? (Y/n)",
+            type = bool,
+            default = True,
+            show_default = False
+        ):
+            return
+
+        progressEcho("Stopping Coretex Node...")
+        node_module.stop()
+        successEcho("Successfully stopped Coretex Node.")
 
     if not node_module.shouldUpdate(repository, tag):
         successEcho("Node is already up to date.")
@@ -135,7 +154,6 @@ def config(verbose: bool) -> None:
         config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (default: 2GB, press Enter to use default): ", default=2, type=int)
 
     saveConfig(config)
-
     previewConfig(config)
 
     # Updating auto-update script since node configuration is changed
