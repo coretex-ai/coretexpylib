@@ -28,19 +28,12 @@ def start() -> None:
         ):
             return
 
-        click.echo("Stopping Coretex Node...")
         node_module.stop()
-        click.echo("Successfully stopped Coretex Node.")
-
 
     if node_module.shouldUpdate(repository, tag):
-        click.echo("Fetching latest node version...")
         node_module.pull("coretexai/coretex-node", f"latest-{config['image']}")
-        click.echo("Latest node version successfully fetched.")
 
-    click.echo("Starting Coretex Node...")
     node_module.start(f"{repository}:{tag}", config)
-    click.echo("Successfully started Coretex Node.")
 
     activateAutoUpdate(CONFIG_DIR, config)
 
@@ -51,9 +44,7 @@ def stop() -> None:
         click.echo("Node is already offline.")
         return
 
-    click.echo("Stopping Coretex Node...")
     node_module.stop()
-    click.echo("Successfully stopped Coretex Node.")
 
 
 @click.command()
@@ -81,9 +72,7 @@ def update() -> None:
         ):
             return
 
-        click.echo("Stopping Coretex Node...")
         node_module.stop()
-        click.echo("Successfully stopped Coretex Node.")
 
     if not node_module.shouldUpdate(repository, tag):
         click.echo("Node is already up to date.")
@@ -101,13 +90,9 @@ def update() -> None:
         ):
             return
 
-    click.echo("Stopping Coretex Node...")
     node_module.stop()
-    click.echo("Successfully stopped Coretex Node.")
 
-    click.echo("Starting Coretex Node...")
     node_module.start(f"{repository}:{tag}", config)
-    click.echo("Successfully started Coretex Node.")
 
 
 @click.command()

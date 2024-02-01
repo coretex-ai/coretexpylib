@@ -1,5 +1,4 @@
 from typing import Any, Dict
-from pathlib import Path
 
 import logging
 
@@ -26,7 +25,9 @@ class NodeException(Exception):
 
 def pull(repository: str, tag: str) -> None:
     try:
+        click.echo("Fetching latest node version...")
         docker.imagePull(f"{repository}:{tag}")
+        click.echo("Latest node version successfully fetched.")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to fetch latest node version")
@@ -38,6 +39,7 @@ def isRunning() -> bool:
 
 def start(dockerImage: str, config: Dict[str, Any]) -> None:
     try:
+        click.echo("Starting Coretex Node...")
         docker.createNetwork(DOCKER_CONTAINER_NETWORK)
 
         docker.start(
@@ -51,6 +53,7 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
             config["nodeSwap"],
             config["nodeSharedMemory"]
         )
+        click.echo("Successfully started Coretex Node.")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to start Coretex Node.")
@@ -58,7 +61,9 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
 
 def stop() -> None:
     try:
+        click.echo("Stopping Coretex Node...")
         docker.stop(DOCKER_CONTAINER_NAME, DOCKER_CONTAINER_NETWORK)
+        click.echo("Successfully stopped Coretex Node.")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to stop Coretex Node.")
@@ -84,6 +89,7 @@ def registerNode(name: str) -> str:
     response = networkManager.post("service", params)
 
     if response.hasFailed():
+        print(response.getJson(dict))
         raise Exception("Failed to configure node. Please try again...")
 
     accessToken = response.getJson(dict).get("access_token")
@@ -96,21 +102,39 @@ def registerNode(name: str) -> str:
 
 def initializeNodeConfiguration() -> None:
     config = loadConfig()
-    if not isNodeConfigured(config):
-        click.echo("Node configuration not found.")
-        click.echo("[Node Configuration]")
 
-        config["nodeName"] = click.prompt("Node name", type = str)
-        config["nodeAccessToken"] = registerNode(config["nodeName"])
+    if isNodeConfigured(config):
+        return
 
-        if isGPUAvailable():
-            isGPU = click.prompt("Would you like to allow access to GPU on your node (Y/n)?", type = bool, default = True)
-            config["image"] = "gpu" if isGPU else "cpu"
-        else:
-            config["image"] = "cpu"
+    click.echo("Node configuration not found.")
+    if isRunning():
+        stopNode = click.prompt(
+            "Node is already running. Do you wish to stop the Node? (Y/n)",
+            type = bool,
+            default = True,
+            show_default = False
+        )
 
-        config["nodeRam"] = DEFAULT_RAM_MEMORY
-        config["nodeSwap"] = DEFAULT_SWAP_MEMORY
-        config["nodeSharedMemory"] = DEFAULT_SHARED_MEMORY
+        if not stopNode:
+            click.echo("If you wish to reconfigure your node, use coretex node stop commands first.")
+            return
 
-        saveConfig(config)
+        click.echo("Stopping Coretex Node...")
+        stop()
+        click.echo("Successfully stopped Coretex Node.")
+
+    click.echo("[Node Configuration]")
+    config["nodeName"] = click.prompt("Node name", type = str)
+    config["nodeAccessToken"] = registerNode(config["nodeName"])
+
+    if isGPUAvailable():
+        isGPU = click.prompt("Would you like to allow access to GPU on your node (Y/n)?", type = bool, default = True)
+        config["image"] = "gpu" if isGPU else "cpu"
+    else:
+        config["image"] = "cpu"
+
+    config["nodeRam"] = DEFAULT_RAM_MEMORY
+    config["nodeSwap"] = DEFAULT_SWAP_MEMORY
+    config["nodeSharedMemory"] = DEFAULT_SHARED_MEMORY
+
+    saveConfig(config)
