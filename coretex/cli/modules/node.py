@@ -95,7 +95,6 @@ def registerNode(name: str) -> str:
 
 
 def initializeNodeConfiguration() -> None:
-    print('why this???')
     config = loadConfig()
     if not isNodeConfigured(config):
         click.echo("Node configuration not found.")

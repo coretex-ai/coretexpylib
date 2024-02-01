@@ -131,7 +131,7 @@ def config(verbose: bool) -> None:
 
     saveConfig(config)
 
-    # updating node autoupdate script since configuration is changed
+    # Updating auto-update script since node configuration is changed
     dumpScript(CONFIG_DIR / UPDATE_SCRIPT_NAME, config)
 
     click.echo("Node successfully configured.")

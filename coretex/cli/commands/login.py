@@ -12,7 +12,7 @@ def login() -> None:
     config = loadConfig()
     if isUserConfigured(config):
         if not click.prompt(
-            f"User already logged in with username {config['username']}. Would you like to log in with different user (Y/n)?",
+            f"User already logged in with username {config['username']}. Would you like to log in with different user? (Y/n)",
             type = bool,
             default = True,
             show_default = False
