@@ -86,6 +86,14 @@ def update() -> None:
     node_module.pull(repository, tag)
     click.echo("Latest version successfully fetched.")
 
+    if getNodeStatus() == NodeStatus.busy:
+        if not click.prompt("Node is busy, do you wish to terminate the current execution to perform the update? (Y/n)",
+            type = bool,
+            default = True,
+            show_default = False
+        ):
+            return
+
     click.echo("Stopping Coretex Node...")
     node_module.stop()
     click.echo("Successfully stopped Coretex Node.")
