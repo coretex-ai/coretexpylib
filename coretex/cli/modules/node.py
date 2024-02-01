@@ -5,6 +5,8 @@ import logging
 
 import click
 
+from .user_interface import clickPrompt
+
 from . import docker
 
 from .utils import isGPUAvailable
@@ -95,17 +97,16 @@ def registerNode(name: str) -> str:
 
 
 def initializeNodeConfiguration() -> None:
-    print('why this???')
     config = loadConfig()
     if not isNodeConfigured(config):
         click.echo("Node configuration not found.")
         click.echo("[Node Configuration]")
 
-        config["nodeName"] = click.prompt("Node name", type = str)
+        config["nodeName"] = clickPrompt("Node name", type = str)
         config["nodeAccessToken"] = registerNode(config["nodeName"])
 
         if isGPUAvailable():
-            isGPU = click.prompt("Would you like to allow access to GPU on your node (Y/n)?", type = bool, default = True)
+            isGPU = clickPrompt("Would you like to allow access to GPU on your node (Y/n)?", type = bool, default = True)
             config["image"] = "gpu" if isGPU else "cpu"
         else:
             config["image"] = "cpu"

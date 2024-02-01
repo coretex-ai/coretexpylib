@@ -2,7 +2,7 @@ from typing import Optional
 
 import click
 
-from ..modules.utils import arrowPrompt
+from ..modules.user_interface import arrowPrompt
 from ... import Project, ProjectType
 from ...networking import NetworkRequestError
 from ...configuration import loadConfig, saveConfig

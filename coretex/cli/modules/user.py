@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 
 import click
 
+from .user_interface import clickPrompt
 from ...utils import decodeDate
 from ...networking import networkManager, NetworkResponse
 from ...configuration import loadConfig, saveConfig
@@ -48,8 +49,8 @@ def authenticate(retryCount: int = 0) -> LoginInfo:
     if retryCount >= 3:
         raise Exception("Failed to authenticate. Terminating...")
 
-    username = click.prompt("Email", type = str)
-    password = click.prompt("Password", type = str, hide_input = True)
+    username = clickPrompt("Email", type = str)
+    password = clickPrompt("Password", type = str, hide_input = True)
 
     response = networkManager.authenticate(username, password, False)
 

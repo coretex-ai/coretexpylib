@@ -1,8 +1,6 @@
-from dataclasses import dataclass
-from pathlib import Path
-
 import click
 
+from ..modules.user_interface import clickPrompt
 from ..modules.user import authenticate, saveLoginData
 from ...configuration import loadConfig, saveConfig, isUserConfigured
 
@@ -11,7 +9,7 @@ from ...configuration import loadConfig, saveConfig, isUserConfigured
 def login() -> None:
     config = loadConfig()
     if isUserConfigured(config):
-        if not click.prompt(
+        if not clickPrompt(
             f"User already logged in with username {config['username']}. Would you like to log in with different user (Y/n)?",
             type = bool,
             default = True,

@@ -113,15 +113,15 @@ function update_node {{
 
     echo "Updating node"
     if ! should_update; then
-        return
+        return 1
     fi
 
     if ! pull_image; then
-        return
+        return 1
     fi
 
     if ! stop_node; then
-        return
+        return 1
     fi
 
     start_node

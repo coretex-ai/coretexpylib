@@ -2,6 +2,8 @@ from pathlib import Path
 
 import click
 
+from ..modules.user_interface import clickPrompt
+
 from .login import login
 from ..modules import node as node_module
 from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate, dumpScript, UPDATE_SCRIPT_NAME
@@ -20,7 +22,7 @@ def start() -> None:
     tag = f"latest-{config['image']}"
 
     if node_module.isRunning():
-        if not click.prompt(
+        if not clickPrompt(
             "Node is already running. Do you wish to restart the Node? (Y/n)",
             type = bool,
             default = True,
@@ -83,7 +85,7 @@ def update() -> None:
 @click.option("--verbose", is_flag = True, help = "Configure node settings manually.")
 def config(verbose: bool) -> None:
     if node_module.isRunning():
-        if click.prompt("Node is already running. Do you wish to stop the Node? (Y/n)",
+        if clickPrompt("Node is already running. Do you wish to stop the Node? (Y/n)",
             type = bool,
             default = True,
             show_default = False):
@@ -98,8 +100,8 @@ def config(verbose: bool) -> None:
         return
 
     if isNodeConfigured(config):
-        if not click.prompt(
-            "Node configuration already exists. Would you like to update (Y/n)?",
+        if not clickPrompt(
+            "Node configuration already exists. Would you like to update? (Y/n)",
             type = bool,
             default = True,
             show_default = False
@@ -108,11 +110,11 @@ def config(verbose: bool) -> None:
 
     click.echo("[Node Configuration]")
 
-    config["nodeName"] = click.prompt("Node name", type = str)
+    config["nodeName"] = clickPrompt("Node name", type = str)
     config["nodeAccessToken"] = node_module.registerNode(config["nodeName"])
 
     if isGPUAvailable():
-        isGPU = click.prompt("Would you like to allow access to GPU on your node (Y/n)?", type = bool, default = True)
+        isGPU = clickPrompt("Allow access to GPU on your node? (Y/n):", type=bool, default=True)
         config["image"] = "gpu" if isGPU else "cpu"
     else:
         config["image"] = "cpu"
@@ -124,14 +126,14 @@ def config(verbose: bool) -> None:
 
         click.echo("To configure node manually run coretex node config with --verbose flag.")
     else:
-        config["storagepath"] = click.prompt("Storage path (press enter to use default)", Path.home() / ".coretex", type = str)
-        config["nodeRam"] = click.prompt("Node RAM memory limit in GB (press enter to use default)", type = int, default = getAvailableRamMemory())
-        config["nodeSwap"] = click.prompt("Node swap memory limit in GB, make sure it is larger then mem limit (press enter to use default)", type = int, default = getAvailableRamMemory() * 2)
-        config["nodeSharedMemory"] = click.prompt("Node POSIX shared memory limit in GB (press enter to use default)", type = int, default = 2)
+        config["storagepath"] = clickPrompt("Storage path (default: ~/.coretex, press Enter to use default): ", default=Path.home() / ".coretex", type=str)
+        config["nodeRam"] = clickPrompt(f"Node RAM memory limit in GB (default: {getAvailableRamMemory()}GB, press Enter to use default): ", default=getAvailableRamMemory(), type=int)
+        config["nodeSwap"] = clickPrompt(f"Node swap memory limit in GB (default: {getAvailableRamMemory() * 2}GB, press Enter to use default): ", default=getAvailableRamMemory() * 2, type=int)
+        config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (default: 2GB, press Enter to use default): ", default=2, type=int)
 
     saveConfig(config)
 
-    # updating node autoupdate script since configuration is changed
+    # Updating auto-update script since node configuration is changed
     dumpScript(CONFIG_DIR / UPDATE_SCRIPT_NAME, config)
 
     click.echo("Node successfully configured.")
