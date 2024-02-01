@@ -2,10 +2,10 @@ from pathlib import Path
 
 import click
 
-from ..modules.user_interface import clickPrompt
 
 from .login import login
 from ..modules import node as node_module
+from ..modules.user_interface import clickPrompt, successEcho, progressEcho, highlightEcho, errorEcho, previewConfig, stdEcho
 from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate, dumpScript, UPDATE_SCRIPT_NAME
 from ..modules.utils import onBeforeCommandExecute, isGPUAvailable
 from ..modules.user import initializeUserSession
@@ -30,14 +30,16 @@ def start() -> None:
         ):
             return
 
-    if node_module.shouldUpdate(repository, tag):
-        click.echo("Fetching latest node version...")
-        node_module.pull("coretexai/coretex-node", f"latest-{config['image']}")
-        click.echo("Latest node version successfully fetched.")
+        node_module.stop()
 
-    click.echo("Starting Coretex Node...")
+    if node_module.shouldUpdate(repository, tag):
+        progressEcho("Fetching latest node version...")
+        node_module.pull("coretexai/coretex-node", f"latest-{config['image']}")
+        successEcho("Latest node version successfully fetched.")
+
+    progressEcho("Starting Coretex Node...")
     node_module.start(f"{repository}:{tag}", config)
-    click.echo("Successfully started Coretex Node.")
+    successEcho("Successfully started Coretex Node.")
 
     activateAutoUpdate(CONFIG_DIR, config)
 
@@ -45,12 +47,12 @@ def start() -> None:
 @click.command()
 def stop() -> None:
     if not node_module.isRunning():
-        click.echo("Node is already offline.")
+        errorEcho("Node is already offline.")
         return
 
-    click.echo("Stopping Coretex Node...")
+    progressEcho("Stopping Coretex Node...")
     node_module.stop()
-    click.echo("Successfully stopped Coretex Node.")
+    successEcho("Successfully stopped Coretex Node.")
 
 
 @click.command()
@@ -61,24 +63,24 @@ def update() -> None:
     tag = f"latest-{config['image']}"
 
     if getNodeStatus() != NodeStatus.active:
-        click.echo("Node is not running. To update Node you need to start it first.")
+        errorEcho("Node is not running. To update Node you need to start it first.")
         return
 
     if not node_module.shouldUpdate(repository, tag):
-        click.echo("Node is already up to date.")
+        successEcho("Node is already up to date.")
         return
 
-    click.echo("Fetching latest node version.")
+    progressEcho("Fetching latest node version.")
     node_module.pull(repository, tag)
-    click.echo("Latest version successfully fetched.")
+    successEcho("Latest version successfully fetched.")
 
-    click.echo("Stopping Coretex Node...")
+    progressEcho("Stopping Coretex Node...")
     node_module.stop()
-    click.echo("Successfully stopped Coretex Node.")
+    successEcho("Successfully stopped Coretex Node.")
 
-    click.echo("Starting Coretex Node...")
+    progressEcho("Starting Coretex Node...")
     node_module.start(f"{repository}:{tag}", config)
-    click.echo("Successfully started Coretex Node.")
+    successEcho("Successfully started Coretex Node.")
 
 
 @click.command()
@@ -90,9 +92,9 @@ def config(verbose: bool) -> None:
             default = True,
             show_default = False):
             node_module.stop()
-
-        click.echo("If you wish to reconfigure your node, use coretex node stop commands first.")
-        return
+        else:
+            errorEcho("If you wish to reconfigure your node, use coretex node stop commands first.")
+            return
 
     config = loadConfig()
     if not isUserConfigured(config):
@@ -100,6 +102,7 @@ def config(verbose: bool) -> None:
         return
 
     if isNodeConfigured(config):
+        previewConfig(config)
         if not clickPrompt(
             "Node configuration already exists. Would you like to update? (Y/n)",
             type = bool,
@@ -108,7 +111,7 @@ def config(verbose: bool) -> None:
         ):
             return
 
-    click.echo("[Node Configuration]")
+    highlightEcho("[Node Configuration]")
 
     config["nodeName"] = clickPrompt("Node name", type = str)
     config["nodeAccessToken"] = node_module.registerNode(config["nodeName"])
@@ -124,7 +127,7 @@ def config(verbose: bool) -> None:
         config["nodeSwap"] = node_module.DEFAULT_SWAP_MEMORY
         config["nodeSharedMemory"] = node_module.DEFAULT_SHARED_MEMORY
 
-        click.echo("To configure node manually run coretex node config with --verbose flag.")
+        stdEcho("To configure node manually run coretex node config with --verbose flag.")
     else:
         config["storagepath"] = clickPrompt("Storage path (default: ~/.coretex, press Enter to use default): ", default=Path.home() / ".coretex", type=str)
         config["nodeRam"] = clickPrompt(f"Node RAM memory limit in GB (default: {getAvailableRamMemory()}GB, press Enter to use default): ", default=getAvailableRamMemory(), type=int)
@@ -133,10 +136,12 @@ def config(verbose: bool) -> None:
 
     saveConfig(config)
 
+    previewConfig(config)
+
     # Updating auto-update script since node configuration is changed
     dumpScript(CONFIG_DIR / UPDATE_SCRIPT_NAME, config)
 
-    click.echo("Node successfully configured.")
+    successEcho("Node successfully configured.")
 
 
 @click.group()

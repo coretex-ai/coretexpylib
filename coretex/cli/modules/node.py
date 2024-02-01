@@ -10,6 +10,7 @@ from .user_interface import clickPrompt
 from . import docker
 
 from .utils import isGPUAvailable
+from .user_interface import highlightEcho, errorEcho
 from ...networking import networkManager
 from ...statistics import getAvailableRamMemory
 from ...configuration import loadConfig, saveConfig, isNodeConfigured
@@ -99,8 +100,8 @@ def registerNode(name: str) -> str:
 def initializeNodeConfiguration() -> None:
     config = loadConfig()
     if not isNodeConfigured(config):
-        click.echo("Node configuration not found.")
-        click.echo("[Node Configuration]")
+        errorEcho("Node configuration not found.")
+        highlightEcho("[Node Configuration]")
 
         config["nodeName"] = clickPrompt("Node name", type = str)
         config["nodeAccessToken"] = registerNode(config["nodeName"])

@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 import click
 
-from .user_interface import clickPrompt
+from .user_interface import clickPrompt, errorEcho
 from ...utils import decodeDate
 from ...networking import networkManager, NetworkResponse
 from ...configuration import loadConfig, saveConfig
@@ -55,7 +55,7 @@ def authenticate(retryCount: int = 0) -> LoginInfo:
     response = networkManager.authenticate(username, password, False)
 
     if response.hasFailed():
-        click.echo("Failed to authenticate. Please try again...")
+        errorEcho("Failed to authenticate. Please try again...")
         return authenticate(retryCount + 1)
 
     jsonResponse = response.getJson(dict)
@@ -74,7 +74,7 @@ def initializeUserSession() -> None:
     config = loadConfig()
 
     if config.get("username") is None or config.get("password") is None:
-        click.echo("User configuration not found. Please authenticate with your credentials.")
+        errorEcho("User configuration not found. Please authenticate with your credentials.")
         loginInfo = authenticate()
         config = saveLoginData(loginInfo, config)
     else:

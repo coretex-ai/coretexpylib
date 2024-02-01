@@ -1,6 +1,6 @@
 import click
 
-from ..modules.user_interface import clickPrompt
+from ..modules.user_interface import clickPrompt, progressEcho, successEcho
 from ..modules.user import authenticate, saveLoginData
 from ...configuration import loadConfig, saveConfig, isUserConfigured
 
@@ -17,10 +17,10 @@ def login() -> None:
         ):
             return
 
-    click.echo("Authenticating...")
+    progressEcho("Authenticating...")
     loginInfo = authenticate()
     config = saveLoginData(loginInfo, config)
 
     saveConfig(config)
 
-    click.echo(f"User {config['username']} successfully logged in.")
+    successEcho(f"User {config['username']} successfully logged in.")
