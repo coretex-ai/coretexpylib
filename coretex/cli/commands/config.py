@@ -5,10 +5,11 @@ from tabulate import tabulate
 
 import click
 
-from .utils import arrowPrompt, isGPUAvailable, validate
-from ..networking import networkManager
-from ..statistics import getAvailableRamMemory
-from ..configuration import loadConfig, saveConfig, isUserConfigured, isNodeConfigured
+from ..modules.utils import arrowPrompt, isGPUAvailable, onBeforeCommandExecute, initializeUserSession
+from ..modules.update import dumpScript, UPDATE_SCRIPT_NAME
+from ...networking import networkManager
+from ...statistics import getAvailableRamMemory
+from ...configuration import loadConfig, saveConfig, isUserConfigured, isNodeConfigured, CONFIG_DIR
 
 
 @dataclass
@@ -87,7 +88,6 @@ def configUser() -> None:
     click.echo("Configuring user...")
     loginInfo = authenticate()
 
-    click.echo("Storage path should be the same as (if) used during --node config")
     storagePath = click.prompt("Storage path (press enter to use default)", Path.home() / ".coretex", type = str)
 
     config["username"] = loginInfo.username
@@ -134,7 +134,6 @@ def configNode() -> None:
     nodeName = click.prompt("Node name", type = str)
     nodeAccessToken = registerNode(nodeName)
 
-    click.echo("Storage path should be the same as (if) used during --user config")
     storagePath = click.prompt("Storage path (press enter to use default)", Path.home() / ".coretex", type = str)
 
     if isGPUAvailable():
@@ -151,11 +150,14 @@ def configNode() -> None:
     config["nodeName"] = nodeName
     config["image"] = image
     config["nodeAccessToken"] = nodeAccessToken
-    config["nodeRam"] = f"{ram}gb"
-    config["nodeSwap"] = f"{swap}gb"
-    config["nodeSharedMemory"] = f"{sharedMemory}gb"
+    config["nodeRam"] = ram
+    config["nodeSwap"] = swap
+    config["nodeSharedMemory"] = sharedMemory
 
     saveConfig(config)
+
+    # updating node autoupdate script since configuration is changed
+    dumpScript(CONFIG_DIR / UPDATE_SCRIPT_NAME, config)
 
     click.echo("[Node Setup Done] Type \"coretex --help\" for additional information")
     click.echo("For additional help visit our documentation at https://docs.coretex.ai/v1/advanced/coretex-cli/troubleshooting")
@@ -164,7 +166,7 @@ def configNode() -> None:
 @click.command()
 @click.option("--user", is_flag = True, help = "Configure user settings")
 @click.option("--node", is_flag = True, help = "Configure node settings")
-@validate(excludeOptions = ["user"])
+@onBeforeCommandExecute(initializeUserSession, excludeOptions = ["user"])
 def config(user: bool, node: bool) -> None:
     if not user and not node:
         raise click.UsageError("Please use either --user or --node")
