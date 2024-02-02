@@ -1,6 +1,5 @@
 from typing import Any, Dict
 
-import subprocess
 import logging
 
 import click
@@ -128,7 +127,7 @@ def initializeNodeConfiguration() -> None:
     config["nodeAccessToken"] = registerNode(config["nodeName"])
 
     if isGPUAvailable():
-        isGPU = click.prompt("Would you like to allow access to GPU on your node (Y/n)?", type = bool, default = True)
+        isGPU = click.prompt("Would you like to allow access to GPU on your node? (Y/n)", type = bool, default = True)
         config["image"] = "gpu" if isGPU else "cpu"
     else:
         config["image"] = "cpu"
