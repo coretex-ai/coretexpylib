@@ -110,7 +110,7 @@ def config(verbose: bool) -> None:
 
     if isNodeConfigured(config):
         if not click.prompt(
-            "Node configuration already exists. Would you like to update (Y/n)?",
+            "Node configuration already exists. Would you like to update? (Y/n)",
             type = bool,
             default = True,
             show_default = False
@@ -124,7 +124,7 @@ def config(verbose: bool) -> None:
     config["nodeAccessToken"] = node_module.registerNode(config["nodeName"])
 
     if isGPUAvailable():
-        isGPU = click.prompt("Would you like to allow access to GPU on your node (Y/n)?", type = bool, default = True)
+        isGPU = click.prompt("Would you like to allow access to GPU on your node? (Y/n)", type = bool, default = True)
         config["image"] = "gpu" if isGPU else "cpu"
     else:
         config["image"] = "cpu"

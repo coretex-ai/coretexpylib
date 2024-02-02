@@ -121,9 +121,7 @@ def initializeNodeConfiguration() -> None:
             click.echo("If you wish to reconfigure your node, use coretex node stop commands first.")
             return
 
-        click.echo("Stopping Coretex Node...")
         stop()
-        click.echo("Successfully stopped Coretex Node.")
 
     click.echo("[Node Configuration]")
     config["nodeName"] = click.prompt("Node name", type = str)

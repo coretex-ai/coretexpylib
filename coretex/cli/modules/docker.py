@@ -104,7 +104,6 @@ def manifestInspect(repository: str, tag: str) -> Dict[str, Any]:
 
 def imageInspect(repository: str, tag: str) -> Dict[str, Any]:
     _, output, _ = command(["docker", "image", "inspect", f"{repository}:{tag}"], ignoreStdout = True, ignoreStderr = True)
-
     jsonOutput = json.loads(output)
     if not isinstance(jsonOutput, list):
         raise TypeError(f"Invalid json.loads() result type \"{type(jsonOutput)}\". Expected: \"list\"")
