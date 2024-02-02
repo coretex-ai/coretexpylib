@@ -95,7 +95,6 @@ def initializeUserSession() -> None:
 
                 if response.statusCode >= 400:
                     response = authenticateUser(config["username"], config["password"])
-
         else:
             response = authenticateUser(config["username"], config["password"])
 

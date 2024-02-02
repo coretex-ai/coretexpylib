@@ -101,7 +101,7 @@ def registerNode(name: str) -> str:
     return accessToken
 
 
-def configureNode(config: dict, verbose: bool) -> None:
+def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     config["nodeName"] = click.prompt("Node name", type = str)
     config["nodeAccessToken"] = registerNode(config["nodeName"])
 
@@ -119,7 +119,7 @@ def configureNode(config: dict, verbose: bool) -> None:
     if verbose:
         config["storagePath"] = click.prompt("Storage path (press enter to use default)", DEFAULT_STORAGE_PATH, type = str)
         config["nodeRam"] = click.prompt("Node RAM memory limit in GB (press enter to use default)", type = int, default = DEFAULT_RAM_MEMORY)
-        config["nodeSwap"] = click.prompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", type=int, default = DEFAULT_SWAP_MEMORY  * 2)
+        config["nodeSwap"] = click.prompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", type = int, default = DEFAULT_SWAP_MEMORY  * 2)
         config["nodeSharedMemory"] = click.prompt("Node POSIX shared memory limit in GB (press enter to use default)", type = int, default = DEFAULT_SHARED_MEMORY)
     else:
         click.echo("To configure node manually run coretex node config with --verbose flag.")
