@@ -2,13 +2,12 @@ from pathlib import Path
 
 import click
 
-from .login import login
 from ..modules import node as node_module
 from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate, dumpScript, UPDATE_SCRIPT_NAME
 from ..modules.utils import onBeforeCommandExecute, isGPUAvailable
 from ..modules.user import initializeUserSession
 from ..modules.docker import isDockerAvailable
-from ...configuration import loadConfig, saveConfig, CONFIG_DIR, isUserConfigured, isNodeConfigured
+from ...configuration import loadConfig, saveConfig, CONFIG_DIR, isNodeConfigured
 from ...statistics import getAvailableRamMemory
 
 

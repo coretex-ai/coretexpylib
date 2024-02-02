@@ -1,6 +1,3 @@
-from dataclasses import dataclass
-from pathlib import Path
-
 import click
 
 from ..modules.user import authenticate, saveLoginData
