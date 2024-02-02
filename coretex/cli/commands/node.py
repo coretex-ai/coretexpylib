@@ -2,14 +2,13 @@ from pathlib import Path
 
 import click
 
-from .login import login
 from ..modules import node as node_module
 from ..modules.user_interface import clickPrompt, successEcho, progressEcho, highlightEcho, errorEcho, previewConfig, stdEcho
 from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate, dumpScript, UPDATE_SCRIPT_NAME
 from ..modules.utils import onBeforeCommandExecute, isGPUAvailable
 from ..modules.user import initializeUserSession
 from ..modules.docker import isDockerAvailable
-from ...configuration import loadConfig, saveConfig, CONFIG_DIR, isUserConfigured, isNodeConfigured
+from ...configuration import loadConfig, saveConfig, CONFIG_DIR, isNodeConfigured
 from ...statistics import getAvailableRamMemory
 
 
@@ -38,9 +37,7 @@ def start() -> None:
         node_module.pull("coretexai/coretex-node", f"latest-{config['image']}")
         successEcho("Latest node version successfully fetched.")
 
-    progressEcho("Starting Coretex Node...")
     node_module.start(f"{repository}:{tag}", config)
-    successEcho("Successfully started Coretex Node.")
 
     activateAutoUpdate(CONFIG_DIR, config)
 
@@ -51,9 +48,7 @@ def stop() -> None:
         errorEcho("Node is already offline.")
         return
 
-    progressEcho("Stopping Coretex Node...")
     node_module.stop()
-    successEcho("Successfully stopped Coretex Node.")
 
 
 @click.command()
@@ -74,32 +69,32 @@ def update() -> None:
         return
 
     if nodeStatus == NodeStatus.busy:
-        if not click.prompt("Node is busy, do you wish to terminate the current execution to perform the update?? (Y/n)",
+        if not clickPrompt("Node is busy, do you wish to terminate the current execution to perform the update? (Y/n)",
             type = bool,
             default = True,
             show_default = False
         ):
             return
 
-        progressEcho("Stopping Coretex Node...")
         node_module.stop()
-        successEcho("Successfully stopped Coretex Node.")
 
     if not node_module.shouldUpdate(repository, tag):
         successEcho("Node is already up to date.")
         return
 
-    progressEcho("Fetching latest node version.")
     node_module.pull(repository, tag)
-    successEcho("Latest version successfully fetched.")
 
-    progressEcho("Stopping Coretex Node...")
+    if getNodeStatus() == NodeStatus.busy:
+        if not clickPrompt("Node is busy, do you wish to terminate the current execution to perform the update? (Y/n)",
+            type = bool,
+            default = True,
+            show_default = False
+        ):
+            return
+
     node_module.stop()
-    successEcho("Successfully stopped Coretex Node.")
 
-    progressEcho("Starting Coretex Node...")
     node_module.start(f"{repository}:{tag}", config)
-    successEcho("Successfully started Coretex Node.")
 
 
 @click.command()
@@ -116,12 +111,8 @@ def config(verbose: bool) -> None:
             return
 
     config = loadConfig()
-    if not isUserConfigured(config):
-        login()
-        return
 
     if isNodeConfigured(config):
-        previewConfig(config)
         if not clickPrompt(
             "Node configuration already exists. Would you like to update? (Y/n)",
             type = bool,
@@ -132,11 +123,12 @@ def config(verbose: bool) -> None:
 
     highlightEcho("[Node Configuration]")
 
+    config["storagepath"] = Path.home() / ".coretex"
     config["nodeName"] = clickPrompt("Node name", type = str)
     config["nodeAccessToken"] = node_module.registerNode(config["nodeName"])
 
     if isGPUAvailable():
-        isGPU = clickPrompt("Allow access to GPU on your node? (Y/n):", type=bool, default=True)
+        isGPU = clickPrompt("Would you like to allow access to GPU on your node? (Y/n)", type = bool, default = True)
         config["image"] = "gpu" if isGPU else "cpu"
     else:
         config["image"] = "cpu"

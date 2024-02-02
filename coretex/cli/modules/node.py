@@ -1,5 +1,4 @@
 from typing import Any, Dict
-from pathlib import Path
 
 import logging
 
@@ -10,10 +9,11 @@ from .user_interface import clickPrompt
 from . import docker
 
 from .utils import isGPUAvailable
-from .user_interface import highlightEcho, errorEcho
+from .user_interface import highlightEcho, errorEcho, progressEcho, successEcho
 from ...networking import networkManager
 from ...statistics import getAvailableRamMemory
 from ...configuration import loadConfig, saveConfig, isNodeConfigured
+from ...utils import CommandException
 
 
 DOCKER_CONTAINER_NAME = "coretex_node"
@@ -29,7 +29,9 @@ class NodeException(Exception):
 
 def pull(repository: str, tag: str) -> None:
     try:
+        progressEcho("Fetching latest node version...")
         docker.imagePull(f"{repository}:{tag}")
+        successEcho("Latest node version successfully fetched.")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to fetch latest node version")
@@ -41,6 +43,7 @@ def isRunning() -> bool:
 
 def start(dockerImage: str, config: Dict[str, Any]) -> None:
     try:
+        progressEcho("Starting Coretex Node...")
         docker.createNetwork(DOCKER_CONTAINER_NETWORK)
 
         docker.start(
@@ -54,6 +57,7 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
             config["nodeSwap"],
             config["nodeSharedMemory"]
         )
+        successEcho("Successfully started Coretex Node.")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to start Coretex Node.")
@@ -61,7 +65,9 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
 
 def stop() -> None:
     try:
+        progressEcho("Starting Coretex Node...")
         docker.stop(DOCKER_CONTAINER_NAME, DOCKER_CONTAINER_NETWORK)
+        successEcho("Successfully started Coretex Node.")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to stop Coretex Node.")
@@ -76,8 +82,8 @@ def shouldUpdate(repository: str, tag: str) -> bool:
             if repository in digest and manifestJson["Descriptor"]["digest"] in digest:
                 return False
         return True
-    except:
-        return False
+    except CommandException:
+        return True
 
 
 def registerNode(name: str) -> str:
@@ -87,6 +93,7 @@ def registerNode(name: str) -> str:
     response = networkManager.post("service", params)
 
     if response.hasFailed():
+        print(response.getJson(dict))
         raise Exception("Failed to configure node. Please try again...")
 
     accessToken = response.getJson(dict).get("access_token")
@@ -99,21 +106,37 @@ def registerNode(name: str) -> str:
 
 def initializeNodeConfiguration() -> None:
     config = loadConfig()
-    if not isNodeConfigured(config):
-        errorEcho("Node configuration not found.")
-        highlightEcho("[Node Configuration]")
 
-        config["nodeName"] = clickPrompt("Node name", type = str)
-        config["nodeAccessToken"] = registerNode(config["nodeName"])
+    if isNodeConfigured(config):
+        return
 
-        if isGPUAvailable():
-            isGPU = clickPrompt("Would you like to allow access to GPU on your node (Y/n)?", type = bool, default = True)
-            config["image"] = "gpu" if isGPU else "cpu"
-        else:
-            config["image"] = "cpu"
+    errorEcho("Node configuration not found.")
+    if isRunning():
+        stopNode = clickPrompt(
+            "Node is already running. Do you wish to stop the Node? (Y/n)",
+            type = bool,
+            default = True,
+            show_default = False
+        )
 
-        config["nodeRam"] = DEFAULT_RAM_MEMORY
-        config["nodeSwap"] = DEFAULT_SWAP_MEMORY
-        config["nodeSharedMemory"] = DEFAULT_SHARED_MEMORY
+        if not stopNode:
+            errorEcho("If you wish to reconfigure your node, use coretex node stop commands first.")
+            return
 
-        saveConfig(config)
+        stop()
+
+    highlightEcho("[Node Configuration]")
+    config["nodeName"] = clickPrompt("Node name", type = str)
+    config["nodeAccessToken"] = registerNode(config["nodeName"])
+
+    if isGPUAvailable():
+        isGPU = clickPrompt("Would you like to allow access to GPU on your node? (Y/n)", type = bool, default = True)
+        config["image"] = "gpu" if isGPU else "cpu"
+    else:
+        config["image"] = "cpu"
+
+    config["nodeRam"] = DEFAULT_RAM_MEMORY
+    config["nodeSwap"] = DEFAULT_SWAP_MEMORY
+    config["nodeSharedMemory"] = DEFAULT_SHARED_MEMORY
+
+    saveConfig(config)
