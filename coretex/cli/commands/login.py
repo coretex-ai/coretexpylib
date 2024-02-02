@@ -19,7 +19,7 @@ def login() -> None:
         ):
             return
 
-    click.echo("Authenticating...")
+    click.echo("Please enter your credentials...")
     loginInfo = authenticate()
     config = saveLoginData(loginInfo, config)
 

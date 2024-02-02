@@ -78,9 +78,7 @@ def update() -> None:
         click.echo("Node is already up to date.")
         return
 
-    click.echo("Fetching latest node version.")
     node_module.pull(repository, tag)
-    click.echo("Latest version successfully fetched.")
 
     if getNodeStatus() == NodeStatus.busy:
         if not click.prompt("Node is busy, do you wish to terminate the current execution to perform the update? (Y/n)",
@@ -109,9 +107,6 @@ def config(verbose: bool) -> None:
         return
 
     config = loadConfig()
-    if not isUserConfigured(config):
-        login()
-        return
 
     if isNodeConfigured(config):
         if not click.prompt(
@@ -124,6 +119,7 @@ def config(verbose: bool) -> None:
 
     click.echo("[Node Configuration]")
 
+    config["storagepath"] = Path.home() / ".coretex"
     config["nodeName"] = click.prompt("Node name", type = str)
     config["nodeAccessToken"] = node_module.registerNode(config["nodeName"])
 

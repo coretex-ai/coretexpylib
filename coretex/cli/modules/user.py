@@ -52,6 +52,7 @@ def authenticate(retryCount: int = 0) -> LoginInfo:
     password = click.prompt("Password", type = str, hide_input = True)
 
     response = networkManager.authenticate(username, password, False)
+    click.echo("Authenticating...")
 
     if response.hasFailed():
         click.echo("Failed to authenticate. Please try again...")

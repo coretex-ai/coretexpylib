@@ -1,5 +1,6 @@
 from typing import Any, Dict
 
+import subprocess
 import logging
 
 import click
@@ -10,6 +11,7 @@ from .utils import isGPUAvailable
 from ...networking import networkManager
 from ...statistics import getAvailableRamMemory
 from ...configuration import loadConfig, saveConfig, isNodeConfigured
+from ...utils import CommandException
 
 
 DOCKER_CONTAINER_NAME = "coretex_node"
@@ -78,8 +80,8 @@ def shouldUpdate(repository: str, tag: str) -> bool:
             if repository in digest and manifestJson["Descriptor"]["digest"] in digest:
                 return False
         return True
-    except:
-        return False
+    except CommandException:
+        return True
 
 
 def registerNode(name: str) -> str:
