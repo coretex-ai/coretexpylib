@@ -1,4 +1,5 @@
 from typing import Any, Dict
+from pathlib import Path
 
 import logging
 
@@ -7,7 +8,7 @@ import click
 from . import docker
 
 from .utils import isGPUAvailable
-from ...networking import networkManager
+from ...networking import networkManager, NetworkRequestError
 from ...statistics import getAvailableRamMemory
 from ...configuration import loadConfig, saveConfig, isNodeConfigured
 from ...utils import CommandException
@@ -15,6 +16,7 @@ from ...utils import CommandException
 
 DOCKER_CONTAINER_NAME = "coretex_node"
 DOCKER_CONTAINER_NETWORK = "coretex_node"
+DEFAULT_STORAGE_PATH = str(Path.home() / "./coretex")
 DEFAULT_RAM_MEMORY = getAvailableRamMemory()
 DEFAULT_SWAP_MEMORY = DEFAULT_RAM_MEMORY * 2
 DEFAULT_SHARED_MEMORY = 2
@@ -84,14 +86,12 @@ def shouldUpdate(repository: str, tag: str) -> bool:
 
 
 def registerNode(name: str) -> str:
-    params = {
-        "machine_name": name
-    }
-    response = networkManager.post("service", params)
+    response = networkManager.post("service", {
+        "machine_name": name,
+    })
 
     if response.hasFailed():
-        print(response.getJson(dict))
-        raise Exception("Failed to configure node. Please try again...")
+        raise NetworkRequestError(response, "Failed to configure node. Please try again...")
 
     accessToken = response.getJson(dict).get("access_token")
 
@@ -99,6 +99,30 @@ def registerNode(name: str) -> str:
         raise TypeError("Something went wrong. Please try again...")
 
     return accessToken
+
+
+def configureNode(config: dict, verbose: bool) -> None:
+    config["nodeName"] = click.prompt("Node name", type = str)
+    config["nodeAccessToken"] = registerNode(config["nodeName"])
+
+    if isGPUAvailable():
+        isGPU = click.prompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
+        config["image"] = "gpu" if isGPU else "cpu"
+    else:
+        config["image"] = "cpu"
+
+    config["storagePath"] = DEFAULT_STORAGE_PATH
+    config["nodeRam"] = DEFAULT_RAM_MEMORY
+    config["nodeSwap"] = DEFAULT_SWAP_MEMORY
+    config["nodeSharedMemory"] = DEFAULT_SHARED_MEMORY
+
+    if verbose:
+        config["storagePath"] = click.prompt("Storage path (press enter to use default)", DEFAULT_STORAGE_PATH, type = str)
+        config["nodeRam"] = click.prompt("Node RAM memory limit in GB (press enter to use default)", type = int, default = DEFAULT_RAM_MEMORY)
+        config["nodeSwap"] = click.prompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", type=int, default = DEFAULT_SWAP_MEMORY  * 2)
+        config["nodeSharedMemory"] = click.prompt("Node POSIX shared memory limit in GB (press enter to use default)", type = int, default = DEFAULT_SHARED_MEMORY)
+    else:
+        click.echo("To configure node manually run coretex node config with --verbose flag.")
 
 
 def initializeNodeConfiguration() -> None:
@@ -117,23 +141,11 @@ def initializeNodeConfiguration() -> None:
         )
 
         if not stopNode:
-            click.echo("If you wish to reconfigure your node, use coretex node stop commands first.")
+            click.echo("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
             return
 
         stop()
 
     click.echo("[Node Configuration]")
-    config["nodeName"] = click.prompt("Node name", type = str)
-    config["nodeAccessToken"] = registerNode(config["nodeName"])
-
-    if isGPUAvailable():
-        isGPU = click.prompt("Would you like to allow access to GPU on your node? (Y/n)", type = bool, default = True)
-        config["image"] = "gpu" if isGPU else "cpu"
-    else:
-        config["image"] = "cpu"
-
-    config["nodeRam"] = DEFAULT_RAM_MEMORY
-    config["nodeSwap"] = DEFAULT_SWAP_MEMORY
-    config["nodeSharedMemory"] = DEFAULT_SHARED_MEMORY
-
+    configureNode(config, verbose = False)
     saveConfig(config)

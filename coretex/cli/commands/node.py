@@ -4,11 +4,10 @@ import click
 
 from ..modules import node as node_module
 from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate, dumpScript, UPDATE_SCRIPT_NAME
-from ..modules.utils import onBeforeCommandExecute, isGPUAvailable
+from ..modules.utils import onBeforeCommandExecute
 from ..modules.user import initializeUserSession
 from ..modules.docker import isDockerAvailable
 from ...configuration import loadConfig, saveConfig, CONFIG_DIR, isNodeConfigured
-from ...statistics import getAvailableRamMemory
 
 
 @click.command()
@@ -99,10 +98,11 @@ def config(verbose: bool) -> None:
         if click.prompt("Node is already running. Do you wish to stop the Node? (Y/n)",
             type = bool,
             default = True,
-            show_default = False):
+            show_default = False
+        ):
             node_module.stop()
 
-        click.echo("If you wish to reconfigure your node, use coretex node stop commands first.")
+        click.echo("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
         return
 
     config = loadConfig()
@@ -117,29 +117,7 @@ def config(verbose: bool) -> None:
             return
 
     click.echo("[Node Configuration]")
-
-    config["storagepath"] = Path.home() / ".coretex"
-    config["nodeName"] = click.prompt("Node name", type = str)
-    config["nodeAccessToken"] = node_module.registerNode(config["nodeName"])
-
-    if isGPUAvailable():
-        isGPU = click.prompt("Would you like to allow access to GPU on your node? (Y/n)", type = bool, default = True)
-        config["image"] = "gpu" if isGPU else "cpu"
-    else:
-        config["image"] = "cpu"
-
-    if not verbose:
-        config["nodeRam"] = node_module.DEFAULT_RAM_MEMORY
-        config["nodeSwap"] = node_module.DEFAULT_SWAP_MEMORY
-        config["nodeSharedMemory"] = node_module.DEFAULT_SHARED_MEMORY
-
-        click.echo("To configure node manually run coretex node config with --verbose flag.")
-    else:
-        config["storagepath"] = click.prompt("Storage path (press enter to use default)", Path.home() / ".coretex", type = str)
-        config["nodeRam"] = click.prompt("Node RAM memory limit in GB (press enter to use default)", type = int, default = getAvailableRamMemory())
-        config["nodeSwap"] = click.prompt("Node swap memory limit in GB, make sure it is larger then mem limit (press enter to use default)", type = int, default = getAvailableRamMemory() * 2)
-        config["nodeSharedMemory"] = click.prompt("Node POSIX shared memory limit in GB (press enter to use default)", type = int, default = 2)
-
+    node_module.configureNode(config, verbose)
     saveConfig(config)
 
     # Updating auto-update script since node configuration is changed

@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import click
 
 from ...utils import decodeDate
-from ...networking import networkManager, NetworkResponse
+from ...networking import networkManager, NetworkResponse, NetworkRequestError
 from ...configuration import loadConfig, saveConfig
 
 
@@ -25,10 +25,10 @@ def authenticateUser(username: str, password: str) -> NetworkResponse:
 
     if response.hasFailed():
         if response.statusCode >= 500:
-            raise RuntimeError("Something went wrong, please try again later.")
+            raise NetworkRequestError(response, "Something went wrong, please try again later.")
 
         if response.statusCode >= 400:
-            raise RuntimeError("User credentials invalid, please try configuring them again.")
+            raise NetworkRequestError(response, "User credentials invalid, please try configuring them again.")
 
     return response
 
@@ -46,7 +46,7 @@ def saveLoginData(loginInfo: LoginInfo, config: Dict[str, Any]) -> Dict[str, Any
 
 def authenticate(retryCount: int = 0) -> LoginInfo:
     if retryCount >= 3:
-        raise Exception("Failed to authenticate. Terminating...")
+        raise RuntimeError("Failed to authenticate. Terminating...")
 
     username = click.prompt("Email", type = str)
     password = click.prompt("Password", type = str, hide_input = True)
@@ -81,15 +81,17 @@ def initializeUserSession() -> None:
         tokenExpirationDate = decodeDate(config["tokenExpirationDate"])
         refreshTokenExpirationDate = decodeDate(config["refreshTokenExpirationDate"])
 
-        if datetime.utcnow().replace(tzinfo = timezone.utc) < tokenExpirationDate:
+        currentDate = datetime.utcnow().replace(tzinfo = timezone.utc)
+
+        if currentDate < tokenExpirationDate:
             return
 
-        if datetime.utcnow().replace(tzinfo = timezone.utc) < refreshTokenExpirationDate:
+        if currentDate < refreshTokenExpirationDate:
             refreshToken = config["refreshToken"]
             response = networkManager.authenticateWithRefreshToken(refreshToken)
             if response.hasFailed():
                 if response.statusCode >= 500:
-                    raise RuntimeError("Something went wrong, please try again later.")
+                    raise NetworkRequestError(response, "Something went wrong, please try again later.")
 
                 if response.statusCode >= 400:
                     response = authenticateUser(config["username"], config["password"])
