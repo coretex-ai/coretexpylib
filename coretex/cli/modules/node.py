@@ -3,12 +3,9 @@ from pathlib import Path
 
 import logging
 
-from .user_interface import clickPrompt
-
 from . import docker
-
 from .utils import isGPUAvailable
-from .user_interface import highlightEcho, errorEcho, progressEcho, successEcho, stdEcho
+from .user_interface import clickPrompt, highlightEcho, errorEcho, progressEcho, successEcho, stdEcho
 from ...networking import networkManager, NetworkRequestError
 from ...statistics import getAvailableRamMemory
 from ...configuration import loadConfig, saveConfig, isNodeConfigured

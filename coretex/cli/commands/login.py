@@ -1,7 +1,7 @@
 import click
 
-from ..modules.user_interface import clickPrompt, stdEcho, successEcho
 from ..modules.user import authenticate, saveLoginData
+from ..modules.user_interface import clickPrompt, stdEcho, successEcho
 from ...configuration import loadConfig, saveConfig, isUserConfigured
 
 

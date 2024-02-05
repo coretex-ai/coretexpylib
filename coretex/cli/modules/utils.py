@@ -30,4 +30,3 @@ def onBeforeCommandExecute(fun: Callable[..., Any], excludeOptions: Optional[Lis
             return f(*args, **kwargs)
         return wrapper
     return decorator
-

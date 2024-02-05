@@ -13,5 +13,4 @@ class ClickExceptionInterceptor(click.Group):
             self.handleException(ctx, exc)
 
     def handleException(self, ctx: click.Context, exc: BaseException) -> None:
-        # Custom exception handling logic here
         errorEcho(f"An error occurred: {exc}")
