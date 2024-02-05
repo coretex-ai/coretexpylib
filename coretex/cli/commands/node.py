@@ -43,7 +43,7 @@ def stop() -> None:
 
     node_module.stop()
 
-
+@click.command
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def update() -> None:
     config = loadConfig()
@@ -61,7 +61,8 @@ def update() -> None:
         return
 
     if nodeStatus == NodeStatus.busy:
-        if not clickPrompt("Node is busy, do you wish to terminate the current execution to perform the update? (Y/n)",
+        if not clickPrompt(
+            "Node is busy, do you wish to terminate the current execution to perform the update? (Y/n)",
             type = bool,
             default = True,
             show_default = False
@@ -77,7 +78,8 @@ def update() -> None:
     node_module.pull(repository, tag)
 
     if getNodeStatus() == NodeStatus.busy:
-        if not clickPrompt("Node is busy, do you wish to terminate the current execution to perform the update? (Y/n)",
+        if not clickPrompt(
+            "Node is busy, do you wish to terminate the current execution to perform the update? (Y/n)",
             type = bool,
             default = True,
             show_default = False
@@ -93,15 +95,16 @@ def update() -> None:
 @click.option("--verbose", is_flag = True, help = "Configure node settings manually.")
 def config(verbose: bool) -> None:
     if node_module.isRunning():
-        if clickPrompt("Node is already running. Do you wish to stop the Node? (Y/n)",
+        if not clickPrompt(
+            "Node is already running. Do you wish to stop the Node? (Y/n)",
             type = bool,
             default = True,
             show_default = False
         ):
-            node_module.stop()
+            errorEcho("If you wish to reconfigure your node, use coretex node stop commands first.")
+            return
 
-        errorEcho("If you wish to reconfigure your node, use coretex node stop commands first.")
-        return
+        node_module.stop()
 
     config = loadConfig()
 
