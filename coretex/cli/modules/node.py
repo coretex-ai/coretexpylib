@@ -5,7 +5,7 @@ import logging
 
 from . import docker
 from .utils import isGPUAvailable
-from .user_interface import clickPrompt, highlightEcho, errorEcho, progressEcho, successEcho, stdEcho
+from .ui import clickPrompt, highlightEcho, errorEcho, progressEcho, successEcho, stdEcho
 from ...networking import networkManager, NetworkRequestError
 from ...statistics import getAvailableRamMemory
 from ...configuration import loadConfig, saveConfig, isNodeConfigured

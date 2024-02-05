@@ -2,7 +2,7 @@ from typing import Optional
 
 import click
 
-from ..modules.user_interface import arrowPrompt, stdEcho, successEcho, progressEcho, errorEcho
+from ..modules.ui import arrowPrompt, stdEcho, successEcho, progressEcho, errorEcho
 from ... import Project, ProjectType
 from ...networking import NetworkRequestError
 from ...configuration import loadConfig, saveConfig
