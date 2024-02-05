@@ -24,9 +24,7 @@ def scheduleJob(configDir: Path, script: str) -> None:
         return
 
     existingLines = getExisting()
-
     cronEntry = f"*/30 * * * * {configDir / script}\n"
-
     existingLines.append(cronEntry)
 
     tempCronFilePath = configDir / "temp.cron"
