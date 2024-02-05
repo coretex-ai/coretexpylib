@@ -3,8 +3,6 @@ from pathlib import Path
 
 import logging
 
-import click
-
 from .user_interface import clickPrompt
 
 from . import docker

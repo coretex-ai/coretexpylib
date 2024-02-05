@@ -1,8 +1,6 @@
-from typing import Dict, Any, Callable
+from typing import Dict, Any
 from dataclasses import dataclass
 from datetime import datetime, timezone
-
-import click
 
 from .user_interface import clickPrompt, errorEcho, progressEcho
 from ...utils import decodeDate

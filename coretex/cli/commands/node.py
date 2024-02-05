@@ -25,14 +25,10 @@ def start() -> None:
         ):
             return
 
-        progressEcho("Stopping Coretex Node...")
         node_module.stop()
-        successEcho("Successfully stopped Coretex Node.")
 
     if node_module.shouldUpdate(repository, tag):
-        progressEcho("Fetching latest node version...")
         node_module.pull("coretexai/coretex-node", f"latest-{config['image']}")
-        successEcho("Latest node version successfully fetched.")
 
     node_module.start(f"{repository}:{tag}", config)
 
