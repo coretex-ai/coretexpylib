@@ -1,8 +1,11 @@
 from typing import Any, List, Dict, Optional
 
+from tabulate import tabulate
+
 import click
 import inquirer
-from tabulate import tabulate
+
+from .node_mode import NodeMode
 
 
 def clickPrompt(text: str, default: Any = None, type: Optional[type] = None, **kwargs: Any) -> Any:
@@ -29,8 +32,12 @@ def previewConfig(config: Dict[str, Any]) -> None:
         ["Storage path", config["storagePath"]],
         ["RAM", f"{config['nodeRam']}GB"],
         ["SWAP memory", f"{config['nodeSwap']}GB"],
-        ["POSIX shared memory", f"{config['nodeSharedMemory']}GB"]
+        ["POSIX shared memory", f"{config['nodeSharedMemory']}GB"],
+        ["Coretex Node mode", f"{NodeMode(config['nodeMode']).name}"],
     ]
+    if config.get("modelId") is not None:
+        table.append(["Coretex Model ID", config["modelId"]])
+
     stdEcho(tabulate(table, tablefmt = "grid"))
 
 

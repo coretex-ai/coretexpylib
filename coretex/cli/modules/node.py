@@ -1,15 +1,18 @@
-from typing import Any, Dict
+from typing import Any, Dict, Tuple, Optional
+from enum import IntEnum
 from pathlib import Path
 
 import logging
 
 from . import docker
 from .utils import isGPUAvailable
-from .user_interface import clickPrompt, highlightEcho, errorEcho, progressEcho, successEcho, stdEcho
+from .user_interface import clickPrompt, highlightEcho, errorEcho, progressEcho, successEcho, stdEcho, arrowPrompt
+from .node_mode import NodeMode
 from ...networking import networkManager, NetworkRequestError
 from ...statistics import getAvailableRamMemory
 from ...configuration import loadConfig, saveConfig, isNodeConfigured
 from ...utils import CommandException
+from ...entities.model import Model
 
 
 DOCKER_CONTAINER_NAME = "coretex_node"
@@ -31,7 +34,7 @@ def pull(repository: str, tag: str) -> None:
         successEcho("Latest node version successfully fetched.")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
-        raise NodeException("Failed to fetch latest node version")
+        raise NodeException("Failed to fetch latest node version.")
 
 
 def isRunning() -> bool:
@@ -52,7 +55,8 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
             config["nodeAccessToken"],
             config["nodeRam"],
             config["nodeSwap"],
-            config["nodeSharedMemory"]
+            config["nodeSharedMemory"],
+            config["nodeMode"]
         )
         successEcho("Successfully started Coretex Node.")
     except BaseException as ex:
@@ -99,6 +103,52 @@ def registerNode(name: str) -> str:
     return accessToken
 
 
+def selectModelId(retryCount: int = 0) -> int:
+    if retryCount >= 3:
+        raise RuntimeError("Failed to fetch Coretex Model. Terminating...")
+
+    modelId = clickPrompt("Specify Coretex Model ID that you want to use:", type = int)
+
+    if not isinstance(modelId, int):
+        raise TypeError(f"Invalid modelId type \"{type(modelId)}\". Expected: \"int\"")
+
+    try:
+        model = Model.fetchById(modelId)
+    except:
+        errorEcho(f"Failed to fetch model with id {modelId}.")
+        return selectModelId(retryCount + 1)
+
+    if model.isDeleted or model.isTrained:
+        errorEcho(f"Model with id {modelId} can't be downloaded because it is deleted or trained.")
+        return selectModelId(retryCount + 1)
+
+    if model.path.exists():
+        stdEcho(f"Model with id {modelId} already exists on path: {model.path}.")
+        return selectModelId(retryCount = 1)
+
+    model.download()
+
+    return modelId
+
+
+def selectNodeMode() -> Tuple[int, Optional[int]]:
+    availableNodeModes = {
+        "Execution": NodeMode.execution,
+        "Function exclusive": NodeMode.functionExclusive,
+        "Function shared": NodeMode.functionShared
+    }
+    choices = list(availableNodeModes.keys())
+
+    stdEcho("Please select Coretex Node mode:")
+    selectedMode = arrowPrompt(choices)
+
+    if not availableNodeModes[selectedMode] == NodeMode.functionExclusive:
+        return availableNodeModes[selectedMode], None
+
+    modelId = selectModelId()
+    return availableNodeModes[selectedMode], modelId
+
+
 def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     highlightEcho("[Node Configuration]")
     config["nodeName"] = clickPrompt("Node name", type = str)
@@ -120,6 +170,11 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
         config["nodeRam"] = clickPrompt("Node RAM memory limit in GB (press enter to use default)", type = int, default = DEFAULT_RAM_MEMORY)
         config["nodeSwap"] = clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", type = int, default = DEFAULT_SWAP_MEMORY)
         config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", type = int, default = DEFAULT_SHARED_MEMORY)
+
+        nodeMode, modelId = selectNodeMode()
+        config["nodeMode"] = nodeMode
+        if modelId is not None:
+            config["modelId"] = modelId
     else:
         stdEcho("To configure node manually run coretex node config with --verbose flag.")
 
