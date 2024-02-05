@@ -43,6 +43,7 @@ def stop() -> None:
 
     node_module.stop()
 
+
 @click.command
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def update() -> None:
