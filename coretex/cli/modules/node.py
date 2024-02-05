@@ -10,7 +10,7 @@ from .user_interface import clickPrompt
 from . import docker
 
 from .utils import isGPUAvailable
-from .user_interface import highlightEcho, errorEcho, progressEcho, successEcho
+from .user_interface import highlightEcho, errorEcho, progressEcho, successEcho, stdEcho
 from ...networking import networkManager, NetworkRequestError
 from ...statistics import getAvailableRamMemory
 from ...configuration import loadConfig, saveConfig, isNodeConfigured
@@ -106,11 +106,11 @@ def registerNode(name: str) -> str:
 
 def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     highlightEcho("[Node Configuration]")
-    config["nodeName"] = click.prompt("Node name", type = str)
+    config["nodeName"] = clickPrompt("Node name", type = str)
     config["nodeAccessToken"] = registerNode(config["nodeName"])
 
     if isGPUAvailable():
-        isGPU = click.prompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
+        isGPU = clickPrompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
         config["image"] = "gpu" if isGPU else "cpu"
     else:
         config["image"] = "cpu"
@@ -121,12 +121,12 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     config["nodeSharedMemory"] = DEFAULT_SHARED_MEMORY
 
     if verbose:
-        config["storagePath"] = click.prompt("Storage path (press enter to use default)", DEFAULT_STORAGE_PATH, type = str)
-        config["nodeRam"] = click.prompt("Node RAM memory limit in GB (press enter to use default)", type = int, default = DEFAULT_RAM_MEMORY)
-        config["nodeSwap"] = click.prompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", type = int, default = DEFAULT_SWAP_MEMORY  * 2)
-        config["nodeSharedMemory"] = click.prompt("Node POSIX shared memory limit in GB (press enter to use default)", type = int, default = DEFAULT_SHARED_MEMORY)
+        config["storagePath"] = clickPrompt("Storage path (press enter to use default)", DEFAULT_STORAGE_PATH, type = str)
+        config["nodeRam"] = clickPrompt("Node RAM memory limit in GB (press enter to use default)", type = int, default = DEFAULT_RAM_MEMORY)
+        config["nodeSwap"] = clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", type = int, default = DEFAULT_SWAP_MEMORY  * 2)
+        config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", type = int, default = DEFAULT_SHARED_MEMORY)
     else:
-        click.echo("To configure node manually run coretex node config with --verbose flag.")
+        stdEcho("To configure node manually run coretex node config with --verbose flag.")
 
 
 def initializeNodeConfiguration() -> None:
