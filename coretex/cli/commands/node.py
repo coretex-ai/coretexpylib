@@ -1,15 +1,12 @@
-from pathlib import Path
-
 import click
 
 from ..modules import node as node_module
-from ..modules.user_interface import clickPrompt, successEcho, progressEcho, highlightEcho, errorEcho, previewConfig, stdEcho
+from ..modules.user_interface import clickPrompt, successEcho, progressEcho, errorEcho, previewConfig
 from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate, dumpScript, UPDATE_SCRIPT_NAME
-from ..modules.utils import onBeforeCommandExecute, isGPUAvailable
+from ..modules.utils import onBeforeCommandExecute
 from ..modules.user import initializeUserSession
 from ..modules.docker import isDockerAvailable
 from ...configuration import loadConfig, saveConfig, CONFIG_DIR, isNodeConfigured
-from ...statistics import getAvailableRamMemory
 
 
 @click.command()
@@ -51,7 +48,6 @@ def stop() -> None:
     node_module.stop()
 
 
-@click.command()
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def update() -> None:
     config = loadConfig()
@@ -104,11 +100,12 @@ def config(verbose: bool) -> None:
         if clickPrompt("Node is already running. Do you wish to stop the Node? (Y/n)",
             type = bool,
             default = True,
-            show_default = False):
+            show_default = False
+        ):
             node_module.stop()
-        else:
-            errorEcho("If you wish to reconfigure your node, use coretex node stop commands first.")
-            return
+
+        errorEcho("If you wish to reconfigure your node, use coretex node stop commands first.")
+        return
 
     config = loadConfig()
 
@@ -121,30 +118,7 @@ def config(verbose: bool) -> None:
         ):
             return
 
-    highlightEcho("[Node Configuration]")
-
-    config["storagepath"] = Path.home() / ".coretex"
-    config["nodeName"] = clickPrompt("Node name", type = str)
-    config["nodeAccessToken"] = node_module.registerNode(config["nodeName"])
-
-    if isGPUAvailable():
-        isGPU = clickPrompt("Would you like to allow access to GPU on your node? (Y/n)", type = bool, default = True)
-        config["image"] = "gpu" if isGPU else "cpu"
-    else:
-        config["image"] = "cpu"
-
-    if not verbose:
-        config["nodeRam"] = node_module.DEFAULT_RAM_MEMORY
-        config["nodeSwap"] = node_module.DEFAULT_SWAP_MEMORY
-        config["nodeSharedMemory"] = node_module.DEFAULT_SHARED_MEMORY
-
-        stdEcho("To configure node manually run coretex node config with --verbose flag.")
-    else:
-        config["storagepath"] = clickPrompt("Storage path (default: ~/.coretex, press Enter to use default): ", default=Path.home() / ".coretex", type=str)
-        config["nodeRam"] = clickPrompt(f"Node RAM memory limit in GB (default: {getAvailableRamMemory()}GB, press Enter to use default): ", default=getAvailableRamMemory(), type=int)
-        config["nodeSwap"] = clickPrompt(f"Node swap memory limit in GB (default: {getAvailableRamMemory() * 2}GB, press Enter to use default): ", default=getAvailableRamMemory() * 2, type=int)
-        config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (default: 2GB, press Enter to use default): ", default=2, type=int)
-
+    node_module.configureNode(config, verbose)
     saveConfig(config)
     previewConfig(config)
 
