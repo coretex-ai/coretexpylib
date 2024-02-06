@@ -78,12 +78,9 @@ def track(taskRun: TaskRun) -> Iterator[FileEventHandler]:
 
             try:
                 artifact = taskRun.createArtifact(artifactPath, str(artifactPath.relative_to(root)))
-                if artifact is None:
+                if artifact is not None:
+                    logging.getLogger("coretexpylib").debug(f"\tSuccessfully uploaded artifact")
+                else:
                     logging.getLogger("coretexpylib").debug(f"\tFailed to upload artifact")
             except Exception as e:
                 logging.getLogger("coretexpylib").error(f"Error while creating artifact: {e}")
-
-            if artifact is not None:
-                logging.getLogger("coretexpylib").debug(f"\tSuccessfully uploaded artifact")
-            else:
-                logging.getLogger("coretexpylib").debug(f"\tFailed to upload artifact")
