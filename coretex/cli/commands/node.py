@@ -1,7 +1,7 @@
 import click
 
 from ..modules import node as node_module
-from ..modules.user_interface import clickPrompt, successEcho, errorEcho, previewConfig
+from ..modules.ui import clickPrompt, successEcho, errorEcho, previewConfig
 from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate, dumpScript, UPDATE_SCRIPT_NAME
 from ..modules.utils import onBeforeCommandExecute
 from ..modules.user import initializeUserSession
@@ -42,6 +42,7 @@ def stop() -> None:
         return
 
     node_module.stop()
+
 
 @click.command
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)

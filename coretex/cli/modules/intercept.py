@@ -1,11 +1,14 @@
 from typing import Any
 
+import logging
+
 import click
 
-from .user_interface import errorEcho
+from .ui import errorEcho
 
 
 class ClickExceptionInterceptor(click.Group):
+
     def invoke(self, ctx: click.Context) -> Any:
         try:
             return super().invoke(ctx)
@@ -14,3 +17,4 @@ class ClickExceptionInterceptor(click.Group):
 
     def handleException(self, ctx: click.Context, exc: BaseException) -> None:
         errorEcho(f"An error occurred: {exc}")
+        logging.getLogger("cli").debug(exc, exc_info = exc)

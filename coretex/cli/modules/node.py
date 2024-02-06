@@ -6,7 +6,7 @@ import logging
 
 from . import docker
 from .utils import isGPUAvailable
-from .user_interface import clickPrompt, highlightEcho, errorEcho, progressEcho, successEcho, stdEcho, arrowPrompt
+from .ui import clickPrompt, arrowPrompt, highlightEcho, errorEcho, progressEcho, successEcho, stdEcho
 from .node_mode import NodeMode
 from ...networking import networkManager, NetworkRequestError
 from ...statistics import getAvailableRamMemory
@@ -77,14 +77,20 @@ def stop() -> None:
 def shouldUpdate(repository: str, tag: str) -> bool:
     try:
         imageJson = docker.imageInspect(repository, tag)
-        manifestJson = docker.manifestInspect(repository, tag)
-
-        for digest in imageJson["RepoDigests"]:
-            if repository in digest and manifestJson["Descriptor"]["digest"] in digest:
-                return False
-        return True
     except CommandException:
+        # imageInspect() will raise an error if image doesn't exist locally
         return True
+
+    try:
+        manifestJson = docker.manifestInspect(repository, tag)
+    except CommandException:
+        return False
+
+    for digest in imageJson["RepoDigests"]:
+        if repository in digest and manifestJson["Descriptor"]["digest"] in digest:
+            return False
+
+    return True
 
 
 def registerNode(name: str) -> str:
