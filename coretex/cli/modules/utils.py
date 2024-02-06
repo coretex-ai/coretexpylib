@@ -4,7 +4,6 @@ from functools import wraps
 from py3nvml import py3nvml
 
 import click
-import inquirer
 
 
 def isGPUAvailable() -> bool:
@@ -14,19 +13,6 @@ def isGPUAvailable() -> bool:
         return True
     except:
         return False
-
-
-def arrowPrompt(choices: List[Any]) -> Any:
-    answers = inquirer.prompt([
-        inquirer.List(
-            "option",
-            message = "Use arrow keys to select an option",
-            choices = choices,
-            carousel = True,
-        )
-    ])
-
-    return answers["option"]
 
 
 def onBeforeCommandExecute(fun: Callable[..., Any], excludeOptions: Optional[List[str]] = None) -> Any:

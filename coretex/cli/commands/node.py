@@ -1,8 +1,7 @@
-from pathlib import Path
-
 import click
 
 from ..modules import node as node_module
+from ..modules.ui import clickPrompt, successEcho, errorEcho, previewConfig
 from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate, dumpScript, UPDATE_SCRIPT_NAME
 from ..modules.utils import onBeforeCommandExecute
 from ..modules.user import initializeUserSession
@@ -18,7 +17,7 @@ def start() -> None:
     tag = f"latest-{config['image']}"
 
     if node_module.isRunning():
-        if not click.prompt(
+        if not clickPrompt(
             "Node is already running. Do you wish to restart the Node? (Y/n)",
             type = bool,
             default = True,
@@ -39,13 +38,13 @@ def start() -> None:
 @click.command()
 def stop() -> None:
     if not node_module.isRunning():
-        click.echo("Node is already offline.")
+        errorEcho("Node is already offline.")
         return
 
     node_module.stop()
 
 
-@click.command()
+@click.command
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def update() -> None:
     config = loadConfig()
@@ -55,15 +54,16 @@ def update() -> None:
     nodeStatus = getNodeStatus()
 
     if nodeStatus == NodeStatus.inactive:
-        click.echo("Node is not running. To update Node you need to start it first.")
+        errorEcho("Node is not running. To update Node you need to start it first.")
         return
 
     if nodeStatus == NodeStatus.reconnecting:
-        click.echo("Node is reconnecting. Cannot update now.")
+        errorEcho("Node is reconnecting. Cannot update now.")
         return
 
     if nodeStatus == NodeStatus.busy:
-        if not click.prompt("Node is busy, do you wish to terminate the current execution to perform the update? (Y/n)",
+        if not clickPrompt(
+            "Node is busy, do you wish to terminate the current execution to perform the update? (Y/n)",
             type = bool,
             default = True,
             show_default = False
@@ -73,13 +73,14 @@ def update() -> None:
         node_module.stop()
 
     if not node_module.shouldUpdate(repository, tag):
-        click.echo("Node is already up to date.")
+        successEcho("Node is already up to date.")
         return
 
     node_module.pull(repository, tag)
 
     if getNodeStatus() == NodeStatus.busy:
-        if not click.prompt("Node is busy, do you wish to terminate the current execution to perform the update? (Y/n)",
+        if not clickPrompt(
+            "Node is busy, do you wish to terminate the current execution to perform the update? (Y/n)",
             type = bool,
             default = True,
             show_default = False
@@ -95,20 +96,21 @@ def update() -> None:
 @click.option("--verbose", is_flag = True, help = "Configure node settings manually.")
 def config(verbose: bool) -> None:
     if node_module.isRunning():
-        if click.prompt("Node is already running. Do you wish to stop the Node? (Y/n)",
+        if not clickPrompt(
+            "Node is already running. Do you wish to stop the Node? (Y/n)",
             type = bool,
             default = True,
             show_default = False
         ):
-            node_module.stop()
+            errorEcho("If you wish to reconfigure your node, use coretex node stop commands first.")
+            return
 
-        click.echo("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
-        return
+        node_module.stop()
 
     config = loadConfig()
 
     if isNodeConfigured(config):
-        if not click.prompt(
+        if not clickPrompt(
             "Node configuration already exists. Would you like to update? (Y/n)",
             type = bool,
             default = True,
@@ -116,14 +118,14 @@ def config(verbose: bool) -> None:
         ):
             return
 
-    click.echo("[Node Configuration]")
     node_module.configureNode(config, verbose)
     saveConfig(config)
+    previewConfig(config)
 
     # Updating auto-update script since node configuration is changed
     dumpScript(CONFIG_DIR / UPDATE_SCRIPT_NAME, config)
 
-    click.echo("Node successfully configured.")
+    successEcho("Node successfully configured.")
 
 
 @click.group()

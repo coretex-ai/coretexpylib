@@ -2,8 +2,7 @@ from typing import Dict, Any
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
-import click
-
+from .ui import clickPrompt, errorEcho, progressEcho
 from ...utils import decodeDate
 from ...networking import networkManager, NetworkResponse, NetworkRequestError
 from ...configuration import loadConfig, saveConfig
@@ -48,14 +47,14 @@ def authenticate(retryCount: int = 0) -> LoginInfo:
     if retryCount >= 3:
         raise RuntimeError("Failed to authenticate. Terminating...")
 
-    username = click.prompt("Email", type = str)
-    password = click.prompt("Password", type = str, hide_input = True)
+    username = clickPrompt("Email", type = str)
+    password = clickPrompt("Password", type = str, hide_input = True)
 
+    progressEcho("Authenticating...")
     response = networkManager.authenticate(username, password, False)
-    click.echo("Authenticating...")
 
     if response.hasFailed():
-        click.echo("Failed to authenticate. Please try again...")
+        errorEcho("Failed to authenticate. Please try again...")
         return authenticate(retryCount + 1)
 
     jsonResponse = response.getJson(dict)
@@ -74,7 +73,7 @@ def initializeUserSession() -> None:
     config = loadConfig()
 
     if config.get("username") is None or config.get("password") is None:
-        click.echo("User configuration not found. Please authenticate with your credentials.")
+        errorEcho("User configuration not found. Please authenticate with your credentials.")
         loginInfo = authenticate()
         config = saveLoginData(loginInfo, config)
     else:
