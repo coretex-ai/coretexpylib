@@ -118,14 +118,6 @@ def selectModelId(retryCount: int = 0) -> int:
         errorEcho(f"Failed to fetch model with id {modelId}.")
         return selectModelId(retryCount + 1)
 
-    if model.isDeleted or model.isTrained:
-        errorEcho(f"Model with id {modelId} can't be downloaded because it is deleted or trained.")
-        return selectModelId(retryCount + 1)
-
-    if model.path.exists():
-        stdEcho(f"Model with id {modelId} already exists on path: {model.path}.")
-        return selectModelId(retryCount = 1)
-
     model.download()
 
     return modelId
