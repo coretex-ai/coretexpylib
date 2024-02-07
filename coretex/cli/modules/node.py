@@ -113,10 +113,7 @@ def selectModelId(retryCount: int = 0) -> int:
     if retryCount >= 3:
         raise RuntimeError("Failed to fetch Coretex Model. Terminating...")
 
-    modelId = clickPrompt("Specify Coretex Model ID that you want to use:", type = int)
-
-    if not isinstance(modelId, int):
-        raise TypeError(f"Invalid modelId type \"{type(modelId)}\". Expected: \"int\"")
+    modelId: int = clickPrompt("Specify Coretex Model ID that you want to use:", type = int)
 
     try:
         model = Model.fetchById(modelId)
@@ -140,11 +137,11 @@ def selectNodeMode() -> Tuple[int, Optional[int]]:
     stdEcho("Please select Coretex Node mode:")
     selectedMode = arrowPrompt(choices)
 
-    if not availableNodeModes[selectedMode] == NodeMode.functionExclusive:
-        return availableNodeModes[selectedMode], None
+    if availableNodeModes[selectedMode] == NodeMode.functionExclusive:
+        modelId = selectModelId()
+        return availableNodeModes[selectedMode], modelId
 
-    modelId = selectModelId()
-    return availableNodeModes[selectedMode], modelId
+    return availableNodeModes[selectedMode], None
 
 
 def configureNode(config: Dict[str, Any], verbose: bool) -> None:
