@@ -77,8 +77,8 @@ def initializeUserSession() -> None:
         loginInfo = authenticate()
         config = saveLoginData(loginInfo, config)
     else:
-        tokenExpirationDate = config.get("tokenExpirationDate", None)
-        refreshTokenExpirationDate = config.get("refreshTokenExpirationDate", None)
+        tokenExpirationDate = config.get("tokenExpirationDate")
+        refreshTokenExpirationDate = config.get("refreshTokenExpirationDate")
 
         if tokenExpirationDate is not None and refreshTokenExpirationDate is not None:
             tokenExpirationDate = decodeDate(tokenExpirationDate)
