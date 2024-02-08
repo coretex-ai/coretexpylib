@@ -34,7 +34,7 @@ CONFIG_DIR = Path.home().joinpath(".config", "coretex")
 DEFAULT_CONFIG_PATH = CONFIG_DIR / "config.json"
 
 
-DEFAULT_CONFIG = {
+DEFAULT_CONFIG: Dict[str, Any] = {
     # os.environ used directly here since we don't wanna
     # set those variables to any value if they don't exist
     # in the os.environ the same way we do for properties which
@@ -43,59 +43,37 @@ DEFAULT_CONFIG = {
     "password": os.environ.get("CTX_PASSWORD"),
     "token": None,
     "refreshToken": None,
-    "serverUrl": getEnvVar("CTX_API_URL", "https://devext.biomechservices.com:29007/"),
+    "serverUrl": getEnvVar("CTX_API_URL", "https://api.coretex.ai/"),
     "storagePath": getEnvVar("CTX_STORAGE_PATH", "~/.coretex"),
 }
 
 
-def _verifyConfiguration(config: Dict[str, Any]) -> bool:
-    # Checks if all keys from default config exist in loaded one
-    requiredKeys = list(DEFAULT_CONFIG.keys())
-    return all(key in config.keys() for key in requiredKeys)
+def loadConfig() -> Dict[str, Any]:
+    with DEFAULT_CONFIG_PATH.open("r") as configFile:
+        try:
+            config: Dict[str, Any] = json.load(configFile)
+        except json.JSONDecodeError:
+            config = {}
 
-
-def _loadConfiguration(configPath: Path) -> Dict[str, Any]:
-    with configPath.open("r") as configFile:
-        config: Dict[str, Any] = json.load(configFile)
-
-    if not _verifyConfiguration(config):
-        raise RuntimeError(">> [Coretex] Invalid configuration")
+    for key, value in DEFAULT_CONFIG.items():
+        if not key in config:
+            config[key] = value
 
     return config
 
 
 def _syncConfigWithEnv() -> None:
-    configPath = Path("~/.config/coretex/config.json").expanduser()
-
     # If configuration does not exist create default one
-    if not configPath.exists():
-        configPath.parent.mkdir(parents = True, exist_ok = True)
+    if not DEFAULT_CONFIG_PATH.exists():
+        DEFAULT_CONFIG_PATH.parent.mkdir(parents = True, exist_ok = True)
+        config = DEFAULT_CONFIG.copy()
+    else:
+        config = loadConfig()
 
-        with configPath.open("w") as configFile:
-            json.dump(DEFAULT_CONFIG, configFile, indent = 4)
-
-    # Load configuration and override environmet variable values
-    try:
-        config = _loadConfiguration(configPath)
-    except BaseException as ex:
-        print(">> [Coretex] Configuration is invalid")
-        print(">> [Coretex] To configure user use \"coretex login\" command")
-        print(">> [Coretex] To configure node use \"coretex node config\" command")
-
-        sys.exit(1)
+    saveConfig(config)
 
     os.environ["CTX_API_URL"] = config["serverUrl"]
     os.environ["CTX_STORAGE_PATH"] = config["storagePath"]
-
-
-def loadConfig() -> Dict[str, Any]:
-    with DEFAULT_CONFIG_PATH.open("r") as configFile:
-        config: Dict[str, Any] = json.load(configFile)
-
-    if not _verifyConfiguration(config):
-        raise RuntimeError(">> [Coretex] Invalid configuration")
-
-    return config
 
 
 def saveConfig(config: Dict[str, Any]) -> None:

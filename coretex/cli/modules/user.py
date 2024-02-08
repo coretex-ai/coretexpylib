@@ -77,30 +77,35 @@ def initializeUserSession() -> None:
         loginInfo = authenticate()
         config = saveLoginData(loginInfo, config)
     else:
-        tokenExpirationDate = decodeDate(config["tokenExpirationDate"])
-        refreshTokenExpirationDate = decodeDate(config["refreshTokenExpirationDate"])
+        tokenExpirationDate = config.get("tokenExpirationDate", None)
+        refreshTokenExpirationDate = config.get("refreshTokenExpirationDate", None)
 
-        currentDate = datetime.utcnow().replace(tzinfo = timezone.utc)
+        if tokenExpirationDate is not None and refreshTokenExpirationDate is not None:
+            tokenExpirationDate = decodeDate(tokenExpirationDate)
+            refreshTokenExpirationDate = decodeDate(refreshTokenExpirationDate)
 
-        if currentDate < tokenExpirationDate:
-            return
+            currentDate = datetime.utcnow().replace(tzinfo = timezone.utc)
+            if currentDate < tokenExpirationDate:
+                return
 
-        if currentDate < refreshTokenExpirationDate:
-            refreshToken = config["refreshToken"]
-            response = networkManager.authenticateWithRefreshToken(refreshToken)
-            if response.hasFailed():
-                if response.statusCode >= 500:
-                    raise NetworkRequestError(response, "Something went wrong, please try again later.")
+            if currentDate < refreshTokenExpirationDate:
+                refreshToken = config["refreshToken"]
+                response = networkManager.authenticateWithRefreshToken(refreshToken)
+                if response.hasFailed():
+                    if response.statusCode >= 500:
+                        raise NetworkRequestError(response, "Something went wrong, please try again later.")
 
-                if response.statusCode >= 400:
-                    response = authenticateUser(config["username"], config["password"])
+                    if response.statusCode >= 400:
+                        response = authenticateUser(config["username"], config["password"])
+            else:
+                response = authenticateUser(config["username"], config["password"])
         else:
             response = authenticateUser(config["username"], config["password"])
 
         jsonResponse = response.getJson(dict)
         config["token"] = jsonResponse["token"]
         config["tokenExpirationDate"] = jsonResponse["expires_on"]
-        config["refreshToken"] = jsonResponse.get("refresh_token", config["refreshToken"])
-        config["refreshTokenExpirationDate"] = jsonResponse.get("refresh_expires_on", config["refreshTokenExpirationDate"])
+        config["refreshToken"] = jsonResponse.get("refresh_token", None)
+        config["refreshTokenExpirationDate"] = jsonResponse.get("refresh_expires_on", None)
 
     saveConfig(config)
