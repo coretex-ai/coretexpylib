@@ -8,6 +8,7 @@ IMAGE={repository}:{tag}
 SERVER_URL={serverUrl}
 STORAGE_PATH={storagePath}
 NODE_ACCESS_TOKEN={nodeAccessToken}
+NODE_MODE={nodeMode}
 CONTAINER_NAME={containerName}
 NETWORK_NAME={networkName}
 RESTART_POLICY={restartPolicy}
@@ -47,7 +48,7 @@ function should_update {{
         digest_line=$(echo "$manifest_output" | grep -o '"digest": ".*"' | head -n 1)
         latest_digest=$(echo "$digest_line" | cut -d '"' -f 4)
 
-        # get digest from local container 
+        # get digest from local container
         current_digest=$($DOCKER_PATH image ls --digests | grep $REPOSITORY | grep $TAG | awk '{{print $3}}')
         current_digest=$(echo "$current_digest" | awk '{{$1=$1;print}}')
 
@@ -98,7 +99,7 @@ function start_node {{
     $DOCKER_PATH network create --driver bridge $NETWORK_NAME
 
     echo "Starting the node with the latest image"
-    $DOCKER_PATH run -d --env "CTX_API_URL=$SERVER_URL" --env "CTX_STORAGE_PATH=$STORAGE_PATH" --env "CTX_NODE_ACCESS_TOKEN=$NODE_ACCESS_TOKEN" --restart $RESTART_POLICY -p $PORTS --cap-add $CAP_ADD --network "$NETWORK_NAME" --memory $RAM_MEMORY --memory-swap $SWAP_MEMORY --shm-size $SHARED_MEMORY --name "$CONTAINER_NAME" "$IMAGE"
+    $DOCKER_PATH run -d --env "CTX_API_URL=$SERVER_URL" --env "CTX_STORAGE_PATH=$STORAGE_PATH" --env "CTX_NODE_ACCESS_TOKEN=$NODE_ACCESS_TOKEN" --env "CTX_NODE_MODE=$NODE_MODE" --restart $RESTART_POLICY -p $PORTS --cap-add $CAP_ADD --network "$NETWORK_NAME" --memory $RAM_MEMORY --memory-swap $SWAP_MEMORY --shm-size $SHARED_MEMORY --name "$CONTAINER_NAME" "$IMAGE"
 }}
 
 # Define function to update node

@@ -37,6 +37,7 @@ def generateUpdateScript(config: Dict[str, Any]) -> str:
         serverUrl = config["serverUrl"],
         storagePath = config["storagePath"],
         nodeAccessToken = config["nodeAccessToken"],
+        nodeMode = config["nodeMode"],
         containerName = DOCKER_CONTAINER_NAME,
         networkName = DOCKER_CONTAINER_NETWORK,
         restartPolicy = "always",
