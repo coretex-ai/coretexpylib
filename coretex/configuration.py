@@ -21,18 +21,14 @@ from pathlib import Path
 import os
 import json
 import sys
-import shutil
 
 
 def isCliRuntime() -> bool:
     executablePath = sys.argv[0]
-    isExecutable = False if shutil.which(executablePath) is None else True
-
-    if executablePath.endswith("/bin/coretex") and isExecutable:
-        os.environ["CTX_STORAGE_PATH"] = str(CONFIG_DIR)
-        return True
-
-    return False
+    return (
+        executablePath.endswith("/bin/coretex") and
+        os.access(executablePath, os.X_OK)
+    )
 
 
 def getEnvVar(key: str, default: str) -> str:
@@ -90,8 +86,10 @@ def _syncConfigWithEnv() -> None:
     os.environ["CTX_API_URL"] = config["serverUrl"]
 
     if not isCliRuntime():
-        print('python')
         os.environ["CTX_STORAGE_PATH"] = config["storagePath"]
+    else:
+        os.environ["CTX_STORAGE_PATH"] = str(CONFIG_DIR)
+
 
 
 def saveConfig(config: Dict[str, Any]) -> None:
