@@ -29,6 +29,7 @@ def previewConfig(config: Dict[str, Any]) -> None:
     table = [
         ["Node name", config["nodeName"]],
         ["Server URL", config["serverUrl"]],
+        ["Coretex Node type", config["nodeImage"]],
         ["Storage path", config["storagePath"]],
         ["RAM", f"{config['nodeRam']}GB"],
         ["SWAP memory", f"{config['nodeSwap']}GB"],

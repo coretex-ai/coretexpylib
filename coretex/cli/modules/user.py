@@ -105,7 +105,7 @@ def initializeUserSession() -> None:
         jsonResponse = response.getJson(dict)
         config["token"] = jsonResponse["token"]
         config["tokenExpirationDate"] = jsonResponse["expires_on"]
-        config["refreshToken"] = jsonResponse.get("refresh_token", None)
-        config["refreshTokenExpirationDate"] = jsonResponse.get("refresh_expires_on", None)
+        config["refreshToken"] = jsonResponse.get("refresh_token")
+        config["refreshTokenExpirationDate"] = jsonResponse.get("refresh_expires_on")
 
     saveConfig(config)
