@@ -23,6 +23,14 @@ import json
 import sys
 
 
+def isCliRuntime() -> bool:
+    executablePath = sys.argv[0]
+    return (
+        executablePath.endswith("/bin/coretex") and
+        os.access(executablePath, os.X_OK)
+    )
+
+
 def getEnvVar(key: str, default: str) -> str:
     if os.environ.get(key) is None:
         os.environ[key] = default
@@ -59,6 +67,9 @@ def loadConfig() -> Dict[str, Any]:
         if not key in config:
             config[key] = value
 
+    # CTX_API_URL can be overrided through environment variable
+    config["serverUrl"] = getEnvVar("CTX_API_URL", config["serverUrl"])
+
     return config
 
 
@@ -73,7 +84,12 @@ def _syncConfigWithEnv() -> None:
     saveConfig(config)
 
     os.environ["CTX_API_URL"] = config["serverUrl"]
-    os.environ["CTX_STORAGE_PATH"] = config["storagePath"]
+
+    if not isCliRuntime():
+        os.environ["CTX_STORAGE_PATH"] = config["storagePath"]
+    else:
+        os.environ["CTX_STORAGE_PATH"] = str(CONFIG_DIR)
+
 
 
 def saveConfig(config: Dict[str, Any]) -> None:

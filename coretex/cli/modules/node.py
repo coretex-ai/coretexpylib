@@ -1,7 +1,7 @@
 from typing import Any, Dict, Tuple, Optional
-from enum import IntEnum
 from pathlib import Path
 
+import os
 import logging
 
 from . import docker
@@ -26,6 +26,10 @@ DEFAULT_NODE_MODE = NodeMode.execution
 
 class NodeException(Exception):
     pass
+
+
+def getRepository() -> str:
+    return os.environ.get("CTX_NODE_IMAGE_REPO", "coretexai/coretex-node")
 
 
 def pull(repository: str, tag: str) -> None:
