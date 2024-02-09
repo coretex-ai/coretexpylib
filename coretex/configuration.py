@@ -59,6 +59,9 @@ def loadConfig() -> Dict[str, Any]:
         if not key in config:
             config[key] = value
 
+    # CTX_API_URL can be overrided through environment variable
+    config["serverUrl"] = getEnvVar("CTX_API_URL", config["serverUrl"])
+
     return config
 
 

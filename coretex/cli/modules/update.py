@@ -5,7 +5,7 @@ from pathlib import Path
 import requests
 
 from .cron import jobExists, scheduleJob
-from .node import DOCKER_CONTAINER_NAME, DOCKER_CONTAINER_NETWORK
+from .node import DOCKER_CONTAINER_NAME, DOCKER_CONTAINER_NETWORK, getRepository
 from ..resources import RESOURCES_DIR
 from ...utils import command
 from ...configuration import CONFIG_DIR
@@ -32,7 +32,7 @@ def generateUpdateScript(config: Dict[str, Any]) -> str:
 
     return bashScriptTemplate.format(
         dockerPath = dockerPath.strip(),
-        repository = "coretexai/coretex-node",
+        repository = getRepository(),
         tag = f"latest-{config['image']}",
         serverUrl = config["serverUrl"],
         storagePath = config["storagePath"],

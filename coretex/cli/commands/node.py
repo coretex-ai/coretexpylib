@@ -1,3 +1,5 @@
+import os
+
 import click
 
 from ..modules import node as node_module
@@ -13,7 +15,7 @@ from ...configuration import loadConfig, saveConfig, CONFIG_DIR, isNodeConfigure
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def start() -> None:
     config = loadConfig()
-    repository = "coretexai/coretex-node"
+    repository = node_module.getRepository()
     tag = f"latest-{config['image']}"
 
     if node_module.isRunning():
@@ -48,7 +50,7 @@ def stop() -> None:
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def update() -> None:
     config = loadConfig()
-    repository = "coretexai/coretex-node"
+    repository = node_module.getRepository()
     tag = f"latest-{config['image']}"
 
     nodeStatus = getNodeStatus()
