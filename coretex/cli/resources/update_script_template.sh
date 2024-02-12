@@ -17,6 +17,7 @@ CAP_ADD={capAdd}
 RAM_MEMORY={ramMemory}G
 SWAP_MEMORY={swapMemory}G
 SHARED_MEMORY={sharedMemory}G
+IMAGE_TYPE={imageType}
 
 NODE_STATUS_ENDPOINT="http://localhost:21000/status"
 
@@ -89,7 +90,7 @@ function stop_node {{
 }}
 
 # Define function to start the node with the latest image
-function start_node {{
+start_node() {
     if $DOCKER_PATH network inspect $NETWORK_NAME; then
         echo "Removing the network: $NETWORK_NAME"
         $DOCKER_PATH network rm "$NETWORK_NAME"
@@ -99,8 +100,15 @@ function start_node {{
     $DOCKER_PATH network create --driver bridge $NETWORK_NAME
 
     echo "Starting the node with the latest image"
-    $DOCKER_PATH run -d --env "CTX_API_URL=$SERVER_URL" --env "CTX_STORAGE_PATH=$STORAGE_PATH" --env "CTX_NODE_ACCESS_TOKEN=$NODE_ACCESS_TOKEN" --env "CTX_NODE_MODE=$NODE_MODE" --restart $RESTART_POLICY -p $PORTS --cap-add $CAP_ADD --network "$NETWORK_NAME" --memory $RAM_MEMORY --memory-swap $SWAP_MEMORY --shm-size $SHARED_MEMORY --name "$CONTAINER_NAME" "$IMAGE"
-}}
+
+    if [ $IMAGE_TYPE = "gpu" ]; then
+        # Run Docker command with GPU support
+        $DOCKER_PATH run -d --env "CTX_API_URL=$SERVER_URL" --env "CTX_STORAGE_PATH=$STORAGE_PATH" --env "CTX_NODE_ACCESS_TOKEN=$NODE_ACCESS_TOKEN" --env "CTX_NODE_MODE=$NODE_MODE" --restart $RESTART_POLICY -p $PORTS --cap-add $CAP_ADD --network "$NETWORK_NAME" --memory $RAM_MEMORY --memory-swap $SWAP_MEMORY --shm-size $SHARED_MEMORY --gpus all --name "$CONTAINER_NAME" "$DOCKER_IMAGE"
+    else
+        # Run Docker command without GPU support
+        $DOCKER_PATH run -d --env "CTX_API_URL=$SERVER_URL" --env "CTX_STORAGE_PATH=$STORAGE_PATH" --env "CTX_NODE_ACCESS_TOKEN=$NODE_ACCESS_TOKEN" --env "CTX_NODE_MODE=$NODE_MODE" --restart $RESTART_POLICY -p $PORTS --cap-add $CAP_ADD --network "$NETWORK_NAME" --memory $RAM_MEMORY --memory-swap $SWAP_MEMORY --shm-size $SHARED_MEMORY --name "$CONTAINER_NAME" "$DOCKER_IMAGE"
+    fi
+}
 
 # Define function to update node
 function update_node {{
