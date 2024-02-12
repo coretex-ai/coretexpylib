@@ -61,7 +61,8 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
             config["nodeRam"],
             config["nodeSwap"],
             config["nodeSharedMemory"],
-            config["nodeMode"]
+            config["nodeMode"],
+            config["modelId"]
         )
         successEcho("Successfully started Coretex Node.")
     except BaseException as ex:

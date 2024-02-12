@@ -59,7 +59,8 @@ def start(
     nodeRam: int,
     nodeSwap: int,
     nodeSharedMemory: int,
-    nodeMode: int
+    nodeMode: int,
+    modelId: int
 ) -> None:
 
     runCommand = [
@@ -68,6 +69,7 @@ def start(
         "--env", f"CTX_STORAGE_PATH={storagePath}",
         "--env", f"CTX_NODE_ACCESS_TOKEN={nodeAccessToken}",
         "--env", f"CTX_NODE_MODE={nodeMode}",
+        "--env", f"CTX_MODEL_ID={modelId}",
         "--restart", 'always',
         "-p", "21000:21000",
         "--cap-add", "SYS_PTRACE",
