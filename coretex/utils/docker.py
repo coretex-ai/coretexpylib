@@ -93,12 +93,6 @@ def removeContainer(name: str) -> None:
     command(["docker", "rm", name], ignoreStdout = True, ignoreStderr = True)
 
 
-def stop(name: str, networkName: str) -> None:
-    stopContainer(name)
-    removeContainer(name)
-    removeNetwork(networkName)
-
-
 def manifestInspect(repository: str, tag: str) -> Dict[str, Any]:
     _, output, _ = command(["docker", "manifest", "inspect", f"{repository}:{tag}", "--verbose"], ignoreStdout = True)
     jsonOutput = json.loads(output)

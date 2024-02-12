@@ -88,7 +88,11 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
 def stop() -> None:
     try:
         progressEcho("Stopping Coretex Node...")
-        docker.stop(DOCKER_CONTAINER_NAME, DOCKER_CONTAINER_NETWORK)
+
+        docker.stopContainer(DOCKER_CONTAINER_NAME)
+        docker.removeContainer(DOCKER_CONTAINER_NAME)
+        docker.removeNetwork(DOCKER_CONTAINER_NETWORK)
+
         successEcho("Successfully stopped Coretex Node.")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
