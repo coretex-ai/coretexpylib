@@ -100,7 +100,14 @@ function start_node {{
     $DOCKER_PATH network create --driver bridge $NETWORK_NAME
 
     echo "Starting the node with the latest image"
-    $DOCKER_PATH run -d --env "CTX_API_URL=$SERVER_URL" --env "CTX_STORAGE_PATH=$STORAGE_PATH" --env "CTX_NODE_ACCESS_TOKEN=$NODE_ACCESS_TOKEN" --env "CTX_NODE_MODE=$NODE_MODE" --env "CTX_MODEL_ID=$MODEL_ID" --restart $RESTART_POLICY -p $PORTS --cap-add $CAP_ADD --network "$NETWORK_NAME" --memory $RAM_MEMORY --memory-swap $SWAP_MEMORY --shm-size $SHARED_MEMORY --name "$CONTAINER_NAME" "$IMAGE"
+    start_command="$DOCKER_PATH run -d --env CTX_API_URL=$SERVER_URL --env CTX_STORAGE_PATH=$STORAGE_PATH --env CTX_NODE_ACCESS_TOKEN=$NODE_ACCESS_TOKEN --env CTX_NODE_MODE=$NODE_MODE --restart $RESTART_POLICY -p $PORTS --cap-add $CAP_ADD --network $NETWORK_NAME --memory $RAM_MEMORY --memory-swap $SWAP_MEMORY --shm-size $SHARED_MEMORY --name $CONTAINER_NAME $IMAGE"
+
+    if [ $MODEL_ID != "None" ]; then
+        start_command+=" --env CTX_MODEL_ID=$MODEL_ID"
+    fi
+
+    # Call start_command wherever you want
+    eval "$start_command"
 }}
 
 # Define function to update node

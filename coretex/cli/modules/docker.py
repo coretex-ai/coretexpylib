@@ -69,7 +69,6 @@ def start(
         "--env", f"CTX_STORAGE_PATH={storagePath}",
         "--env", f"CTX_NODE_ACCESS_TOKEN={nodeAccessToken}",
         "--env", f"CTX_NODE_MODE={nodeMode}",
-        "--env", f"CTX_MODEL_ID={modelId}",
         "--restart", 'always',
         "-p", "21000:21000",
         "--cap-add", "SYS_PTRACE",
@@ -82,6 +81,9 @@ def start(
 
     if imageType == "gpu":
         runCommand.extend(["--gpus", "all"])
+
+    if modelId is not None:
+        runCommand.extend(["--env", f"CTX_MODEL_ID={modelId}"])
 
     runCommand.append(dockerImage)
     command(runCommand, ignoreStdout = True)
