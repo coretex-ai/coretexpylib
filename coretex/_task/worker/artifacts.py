@@ -83,4 +83,5 @@ def track(taskRun: TaskRun) -> Iterator[FileEventHandler]:
                 else:
                     logging.getLogger("coretexpylib").debug(f"\tFailed to upload artifact")
             except Exception as e:
-                logging.getLogger("coretexpylib").error(f"Error while creating artifact: {e}")
+                logging.getLogger("coretexpylib").error(f"\tError while creating artifact: {e}")
+                logging.getLogger("coretexpylib").debug(f"\tError while creating artifact: {e}", exc_info = e)
