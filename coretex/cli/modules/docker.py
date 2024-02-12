@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 import json
 
@@ -60,7 +60,7 @@ def start(
     nodeSwap: int,
     nodeSharedMemory: int,
     nodeMode: int,
-    modelId: int
+    modelId: Optional[int]
 ) -> None:
 
     runCommand = [

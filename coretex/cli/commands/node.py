@@ -1,4 +1,4 @@
-import os
+from typing import Optional
 
 import click
 
@@ -12,12 +12,9 @@ from ...configuration import loadConfig, saveConfig, CONFIG_DIR, isNodeConfigure
 
 
 @click.command()
+@click.option("--image", type = str, help = "Docker image url")
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
-def start() -> None:
-    config = loadConfig()
-    repository = node_module.getRepository()
-    tag = f"latest-{config['image']}"
-
+def start(image: Optional[str]) -> None:
     if node_module.isRunning():
         if not clickPrompt(
             "Node is already running. Do you wish to restart the Node? (Y/n)",
@@ -29,12 +26,18 @@ def start() -> None:
 
         node_module.stop()
 
-    if node_module.shouldUpdate(repository, tag):
-        node_module.pull("coretexai/coretex-node", f"latest-{config['image']}")
+    config = loadConfig()
+    if image is not None:
+        node_module.start(image, config)
+    else:
+        repository = node_module.getRepository()
+        tag = f"latest-{config['image']}"
+        if node_module.shouldUpdate(repository, tag):
+            node_module.pull("coretexai/coretex-node", f"latest-{config['image']}")
 
-    node_module.start(f"{repository}:{tag}", config)
+        node_module.start(f"{repository}:{tag}", config)
 
-    activateAutoUpdate(CONFIG_DIR, config)
+        activateAutoUpdate(CONFIG_DIR, config)
 
 
 @click.command()

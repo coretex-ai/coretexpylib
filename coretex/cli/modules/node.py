@@ -17,7 +17,7 @@ from ...entities.model import Model
 
 DOCKER_CONTAINER_NAME = "coretex_node"
 DOCKER_CONTAINER_NETWORK = "coretex_node"
-DEFAULT_STORAGE_PATH = str(Path.home() / "./coretex")
+DEFAULT_STORAGE_PATH = str(Path.home() / ".coretex")
 DEFAULT_RAM_MEMORY = getAvailableRamMemory()
 DEFAULT_SWAP_MEMORY = DEFAULT_RAM_MEMORY * 2
 DEFAULT_SHARED_MEMORY = 2
@@ -62,7 +62,7 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
             config["nodeSwap"],
             config["nodeSharedMemory"],
             config["nodeMode"],
-            config["modelId"]
+            config.get("modelId")
         )
         successEcho("Successfully started Coretex Node.")
     except BaseException as ex:
@@ -115,6 +115,22 @@ def registerNode(name: str) -> str:
     return accessToken
 
 
+def selectImage() -> str:
+    availableImages = {
+        "Official Coretex CPU image": "cpu",
+        "Official Coretex GPU image": "gpu",
+        "Custom image": "custom",
+    } if isGPUAvailable() else {
+        "Official Coretex CPU image": "cpu",
+        "Custom image": "custom",
+    }
+
+    choices = list(availableImages.keys())
+    selectedImage = arrowPrompt(choices)
+
+    return availableImages[selectedImage]
+
+
 def selectModelId(retryCount: int = 0) -> int:
     if retryCount >= 3:
         raise RuntimeError("Failed to fetch Coretex Model. Terminating...")
@@ -155,9 +171,12 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     config["nodeName"] = clickPrompt("Node name", type = str)
     config["nodeAccessToken"] = registerNode(config["nodeName"])
 
-    if isGPUAvailable():
-        isGPU = clickPrompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
-        config["image"] = "gpu" if isGPU else "cpu"
+    if not isGPUAvailable():
+        image = selectImage()
+        if image == "custom":
+            config["customImageUrl"] = clickPrompt("Specify URL of docker image that you want to use:", type = str)
+        # isGPU = clickPrompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
+        # config["image"] = "gpu" if isGPU else "cpu"
     else:
         config["image"] = "cpu"
 
