@@ -90,7 +90,7 @@ function stop_node {{
 }}
 
 # Define function to start the node with the latest image
-start_node() {
+function start_node {{
     if $DOCKER_PATH network inspect $NETWORK_NAME; then
         echo "Removing the network: $NETWORK_NAME"
         $DOCKER_PATH network rm "$NETWORK_NAME"
@@ -108,7 +108,7 @@ start_node() {
         # Run Docker command without GPU support
         $DOCKER_PATH run -d --env "CTX_API_URL=$SERVER_URL" --env "CTX_STORAGE_PATH=$STORAGE_PATH" --env "CTX_NODE_ACCESS_TOKEN=$NODE_ACCESS_TOKEN" --env "CTX_NODE_MODE=$NODE_MODE" --restart $RESTART_POLICY -p $PORTS --cap-add $CAP_ADD --network "$NETWORK_NAME" --memory $RAM_MEMORY --memory-swap $SWAP_MEMORY --shm-size $SHARED_MEMORY --name "$CONTAINER_NAME" "$DOCKER_IMAGE"
     fi
-}
+}}
 
 # Define function to update node
 function update_node {{
