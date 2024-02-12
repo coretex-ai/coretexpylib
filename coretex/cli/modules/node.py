@@ -17,7 +17,7 @@ from ...entities.model import Model
 
 DOCKER_CONTAINER_NAME = "coretex_node"
 DOCKER_CONTAINER_NETWORK = "coretex_node"
-DEFAULT_STORAGE_PATH = str(Path.home() / "./coretex")
+DEFAULT_STORAGE_PATH = str(Path.home() / ".coretex")
 DEFAULT_RAM_MEMORY = getAvailableRamMemory()
 DEFAULT_SWAP_MEMORY = DEFAULT_RAM_MEMORY * 2
 DEFAULT_SHARED_MEMORY = 2
