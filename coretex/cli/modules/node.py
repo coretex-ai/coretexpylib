@@ -4,14 +4,13 @@ from pathlib import Path
 import os
 import logging
 
-from . import docker
 from .utils import isGPUAvailable
 from .ui import clickPrompt, arrowPrompt, highlightEcho, errorEcho, progressEcho, successEcho, stdEcho
 from .node_mode import NodeMode
 from ...networking import networkManager, NetworkRequestError
 from ...statistics import getAvailableRamMemory
 from ...configuration import loadConfig, saveConfig, isNodeConfigured
-from ...utils import CommandException
+from ...utils import CommandException, docker
 from ...entities.model import Model
 
 

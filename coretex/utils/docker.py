@@ -2,7 +2,7 @@ from typing import Dict, Any, List, Tuple
 
 import json
 
-from ...utils import command, CommandException
+from .process import command, CommandException
 
 
 def isDockerAvailable() -> None:
