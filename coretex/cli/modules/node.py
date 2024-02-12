@@ -185,6 +185,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     config["nodeSwap"] = DEFAULT_SWAP_MEMORY
     config["nodeSharedMemory"] = DEFAULT_SHARED_MEMORY
     config["nodeMode"] = DEFAULT_NODE_MODE
+    config["allowDocker"] = False
 
     if verbose:
         config["storagePath"] = clickPrompt("Storage path (press enter to use default)", DEFAULT_STORAGE_PATH, type = str)
