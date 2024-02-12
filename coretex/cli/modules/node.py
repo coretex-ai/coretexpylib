@@ -55,9 +55,12 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
             "CTX_API_URL": config["serverUrl"],
             "CTX_STORAGE_PATH": config["storagePath"],
             "CTX_NODE_ACCESS_TOKEN": config["nodeAccessToken"],
-            "CTX_NODE_MODE": config["nodeMode"],
-            "CTX_MODEL_ID": None
+            "CTX_NODE_MODE": config["nodeMode"]
         }
+
+        modelId = config.get("modelId")
+        if isinstance(modelId, int):
+            environ["CTX_MODEL_ID"] = modelId
 
         volumes = [
             (config["storagePath"], "/root/.coretex")
