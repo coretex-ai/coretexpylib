@@ -51,18 +51,32 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
         progressEcho("Starting Coretex Node...")
         docker.createNetwork(DOCKER_CONTAINER_NETWORK)
 
+        environ = {
+            "CTX_API_URL": config["serverUrl"],
+            "CTX_STORAGE_PATH": config["storagePath"],
+            "CTX_NODE_ACCESS_TOKEN": config["nodeAccessToken"],
+            "CTX_NODE_MODE": config["nodeMode"],
+            "CTX_MODEL_ID": None
+        }
+
+        volumes = [
+            (config["storagePath"], "/root/.coretex")
+        ]
+
+        if config.get("allowDocker", False):
+            volumes.append(("/var/run/docker.sock", "/var/run/docker.sock"))
+
         docker.start(
             DOCKER_CONTAINER_NAME,
             dockerImage,
-            config["image"],
-            config["serverUrl"],
-            config["storagePath"],
-            config["nodeAccessToken"],
+            config["image"] == "gpu",
             config["nodeRam"],
             config["nodeSwap"],
             config["nodeSharedMemory"],
-            config["nodeMode"]
+            environ,
+            volumes
         )
+
         successEcho("Successfully started Coretex Node.")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
@@ -168,9 +182,10 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
 
     if verbose:
         config["storagePath"] = clickPrompt("Storage path (press enter to use default)", DEFAULT_STORAGE_PATH, type = str)
-        config["nodeRam"] = clickPrompt("Node RAM memory limit in GB (press enter to use default)", type = int, default = DEFAULT_RAM_MEMORY)
-        config["nodeSwap"] = clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", type = int, default = DEFAULT_SWAP_MEMORY)
-        config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", type = int, default = DEFAULT_SHARED_MEMORY)
+        config["nodeRam"] = clickPrompt("Node RAM memory limit in GB (press enter to use default)", DEFAULT_RAM_MEMORY, type = int)
+        config["nodeSwap"] = clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", DEFAULT_SWAP_MEMORY, type = int)
+        config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", DEFAULT_SHARED_MEMORY, type = int)
+        config["allowDocker"] = clickPrompt("Allow Node to access system docker? This is a security risk! (Y/n)", type = bool)
 
         nodeMode, modelId = selectNodeMode()
         config["nodeMode"] = nodeMode
