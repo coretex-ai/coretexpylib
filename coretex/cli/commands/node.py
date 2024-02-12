@@ -7,8 +7,8 @@ from ..modules.ui import clickPrompt, successEcho, errorEcho, previewConfig
 from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate, dumpScript, UPDATE_SCRIPT_NAME
 from ..modules.utils import onBeforeCommandExecute
 from ..modules.user import initializeUserSession
-from ..modules.docker import isDockerAvailable
 from ...configuration import loadConfig, saveConfig, CONFIG_DIR, isNodeConfigured
+from ...utils import docker
 
 
 @click.command()
@@ -131,7 +131,7 @@ def config(verbose: bool) -> None:
 
 
 @click.group()
-@onBeforeCommandExecute(isDockerAvailable)
+@onBeforeCommandExecute(docker.isDockerAvailable)
 @onBeforeCommandExecute(initializeUserSession)
 def node() -> None:
     pass
