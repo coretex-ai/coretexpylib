@@ -87,11 +87,15 @@ def start(
 
 def stopContainer(name: str) -> None:
     command(["docker", "stop", name], ignoreStdout = True, ignoreStderr = True)
+
+
+def removeContainer(name: str) -> None:
     command(["docker", "rm", name], ignoreStdout = True, ignoreStderr = True)
 
 
 def stop(name: str, networkName: str) -> None:
     stopContainer(name)
+    removeContainer(name)
     removeNetwork(networkName)
 
 
