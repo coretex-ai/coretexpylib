@@ -78,6 +78,7 @@ def start(
         "--memory-swap", f"{nodeSwap}G",
         "--shm-size", f"{nodeSharedMemory}G",
         "--name", name,
+        "-v", f"{storagePath}:/root/.coretex"
     ]
 
     if imageType == "gpu":
