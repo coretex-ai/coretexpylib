@@ -4,14 +4,13 @@ from pathlib import Path
 import os
 import logging
 
-from . import docker
 from .utils import isGPUAvailable
 from .ui import clickPrompt, arrowPrompt, highlightEcho, errorEcho, progressEcho, successEcho, stdEcho
 from .node_mode import NodeMode
 from ...networking import networkManager, NetworkRequestError
 from ...statistics import getAvailableRamMemory
 from ...configuration import loadConfig, saveConfig, isNodeConfigured
-from ...utils import CommandException
+from ...utils import CommandException, docker
 from ...entities.model import Model
 
 
@@ -51,19 +50,35 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
         progressEcho("Starting Coretex Node...")
         docker.createNetwork(DOCKER_CONTAINER_NETWORK)
 
+        environ = {
+            "CTX_API_URL": config["serverUrl"],
+            "CTX_STORAGE_PATH": config["storagePath"],
+            "CTX_NODE_ACCESS_TOKEN": config["nodeAccessToken"],
+            "CTX_NODE_MODE": config["nodeMode"]
+        }
+
+        modelId = config.get("modelId")
+        if isinstance(modelId, int):
+            environ["CTX_MODEL_ID"] = modelId
+
+        volumes = [
+            (config["storagePath"], "/root/.coretex")
+        ]
+
+        if config.get("allowDocker", False):
+            volumes.append(("/var/run/docker.sock", "/var/run/docker.sock"))
+
         docker.start(
             DOCKER_CONTAINER_NAME,
             dockerImage,
-            config["image"],
-            config["serverUrl"],
-            config["storagePath"],
-            config["nodeAccessToken"],
+            config["image"] == "gpu",
             config["nodeRam"],
             config["nodeSwap"],
             config["nodeSharedMemory"],
-            config["nodeMode"],
-            config.get("modelId")
+            environ,
+            volumes
         )
+
         successEcho("Successfully started Coretex Node.")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
@@ -73,7 +88,11 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
 def stop() -> None:
     try:
         progressEcho("Stopping Coretex Node...")
-        docker.stop(DOCKER_CONTAINER_NAME, DOCKER_CONTAINER_NETWORK)
+
+        docker.stopContainer(DOCKER_CONTAINER_NAME)
+        docker.removeContainer(DOCKER_CONTAINER_NAME)
+        docker.removeNetwork(DOCKER_CONTAINER_NETWORK)
+
         successEcho("Successfully stopped Coretex Node.")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
@@ -185,12 +204,14 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     config["nodeSwap"] = DEFAULT_SWAP_MEMORY
     config["nodeSharedMemory"] = DEFAULT_SHARED_MEMORY
     config["nodeMode"] = DEFAULT_NODE_MODE
+    config["allowDocker"] = False
 
     if verbose:
         config["storagePath"] = clickPrompt("Storage path (press enter to use default)", DEFAULT_STORAGE_PATH, type = str)
-        config["nodeRam"] = clickPrompt("Node RAM memory limit in GB (press enter to use default)", type = int, default = DEFAULT_RAM_MEMORY)
-        config["nodeSwap"] = clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", type = int, default = DEFAULT_SWAP_MEMORY)
-        config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", type = int, default = DEFAULT_SHARED_MEMORY)
+        config["nodeRam"] = clickPrompt("Node RAM memory limit in GB (press enter to use default)", DEFAULT_RAM_MEMORY, type = int)
+        config["nodeSwap"] = clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", DEFAULT_SWAP_MEMORY, type = int)
+        config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", DEFAULT_SHARED_MEMORY, type = int)
+        config["allowDocker"] = clickPrompt("Allow Node to access system docker? This is a security risk! (Y/n)", type = bool)
 
         nodeMode, modelId = selectNodeMode()
         config["nodeMode"] = nodeMode
