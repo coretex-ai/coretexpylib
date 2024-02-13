@@ -46,7 +46,7 @@ def removeNetwork(name: str) -> None:
 
 
 def imagePull(image: str) -> None:
-    command(["docker", "image", "pull", image], ignoreStdout = True)
+    command(["docker", "image", "pull", image])
 
 
 def start(
@@ -82,7 +82,7 @@ def start(
         runCommand.extend(["--gpus", "all"])
 
     runCommand.append(image)
-    command(runCommand, ignoreStdout = True)
+    command(runCommand, ignoreStdout = True, ignoreStderr = True)
 
 
 def stopContainer(name: str) -> None:

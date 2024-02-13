@@ -32,8 +32,9 @@ def start(image: Optional[str]) -> None:
     else:
         repository = node_module.getRepository()
         tag = f"latest-{config['image']}"
-        if node_module.shouldUpdate(repository, tag):
-            node_module.pull("coretexai/coretex-node", f"latest-{config['image']}")
+        if config["image"] != "custom":
+            if node_module.shouldUpdate(repository, tag):
+                node_module.pull(repository, tag)
 
         node_module.start(f"{repository}:{tag}", config)
 

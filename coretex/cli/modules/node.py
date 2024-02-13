@@ -50,6 +50,10 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
         progressEcho("Starting Coretex Node...")
         docker.createNetwork(DOCKER_CONTAINER_NETWORK)
 
+        if config.get("customImageUrl") is not None:
+            dockerImage = config["customImageUrl"]
+            stdEcho(f"Starting Node with Custom image: {config['customImageUrl']}")
+
         environ = {
             "CTX_API_URL": config["serverUrl"],
             "CTX_STORAGE_PATH": config["storagePath"],
@@ -145,7 +149,7 @@ def selectImage() -> str:
     }
 
     choices = list(availableImages.keys())
-    selectedImage = arrowPrompt(choices)
+    selectedImage = arrowPrompt(choices, "Please select image that you want to use (use arrow keys to select an option):")
 
     return availableImages[selectedImage]
 
@@ -169,14 +173,13 @@ def selectModelId(retryCount: int = 0) -> int:
 
 def selectNodeMode() -> Tuple[int, Optional[int]]:
     availableNodeModes = {
-        "Execution": NodeMode.execution,
-        "Function exclusive": NodeMode.functionExclusive,
-        "Function shared": NodeMode.functionShared
+        "Run workflows (worker)": NodeMode.execution,
+        "Serve a single endpoint (dedicated inference)": NodeMode.functionExclusive,
+        "Serve multiple endpoints (shared inference)": NodeMode.functionShared
     }
     choices = list(availableNodeModes.keys())
 
-    stdEcho("Please select Coretex Node mode:")
-    selectedMode = arrowPrompt(choices)
+    selectedMode = arrowPrompt(choices, "Please select Coretex Node mode (use arrow keys to select an option):")
 
     if availableNodeModes[selectedMode] == NodeMode.functionExclusive:
         modelId = selectModelId()
@@ -190,14 +193,10 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     config["nodeName"] = clickPrompt("Node name", type = str)
     config["nodeAccessToken"] = registerNode(config["nodeName"])
 
-    if not isGPUAvailable():
-        image = selectImage()
-        if image == "custom":
-            config["customImageUrl"] = clickPrompt("Specify URL of docker image that you want to use:", type = str)
-        # isGPU = clickPrompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
-        # config["image"] = "gpu" if isGPU else "cpu"
-    else:
-        config["image"] = "cpu"
+    image = selectImage()
+    config["image"] = image
+    if image == "custom":
+        config["customImageUrl"] = clickPrompt("Specify URL of docker image that you want to use:", type = str)
 
     config["storagePath"] = DEFAULT_STORAGE_PATH
     config["nodeRam"] = DEFAULT_RAM_MEMORY

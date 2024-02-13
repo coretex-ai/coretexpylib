@@ -67,9 +67,6 @@ def loadConfig() -> Dict[str, Any]:
         if not key in config:
             config[key] = value
 
-    # CTX_API_URL can be overrided through environment variable
-    config["serverUrl"] = getEnvVar("CTX_API_URL", config["serverUrl"])
-
     return config
 
 
@@ -83,7 +80,8 @@ def _syncConfigWithEnv() -> None:
 
     saveConfig(config)
 
-    os.environ["CTX_API_URL"] = config["serverUrl"]
+    if not "CTX_API_URL" in os.environ:
+        os.environ["CTX_API_URL"] = config["serverUrl"]
 
     if not isCliRuntime():
         os.environ["CTX_STORAGE_PATH"] = config["storagePath"]
