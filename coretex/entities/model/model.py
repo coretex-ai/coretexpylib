@@ -25,7 +25,7 @@ import json
 import logging
 
 from ... import folder_manager
-from ...networking import networkManager, NetworkObject, ChunkUploadSession, MAX_CHUNK_SIZE
+from ...networking import networkManager, NetworkObject, ChunkUploadSession, MAX_CHUNK_SIZE, NetworkRequestError
 from ...codable import KeyDescriptor
 
 
@@ -273,7 +273,7 @@ class Model(NetworkObject):
 
         response = networkManager.formData("model/upload", parameters)
         if response.hasFailed():
-            logging.getLogger("coretexpylib").info(">> [Coretex] Failed to upload model file")
+            raise NetworkRequestError(">> [Coretex] Failed to upload model file")
         else:
             logging.getLogger("coretexpylib").info(">> [Coretex] Uploaded model file")
 
