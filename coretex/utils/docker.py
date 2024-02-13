@@ -70,7 +70,6 @@ def start(
         "--memory-swap", f"{swap}G",
         "--shm-size", f"{shm}G",
         "--name", name,
-        "-v", f"{storagePath}:/root/.coretex:rw"
     ]
 
     for key, value in environ.items():
