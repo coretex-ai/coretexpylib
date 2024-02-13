@@ -273,7 +273,7 @@ class Model(NetworkObject):
 
         response = networkManager.formData("model/upload", parameters)
         if response.hasFailed():
-            raise NetworkRequestError(">> [Coretex] Failed to upload model file")
+            raise NetworkRequestError(response, ">> [Coretex] Failed to upload model file")
         else:
             logging.getLogger("coretexpylib").info(">> [Coretex] Uploaded model file")
 
