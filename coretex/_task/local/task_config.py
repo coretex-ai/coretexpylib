@@ -51,6 +51,13 @@ class TaskConfig(Codable):
 
         return descriptors
 
+    @classmethod
+    def decode(cls, params: dict):
+        if params.get("param_groups") is None:
+            params["param_groups"] = []
+
+        return super().decode(params)
+
 
 def readTaskConfig() -> List[BaseParameter]:
     parameters: List[BaseParameter] = []
