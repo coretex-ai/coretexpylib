@@ -15,6 +15,8 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from typing import Tuple
+
 from .secret import Secret
 
 
@@ -26,3 +28,6 @@ class CredentialsSecret(Secret):
 
     username: str
     password: str
+
+    def _encryptedFields(self) -> Tuple[str, ...]:
+        return ("username", "password")

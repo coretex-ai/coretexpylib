@@ -16,11 +16,14 @@ from ...entities.model import Model
 
 DOCKER_CONTAINER_NAME = "coretex_node"
 DOCKER_CONTAINER_NETWORK = "coretex_node"
+
 DEFAULT_STORAGE_PATH = str(Path.home() / "./coretex")
 DEFAULT_RAM_MEMORY = getAvailableRamMemory()
 DEFAULT_SWAP_MEMORY = DEFAULT_RAM_MEMORY * 2
 DEFAULT_SHARED_MEMORY = 2
 DEFAULT_NODE_MODE = NodeMode.execution
+DEFAULT_ALLOW_DOCKER = False
+DEFAULT_SECRETS_KEY = ""
 
 
 class NodeException(Exception):
@@ -60,6 +63,10 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
         modelId = config.get("modelId")
         if isinstance(modelId, int):
             environ["CTX_MODEL_ID"] = modelId
+
+        secretsKey = config.get("secretsKey", DEFAULT_SECRETS_KEY)
+        if isinstance(secretsKey, str) and secretsKey != DEFAULT_SECRETS_KEY:
+            environ["CTX_SECRETS_KEY"] = secretsKey
 
         volumes = [
             (config["storagePath"], "/root/.coretex")
@@ -185,14 +192,16 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     config["nodeSwap"] = DEFAULT_SWAP_MEMORY
     config["nodeSharedMemory"] = DEFAULT_SHARED_MEMORY
     config["nodeMode"] = DEFAULT_NODE_MODE
-    config["allowDocker"] = False
+    config["allowDocker"] = DEFAULT_ALLOW_DOCKER
+    config["secretsKey"] = DEFAULT_SECRETS_KEY
 
     if verbose:
         config["storagePath"] = clickPrompt("Storage path (press enter to use default)", DEFAULT_STORAGE_PATH, type = str)
         config["nodeRam"] = clickPrompt("Node RAM memory limit in GB (press enter to use default)", DEFAULT_RAM_MEMORY, type = int)
         config["nodeSwap"] = clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", DEFAULT_SWAP_MEMORY, type = int)
         config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", DEFAULT_SHARED_MEMORY, type = int)
-        config["allowDocker"] = clickPrompt("Allow Node to access system docker? This is a security risk! (Y/n)", type = bool)
+        config["allowDocker"] = clickPrompt("Allow Node to access system docker? This is a security risk! (Y/n)", DEFAULT_ALLOW_DOCKER, type = bool)
+        config["secretsKey"] = clickPrompt("Enter a key used for decrypting your Coretex Secrets", DEFAULT_SECRETS_KEY, type = str)
 
         nodeMode, modelId = selectNodeMode()
         config["nodeMode"] = nodeMode

@@ -22,6 +22,7 @@ click = "*"
 tabulate = "*"
 inquirer = "*"
 docker = "*"
+cryptography = "*"
 
 [dev-packages]
 mypy = "*"
