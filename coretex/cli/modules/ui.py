@@ -77,4 +77,4 @@ def errorEcho(text: str) -> None:
 
 
 def highlightEcho(text: str) -> None:
-    click.echo(click.style(f"\n\U00002755 {text} \U00002755\n"))
+    click.echo(click.style(f"\n\U00002755 {text} \U00002755"))

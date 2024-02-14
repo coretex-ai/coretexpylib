@@ -67,10 +67,6 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
         progressEcho("Starting Coretex Node...")
         docker.createNetwork(DOCKER_CONTAINER_NETWORK)
 
-        if config.get("customImageUrl") is not None:
-            dockerImage = config["customImageUrl"]
-            stdEcho(f"Starting Node with Custom image: {config['customImageUrl']}")
-
         environ = {
             "CTX_API_URL": config["serverUrl"],
             "CTX_STORAGE_PATH": config["storagePath"],
@@ -157,8 +153,7 @@ def registerNode(name: str) -> str:
 
 def selectImage() -> str:
     availableImages = {
-        "Official Coretex CPU image": "cpu",
-        **({"Official Coretex GPU image": "gpu"} if isGPUAvailable() else {}),
+        "Official Coretex image": "coretex",
         "Custom image": "custom",
     }
 
@@ -211,6 +206,12 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     config["image"] = image
     if image == "custom":
         config["customImageUrl"] = clickPrompt("Specify URL of docker image that you want to use:", type = str)
+
+    if isGPUAvailable():
+        isGPU = clickPrompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
+        config["imageType"] = "gpu" if isGPU else "cpu"
+    else:
+        config["imageType"] = "cpu"
 
     config["storagePath"] = DEFAULT_STORAGE_PATH
     config["nodeRam"] = DEFAULT_RAM_MEMORY

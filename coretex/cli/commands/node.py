@@ -20,7 +20,7 @@ from typing import Optional
 import click
 
 from ..modules import node as node_module
-from ..modules.ui import clickPrompt, successEcho, errorEcho, previewConfig
+from ..modules.ui import clickPrompt, stdEcho, successEcho, errorEcho, previewConfig
 from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate, dumpScript, UPDATE_SCRIPT_NAME
 from ..modules.utils import onBeforeCommandExecute
 from ..modules.user import initializeUserSession
@@ -48,14 +48,17 @@ def start(image: Optional[str]) -> None:
         node_module.start(image, config)
     else:
         repository = node_module.getRepository()
-        tag = f"latest-{config['image']}"
+        tag = f"latest-{config['imageType']}"
         if config["image"] != "custom":
             if node_module.shouldUpdate(repository, tag):
                 node_module.pull(repository, tag)
 
-        node_module.start(f"{repository}:{tag}", config)
+            node_module.start(f"{repository}:{tag}", config)
+            activateAutoUpdate(CONFIG_DIR, config)
 
-        activateAutoUpdate(CONFIG_DIR, config)
+        if config.get("customImageUrl") is not None:
+            stdEcho(f"Starting Node with Custom image: {config['customImageUrl']}")
+            node_module.start(config["customImageUrl"], config)
 
 
 @click.command()
