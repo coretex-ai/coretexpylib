@@ -1,8 +1,8 @@
-from typing import Dict, Any
+from typing import Dict, Any, List, Tuple
 
 import json
 
-from ...utils import command, CommandException
+from .process import command, CommandException
 
 
 def isDockerAvailable() -> None:
@@ -51,50 +51,46 @@ def imagePull(image: str) -> None:
 
 def start(
     name: str,
-    dockerImage: str,
-    imageType: str,
-    serverUrl: str,
-    storagePath: str,
-    nodeAccessToken: str,
-    nodeRam: int,
-    nodeSwap: int,
-    nodeSharedMemory: int,
-    nodeMode: int,
-    modelId: int
+    image: str,
+    allowGpu: bool,
+    ram: int,
+    swap: int,
+    shm: int,
+    environ: Dict[str, str],
+    volumes: List[Tuple[str, str]]
 ) -> None:
 
     runCommand = [
         "docker", "run", "-d",
-        "--env", f"CTX_API_URL={serverUrl}",
-        "--env", f"CTX_STORAGE_PATH={storagePath}",
-        "--env", f"CTX_NODE_ACCESS_TOKEN={nodeAccessToken}",
-        "--env", f"CTX_NODE_MODE={nodeMode}",
-        "--env", f"CTX_MODEL_ID={modelId}",
         "--restart", 'always',
         "-p", "21000:21000",
         "--cap-add", "SYS_PTRACE",
         "--network", name,
-        "--memory", f"{nodeRam}G",
-        "--memory-swap", f"{nodeSwap}G",
-        "--shm-size", f"{nodeSharedMemory}G",
+        "--memory", f"{ram}G",
+        "--memory-swap", f"{swap}G",
+        "--shm-size", f"{shm}G",
         "--name", name,
     ]
 
-    if imageType == "gpu":
+    for key, value in environ.items():
+        runCommand.extend(["--env", f"{key}={value}"])
+
+    for source, destination in volumes:
+        runCommand.extend(["-v", f"{source}:{destination}"])
+
+    if allowGpu:
         runCommand.extend(["--gpus", "all"])
 
-    runCommand.append(dockerImage)
+    runCommand.append(image)
     command(runCommand, ignoreStdout = True)
 
 
 def stopContainer(name: str) -> None:
     command(["docker", "stop", name], ignoreStdout = True, ignoreStderr = True)
+
+
+def removeContainer(name: str) -> None:
     command(["docker", "rm", name], ignoreStdout = True, ignoreStderr = True)
-
-
-def stop(name: str, networkName: str) -> None:
-    stopContainer(name)
-    removeNetwork(networkName)
 
 
 def manifestInspect(repository: str, tag: str) -> Dict[str, Any]:

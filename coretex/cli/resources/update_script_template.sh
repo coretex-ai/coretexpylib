@@ -9,6 +9,7 @@ SERVER_URL={serverUrl}
 STORAGE_PATH={storagePath}
 NODE_ACCESS_TOKEN={nodeAccessToken}
 NODE_MODE={nodeMode}
+MODEL_ID={modelId}
 CONTAINER_NAME={containerName}
 NETWORK_NAME={networkName}
 RESTART_POLICY={restartPolicy}
@@ -105,6 +106,10 @@ function start_node {{
     if [ $IMAGE_TYPE = "gpu" ]; then
         # Run Docker command with GPU support
         start_command+=" --gpus all"
+    fi
+
+    if [ $MODEL_ID != "None" ]; then
+        start_command+=" --env CTX_MODEL_ID=$MODEL_ID"
     fi
 
     eval "$start_command"
