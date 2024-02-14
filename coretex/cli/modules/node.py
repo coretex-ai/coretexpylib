@@ -141,10 +141,7 @@ def registerNode(name: str) -> str:
 def selectImage() -> str:
     availableImages = {
         "Official Coretex CPU image": "cpu",
-        "Official Coretex GPU image": "gpu",
-        "Custom image": "custom",
-    } if isGPUAvailable() else {
-        "Official Coretex CPU image": "cpu",
+        **({"Official Coretex GPU image": "gpu"} if isGPUAvailable() else {}),
         "Custom image": "custom",
     }
 
