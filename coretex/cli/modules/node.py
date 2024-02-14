@@ -146,7 +146,9 @@ def selectModelId(storagePath: str, retryCount: int = 0) -> int:
         errorEcho(f"Failed to fetch model with id {modelId}.")
         return selectModelId(storagePath, retryCount + 1)
 
-    model.download(Path(storagePath).joinpath("models", str(model.id)))
+    modelDir = Path(storagePath) / "models"
+    modelDir.mkdir(parents = True, exist_ok = True)
+    model.download(modelDir / str(model.id))
 
     return modelId
 

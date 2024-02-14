@@ -6,7 +6,8 @@ from .commands.login import login
 from .modules.intercept import ClickExceptionInterceptor
 
 
-@click.group(cls = ClickExceptionInterceptor)
+# @click.group(cls = ClickExceptionInterceptor)
+@click.group()
 def cli() -> None:
     pass
 
