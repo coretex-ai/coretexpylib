@@ -33,6 +33,13 @@ class Secret(NetworkObject, ABC):
 
     @abstractmethod
     def _encryptedFields(self) -> Tuple[str, ...]:
+        """
+            Returns
+            -------
+            Tuple[str, ...] -> A list of fields which are to be
+                decrypted when "Secret.decrypted" is called
+        """
+
         pass
 
     def decrypted(self) -> Self:
