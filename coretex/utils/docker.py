@@ -93,8 +93,8 @@ def removeContainer(name: str) -> None:
     command(["docker", "rm", name], ignoreStdout = True, ignoreStderr = True)
 
 
-def manifestInspect(repository: str, tag: str) -> Dict[str, Any]:
-    _, output, _ = command(["docker", "manifest", "inspect", f"{repository}:{tag}", "--verbose"], ignoreStdout = True)
+def manifestInspect(image: str) -> Dict[str, Any]:
+    _, output, _ = command(["docker", "manifest", "inspect", image, "--verbose"], ignoreStdout = True)
     jsonOutput = json.loads(output)
     if not isinstance(jsonOutput, dict):
         raise TypeError(f"Invalid function result type \"{type(jsonOutput)}\". Expected: \"dict\"")
@@ -102,8 +102,8 @@ def manifestInspect(repository: str, tag: str) -> Dict[str, Any]:
     return jsonOutput
 
 
-def imageInspect(repository: str, tag: str) -> Dict[str, Any]:
-    _, output, _ = command(["docker", "image", "inspect", f"{repository}:{tag}"], ignoreStdout = True, ignoreStderr = True)
+def imageInspect(image: str) -> Dict[str, Any]:
+    _, output, _ = command(["docker", "image", "inspect", image], ignoreStdout = True, ignoreStderr = True)
     jsonOutput = json.loads(output)
     if not isinstance(jsonOutput, list):
         raise TypeError(f"Invalid json.loads() result type \"{type(jsonOutput)}\". Expected: \"list\"")

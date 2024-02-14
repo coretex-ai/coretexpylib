@@ -44,21 +44,19 @@ def start(image: Optional[str]) -> None:
         node_module.stop()
 
     config = loadConfig()
+
     if image is not None:
-        node_module.start(image, config)
-    else:
-        repository = node_module.getRepository()
-        tag = f"latest-{config['imageType']}"
-        if config["image"] != "custom":
-            if node_module.shouldUpdate(repository, tag):
-                node_module.pull(repository, tag)
+        config["image"] = image  # store forced image (flagged) so we can run autoupdate afterwards
+        saveConfig(config)
 
-            node_module.start(f"{repository}:{tag}", config)
-            activateAutoUpdate(CONFIG_DIR, config)
+    dockerImage = config["image"]
 
-        if config.get("customImageUrl") is not None:
-            stdEcho(f"Starting Node with Custom image: {config['customImageUrl']}")
-            node_module.start(config["customImageUrl"], config)
+    if node_module.shouldUpdate(dockerImage):
+        node_module.pull(dockerImage)
+
+    node_module.start(dockerImage, config)
+
+    activateAutoUpdate(CONFIG_DIR, config)
 
 
 @click.command()
@@ -74,8 +72,7 @@ def stop() -> None:
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def update() -> None:
     config = loadConfig()
-    repository = node_module.getRepository()
-    tag = f"latest-{config['image']}"
+    dockerImage = config["image"]
 
     nodeStatus = getNodeStatus()
 
@@ -98,11 +95,11 @@ def update() -> None:
 
         node_module.stop()
 
-    if not node_module.shouldUpdate(repository, tag):
+    if not node_module.shouldUpdate(dockerImage):
         successEcho("Node is already up to date.")
         return
 
-    node_module.pull(repository, tag)
+    node_module.pull(dockerImage)
 
     if getNodeStatus() == NodeStatus.busy:
         if not clickPrompt(
@@ -115,7 +112,7 @@ def update() -> None:
 
     node_module.stop()
 
-    node_module.start(f"{repository}:{tag}", config)
+    node_module.start(dockerImage, config)
 
 
 @click.command()

@@ -16,6 +16,7 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import Any, Dict, Tuple, Optional
+from enum import Enum
 from pathlib import Path
 
 import os
@@ -44,15 +45,21 @@ class NodeException(Exception):
     pass
 
 
+class ImageType(Enum):
+
+    official = "official"
+    custom = "custom"
+
+
 def getRepository() -> str:
     return os.environ.get("CTX_NODE_IMAGE_REPO", "coretexai/coretex-node")
 
 
-def pull(repository: str, tag: str) -> None:
+def pull(image: str) -> None:
     try:
-        progressEcho("Fetching latest node version...")
-        docker.imagePull(f"{repository}:{tag}")
-        successEcho("Latest node version successfully fetched.")
+        progressEcho(f"Fetching image {image}...")
+        docker.imagePull(image)
+        successEcho(f"Image {image} successfully fetched.")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to fetch latest node version.")
@@ -116,15 +123,24 @@ def stop() -> None:
         raise NodeException("Failed to stop Coretex Node.")
 
 
-def shouldUpdate(repository: str, tag: str) -> bool:
+def getRepoFromImageUrl(image: str) -> str:
+    lastIndex = image.rfind(":")
+    if lastIndex != -1:
+        return image[:lastIndex]
+    else:
+        return image
+
+
+def shouldUpdate(image: str) -> bool:
+    repository = getRepoFromImageUrl(image)
     try:
-        imageJson = docker.imageInspect(repository, tag)
+        imageJson = docker.imageInspect(image)
     except CommandException:
         # imageInspect() will raise an error if image doesn't exist locally
         return True
 
     try:
-        manifestJson = docker.manifestInspect(repository, tag)
+        manifestJson = docker.manifestInspect(image)
     except CommandException:
         return False
 
@@ -151,10 +167,10 @@ def registerNode(name: str) -> str:
     return accessToken
 
 
-def selectImage() -> str:
+def selectImageType() -> ImageType:
     availableImages = {
-        "Official Coretex image": "coretex",
-        "Custom image": "custom",
+        "Official Coretex image": ImageType.official,
+        "Custom image": ImageType.custom,
     }
 
     choices = list(availableImages.keys())
@@ -202,16 +218,20 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     config["nodeName"] = clickPrompt("Node name", type = str)
     config["nodeAccessToken"] = registerNode(config["nodeName"])
 
-    image = selectImage()
-    config["image"] = image
-    if image == "custom":
-        config["customImageUrl"] = clickPrompt("Specify URL of docker image that you want to use:", type = str)
+    imageType = selectImageType()
+    if imageType == ImageType.custom:
+        config["image"] = clickPrompt("Specify URL of docker image that you want to use:", type = str)
+    else:
+        config["image"] = "coretexai/coretex-node"
 
     if isGPUAvailable():
-        isGPU = clickPrompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
-        config["imageType"] = "gpu" if isGPU else "cpu"
+        config["allowGpu"] = clickPrompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
     else:
-        config["imageType"] = "cpu"
+        config["allowGpu"] = False
+
+    if imageType == ImageType.official:
+        tag = "gpu" if config["allowGpu"] else "cpu"
+        config["image"] += f":latest-{tag}"
 
     config["storagePath"] = DEFAULT_STORAGE_PATH
     config["nodeRam"] = DEFAULT_RAM_MEMORY
