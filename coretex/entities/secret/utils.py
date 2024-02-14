@@ -25,10 +25,33 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 
 def sha256(value: bytes) -> bytes:
+    """
+        Hashes the provided value using SHA256 hashing algorithm.
+
+        Parameters
+        ----------
+        value : bytes
+            Value which will be hashed
+
+        Returns
+        -------
+        bytes -> Hashed value
+    """
+
     return hashlib.sha256(value).digest()
 
 
 def getKey() -> bytes:
+    """
+        Retrieves secrets key stored in "CTX_SECRET_KEY"
+        environment variable. This key is used for decrypting
+        Coretex Secrets.
+
+        Returns
+        -------
+        bytes -> Hashed secrets key
+    """
+
     if not "CTX_SECRET_KEY" in os.environ:
         raise RuntimeError("Secret encryption key not found")
 
@@ -37,6 +60,27 @@ def getKey() -> bytes:
 
 
 def decrypt(key: bytes, iv: bytes, data: bytes) -> bytes:
+    """
+        Decrypts data encrypted using AES in CBC
+        mode with PKCS7 padding.
+
+        Parameters
+        ----------
+        key : bytes
+            Key which will be used for decryption. Must be a
+            valid AES key (128, 192, or 256 bits) otherwise an
+            error will be raised.
+        iv : bytes
+            Initialization vector used for randomizing the input
+            data of the encryption. Must be 16 bytes long.
+        data : bytes
+            Data which will be decrypted.
+
+        Returns
+        -------
+        bytes -> Decrypted data
+    """
+
     cipher = Cipher(
         algorithms.AES(key),
         modes.CBC(iv),
@@ -51,6 +95,20 @@ def decrypt(key: bytes, iv: bytes, data: bytes) -> bytes:
 
 
 def decryptSecretValue(value: str) -> str:
+    """
+        Decrypts Coretex Secret value.
+
+        Parameters
+        ----------
+        value : str
+            A concatenated base64 string of IV and cipher.
+            Both values must be encoded with base64 and concatenated.
+
+        Returns
+        -------
+        str -> Decrypted value of Coretex Secret
+    """
+
     iv = base64.b64decode(value[:24])
     data = base64.b64decode(value[24:])
 

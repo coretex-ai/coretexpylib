@@ -36,6 +36,12 @@ class Secret(NetworkObject, ABC):
         pass
 
     def decrypted(self) -> Self:
+        """
+            Returns
+            -------
+            Self -> Decrypted Coretex Secret
+        """
+
         decrypted = copy.deepcopy(self)
 
         for field in self._encryptedFields():
