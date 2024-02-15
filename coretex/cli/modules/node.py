@@ -124,9 +124,13 @@ def stop() -> None:
 
 
 def getRepoFromImageUrl(image: str) -> str:
-    lastIndex = image.rfind(":")
-    if lastIndex != -1:
-        return image[:lastIndex]
+    imageName = image.split("/")[-1]
+    if not ":" in imageName:
+        return image
+
+    tagIndex = image.rfind(":")
+    if tagIndex != -1:
+        return image[:tagIndex]
     else:
         return image
 
