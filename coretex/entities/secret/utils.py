@@ -43,7 +43,7 @@ def sha256(value: bytes) -> bytes:
 
 def getKey() -> bytes:
     """
-        Retrieves secrets key stored in "CTX_SECRET_KEY"
+        Retrieves secrets key stored in "CTX_SECRETS_KEY"
         environment variable. This key is used for decrypting
         Coretex Secrets.
 
@@ -52,10 +52,10 @@ def getKey() -> bytes:
         bytes -> Hashed secrets key
     """
 
-    if not "CTX_SECRET_KEY" in os.environ:
+    if not "CTX_SECRETS_KEY" in os.environ:
         raise RuntimeError("Secret encryption key not found")
 
-    key = os.environ["CTX_SECRET_KEY"]
+    key = os.environ["CTX_SECRETS_KEY"]
     return sha256(key.encode())
 
 
@@ -112,4 +112,4 @@ def decryptSecretValue(value: str) -> str:
     iv = base64.b64decode(value[:24])
     data = base64.b64decode(value[24:])
 
-    return decrypt(getKey(), data, iv).decode()
+    return decrypt(getKey(), iv, data).decode()
