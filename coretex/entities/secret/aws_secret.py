@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Dict
+from typing import Dict, Tuple
 
 from .secret import Secret
 from ...codable import KeyDescriptor
@@ -43,3 +43,6 @@ class AWSSecret(Secret):
         descriptors["value"] = KeyDescriptor("secret")
 
         return descriptors
+
+    def _encryptedFields(self) -> Tuple[str, ...]:
+        return ("key", "value")

@@ -15,17 +15,53 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 from typing_extensions import Self
+from abc import ABC, abstractmethod
 
+import copy
+
+from .utils import decryptSecretValue
 from ...networking import NetworkObject, networkManager, NetworkRequestError
 
 
-class Secret(NetworkObject):
+class Secret(NetworkObject, ABC):
 
     """
         Represents base Secret entity from Coretex.ai
     """
+
+    @abstractmethod
+    def _encryptedFields(self) -> Tuple[str, ...]:
+        """
+            Returns
+            -------
+            Tuple[str, ...] -> A list of fields which are to be
+                decrypted when "Secret.decrypted" is called
+        """
+
+        pass
+
+    def decrypted(self) -> Self:
+        """
+            Returns
+            -------
+            Self -> Decrypted Coretex Secret
+        """
+
+        decrypted = copy.deepcopy(self)
+
+        for field in self._encryptedFields():
+            if not field in decrypted.__dict__:
+                raise AttributeError(f"\"{type(decrypted)}\".\"{field}\" not found")
+
+            value = decrypted.__dict__[field]
+            if not isinstance(value, str):
+                raise TypeError(f"Expected \"str\" received \"{type(value)}\"")
+
+            decrypted.__dict__[field] = decryptSecretValue(value)
+
+        return decrypted
 
     @classmethod
     def _endpoint(cls) -> str:

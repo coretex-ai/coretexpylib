@@ -39,7 +39,8 @@ dependencies = [
   "click",
   "tabulate",
   "inquirer",
-  "docker"
+  "docker",
+  "cryptography"
 ]
 
 [project.urls]
