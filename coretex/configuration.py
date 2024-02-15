@@ -52,7 +52,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "token": None,
     "refreshToken": None,
     "serverUrl": getEnvVar("CTX_API_URL", "https://api.coretex.ai/"),
-    "storagePath": getEnvVar("CTX_STORAGE_PATH", "~/.coretex"),
+    "storagePath": getEnvVar("CTX_STORAGE_PATH", "~/.coretex")
 }
 
 
@@ -83,11 +83,14 @@ def _syncConfigWithEnv() -> None:
     if not "CTX_API_URL" in os.environ:
         os.environ["CTX_API_URL"] = config["serverUrl"]
 
+    secretsKey = config.get("secretsKey")
+    if isinstance(secretsKey, str) and secretsKey != "":
+        os.environ["CTX_SECRETS_KEY"] = secretsKey
+
     if not isCliRuntime():
         os.environ["CTX_STORAGE_PATH"] = config["storagePath"]
     else:
         os.environ["CTX_STORAGE_PATH"] = str(CONFIG_DIR)
-
 
 
 def saveConfig(config: Dict[str, Any]) -> None:
@@ -102,6 +105,7 @@ def isUserConfigured(config: Dict[str, Any]) -> bool:
         config.get("password") is not None and
         config.get("storagePath") is not None
     )
+
 
 def isNodeConfigured(config: Dict[str, Any]) -> bool:
     return (
