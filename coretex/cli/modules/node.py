@@ -16,8 +16,7 @@ from ...entities.model import Model
 
 DOCKER_CONTAINER_NAME = "coretex_node"
 DOCKER_CONTAINER_NETWORK = "coretex_node"
-
-DEFAULT_STORAGE_PATH = str(Path.home() / "./coretex")
+DEFAULT_STORAGE_PATH = str(Path.home() / ".coretex")
 DEFAULT_RAM_MEMORY = getAvailableRamMemory()
 DEFAULT_SWAP_MEMORY = DEFAULT_RAM_MEMORY * 2
 DEFAULT_SHARED_MEMORY = 2
@@ -55,7 +54,7 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
 
         environ = {
             "CTX_API_URL": config["serverUrl"],
-            "CTX_STORAGE_PATH": config["storagePath"],
+            "CTX_STORAGE_PATH": "/root/.coretex",
             "CTX_NODE_ACCESS_TOKEN": config["nodeAccessToken"],
             "CTX_NODE_MODE": config["nodeMode"]
         }
@@ -141,7 +140,7 @@ def registerNode(name: str) -> str:
     return accessToken
 
 
-def selectModelId(retryCount: int = 0) -> int:
+def selectModelId(storagePath: str, retryCount: int = 0) -> int:
     if retryCount >= 3:
         raise RuntimeError("Failed to fetch Coretex Model. Terminating...")
 
@@ -151,14 +150,16 @@ def selectModelId(retryCount: int = 0) -> int:
         model = Model.fetchById(modelId)
     except:
         errorEcho(f"Failed to fetch model with id {modelId}.")
-        return selectModelId(retryCount + 1)
+        return selectModelId(storagePath, retryCount + 1)
 
-    model.download()
+    modelDir = Path(storagePath) / "models"
+    modelDir.mkdir(parents = True, exist_ok = True)
+    model.download(modelDir / str(model.id))
 
     return modelId
 
 
-def selectNodeMode() -> Tuple[int, Optional[int]]:
+def selectNodeMode(storagePath: str) -> Tuple[int, Optional[int]]:
     availableNodeModes = {
         "Execution": NodeMode.execution,
         "Function exclusive": NodeMode.functionExclusive,
@@ -170,7 +171,7 @@ def selectNodeMode() -> Tuple[int, Optional[int]]:
     selectedMode = arrowPrompt(choices)
 
     if availableNodeModes[selectedMode] == NodeMode.functionExclusive:
-        modelId = selectModelId()
+        modelId = selectModelId(storagePath)
         return availableNodeModes[selectedMode], modelId
 
     return availableNodeModes[selectedMode], None
@@ -203,7 +204,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
         config["allowDocker"] = clickPrompt("Allow Node to access system docker? This is a security risk! (Y/n)", DEFAULT_ALLOW_DOCKER, type = bool)
         config["secretsKey"] = clickPrompt("Enter a key used for decrypting your Coretex Secrets", DEFAULT_SECRETS_KEY, type = str)
 
-        nodeMode, modelId = selectNodeMode()
+        nodeMode, modelId = selectNodeMode(config["storagePath"])
         config["nodeMode"] = nodeMode
         if modelId is not None:
             config["modelId"] = modelId
