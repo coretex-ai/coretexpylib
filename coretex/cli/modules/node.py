@@ -1,4 +1,22 @@
+#     Copyright (C) 2023  Coretex LLC
+
+#     This file is part of Coretex.ai
+
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU Affero General Public License as
+#     published by the Free Software Foundation, either version 3 of the
+#     License, or (at your option) any later version.
+
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU Affero General Public License for more details.
+
+#     You should have received a copy of the GNU Affero General Public License
+#     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from typing import Any, Dict, Tuple, Optional
+from enum import Enum
 from pathlib import Path
 
 import os
@@ -29,15 +47,21 @@ class NodeException(Exception):
     pass
 
 
+class ImageType(Enum):
+
+    official = "official"
+    custom = "custom"
+
+
 def getRepository() -> str:
     return os.environ.get("CTX_NODE_IMAGE_REPO", "coretexai/coretex-node")
 
 
-def pull(repository: str, tag: str) -> None:
+def pull(image: str) -> None:
     try:
-        progressEcho("Fetching latest node version...")
-        docker.imagePull(f"{repository}:{tag}")
-        successEcho("Latest node version successfully fetched.")
+        progressEcho(f"Fetching image {image}...")
+        docker.imagePull(image)
+        successEcho(f"Image {image} successfully fetched.")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to fetch latest node version.")
@@ -105,15 +129,28 @@ def stop() -> None:
         raise NodeException("Failed to stop Coretex Node.")
 
 
-def shouldUpdate(repository: str, tag: str) -> bool:
+def getRepoFromImageUrl(image: str) -> str:
+    imageName = image.split("/")[-1]
+    if not ":" in imageName:
+        return image
+
+    tagIndex = image.rfind(":")
+    if tagIndex != -1:
+        return image[:tagIndex]
+    else:
+        return image
+
+
+def shouldUpdate(image: str) -> bool:
+    repository = getRepoFromImageUrl(image)
     try:
-        imageJson = docker.imageInspect(repository, tag)
+        imageJson = docker.imageInspect(image)
     except CommandException:
         # imageInspect() will raise an error if image doesn't exist locally
         return True
 
     try:
-        manifestJson = docker.manifestInspect(repository, tag)
+        manifestJson = docker.manifestInspect(image)
     except CommandException:
         return False
 
@@ -140,6 +177,18 @@ def registerNode(name: str) -> str:
     return accessToken
 
 
+def selectImageType() -> ImageType:
+    availableImages = {
+        "Official Coretex image": ImageType.official,
+        "Custom image": ImageType.custom,
+    }
+
+    choices = list(availableImages.keys())
+    selectedImage = arrowPrompt(choices, "Please select image that you want to use (use arrow keys to select an option):")
+
+    return availableImages[selectedImage]
+
+
 def selectModelId(storagePath: str, retryCount: int = 0) -> int:
     if retryCount >= 3:
         raise RuntimeError("Failed to fetch Coretex Model. Terminating...")
@@ -161,14 +210,13 @@ def selectModelId(storagePath: str, retryCount: int = 0) -> int:
 
 def selectNodeMode(storagePath: str) -> Tuple[int, Optional[int]]:
     availableNodeModes = {
-        "Execution": NodeMode.execution,
-        "Function exclusive": NodeMode.functionExclusive,
-        "Function shared": NodeMode.functionShared
+        "Run workflows (worker)": NodeMode.execution,
+        "Serve a single endpoint (dedicated inference)": NodeMode.functionExclusive,
+        "Serve multiple endpoints (shared inference)": NodeMode.functionShared
     }
     choices = list(availableNodeModes.keys())
 
-    stdEcho("Please select Coretex Node mode:")
-    selectedMode = arrowPrompt(choices)
+    selectedMode = arrowPrompt(choices, "Please select Coretex Node mode (use arrow keys to select an option):")
 
     if availableNodeModes[selectedMode] == NodeMode.functionExclusive:
         modelId = selectModelId(storagePath)
@@ -182,11 +230,20 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     config["nodeName"] = clickPrompt("Node name", type = str)
     config["nodeAccessToken"] = registerNode(config["nodeName"])
 
-    if isGPUAvailable():
-        isGPU = clickPrompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
-        config["image"] = "gpu" if isGPU else "cpu"
+    imageType = selectImageType()
+    if imageType == ImageType.custom:
+        config["image"] = clickPrompt("Specify URL of docker image that you want to use:", type = str)
     else:
-        config["image"] = "cpu"
+        config["image"] = "coretexai/coretex-node"
+
+    if isGPUAvailable():
+        config["allowGpu"] = clickPrompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
+    else:
+        config["allowGpu"] = False
+
+    if imageType == ImageType.official:
+        tag = "gpu" if config["allowGpu"] else "cpu"
+        config["image"] += f":latest-{tag}"
 
     config["storagePath"] = DEFAULT_STORAGE_PATH
     config["nodeRam"] = DEFAULT_RAM_MEMORY

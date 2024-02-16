@@ -16,9 +16,7 @@ def selectProjectType() -> ProjectType:
     }
 
     choices = list(availableProjectTypes.keys())
-
-    ui.stdEcho("Specify type of project that you wish to create:")
-    selectedChoice = ui.arrowPrompt(choices)
+    selectedChoice = ui.arrowPrompt(choices, "Specify type of project that you wish to create:")
 
     selectedProjectType = availableProjectTypes[selectedChoice]
     ui.stdEcho(f"You've chosen: {selectedChoice}")
