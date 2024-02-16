@@ -38,6 +38,7 @@ from .network_response import NetworkResponse
 from .file_data import FileData
 
 
+REQUEST_TIMEOUT = 5
 MAX_RETRY_COUNT = 3
 LOGIN_ENDPOINT = "user/login"
 REFRESH_ENDPOINT = "user/refresh"
@@ -176,6 +177,7 @@ class NetworkManagerBase(ABC):
         body: Optional[RequestBodyType] = None,
         files: Optional[RequestFormType] = None,
         auth: Optional[Tuple[str, str]] = None,
+        timeout: Optional[Union[int, Tuple[int, int]]] = REQUEST_TIMEOUT,
         stream: bool = False,
         retryCount: int = 0
     ) -> NetworkResponse:
@@ -242,6 +244,7 @@ class NetworkManagerBase(ABC):
                 params = query,
                 data = data,
                 auth = auth,
+                timeout = timeout,
                 files = files,
                 headers = headers
             )
@@ -407,7 +410,9 @@ class NetworkManagerBase(ABC):
             headers = self._headers("multipart/form-data")
             del headers["Content-Type"]
 
-            return self.request(endpoint, RequestType.post, headers, body = params, files = filesData)
+            timeout = 3600 if endpoint in ["upload/chunk", "artifact/upload-file"] else REQUEST_TIMEOUT
+
+            return self.request(endpoint, RequestType.post, headers, body = params, files = filesData, timeout = timeout)
 
         # mypy is complaining about missing return statement but this code is unreachable
         # see: https://github.com/python/mypy/issues/7726
