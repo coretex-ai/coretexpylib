@@ -7,7 +7,7 @@ from ...entities import Model
 from ...configuration import loadConfig
 
 
-@click.command
+@click.command()
 @click.argument("path", type = click.Path(exists = True, file_okay = False, dir_okay = True))
 @click.option("-n", "--name", type = str, required = True)
 @click.option("-p", "--project", type = str, required = False, default = None)
@@ -30,7 +30,7 @@ def create(name: str, path: str, project: Optional[str], accuracy: float) -> Non
     ui.successEcho(f"Model \"{model.name}\" created successfully")
 
 
-@click.group
+@click.group()
 @utils.onBeforeCommandExecute(user.initializeUserSession)
 def model() -> None:
     pass

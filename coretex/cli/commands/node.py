@@ -46,7 +46,7 @@ def stop() -> None:
     node_module.stop()
 
 
-@click.command
+@click.command()
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def update() -> None:
     config = loadConfig()

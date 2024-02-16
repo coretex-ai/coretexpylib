@@ -46,7 +46,7 @@ def select(name: Optional[str], id: Optional[int]) -> None:
         selectProject(project.id)
 
 
-@click.group
+@click.group()
 @utils.onBeforeCommandExecute(user.initializeUserSession)
 def project() -> None:
     pass
