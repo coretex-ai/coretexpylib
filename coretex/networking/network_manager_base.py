@@ -264,7 +264,7 @@ class NetworkManagerBase(ABC):
 
                     time.sleep(delay)
 
-                return self.request(endpoint, requestType, headers, query, body, files, auth, stream, retryCount + 1)
+                return self.request(endpoint, requestType, headers, query, body, files, auth, timeout, stream, retryCount + 1)
 
             return response
         except BaseException as exception:
@@ -274,7 +274,7 @@ class NetworkManagerBase(ABC):
                 if self._apiToken is not None:
                     headers[API_TOKEN_HEADER] = self._apiToken
 
-                return self.request(endpoint, requestType, headers, query, body, files, auth, stream, retryCount + 1)
+                return self.request(endpoint, requestType, headers, query, body, files, auth, timeout, stream, retryCount + 1)
 
             raise RequestFailedError(endpoint, requestType)
 
