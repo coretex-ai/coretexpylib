@@ -243,18 +243,21 @@ class Model(NetworkObject):
         with modelDescriptorPath.open("w", encoding = "utf-8") as file:
             json.dump(contents, file, ensure_ascii = False, indent = 4)
 
-    def download(self, ignoreCache: bool = False) -> None:
+    def download(self, path: Optional[Path] = None, ignoreCache: bool = False) -> None:
         """
             Downloads and extracts the model zip file from Coretex.ai
         """
 
+        if path is None:
+            path = self.path
+
         if self.isDeleted or not self.isTrained:
             return
 
-        if self.path.exists() and not ignoreCache:
+        if path.exists() and not ignoreCache:
             return
 
-        modelZip = folder_manager.modelsFolder / f"{self.id}.zip"
+        modelZip = path.with_suffix(".zip")
         response = networkManager.download(f"{self._endpoint()}/download", modelZip, {
             "id": self.id
         })
@@ -263,7 +266,7 @@ class Model(NetworkObject):
             raise NetworkRequestError(response, "Failed to download Model")
 
         with ZipFile(modelZip) as zipFile:
-            zipFile.extractall(self.path)
+            zipFile.extractall(path)
 
     def upload(self, path: Union[Path, str]) -> None:
         """

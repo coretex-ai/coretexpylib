@@ -16,6 +16,7 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import Optional, List, Dict, Any
+from typing_extensions import Self
 from pathlib import Path
 
 import yaml
@@ -50,6 +51,13 @@ class TaskConfig(Codable):
         descriptors["paramGroups"] = KeyDescriptor("param_groups", ParamGroup, list)
 
         return descriptors
+
+    @classmethod
+    def decode(cls, params: dict) -> Self:
+        if params.get("param_groups") is None:
+            params["param_groups"] = []
+
+        return super().decode(params)
 
 
 def readTaskConfig() -> List[BaseParameter]:
