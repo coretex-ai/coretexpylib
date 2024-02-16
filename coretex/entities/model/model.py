@@ -15,17 +15,16 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Any, Dict, Union
+from typing import Any, Dict, Union, Optional
 from typing_extensions import Self
 from datetime import datetime
 from zipfile import ZipFile
 from pathlib import Path
 
 import json
-import logging
 
 from ... import folder_manager
-from ...networking import networkManager, NetworkObject, FileData
+from ...networking import networkManager, NetworkObject, FileData, NetworkRequestError, EntityNotCreated
 from ...codable import KeyDescriptor
 
 
@@ -99,9 +98,16 @@ class Model(NetworkObject):
         return descriptors
 
     @classmethod
-    def createModel(cls, name: str, taskRunId: int, accuracy: float, meta: Dict[str, Any]) -> Self:
+    def createModel(
+        cls,
+        name: str,
+        taskRunId: int,
+        accuracy: float,
+        meta: Optional[Dict[str, Any]] = None
+    ) -> Self:
+
         """
-            Creates Model object of the provided TaskRun with specified properties
+            Creates Model as a result of TaskRun
 
             Parameters
             ----------
@@ -111,8 +117,8 @@ class Model(NetworkObject):
                 TaskRun id of model
             accuracy : float
                 model accuracy
-            meta : Dict[str, Any]
-                model meta data
+            meta : Optional[Dict[str, Any]]
+                model metadata
 
             Returns
             -------
@@ -120,16 +126,12 @@ class Model(NetworkObject):
 
             Example
             -------
-            >>> from coretex import Model, ExecutingTaskRun
-            \b
-            >>> taskRun = ExecutingTaskRun.current()
-            >>> model = Model.createModel(
-                    name = taskRun.name,
-                    taskRunId = taskRun.id,
-                    accuracy = 0.87,
-                    meta = {}
-                )
+            >>> from coretex import Model, currentTaskRun
+            >>> model = Model.createModel("model-name", currentTaskRun().id, 0.87)
         """
+
+        if meta is None:
+            meta = {}
 
         model = cls.create(
             name = name,
@@ -139,7 +141,55 @@ class Model(NetworkObject):
         )
 
         if model is None:
-            raise ValueError(">> [Coretex] Failed to create Model entity")
+            raise EntityNotCreated("Failed to create Model")
+
+        return model
+
+    @classmethod
+    def createProjectModel(
+        cls,
+        name: str,
+        projectId: int,
+        accuracy: float,
+        meta: Optional[Dict[str, Any]] = None
+    ) -> Self:
+
+        """
+            Creates Model object inside of the provided Project with specified properties
+
+            Parameters
+            ----------
+            name : str
+                Model name
+            projectId : int
+                Project to which the Model will be added
+            accuracy : float
+                Model accuracy
+            meta : Dict[str, Any]
+                Model metadata
+
+            Returns
+            -------
+            Self -> Model object
+
+            Example
+            -------
+            >>> from coretex import Model
+            >>> model = Model.createProjectModel("model-name", 123, 0.87)
+        """
+
+        if meta is None:
+            meta = {}
+
+        model = cls.create(
+            name = name,
+            project_id = projectId,
+            accuracy = accuracy,
+            meta = meta
+        )
+
+        if model is None:
+            raise EntityNotCreated("Failed to create Model")
 
         return model
 
@@ -159,13 +209,13 @@ class Model(NetworkObject):
 
             Example
             -------
-            >>> from coretex import ExecutingTaskRun, Model
-            >>> model = Model.createModel(taskRun.name, taskRun.id, accuracy, {})
+            >>> from coretex import currentTaskRun, Model
+            >>> model = Model.createModel("model-name", currentTaskRun().id, accuracy)
             >>> model.saveModelDescriptor(modelPath, {
-                    "project_task": taskRun.projectType,
+                    "project_task": currentTaskRun().projectType,
                     "labels": labels,
                     "modelName": model.name,
-                    "description": taskRun.description,
+                    "description": currentTaskRun().description,
 
                     "input_description":
                         Input shape is [x, y]
@@ -190,7 +240,7 @@ class Model(NetworkObject):
 
         modelDescriptorPath = path / cls.modelDescriptorFileName()
 
-        with open(modelDescriptorPath, "w", encoding = "utf-8") as file:
+        with modelDescriptorPath.open("w", encoding = "utf-8") as file:
             json.dump(contents, file, ensure_ascii = False, indent = 4)
 
     def download(self, ignoreCache: bool = False) -> None:
@@ -210,50 +260,37 @@ class Model(NetworkObject):
         })
 
         if response.hasFailed():
-            logging.getLogger("coretexpylib").info(">> [Coretex] Failed to download the model")
+            raise NetworkRequestError(response, "Failed to download Model")
 
         with ZipFile(modelZip) as zipFile:
             zipFile.extractall(self.path)
 
-    def upload(self, path: Union[Path, str]) -> bool:
+    def upload(self, path: Union[Path, str]) -> None:
         """
             Uploads the provided model folder as zip file to Coretex.ai
 
             Parameters
             ----------
             path : Union[Path, str]
-                Path to the saved model directory
+                Path to the model directory
 
-            Returns
+            Raises
             -------
-            bool -> True if model data uploaded successfully, False if model data upload has failed
-
+            ValueError -> if provided path is not a directory
+            NetworkRequestError -> if Model upload failed
 
             Example
             -------
-            >>> from coretex import Model, ExecutingTaskRun
-            \b
-            >>> taskRun: ExecutingTaskRun[NetworkDataset] = ExecutingTaskRun.current()
-            >>> model = Model.createModel(
-                name = taskRun.name,
-                taskRunId = taskRun.id,
-                accuracy = 0.87,
-                meta = {}
-            )
-            >>> if not model.upload("path/to/model-dir"):
-                    print("Failed to upload model")
+            >>> from coretex import Model, currentTaskRun
+            >>> model = Model.createModel("model-name", currentTaskRun().id, 0.87)
+            >>> model.upload("path/to/model-dir")
         """
-
-        if self.isDeleted:
-            return False
 
         if isinstance(path, str):
             path = Path(path)
 
         if not path.is_dir():
-            raise ValueError(">> [Coretex] \"path\" must be a directory")
-
-        logging.getLogger("coretexpylib").info(">> [Coretex] Uploading model file...")
+            raise ValueError("\"path\" must be a directory")
 
         zipPath = path.with_suffix(".zip")
         with ZipFile(zipPath, "w") as zipFile:
@@ -273,8 +310,4 @@ class Model(NetworkObject):
 
         response = networkManager.formData("model/upload", parameters, files)
         if response.hasFailed():
-            logging.getLogger("coretexpylib").info(">> [Coretex] Failed to upload model file")
-        else:
-            logging.getLogger("coretexpylib").info(">> [Coretex] Uploaded model file")
-
-        return not response.hasFailed()
+            raise NetworkRequestError(response, "Failed to upload model")
