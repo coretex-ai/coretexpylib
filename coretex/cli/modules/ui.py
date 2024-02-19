@@ -53,7 +53,7 @@ def previewConfig(config: Dict[str, Any]) -> None:
         ["POSIX shared memory", f"{config['nodeSharedMemory']}GB"],
         ["Coretex Node mode", f"{NodeMode(config['nodeMode']).name}"],
         ["Docker access", "Yes" if config.get("allowDocker", False) else "No"],
-        ["Secrets key", config.get("secretsKey", "")]
+        ["Secrets key", "******"]
     ]
     if config.get("modelId") is not None:
         table.append(["Coretex Model ID", config["modelId"]])

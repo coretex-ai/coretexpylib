@@ -259,7 +259,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
         config["nodeSwap"] = clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", DEFAULT_SWAP_MEMORY, type = int)
         config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", DEFAULT_SHARED_MEMORY, type = int)
         config["allowDocker"] = clickPrompt("Allow Node to access system docker? This is a security risk! (Y/n)", DEFAULT_ALLOW_DOCKER, type = bool)
-        config["secretsKey"] = clickPrompt("Enter a key used for decrypting your Coretex Secrets", DEFAULT_SECRETS_KEY, type = str)
+        config["secretsKey"] = clickPrompt("Enter a key used for decrypting your Coretex Secrets", DEFAULT_SECRETS_KEY, type = str, hide_input = True)
 
         nodeMode, modelId = selectNodeMode(config["storagePath"])
         config["nodeMode"] = nodeMode
