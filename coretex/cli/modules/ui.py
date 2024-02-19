@@ -43,17 +43,24 @@ def arrowPrompt(choices: List[Any], message: str) -> Any:
 
 
 def previewConfig(config: Dict[str, Any]) -> None:
+    allowDocker = "Yes" if config.get("allowDocker", False) else "No"
+
+    if config.get("secretsKey") is None or config.get("secretsKey") == "":
+        secretsKey = ""
+    else:
+        secretsKey = "********"
+
     table = [
-        ["Node name", config["nodeName"]],
-        ["Server URL", config["serverUrl"]],
-        ["Coretex Node type", config["image"]],
-        ["Storage path", config["storagePath"]],
-        ["RAM", f"{config['nodeRam']}GB"],
-        ["SWAP memory", f"{config['nodeSwap']}GB"],
+        ["Node name",           config["nodeName"]],
+        ["Server URL",          config["serverUrl"]],
+        ["Coretex Node type",   config["image"]],
+        ["Storage path",        config["storagePath"]],
+        ["RAM",                 f"{config['nodeRam']}GB"],
+        ["SWAP memory",         f"{config['nodeSwap']}GB"],
         ["POSIX shared memory", f"{config['nodeSharedMemory']}GB"],
-        ["Coretex Node mode", f"{NodeMode(config['nodeMode']).name}"],
-        ["Docker access", "Yes" if config.get("allowDocker", False) else "No"],
-        ["Secrets key", config.get("secretsKey", "")]
+        ["Coretex Node mode",   f"{NodeMode(config['nodeMode']).name}"],
+        ["Docker access",       allowDocker],
+        ["Secrets key",         secretsKey]
     ]
     if config.get("modelId") is not None:
         table.append(["Coretex Model ID", config["modelId"]])
