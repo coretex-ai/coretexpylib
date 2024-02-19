@@ -20,7 +20,7 @@ from typing import Optional
 import click
 
 from ..modules import node as node_module
-from ..modules.ui import clickPrompt, stdEcho, successEcho, errorEcho, previewConfig
+from ..modules.ui import clickPrompt, successEcho, errorEcho, previewConfig
 from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate, dumpScript, UPDATE_SCRIPT_NAME
 from ..modules.utils import onBeforeCommandExecute
 from ..modules.user import initializeUserSession
