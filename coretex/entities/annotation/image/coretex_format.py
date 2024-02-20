@@ -15,10 +15,10 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from typing import List, Dict, Tuple, Optional
 from typing_extensions import Self
 from uuid import UUID
-from typing import List, Dict, Tuple
-from math import fsum, cos, sin, radians
+from math import cos, sin, radians
 
 from PIL import Image, ImageDraw
 
@@ -193,7 +193,12 @@ class CoretexSegmentationInstance(Codable):
 
         self.segmentations = modifiedSegmentations
 
-    def rotateSegmentations(self, degrees: int) -> None:
+    def rotateSegmentations(
+        self,
+        degrees: int,
+        origin: Optional[Tuple[int, int]] = None
+    ) -> None:
+
         """
             Rotates segmentations of CoretexSegmentationInstance object
 
@@ -203,8 +208,11 @@ class CoretexSegmentationInstance(Codable):
                 degree of rotation
         """
 
+        if origin is None:
+            origin = self.centroid()
+
         rotatedSegmentations: List[List[int]] = []
-        centerX, centerY = self.centroid()
+        centerX, centerY = origin
 
         # because rotations with image and segmentations doesn't go in same direction
         # one of the rotations has to be inverted so they go in same direction
