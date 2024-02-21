@@ -101,7 +101,7 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
         docker.start(
             DOCKER_CONTAINER_NAME,
             dockerImage,
-            config["image"] == "gpu",
+            config["allowGpu"],
             config["nodeRam"],
             config["nodeSwap"],
             config["nodeSharedMemory"],
