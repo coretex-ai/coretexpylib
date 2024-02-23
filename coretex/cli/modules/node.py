@@ -53,10 +53,6 @@ class ImageType(Enum):
     custom = "custom"
 
 
-def getRepository() -> str:
-    return os.environ.get("CTX_NODE_IMAGE_REPO", "coretexai/coretex-node")
-
-
 def pull(image: str) -> None:
     try:
         progressEcho(f"Fetching image {image}...")
@@ -139,6 +135,18 @@ def getRepoFromImageUrl(image: str) -> str:
         return image[:tagIndex]
     else:
         return image
+
+
+def getTagFromImageUrl(image: str) -> str:
+    imageName = image.split("/")[-1]
+    if not ":" in imageName:
+        return "latest"
+
+    tagIndex = image.rfind(":")
+    if tagIndex != -1:
+        return image[tagIndex + 1:]
+    else:
+        return "latest"
 
 
 def shouldUpdate(image: str) -> bool:

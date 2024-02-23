@@ -22,7 +22,7 @@ from pathlib import Path
 import requests
 
 from .cron import jobExists, scheduleJob
-from .node import DOCKER_CONTAINER_NAME, DOCKER_CONTAINER_NETWORK, getRepository
+from .node import DOCKER_CONTAINER_NAME, DOCKER_CONTAINER_NETWORK, getRepoFromImageUrl, getTagFromImageUrl
 from ..resources import RESOURCES_DIR
 from ...utils import command
 from ...configuration import CONFIG_DIR
@@ -49,8 +49,8 @@ def generateUpdateScript(config: Dict[str, Any]) -> str:
 
     return bashScriptTemplate.format(
         dockerPath = dockerPath.strip(),
-        repository = getRepository(),
-        tag = f"latest-{config['image']}",
+        repository = getRepoFromImageUrl(config["image"]),
+        tag = getTagFromImageUrl(config["image"]),
         serverUrl = config["serverUrl"],
         storagePath = config["storagePath"],
         nodeAccessToken = config["nodeAccessToken"],
@@ -64,7 +64,7 @@ def generateUpdateScript(config: Dict[str, Any]) -> str:
         ramMemory = config["nodeRam"],
         swapMemory = config["nodeSwap"],
         sharedMemory = config["nodeSharedMemory"],
-        imageType = config["image"]
+        imageType = "cpu" if config["allowGpu"] is False else "gpu"
     )
 
 
