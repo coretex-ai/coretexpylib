@@ -410,7 +410,7 @@ class NetworkManagerBase(ABC):
             headers = self._headers("multipart/form-data")
             del headers["Content-Type"]
 
-            timeout = 3600 if endpoint in ["upload/chunk", "artifact/upload-file"] else REQUEST_TIMEOUT
+            timeout = 3600 if len(files) > 0 else REQUEST_TIMEOUT
 
             return self.request(endpoint, RequestType.post, headers, body = params, files = filesData, timeout = timeout)
 
