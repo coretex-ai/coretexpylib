@@ -14,3 +14,12 @@
 
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+from enum import IntEnum
+
+
+class NodeMode(IntEnum):
+
+    execution         = 1
+    functionExclusive = 2
+    functionShared    = 3

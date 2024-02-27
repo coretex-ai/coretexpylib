@@ -16,13 +16,13 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-from typing import Union, List, Iterator
+from typing import List, Iterator
 from pathlib import Path
 from contextlib import contextmanager
 
 import logging
 
-from watchdog.events import FileSystemEventHandler, DirCreatedEvent, FileCreatedEvent
+from watchdog.events import FileSystemEventHandler, FileSystemEvent
 from watchdog.observers import Observer
 
 from ...entities import TaskRun
@@ -38,7 +38,7 @@ class FileEventHandler(FileSystemEventHandler):
 
         self.artifactPaths: List[Path] = []
 
-    def on_created(self, event: Union[DirCreatedEvent, FileCreatedEvent]) -> None:
+    def on_created(self, event: FileSystemEvent) -> None:
         if event.is_directory:
             return
 
@@ -75,9 +75,13 @@ def track(taskRun: TaskRun) -> Iterator[FileEventHandler]:
 
         for index, artifactPath in enumerate(eventHandler.artifactPaths):
             logging.getLogger("coretexpylib").debug(f">> [Coretex] Uploading {index + 1}/{len(eventHandler.artifactPaths)} - \"{artifactPath}\"")
-            artifact = taskRun.createArtifact(artifactPath, str(artifactPath.relative_to(root)))
 
-            if artifact is not None:
-                logging.getLogger("coretexpylib").debug(f"\tSuccessfully uploaded artifact")
-            else:
-                logging.getLogger("coretexpylib").debug(f"\tFailed to upload artifact")
+            try:
+                artifact = taskRun.createArtifact(artifactPath, str(artifactPath.relative_to(root)))
+                if artifact is not None:
+                    logging.getLogger("coretexpylib").debug(f"\tSuccessfully uploaded artifact")
+                else:
+                    logging.getLogger("coretexpylib").debug(f"\tFailed to upload artifact")
+            except Exception as e:
+                logging.getLogger("coretexpylib").error(f"\tError while creating artifact: {e}")
+                logging.getLogger("coretexpylib").debug(f"\tError while creating artifact: {e}", exc_info = e)

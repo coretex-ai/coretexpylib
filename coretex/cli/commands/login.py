@@ -17,19 +17,27 @@
 
 import click
 
-from .commands.login import login
-from .commands.model import model
-from .commands.node import node
-from .commands.project import project
-
-from .modules.intercept import ClickExceptionInterceptor
+from ..modules.user import authenticate, saveLoginData
+from ..modules.ui import clickPrompt, stdEcho, successEcho
+from ...configuration import loadConfig, saveConfig, isUserConfigured
 
 
-@click.group(cls = ClickExceptionInterceptor)
-def cli() -> None:
-    pass
+@click.command()
+def login() -> None:
+    config = loadConfig()
+    if isUserConfigured(config):
+        if not clickPrompt(
+            f"User already logged in with username {config['username']}.\nWould you like to log in with a different user (Y/n)?",
+            type = bool,
+            default = True,
+            show_default = False
+        ):
+            return
 
-cli.add_command(login)
-cli.add_command(model)
-cli.add_command(project)
-cli.add_command(node)
+    stdEcho("Please enter your credentials:")
+    loginInfo = authenticate()
+    config = saveLoginData(loginInfo, config)
+
+    saveConfig(config)
+
+    successEcho(f"User {config['username']} successfully logged in.")

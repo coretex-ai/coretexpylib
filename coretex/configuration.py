@@ -23,6 +23,14 @@ import json
 import sys
 
 
+def isCliRuntime() -> bool:
+    executablePath = sys.argv[0]
+    return (
+        executablePath.endswith("/bin/coretex") and
+        os.access(executablePath, os.X_OK)
+    )
+
+
 def getEnvVar(key: str, default: str) -> str:
     if os.environ.get(key) is None:
         os.environ[key] = default
@@ -30,9 +38,11 @@ def getEnvVar(key: str, default: str) -> str:
     return os.environ[key]
 
 
-DEFAULT_CONFIG_PATH = Path.home().joinpath(".config", "coretex", "config.json")
+CONFIG_DIR = Path.home().joinpath(".config", "coretex")
+DEFAULT_CONFIG_PATH = CONFIG_DIR / "config.json"
 
-DEFAULT_CONFIG = {
+
+DEFAULT_CONFIG: Dict[str, Any] = {
     # os.environ used directly here since we don't wanna
     # set those variables to any value if they don't exist
     # in the os.environ the same way we do for properties which
@@ -41,60 +51,46 @@ DEFAULT_CONFIG = {
     "password": os.environ.get("CTX_PASSWORD"),
     "token": None,
     "refreshToken": None,
-    "serverUrl": getEnvVar("CTX_API_URL", "https://devext.biomechservices.com:29007/"),
-    "storagePath": getEnvVar("CTX_STORAGE_PATH", "~/.coretex"),
+    "serverUrl": getEnvVar("CTX_API_URL", "https://api.coretex.ai/"),
+    "storagePath": getEnvVar("CTX_STORAGE_PATH", "~/.coretex")
 }
 
 
-def _verifyConfiguration(config: Dict[str, Any]) -> bool:
-    # Checks if all keys from default config exist in loaded one
-    requiredKeys = list(DEFAULT_CONFIG.keys())
-    return all(key in config.keys() for key in requiredKeys)
+def loadConfig() -> Dict[str, Any]:
+    with DEFAULT_CONFIG_PATH.open("r") as configFile:
+        try:
+            config: Dict[str, Any] = json.load(configFile)
+        except json.JSONDecodeError:
+            config = {}
 
-
-def _loadConfiguration(configPath: Path) -> Dict[str, Any]:
-    with configPath.open("r") as configFile:
-        config: Dict[str, Any] = json.load(configFile)
-
-    if not _verifyConfiguration(config):
-        raise RuntimeError(">> [Coretex] Invalid configuration")
+    for key, value in DEFAULT_CONFIG.items():
+        if not key in config:
+            config[key] = value
 
     return config
 
 
 def _syncConfigWithEnv() -> None:
-    configPath = Path("~/.config/coretex/config.json").expanduser()
-
     # If configuration does not exist create default one
-    if not configPath.exists():
-        print(">> [Coretex] Configuration not found, creating default one")
-        configPath.parent.mkdir(parents = True, exist_ok = True)
+    if not DEFAULT_CONFIG_PATH.exists():
+        DEFAULT_CONFIG_PATH.parent.mkdir(parents = True, exist_ok = True)
+        config = DEFAULT_CONFIG.copy()
+    else:
+        config = loadConfig()
 
-        with configPath.open("w") as configFile:
-            json.dump(DEFAULT_CONFIG, configFile, indent = 4)
+    saveConfig(config)
 
-    # Load configuration and override environmet variable values
-    try:
-        config = _loadConfiguration(configPath)
-    except BaseException as ex:
-        print(">> [Coretex] Configuration is invalid")
-        print(">> [Coretex] To configure user use \"coretex config --user\" command")
-        print(">> [Coretex] To configure node use \"coretex config --node\" command")
+    if not "CTX_API_URL" in os.environ:
+        os.environ["CTX_API_URL"] = config["serverUrl"]
 
-        sys.exit(1)
+    secretsKey = config.get("secretsKey")
+    if isinstance(secretsKey, str) and secretsKey != "":
+        os.environ["CTX_SECRETS_KEY"] = secretsKey
 
-    os.environ["CTX_API_URL"] = config["serverUrl"]
-    os.environ["CTX_STORAGE_PATH"] = config["storagePath"]
-
-
-def loadConfig() -> Dict[str, Any]:
-    with DEFAULT_CONFIG_PATH.open("r") as configFile:
-        config: Dict[str, Any] = json.load(configFile)
-
-    if not _verifyConfiguration(config):
-        raise RuntimeError(">> [Coretex] Invalid configuration")
-
-    return config
+    if not isCliRuntime():
+        os.environ["CTX_STORAGE_PATH"] = config["storagePath"]
+    else:
+        os.environ["CTX_STORAGE_PATH"] = str(CONFIG_DIR)
 
 
 def saveConfig(config: Dict[str, Any]) -> None:
@@ -110,10 +106,16 @@ def isUserConfigured(config: Dict[str, Any]) -> bool:
         config.get("storagePath") is not None
     )
 
+
 def isNodeConfigured(config: Dict[str, Any]) -> bool:
     return (
         config.get("nodeName") is not None and
         config.get("storagePath") is not None and
         config.get("image") is not None and
-        config.get("organizationID") is not None
+        config.get("serverUrl") is not None and
+        config.get("nodeAccessToken") is not None and
+        config.get("nodeRam") is not None and
+        config.get("nodeSwap") is not None and
+        config.get("nodeSharedMemory") is not None and
+        config.get("nodeMode") is not None
     )

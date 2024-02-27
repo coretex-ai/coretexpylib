@@ -1,6 +1,6 @@
 [project]
 name = "coretex"
-version = "1.0.57"
+version = "1.0.80"
 authors = [
   { name="Duško Mirković", email="dmirkovic@coretex.ai" }
 ]
@@ -39,7 +39,8 @@ dependencies = [
   "click",
   "tabulate",
   "inquirer",
-  "docker"
+  "docker",
+  "cryptography"
 ]
 
 [project.urls]
@@ -53,7 +54,7 @@ include = ["coretex*"]
 exclude = ["tests*", "docs_images*", "doxygen-awesome-css*"]
 
 [tool.setuptools.package-data]
-"*" = ["py.typed"]
+"*" = ["py.typed", "resources/*"]
 
 [project.scripts]
 coretex = "coretex.cli.main:cli"
