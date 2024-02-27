@@ -22,7 +22,6 @@ from zipfile import ZipFile
 from pathlib import Path
 
 import json
-import logging
 
 from ... import folder_manager
 from ...networking import networkManager, NetworkObject, ChunkUploadSession, MAX_CHUNK_SIZE, NetworkRequestError, EntityNotCreated
