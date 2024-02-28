@@ -41,6 +41,7 @@ DEFAULT_SHARED_MEMORY = 2
 DEFAULT_NODE_MODE = NodeMode.execution
 DEFAULT_ALLOW_DOCKER = False
 DEFAULT_SECRETS_KEY = ""
+DEFAULT_INIT_SCRIPT = ""
 
 
 class NodeException(Exception):
@@ -65,6 +66,22 @@ def pull(image: str) -> None:
 
 def isRunning() -> bool:
     return docker.containerExists(DOCKER_CONTAINER_NAME)
+
+
+def _getInitScript(config: Dict[str, Any]) -> Optional[Path]:
+    value = config.get("initScript")
+
+    if not isinstance(value, str):
+        return None
+
+    if value == DEFAULT_INIT_SCRIPT:
+        return None
+
+    path = Path(value).expanduser().absolute()
+    if not path.exists():
+        return None
+
+    return path
 
 
 def start(dockerImage: str, config: Dict[str, Any]) -> None:
@@ -93,6 +110,10 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
 
         if config.get("allowDocker", False):
             volumes.append(("/var/run/docker.sock", "/var/run/docker.sock"))
+
+        initScript = _getInitScript(config)
+        if initScript is not None:
+            volumes.append((str(initScript), "/script/init.sh"))
 
         docker.start(
             DOCKER_CONTAINER_NAME,
@@ -233,6 +254,25 @@ def selectNodeMode(storagePath: str) -> Tuple[int, Optional[int]]:
     return availableNodeModes[selectedMode], None
 
 
+def _configureInitScript() -> str:
+    initScript = clickPrompt("Enter a path to sh script which will be executed before Node starts", DEFAULT_INIT_SCRIPT, type = str)
+
+    if initScript == DEFAULT_INIT_SCRIPT:
+        return DEFAULT_INIT_SCRIPT
+
+    path = Path(initScript).expanduser().absolute()
+
+    if path.is_dir():
+        errorEcho("Provided path is pointing to a directory, file expected!")
+        return _configureInitScript()
+
+    if not path.exists():
+        errorEcho("Provided file does not exist!")
+        return _configureInitScript()
+
+    return str(path)
+
+
 def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     highlightEcho("[Node Configuration]")
     config["nodeName"] = clickPrompt("Node name", type = str)
@@ -260,6 +300,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     config["nodeMode"] = DEFAULT_NODE_MODE
     config["allowDocker"] = DEFAULT_ALLOW_DOCKER
     config["secretsKey"] = DEFAULT_SECRETS_KEY
+    config["initScript"] = DEFAULT_INIT_SCRIPT
 
     if verbose:
         config["storagePath"] = clickPrompt("Storage path (press enter to use default)", DEFAULT_STORAGE_PATH, type = str)
@@ -268,6 +309,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
         config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", DEFAULT_SHARED_MEMORY, type = int)
         config["allowDocker"] = clickPrompt("Allow Node to access system docker? This is a security risk! (Y/n)", DEFAULT_ALLOW_DOCKER, type = bool)
         config["secretsKey"] = clickPrompt("Enter a key used for decrypting your Coretex Secrets", DEFAULT_SECRETS_KEY, type = str, hide_input = True)
+        config["initScript"] = _configureInitScript()
 
         nodeMode, modelId = selectNodeMode(config["storagePath"])
         config["nodeMode"] = nodeMode
