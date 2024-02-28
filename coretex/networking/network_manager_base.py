@@ -410,10 +410,7 @@ class NetworkManagerBase(ABC):
             headers = self._headers("multipart/form-data")
             del headers["Content-Type"]
 
-            if len(files) > 0:
-                timeout: Tuple[int, int] = (600, 300)
-            else:
-                timeout: int = REQUEST_TIMEOUT
+            timeout: Union[int, Tuple[int, int]] = (600, 300) if len(files) > 0 else REQUEST_TIMEOUT
 
             return self.request(endpoint, RequestType.post, headers, body = params, files = filesData, timeout = timeout)
 
