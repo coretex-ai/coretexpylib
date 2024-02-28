@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Any, List, Dict, Optional
+from typing import Any, List, Dict, Optional, Union
 
 from tabulate import tabulate
 
@@ -25,7 +25,13 @@ import inquirer
 from .node_mode import NodeMode
 
 
-def clickPrompt(text: str, default: Any = None, type: Optional[type] = None, **kwargs: Any) -> Any:
+def clickPrompt(
+    text: str,
+    default: Any = None,
+    type: Optional[Union[type, click.ParamType]] = None,
+    **kwargs: Any
+) -> Any:
+
     return click.prompt(click.style(f"\n\U00002754 {text}", fg = "blue"), default = default, type = type, **kwargs)
 
 
@@ -60,7 +66,8 @@ def previewConfig(config: Dict[str, Any]) -> None:
         ["POSIX shared memory", f"{config['nodeSharedMemory']}GB"],
         ["Coretex Node mode",   f"{NodeMode(config['nodeMode']).name}"],
         ["Docker access",       allowDocker],
-        ["Secrets key",         secretsKey]
+        ["Secrets key",         secretsKey],
+        ["Node init script",    config.get("initScript", "")]
     ]
     if config.get("modelId") is not None:
         table.append(["Coretex Model ID", config["modelId"]])
