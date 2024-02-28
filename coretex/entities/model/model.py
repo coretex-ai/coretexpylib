@@ -24,7 +24,7 @@ from pathlib import Path
 import json
 
 from ... import folder_manager
-from ...networking import networkManager, NetworkObject, FileData, NetworkRequestError, EntityNotCreated
+from ...networking import networkManager, NetworkObject, ChunkUploadSession, MAX_CHUNK_SIZE, NetworkRequestError, EntityNotCreated
 from ...codable import KeyDescriptor
 
 
@@ -303,14 +303,14 @@ class Model(NetworkObject):
 
                 zipFile.write(value, value.relative_to(path))
 
-        files = [
-            FileData.createFromPath("file", zipPath)
-        ]
+        uploadSession = ChunkUploadSession(MAX_CHUNK_SIZE, zipPath)
+        uploadId = uploadSession.run()
 
         parameters = {
-            "id": self.id
+            "id": self.id,
+            "file_id": uploadId
         }
 
-        response = networkManager.formData("model/upload", parameters, files)
+        response = networkManager.formData("model/upload", parameters)
         if response.hasFailed():
             raise NetworkRequestError(response, "Failed to upload model")
