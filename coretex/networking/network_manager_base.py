@@ -52,6 +52,8 @@ RETRY_STATUS_CODES = [
     HTTPStatus.SERVICE_UNAVAILABLE
 ]
 
+TimeoutType = Union[int, Tuple[int, int]]
+
 
 def getDelayBeforeRetry(retryCount: int) -> int:
     # retryCount starts from 0 so we add +1/+2 to start/end
@@ -177,7 +179,7 @@ class NetworkManagerBase(ABC):
         body: Optional[RequestBodyType] = None,
         files: Optional[RequestFormType] = None,
         auth: Optional[Tuple[str, str]] = None,
-        timeout: Optional[Union[int, Tuple[int, int]]] = REQUEST_TIMEOUT,
+        timeout: Optional[TimeoutType] = REQUEST_TIMEOUT,
         stream: bool = False,
         retryCount: int = 0
     ) -> NetworkResponse:
@@ -410,7 +412,7 @@ class NetworkManagerBase(ABC):
             headers = self._headers("multipart/form-data")
             del headers["Content-Type"]
 
-            timeout: Union[int, Tuple[int, int]] = (600, 300) if len(files) > 0 else REQUEST_TIMEOUT
+            timeout: TimeoutType = (600, 300) if len(files) > 0 else REQUEST_TIMEOUT
 
             return self.request(endpoint, RequestType.post, headers, body = params, files = filesData, timeout = timeout)
 
