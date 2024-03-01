@@ -21,3 +21,4 @@ from .date import DATE_FORMAT, TIME_ZONE, decodeDate
 from .hash import hashCacheName
 from .image import resizeWithPadding
 from .process import logProcessOutput, command, CommandException
+from .logs import createFileHandler

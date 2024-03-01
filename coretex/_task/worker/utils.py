@@ -20,6 +20,7 @@ from multiprocessing.connection import Connection
 import logging
 
 from ... import folder_manager
+from ...utils import createFileHandler
 
 
 def sendSuccess(conn: Connection, message: str) -> None:
@@ -39,12 +40,12 @@ def sendFailure(conn: Connection, message: str) -> None:
 def initializeLogger(taskRunId: int) -> None:
     formatter = logging.Formatter(
         fmt = "%(asctime)s %(levelname)s: %(message)s",
-        datefmt= "%Y-%m-%d %H:%M:%S",
+        datefmt = "%Y-%m-%d %H:%M:%S",
         style = "%",
     )
 
     workerLogPath = folder_manager.getRunLogsDir(taskRunId) / "worker.log"
-    fileHandler = logging.FileHandler(workerLogPath)
+    fileHandler = createFileHandler(workerLogPath)
 
     fileHandler.setLevel(logging.DEBUG)
     fileHandler.setFormatter(formatter)
