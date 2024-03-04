@@ -25,7 +25,7 @@ from .cron import jobExists, scheduleJob
 from .node import DOCKER_CONTAINER_NAME, DOCKER_CONTAINER_NETWORK, getRepoFromImageUrl, getTagFromImageUrl
 from ..resources import RESOURCES_DIR
 from ...utils import command
-from ...configuration import CONFIG_DIR
+from ...configuration import CONFIG_DIR, getInitScript
 
 
 UPDATE_SCRIPT_NAME = "ctx_node_update.sh"
@@ -64,7 +64,9 @@ def generateUpdateScript(config: Dict[str, Any]) -> str:
         ramMemory = config["nodeRam"],
         swapMemory = config["nodeSwap"],
         sharedMemory = config["nodeSharedMemory"],
-        imageType = "cpu" if config["allowGpu"] is False else "gpu"
+        imageType = "cpu" if config["allowGpu"] is False else "gpu",
+        allowDocker = config.get("allowDocker", False),
+        initScript = getInitScript(config)
     )
 
 

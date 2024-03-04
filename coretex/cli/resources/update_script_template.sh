@@ -36,6 +36,8 @@ RAM_MEMORY={ramMemory}G
 SWAP_MEMORY={swapMemory}G
 SHARED_MEMORY={sharedMemory}G
 IMAGE_TYPE={imageType}
+ALLOW_DOCKER={allowDocker}
+INIT_SCRIPT={initScript}
 
 NODE_STATUS_ENDPOINT="http://localhost:21000/status"
 
@@ -127,6 +129,14 @@ function start_node {{
 
     if [ $MODEL_ID != "None" ]; then
         start_command+=" --env CTX_MODEL_ID=$MODEL_ID"
+    fi
+
+    if [ $ALLOW_DOCKER == "True" ]; then
+        start_command+=" -v /var/run/docker.sock:/var/run/docker.sock"
+    fi
+
+    if [ $INIT_SCRIPT != "None" ]; then
+        start_command+=" -v $INIT_SCRIPT:/script/init.sh"
     fi
 
     eval "$start_command"
