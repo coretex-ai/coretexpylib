@@ -49,14 +49,14 @@ OUTPUT_FILE="$OUTPUT_DIR/ctx_autoupdate.log"
 # Redirect all output to the file
 exec >>"$OUTPUT_FILE" 2>&1
 
-function fetch_node_status {{
-    local api_response=$(curl -s "$NODE_STATUS_ENDPOINT")
-    local status=$(echo "$api_response" | sed -n 's/.*"status":\([^,}}]*\).*/\1/p')
+fetch_node_status() {{
+    api_response=$(curl -s "$NODE_STATUS_ENDPOINT")
+    status=$(echo "$api_response" | sed -n 's/.*"status":\([^,}}]*\).*/\1/p')
     echo "$status"
 }}
 
-function should_update {{
-    local status=$(fetch_node_status)
+should_update() {{
+    status=$(fetch_node_status)
 
     if [ "$status" -eq 2 ]; then
         echo "Checking node version..."
@@ -84,7 +84,7 @@ function should_update {{
     fi
 }}
 
-function pull_image {{
+pull_image() {{
     if $DOCKER_PATH image pull "$IMAGE"; then
         echo "Image pulled successfully: $IMAGE"
         return 0
@@ -94,8 +94,8 @@ function pull_image {{
     fi
 }}
 
-# Define function to stop and remove the container
-function stop_node {{
+# Define to stop and remove the container
+stop_node() {{
     echo "Stopping and removing the container: $CONTAINER_NAME"
     $DOCKER_PATH stop "$CONTAINER_NAME" && $DOCKER_PATH rm "$CONTAINER_NAME"
 
@@ -107,8 +107,8 @@ function stop_node {{
     echo "Node successfully stopped."
 }}
 
-# Define function to start the node with the latest image
-function start_node {{
+# Define to start the node with the latest image
+start_node() {{
     if $DOCKER_PATH network inspect $NETWORK_NAME; then
         echo "Removing the network: $NETWORK_NAME"
         $DOCKER_PATH network rm "$NETWORK_NAME"
@@ -132,9 +132,9 @@ function start_node {{
     eval "$start_command"
 }}
 
-# Define function to update node
-function update_node {{
-    local status=$(fetch_node_status)
+# Define to update node
+update_node() {{
+    status=$(fetch_node_status)
 
     if [ "$status" -eq 3 ]; then
         echo "Node is busy, stopping node update."
@@ -157,12 +157,12 @@ function update_node {{
     start_node
 }}
 
-# Function to run node update
-function run_node_update {{
+# to run node update
+run_node_update() {{
     echo "Running command: update_node"
     update_node
 
-    local exit_code=$?
+    exit_code=$?
     if [ "$exit_code" -eq 0 ]; then
         echo "Node update finished successfully"
     else
