@@ -94,7 +94,7 @@ pull_image() {{
     fi
 }}
 
-# Define to stop and remove the container
+# Define function to stop and remove the container
 stop_node() {{
     echo "Stopping and removing the container: $CONTAINER_NAME"
     $DOCKER_PATH stop "$CONTAINER_NAME" && $DOCKER_PATH rm "$CONTAINER_NAME"
@@ -107,7 +107,7 @@ stop_node() {{
     echo "Node successfully stopped."
 }}
 
-# Define to start the node with the latest image
+# Define function to start the node with the latest image
 start_node() {{
     if $DOCKER_PATH network inspect $NETWORK_NAME; then
         echo "Removing the network: $NETWORK_NAME"
@@ -132,7 +132,7 @@ start_node() {{
     eval "$start_command"
 }}
 
-# Define to update node
+# Define function to update node
 update_node() {{
     status=$(fetch_node_status)
 
@@ -157,7 +157,7 @@ update_node() {{
     start_node
 }}
 
-# to run node update
+# function to run node update
 run_node_update() {{
     echo "Running command: update_node"
     update_node
