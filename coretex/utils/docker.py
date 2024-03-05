@@ -26,9 +26,17 @@ def networkExists(name: str) -> bool:
         return False
 
 
-def containerExists(name: str) -> bool:
+def containerRunning(name: str) -> bool:
     try:
         _, output, _ = command(["docker", "ps", "--format", "{{.Names}}"], ignoreStderr = True, ignoreStdout = True)
+        return name in output
+    except:
+        return False
+
+
+def containerExists(name: str) -> bool:
+    try:
+        _, output, _ = command(["docker", "ps", "-a", "--format", "{{.Names}}"], ignoreStderr = True, ignoreStdout = True)
         return name in output
     except:
         return False

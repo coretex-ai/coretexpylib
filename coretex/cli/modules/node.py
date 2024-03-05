@@ -65,8 +65,10 @@ def pull(image: str) -> None:
 
 
 def isRunning() -> bool:
-    return docker.containerExists(DOCKER_CONTAINER_NAME)
+    return docker.containerRunning(DOCKER_CONTAINER_NAME)
 
+def exists() -> bool:
+    return docker.containerExists(DOCKER_CONTAINER_NAME)
 
 def _getInitScript(config: Dict[str, Any]) -> Optional[Path]:
     value = config.get("initScript")
