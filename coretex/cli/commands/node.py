@@ -44,9 +44,7 @@ def start(image: Optional[str]) -> None:
         node_module.stop()
 
     if node_module.exists():
-        docker.stopContainer(node_module.DOCKER_CONTAINER_NAME)
-        docker.removeContainer(node_module.DOCKER_CONTAINER_NAME)
-        docker.removeNetwork(node_module.DOCKER_CONTAINER_NETWORK)
+        node_module.stop(echoOutput = False)
 
     config = loadConfig()
 
