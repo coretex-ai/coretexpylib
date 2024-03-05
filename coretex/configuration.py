@@ -33,7 +33,7 @@ def isCliRuntime() -> bool:
 
 def getEnvVar(key: str, default: str) -> str:
     if os.environ.get(key) is None:
-        os.environ[key] = default
+        return default
 
     return os.environ[key]
 
