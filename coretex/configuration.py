@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from pathlib import Path
 
 import os
@@ -119,3 +119,19 @@ def isNodeConfigured(config: Dict[str, Any]) -> bool:
         config.get("nodeSharedMemory") is not None and
         config.get("nodeMode") is not None
     )
+
+
+def getInitScript(config: Dict[str, Any]) -> Optional[Path]:
+    value = config.get("initScript")
+
+    if not isinstance(value, str):
+        return None
+
+    if value == "":
+        return None
+
+    path = Path(value).expanduser().absolute()
+    if not path.exists():
+        return None
+
+    return path

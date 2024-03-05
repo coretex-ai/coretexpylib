@@ -19,7 +19,6 @@ from typing import Any, Dict, Tuple, Optional
 from enum import Enum
 from pathlib import Path
 
-import os
 import logging
 
 from .utils import isGPUAvailable
@@ -27,7 +26,7 @@ from .ui import clickPrompt, arrowPrompt, highlightEcho, errorEcho, progressEcho
 from .node_mode import NodeMode
 from ...networking import networkManager, NetworkRequestError
 from ...statistics import getAvailableRamMemory
-from ...configuration import loadConfig, saveConfig, isNodeConfigured
+from ...configuration import loadConfig, saveConfig, isNodeConfigured, getInitScript
 from ...utils import CommandException, docker
 from ...entities.model import Model
 
@@ -68,22 +67,6 @@ def isRunning() -> bool:
     return docker.containerExists(DOCKER_CONTAINER_NAME)
 
 
-def _getInitScript(config: Dict[str, Any]) -> Optional[Path]:
-    value = config.get("initScript")
-
-    if not isinstance(value, str):
-        return None
-
-    if value == DEFAULT_INIT_SCRIPT:
-        return None
-
-    path = Path(value).expanduser().absolute()
-    if not path.exists():
-        return None
-
-    return path
-
-
 def start(dockerImage: str, config: Dict[str, Any]) -> None:
     try:
         progressEcho("Starting Coretex Node...")
@@ -111,7 +94,7 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
         if config.get("allowDocker", False):
             volumes.append(("/var/run/docker.sock", "/var/run/docker.sock"))
 
-        initScript = _getInitScript(config)
+        initScript = getInitScript(config)
         if initScript is not None:
             volumes.append((str(initScript), "/script/init.sh"))
 
