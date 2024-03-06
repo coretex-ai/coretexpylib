@@ -44,7 +44,7 @@ def start(image: Optional[str]) -> None:
         node_module.stop()
 
     if node_module.exists():
-        node_module.stop(echoOutput = False)
+        node_module.clean()
 
     config = loadConfig()
 
