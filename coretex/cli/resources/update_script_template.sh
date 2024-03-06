@@ -50,15 +50,17 @@ OUTPUT_FILE="$OUTPUT_DIR/ctx_autoupdate.log"
 exec >>"$OUTPUT_FILE" 2>&1
 
 fetch_node_status() {{
+    fetched_status=0
     api_response=$(curl -s "$NODE_STATUS_ENDPOINT")
-    status=$(echo "$api_response" | sed -n 's/.*"status":\([^,}}]*\).*/\1/p')
-    echo "$status"
+    fetched_status=$(echo "$api_response" | sed -n 's/.*"status":\([^,}}]*\).*/\1/p')
+    echo "$fetched_status"
 }}
 
 should_update() {{
-    status=$(fetch_node_status)
+    node_status=0
+    node_status=$(fetch_node_status)
 
-    if [ "$status" -eq 2 ]; then
+    if [ "$node_status" -eq 2 ]; then
         echo "Checking node version..."
         # Get latest image digest from docker hub
         manifest_output=$($DOCKER_PATH manifest inspect $REPOSITORY:$TAG --verbose)
@@ -134,9 +136,10 @@ start_node() {{
 
 # Define function to update node
 update_node() {{
-    status=$(fetch_node_status)
+    current_node_status=0
+    current_node_status=$(fetch_node_status)
 
-    if [ "$status" -eq 3 ]; then
+    if [ "$current_node_status" -eq 3 ]; then
         echo "Node is busy, stopping node update."
         return 1
     fi
