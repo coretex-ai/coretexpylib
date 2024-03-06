@@ -16,7 +16,6 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import TextIO
-from datetime import datetime
 
 import sys
 import logging
@@ -26,7 +25,6 @@ import signal
 from .current_task_run import setCurrentTaskRun
 from .. import folder_manager
 from ..entities import TaskRun
-from ..utils import DATE_FORMAT
 
 
 class TaskCallback:
@@ -77,6 +75,11 @@ class TaskCallback:
         sys.exit(1)
 
     def onCleanUp(self) -> None:
+        # Flushes the internal buffers of logging module handlers
+        # and other logging cleanup
+        # IMPORTANT: do not use logging after calling this
+        logging.shutdown()
+
         try:
             from py3nvml import py3nvml
             py3nvml.nvmlShutdown()
