@@ -64,6 +64,7 @@ def start(
     ram: int,
     swap: int,
     shm: int,
+    cpuCount: int,
     environ: Dict[str, str],
     volumes: List[Tuple[str, str]]
 ) -> None:
@@ -77,6 +78,7 @@ def start(
         "--memory", f"{ram}G",
         "--memory-swap", f"{swap}G",
         "--shm-size", f"{shm}G",
+        "--cpus", f"{cpuCount}",
         "--name", name,
     ]
 

@@ -32,7 +32,7 @@ def clickPrompt(
     **kwargs: Any
 ) -> Any:
 
-    return click.prompt(click.style(f"\n\U00002754 {text}", fg = "blue"), default = default, type = type, **kwargs)
+    return click.prompt(click.style(f"\n\U00002754 {text}", fg = "cyan"), default = default, type = type, **kwargs)
 
 
 def arrowPrompt(choices: List[Any], message: str) -> Any:
@@ -64,6 +64,7 @@ def previewConfig(config: Dict[str, Any]) -> None:
         ["RAM",                 f"{config['nodeRam']}GB"],
         ["SWAP memory",         f"{config['nodeSwap']}GB"],
         ["POSIX shared memory", f"{config['nodeSharedMemory']}GB"],
+        ["CPU cores allocated", config["cpuCount"]],
         ["Coretex Node mode",   f"{NodeMode(config['nodeMode']).name}"],
         ["Docker access",       allowDocker],
         ["Secrets key",         secretsKey],
@@ -76,7 +77,7 @@ def previewConfig(config: Dict[str, Any]) -> None:
 
 
 def stdEcho(text: str) -> None:
-    click.echo(click.style(f"\n{text}", fg = "blue"))
+    click.echo(click.style(f"\n{text}", fg = "cyan"))
 
 
 def successEcho(text: str) -> None:

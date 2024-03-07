@@ -64,6 +64,7 @@ def generateUpdateScript(config: Dict[str, Any]) -> str:
         ramMemory = config["nodeRam"],
         swapMemory = config["nodeSwap"],
         sharedMemory = config["nodeSharedMemory"],
+        cpuCount = config["cpuCount"],
         imageType = "cpu" if config["allowGpu"] is False else "gpu",
         allowDocker = config.get("allowDocker", False),
         initScript = getInitScript(config)
