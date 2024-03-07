@@ -64,6 +64,10 @@ def pull(image: str) -> None:
 
 
 def isRunning() -> bool:
+    return docker.containerRunning(DOCKER_CONTAINER_NAME)
+
+
+def exists() -> bool:
     return docker.containerExists(DOCKER_CONTAINER_NAME)
 
 
@@ -115,15 +119,19 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
         raise NodeException("Failed to start Coretex Node.")
 
 
-def stop() -> None:
+def clean() -> None:
     try:
-        progressEcho("Stopping Coretex Node...")
-
-        docker.stopContainer(DOCKER_CONTAINER_NAME)
         docker.removeContainer(DOCKER_CONTAINER_NAME)
         docker.removeNetwork(DOCKER_CONTAINER_NETWORK)
+    except BaseException as ex:
+        logging.getLogger("cli").debug(ex, exc_info = ex)
+        raise NodeException("Failed to clean inactive Coretex Node.")
 
-        successEcho("Successfully stopped Coretex Node.")
+
+def stop() -> None:
+    try:
+        docker.stopContainer(DOCKER_CONTAINER_NAME)
+        clean()
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to stop Coretex Node.")

@@ -43,6 +43,9 @@ def start(image: Optional[str]) -> None:
 
         node_module.stop()
 
+    if node_module.exists():
+        node_module.clean()
+
     config = loadConfig()
 
     if image is not None:
