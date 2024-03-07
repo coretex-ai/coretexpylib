@@ -92,7 +92,6 @@ def start(
         runCommand.extend(["--gpus", "all"])
 
     runCommand.append(image)
-
     command(runCommand, ignoreStdout = True, ignoreStderr = True)
 
 
