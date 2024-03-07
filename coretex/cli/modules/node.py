@@ -19,6 +19,7 @@ from typing import Any, Dict, Tuple, Optional
 from enum import Enum
 from pathlib import Path
 
+import os
 import logging
 
 from .utils import isGPUAvailable
@@ -37,6 +38,7 @@ DEFAULT_STORAGE_PATH = str(Path.home() / ".coretex")
 DEFAULT_RAM_MEMORY = getAvailableRamMemory()
 DEFAULT_SWAP_MEMORY = DEFAULT_RAM_MEMORY * 2
 DEFAULT_SHARED_MEMORY = 2
+DEFAULT_CPU_COUNT = os.cpu_count()
 DEFAULT_NODE_MODE = NodeMode.execution
 DEFAULT_ALLOW_DOCKER = False
 DEFAULT_SECRETS_KEY = ""
@@ -109,6 +111,7 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
             config["nodeRam"],
             config["nodeSwap"],
             config["nodeSharedMemory"],
+            config["cpuCount"],
             environ,
             volumes
         )
@@ -130,8 +133,10 @@ def clean() -> None:
 
 def stop() -> None:
     try:
+        progressEcho("Stopping Coretex Node...")
         docker.stopContainer(DOCKER_CONTAINER_NAME)
         clean()
+        successEcho("Successfully stopped Coretex Node....")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to stop Coretex Node.")
@@ -288,6 +293,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     config["nodeRam"] = DEFAULT_RAM_MEMORY
     config["nodeSwap"] = DEFAULT_SWAP_MEMORY
     config["nodeSharedMemory"] = DEFAULT_SHARED_MEMORY
+    config["cpuCount"] = DEFAULT_CPU_COUNT
     config["nodeMode"] = DEFAULT_NODE_MODE
     config["allowDocker"] = DEFAULT_ALLOW_DOCKER
     config["secretsKey"] = DEFAULT_SECRETS_KEY
@@ -298,6 +304,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
         config["nodeRam"] = clickPrompt("Node RAM memory limit in GB (press enter to use default)", DEFAULT_RAM_MEMORY, type = int)
         config["nodeSwap"] = clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", DEFAULT_SWAP_MEMORY, type = int)
         config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", DEFAULT_SHARED_MEMORY, type = int)
+        config["cpuCount"] = clickPrompt("Enter the number of CPUs the container will use (press enter to use default)", DEFAULT_CPU_COUNT, type = int)
         config["allowDocker"] = clickPrompt("Allow Node to access system docker? This is a security risk! (Y/n)", DEFAULT_ALLOW_DOCKER, type = bool)
         config["secretsKey"] = clickPrompt("Enter a key used for decrypting your Coretex Secrets", DEFAULT_SECRETS_KEY, type = str, hide_input = True)
         config["initScript"] = _configureInitScript()

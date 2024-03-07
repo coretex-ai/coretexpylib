@@ -35,6 +35,7 @@ CAP_ADD={capAdd}
 RAM_MEMORY={ramMemory}G
 SWAP_MEMORY={swapMemory}G
 SHARED_MEMORY={sharedMemory}G
+CPU_COUNT={cpuCount}
 IMAGE_TYPE={imageType}
 ALLOW_DOCKER={allowDocker}
 INIT_SCRIPT={initScript}
@@ -122,7 +123,7 @@ start_node() {{
     $DOCKER_PATH network create --driver bridge $NETWORK_NAME
 
     echo "Starting the node with the latest image"
-    start_command="$DOCKER_PATH run -d --env CTX_API_URL=$SERVER_URL --env CTX_STORAGE_PATH=$STORAGE_PATH --env CTX_NODE_ACCESS_TOKEN=$NODE_ACCESS_TOKEN --env CTX_NODE_MODE=$NODE_MODE --restart $RESTART_POLICY -p $PORTS --cap-add $CAP_ADD --network $NETWORK_NAME --memory $RAM_MEMORY --memory-swap $SWAP_MEMORY --shm-size $SHARED_MEMORY --name $CONTAINER_NAME $IMAGE"
+    start_command="$DOCKER_PATH run -d --env CTX_API_URL=$SERVER_URL --env CTX_STORAGE_PATH=$STORAGE_PATH --env CTX_NODE_ACCESS_TOKEN=$NODE_ACCESS_TOKEN --env CTX_NODE_MODE=$NODE_MODE --restart $RESTART_POLICY -p $PORTS --cap-add $CAP_ADD --network $NETWORK_NAME --memory $RAM_MEMORY --memory-swap $SWAP_MEMORY --shm-size $SHARED_MEMORY --cpus $CPU_COUNT --name $CONTAINER_NAME $IMAGE"
 
     if [ $IMAGE_TYPE = "gpu" ]; then
         # Run Docker command with GPU support
