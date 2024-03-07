@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #     Copyright (C) 2023  Coretex LLC
 
 #     This file is part of Coretex.ai
@@ -15,7 +17,6 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#!/bin/bash
 
 # Define Docker-related variables
 DOCKER_PATH={dockerPath}
