@@ -77,7 +77,7 @@ should_update() {{
         current_digest=$(echo "$current_digest" | awk '{{$1=$1;print}}')
 
         # Compare digests
-        if [[ $latest_digest != $current_digest ]]; then
+        if [ "$latest_digest" != "$current_digest" ]; then
             return 0 # Return True since there is new image to be pulled from docker hub
         else
             echo "Node version is up to date."
