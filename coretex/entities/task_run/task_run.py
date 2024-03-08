@@ -586,7 +586,8 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
         saveSnapshot: bool,
         name: Optional[str],
         description: Optional[str] = None,
-        parameters: Optional[List[Dict[str, Any]]] = None
+        parameters: Optional[List[Dict[str, Any]]] = None,
+        entryPoint: Optional[str] = None
     ) -> Self:
 
         """
@@ -626,6 +627,10 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
             "execution_type": ExecutionType.local.value,
             "parameters": json.dumps(parameters)
         }
+        if entryPoint is not None:
+            params["entry_point"] = entryPoint
+
+        print(params)
         # Create snapshot
         if saveSnapshot:
             files = [FileData.createFromPath("file", createSnapshot())]
@@ -637,4 +642,5 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
             raise NetworkRequestError(response, "Failed to create TaskRun")
 
         responseJson = response.getJson(dict)
+        print(cls.fetchById(responseJson["experiment_ids"][0]))
         return cls.fetchById(responseJson["experiment_ids"][0])
