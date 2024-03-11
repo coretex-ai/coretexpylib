@@ -412,7 +412,13 @@ class NetworkManagerBase(ABC):
             headers = self._headers("multipart/form-data")
             del headers["Content-Type"]
 
-            timeout: TimeoutType = (600, 300) if len(files) > 0 else REQUEST_TIMEOUT
+            if len(files) == 0:
+                timeout = REQUEST_TIMEOUT
+            else:
+                if self.request(endpoint, RequestType.options, timeout = REQUEST_TIMEOUT).hasFailed():
+                    raise ConnectionError(">> [Coretex] Could not establish a connection with the server")
+
+                timeout = (600, 300)
 
             return self.request(endpoint, RequestType.post, headers, body = params, files = filesData, timeout = timeout)
 
