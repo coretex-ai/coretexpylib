@@ -87,10 +87,7 @@ def _syncConfigWithEnv() -> None:
     if isinstance(secretsKey, str) and secretsKey != "":
         os.environ["CTX_SECRETS_KEY"] = secretsKey
 
-    if not isCliRuntime():
-        os.environ["CTX_STORAGE_PATH"] = config["storagePath"]
-    else:
-        os.environ["CTX_STORAGE_PATH"] = str(CONFIG_DIR)
+    os.environ["CTX_STORAGE_PATH"] = config["storagePath"]
 
 
 def saveConfig(config: Dict[str, Any]) -> None:

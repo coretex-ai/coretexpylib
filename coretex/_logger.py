@@ -20,6 +20,7 @@ from datetime import datetime
 from . import folder_manager
 from .entities import LogSeverity
 from .logging import initializeLogger
+from .configuration import CONFIG_DIR
 
 
 def _initializeDefaultLogger() -> None:
@@ -31,6 +32,7 @@ def _initializeDefaultLogger() -> None:
 
 def _initializeCLILogger() -> None:
     logName = datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f%z")
-    logPath = folder_manager.cliLogs.joinpath(logName).with_suffix(".log")
+    logPath = CONFIG_DIR / "logs"
+    logPath.mkdir(exist_ok = True)
 
-    initializeLogger(LogSeverity.info, logPath)
+    initializeLogger(LogSeverity.info, logPath.joinpath(logName).with_suffix(".log"))

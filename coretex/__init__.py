@@ -24,6 +24,7 @@ _syncConfigWithEnv()
 from ._logger import _initializeDefaultLogger, _initializeCLILogger
 from .configuration import isCliRuntime
 
+
 if isCliRuntime():
     _initializeCLILogger()
 else:
