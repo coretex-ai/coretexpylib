@@ -21,6 +21,7 @@ import os
 import shutil
 
 from .utils import file as file_utils
+from .configuration import CONFIG_DIR, isCliRuntime
 
 
 """
@@ -51,7 +52,7 @@ from .utils import file as file_utils
 def _createFolder(name: str) -> Path:
     path = _root / name
 
-    if not path.exists():
+    if not path.exists() and not isCliRuntime():
         path.mkdir(parents = True, exist_ok = True)
 
     return path
@@ -68,11 +69,15 @@ environments     = _createFolder("environments")
 temp             = _createFolder("temp")
 _artifactsFolder = _createFolder("artifacts")
 
-runsLogDirectory = logs / "runs"
-runsLogDirectory.mkdir(exist_ok = True)
+if not isCliRuntime():
+    runsLogDirectory = logs / "runs"
+    runsLogDirectory.mkdir(exist_ok = True)
 
-coretexpylibLogs = logs / "coretexpylib"
-coretexpylibLogs.mkdir(exist_ok = True)
+    coretexpylibLogs = logs / "coretexpylib"
+    coretexpylibLogs.mkdir(exist_ok = True)
+else:
+    cliLogs = logs / "coretex_cli"
+    cliLogs.mkdir(exist_ok = True, parents = True)
 
 
 def createTempFolder(name: str) -> Path:

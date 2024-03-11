@@ -27,3 +27,10 @@ def _initializeDefaultLogger() -> None:
     logPath = folder_manager.coretexpylibLogs.joinpath(logName).with_suffix(".log")
 
     initializeLogger(LogSeverity.info, logPath)
+
+
+def _initializeCLILogger() -> None:
+    logName = datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f%z")
+    logPath = folder_manager.cliLogs.joinpath(logName).with_suffix(".log")
+
+    initializeLogger(LogSeverity.info, logPath)
