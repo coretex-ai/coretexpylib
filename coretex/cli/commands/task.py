@@ -26,12 +26,13 @@ import click
 from ..modules.user import initializeUserSession
 from ..modules.utils import onBeforeCommandExecute
 from ..modules.project_utils import isProjectSelected
-from ...configuration import loadConfig
 from ... import _task
 from ..._task.local.local import LocalTaskCallback
 from ..._task.local.task_config import readTaskConfig
+from ...configuration import loadConfig
 from ...networking import RequestFailedError
 from ...entities import TaskRun, TaskRunStatus
+
 
 @click.command()
 @onBeforeCommandExecute(initializeUserSession)
@@ -44,8 +45,6 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
     config = loadConfig()
     parameters = readTaskConfig()
 
-    print(path, name, description, snapshot)
-
     taskRun: TaskRun = TaskRun.runLocal(
         config["projectId"],
         snapshot,
@@ -55,11 +54,8 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
         entryPoint = path,
     )
 
-    # logging.getLogger("coretexpylib").info(f">> [Coretex] Created local run with ID \"{taskRun.id}\"")
-
     taskRun.updateStatus(TaskRunStatus.preparingToStart)
     taskRunId = taskRun.id
-    print(taskRunId)
     callback = LocalTaskCallback(taskRun, config["refreshToken"])
 
     try:

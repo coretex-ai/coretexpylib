@@ -642,5 +642,4 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
             raise NetworkRequestError(response, "Failed to create TaskRun")
 
         responseJson = response.getJson(dict)
-        print(cls.fetchById(responseJson["experiment_ids"][0]))
         return cls.fetchById(responseJson["experiment_ids"][0])
