@@ -15,8 +15,6 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Type
-
 from datetime import datetime, timezone
 
 
@@ -28,7 +26,8 @@ DATE_FORMAT = "%Y-%m-%d %H:%M:%S.%f%z"
 
 CORETEX_DATE_FORMATS = [
     DATE_FORMAT,
-    "%Y-%m-%dT%H:%M:%S.%f%z"
+    "%Y-%m-%dT%H:%M:%S.%f%z",
+    "%Y-%m-%d %H:%M:%S%z"
 ]
 
 
