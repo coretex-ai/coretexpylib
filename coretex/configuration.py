@@ -117,7 +117,6 @@ def isNodeConfigured(config: Dict[str, Any]) -> bool:
         config.get("nodeRam") is not None and
         config.get("nodeSwap") is not None and
         config.get("nodeSharedMemory") is not None and
-        config.get("cpuCount") is not None and
         config.get("nodeMode") is not None
     )
 

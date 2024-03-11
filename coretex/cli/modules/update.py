@@ -22,7 +22,7 @@ from pathlib import Path
 import requests
 
 from .cron import jobExists, scheduleJob
-from .node import DOCKER_CONTAINER_NAME, DOCKER_CONTAINER_NETWORK, getRepoFromImageUrl, getTagFromImageUrl
+from .node import DOCKER_CONTAINER_NAME, DOCKER_CONTAINER_NETWORK, DEFAULT_CPU_COUNT, getRepoFromImageUrl, getTagFromImageUrl
 from ..resources import RESOURCES_DIR
 from ...utils import command
 from ...configuration import CONFIG_DIR, getInitScript
@@ -64,7 +64,7 @@ def generateUpdateScript(config: Dict[str, Any]) -> str:
         ramMemory = config["nodeRam"],
         swapMemory = config["nodeSwap"],
         sharedMemory = config["nodeSharedMemory"],
-        cpuCount = config["cpuCount"],
+        cpuCount = config.get("cpuCount", DEFAULT_CPU_COUNT),
         imageType = "cpu" if config["allowGpu"] is False else "gpu",
         allowDocker = config.get("allowDocker", False),
         initScript = getInitScript(config)
