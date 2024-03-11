@@ -91,6 +91,7 @@ def start(
     if allowGpu:
         runCommand.extend(["--gpus", "all"])
 
+    # Docker image must always be the last parameter of docker run command
     runCommand.append(image)
     command(runCommand, ignoreStdout = True, ignoreStderr = True)
 
