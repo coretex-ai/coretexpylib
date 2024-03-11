@@ -23,6 +23,7 @@ from coretex.networking import EntityNotCreated
 from .base import BaseObject
 from .task import Task
 from .project_type import ProjectType
+from .project_visibility import ProjectVisibility
 
 
 class Project(BaseObject):
@@ -33,9 +34,16 @@ class Project(BaseObject):
     """
 
     tasks: List[Task]
+    visibility: ProjectVisibility
 
     @classmethod
-    def createProject(cls, name: str, projectType: ProjectType, description: Optional[str] = None) -> Self:
+    def createProject(
+        cls,
+        name: str,
+        projectType: ProjectType,
+        description: Optional[str] = None,
+        visiblity: Optional[ProjectVisibility] = ProjectVisibility.private
+    ) -> Self:
         """
             Creates a new project with the provided name and description
 
@@ -71,7 +79,8 @@ class Project(BaseObject):
         project = cls.create(
             name = name,
             project_task = projectType,
-            description = description
+            description = description,
+            visiblity = visiblity
         )
 
         if project is None:

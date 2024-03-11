@@ -20,8 +20,9 @@ from typing import Optional
 import click
 
 from ..modules import ui, project_utils, utils, user
-from ...entities import Project
-from ...networking import NetworkRequestError
+from ..modules.ui import clickPrompt, errorEcho, successEcho, progressEcho
+from ...entities import Project, ProjectType, ProjectVisibility
+from ...networking import NetworkRequestError, EntityNotCreated
 from ...configuration import loadConfig, saveConfig
 
 
@@ -29,6 +30,54 @@ def selectProject(projectId: int) -> None:
     config = loadConfig()
     config["projectId"] = projectId
     saveConfig(config)
+
+
+@click.command()
+@click.option("--name", "-n", type = str, help = "Project name")
+@click.option("--type", "-t", type = int, help = "Project type")
+@click.option("--description", "-d", type = str, help = "Project description")
+@click.option("--visibility", "-v", type = str, help = "Project visibility")
+def create(name: Optional[str], type: Optional[int], description: Optional[str], visibility: Optional[int]) -> None:
+    if name is None:
+        name = clickPrompt("Please enter name of the project you want to create:", type = str)
+
+    if type is None:
+        type = project_utils.selectProjectType()
+
+    if description is None:
+        description = clickPrompt("Please enter your project's description:", type = str)
+
+    if visibility is None:
+        visibility = project_utils.selectProjectVisibility()
+
+    try:
+        Project.createProject(name, ProjectType(type), description, ProjectVisibility(int(visibility)))
+        ui.successEcho(f"Project \"{name}\" created successfully.")
+    except EntityNotCreated:
+        raise click.ClickException(f"Failed to create project \"{name}\".")
+
+
+@click.command()
+@click.option("--name", "-n", type = str, help = "Project name")
+@click.option("--visibility", "-v", type = int, help = "Project visibility")
+@click.option("--description", "-d", type = str, help = "Project description")
+def edit(name: Optional[str], description: Optional[str], visibility: Optional[int]) -> None:
+    config = loadConfig()
+    selectedProject = Project.fetchById(config["projectId"])
+
+    if name is None:
+        name = clickPrompt("Please enter new name for your project", type = str, default = selectedProject.name)
+
+    if description is None:
+        description = clickPrompt("Please enter new description for your project", type = str, default = selectedProject.description)
+
+    if visibility is None:
+        visibility = project_utils.selectProjectVisibility()
+
+    try:
+        selectedProject.update(name = name, description = description, visibility = visibility)
+    except NetworkRequestError:
+        raise click.ClickException(f"Failed to create project \"{name}\".")
 
 
 @click.command()
@@ -41,23 +90,23 @@ def select(name: Optional[str], id: Optional[int]) -> None:
     project: Optional[Project] = None
 
     if name is not None:
-        ui.progressEcho("Validating project...")
+        progressEcho("Validating project...")
 
         try:
             project = Project.fetchOne(name = name)
-            ui.successEcho(f"Project \"{name}\" selected successfully!")
+            successEcho(f"Project \"{name}\" selected successfully!")
             selectProject(project.id)
         except ValueError:
-            ui.errorEcho(f"Project \"{name}\" not found.")
+            errorEcho(f"Project \"{name}\" not found.")
             project = project_utils.promptProjectCreate("Do you want to create a project with that name?", name)
 
     if id is not None:
-        ui.progressEcho("Validating project...")
+        progressEcho("Validating project...")
         try:
             project = Project.fetchById(id)
-            ui.successEcho(f"Project with id \"{id}\" fetched successfully. Project name \"{project.name}\"")
+            successEcho(f"Project with id \"{id}\" fetched successfully. Project name \"{project.name}\"")
         except NetworkRequestError:
-            ui.errorEcho(f"Failed to fetch project with provided id \"{id}\"")
+            errorEcho(f"Failed to fetch project with provided id \"{id}\"")
 
     if project is not None:
         selectProject(project.id)
@@ -69,4 +118,6 @@ def project() -> None:
     pass
 
 
+project.add_command(create, "create")
+project.add_command(edit, "edit")
 project.add_command(select, "select")

@@ -3,11 +3,12 @@ from typing import Optional, Dict, Any
 import click
 
 from . import ui
-from ...entities import Project, ProjectType
+from ...entities import Project, ProjectType, ProjectVisibility
 from ...networking import EntityNotCreated
 
 
 def selectProjectType() -> ProjectType:
+    print('la ?')
     availableProjectTypes = {
         "Computer Vision": ProjectType.computerVision,
         "Motion Recognition": ProjectType.motionRecognition,
@@ -21,6 +22,21 @@ def selectProjectType() -> ProjectType:
     selectedProjectType = availableProjectTypes[selectedChoice]
     ui.stdEcho(f"You've chosen: {selectedChoice}")
     return selectedProjectType
+
+
+def selectProjectVisibility() -> ProjectVisibility:
+    availableProjectVisibilities = {
+        "Private": ProjectVisibility.private,
+        "Shared": ProjectVisibility.shared,
+        "Public": ProjectVisibility.public,
+    }
+
+    choices = list(availableProjectVisibilities.keys())
+    selectedChoice = ui.arrowPrompt(choices, "Specify visibility of project:")
+
+    selectedProjectVisibility = availableProjectVisibilities[selectedChoice]
+    ui.stdEcho(f"You've chosen: {selectedChoice}")
+    return selectedProjectVisibility
 
 
 def promptProjectCreate(message: str, name: str) -> Optional[Project]:
