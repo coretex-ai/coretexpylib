@@ -21,7 +21,6 @@ import os
 import shutil
 
 from .utils import file as file_utils
-from .configuration import CONFIG_DIR
 
 
 """
