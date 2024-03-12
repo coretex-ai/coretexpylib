@@ -19,30 +19,16 @@ from typing import Any, Dict, Tuple, Optional
 from enum import Enum
 from pathlib import Path
 
-import os
 import logging
 
+from . import config_defaults
 from .utils import isGPUAvailable
 from .ui import clickPrompt, arrowPrompt, highlightEcho, errorEcho, progressEcho, successEcho, stdEcho
 from .node_mode import NodeMode
 from ...networking import networkManager, NetworkRequestError
-from ...statistics import getAvailableRamMemory
 from ...configuration import loadConfig, saveConfig, isNodeConfigured, getInitScript
 from ...utils import CommandException, docker
 from ...entities.model import Model
-
-
-DOCKER_CONTAINER_NAME = "coretex_node"
-DOCKER_CONTAINER_NETWORK = "coretex_node"
-DEFAULT_STORAGE_PATH = str(Path.home() / ".coretex")
-DEFAULT_RAM_MEMORY = getAvailableRamMemory()
-DEFAULT_SWAP_MEMORY = DEFAULT_RAM_MEMORY * 2
-DEFAULT_SHARED_MEMORY = 2
-DEFAULT_CPU_COUNT = os.cpu_count()
-DEFAULT_NODE_MODE = NodeMode.execution
-DEFAULT_ALLOW_DOCKER = False
-DEFAULT_SECRETS_KEY = ""
-DEFAULT_INIT_SCRIPT = ""
 
 
 class NodeException(Exception):
@@ -66,17 +52,17 @@ def pull(image: str) -> None:
 
 
 def isRunning() -> bool:
-    return docker.containerRunning(DOCKER_CONTAINER_NAME)
+    return docker.containerRunning(config_defaults.DOCKER_CONTAINER_NAME)
 
 
 def exists() -> bool:
-    return docker.containerExists(DOCKER_CONTAINER_NAME)
+    return docker.containerExists(config_defaults.DOCKER_CONTAINER_NAME)
 
 
 def start(dockerImage: str, config: Dict[str, Any]) -> None:
     try:
         progressEcho("Starting Coretex Node...")
-        docker.createNetwork(DOCKER_CONTAINER_NETWORK)
+        docker.createNetwork(config_defaults.DOCKER_CONTAINER_NETWORK)
 
         environ = {
             "CTX_API_URL": config["serverUrl"],
@@ -89,8 +75,8 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
         if isinstance(modelId, int):
             environ["CTX_MODEL_ID"] = modelId
 
-        secretsKey = config.get("secretsKey", DEFAULT_SECRETS_KEY)
-        if isinstance(secretsKey, str) and secretsKey != DEFAULT_SECRETS_KEY:
+        secretsKey = config.get("secretsKey", config_defaults.DEFAULT_SECRETS_KEY)
+        if isinstance(secretsKey, str) and secretsKey != config_defaults.DEFAULT_SECRETS_KEY:
             environ["CTX_SECRETS_KEY"] = secretsKey
 
         volumes = [
@@ -105,7 +91,7 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
             volumes.append((str(initScript), "/script/init.sh"))
 
         docker.start(
-            DOCKER_CONTAINER_NAME,
+            config_defaults.DOCKER_CONTAINER_NAME,
             dockerImage,
             config["allowGpu"],
             config["nodeRam"],
@@ -124,8 +110,8 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
 
 def clean() -> None:
     try:
-        docker.removeContainer(DOCKER_CONTAINER_NAME)
-        docker.removeNetwork(DOCKER_CONTAINER_NETWORK)
+        docker.removeContainer(config_defaults.DOCKER_CONTAINER_NAME)
+        docker.removeNetwork(config_defaults.DOCKER_CONTAINER_NETWORK)
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to clean inactive Coretex Node.")
@@ -134,7 +120,7 @@ def clean() -> None:
 def stop() -> None:
     try:
         progressEcho("Stopping Coretex Node...")
-        docker.stopContainer(DOCKER_CONTAINER_NAME)
+        docker.stopContainer(config_defaults.DOCKER_CONTAINER_NAME)
         clean()
         successEcho("Successfully stopped Coretex Node....")
     except BaseException as ex:
@@ -251,10 +237,10 @@ def selectNodeMode(storagePath: str) -> Tuple[int, Optional[int]]:
 
 
 def _configureInitScript() -> str:
-    initScript = clickPrompt("Enter a path to sh script which will be executed before Node starts", DEFAULT_INIT_SCRIPT, type = str)
+    initScript = clickPrompt("Enter a path to sh script which will be executed before Node starts", config_defaults.DEFAULT_INIT_SCRIPT, type = str)
 
-    if initScript == DEFAULT_INIT_SCRIPT:
-        return DEFAULT_INIT_SCRIPT
+    if initScript == config_defaults.DEFAULT_INIT_SCRIPT:
+        return config_defaults.DEFAULT_INIT_SCRIPT
 
     path = Path(initScript).expanduser().absolute()
 
@@ -289,24 +275,24 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
         tag = "gpu" if config["allowGpu"] else "cpu"
         config["image"] += f":latest-{tag}"
 
-    config["storagePath"] = DEFAULT_STORAGE_PATH
-    config["nodeRam"] = DEFAULT_RAM_MEMORY
-    config["nodeSwap"] = DEFAULT_SWAP_MEMORY
-    config["nodeSharedMemory"] = DEFAULT_SHARED_MEMORY
-    config["cpuCount"] = DEFAULT_CPU_COUNT
-    config["nodeMode"] = DEFAULT_NODE_MODE
-    config["allowDocker"] = DEFAULT_ALLOW_DOCKER
-    config["secretsKey"] = DEFAULT_SECRETS_KEY
-    config["initScript"] = DEFAULT_INIT_SCRIPT
+    config["storagePath"] = config_defaults.DEFAULT_STORAGE_PATH
+    config["nodeRam"] = config_defaults.DEFAULT_RAM_MEMORY
+    config["nodeSwap"] = config_defaults.DEFAULT_SWAP_MEMORY
+    config["nodeSharedMemory"] = config_defaults.DEFAULT_SHARED_MEMORY
+    config["cpuCount"] = config_defaults.DEFAULT_CPU_COUNT
+    config["nodeMode"] = config_defaults.DEFAULT_NODE_MODE
+    config["allowDocker"] = config_defaults.DEFAULT_ALLOW_DOCKER
+    config["secretsKey"] = config_defaults.DEFAULT_SECRETS_KEY
+    config["initScript"] = config_defaults.DEFAULT_INIT_SCRIPT
 
     if verbose:
-        config["storagePath"] = clickPrompt("Storage path (press enter to use default)", DEFAULT_STORAGE_PATH, type = str)
-        config["nodeRam"] = clickPrompt("Node RAM memory limit in GB (press enter to use default)", DEFAULT_RAM_MEMORY, type = int)
-        config["nodeSwap"] = clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", DEFAULT_SWAP_MEMORY, type = int)
-        config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", DEFAULT_SHARED_MEMORY, type = int)
-        config["cpuCount"] = clickPrompt("Enter the number of CPUs the container will use (press enter to use default)", DEFAULT_CPU_COUNT, type = int)
-        config["allowDocker"] = clickPrompt("Allow Node to access system docker? This is a security risk! (Y/n)", DEFAULT_ALLOW_DOCKER, type = bool)
-        config["secretsKey"] = clickPrompt("Enter a key used for decrypting your Coretex Secrets", DEFAULT_SECRETS_KEY, type = str, hide_input = True)
+        config["storagePath"] = clickPrompt("Storage path (press enter to use default)", config_defaults.DEFAULT_STORAGE_PATH, type = str)
+        config["nodeRam"] = clickPrompt("Node RAM memory limit in GB (press enter to use default)", config_defaults.DEFAULT_RAM_MEMORY, type = int)
+        config["nodeSwap"] = clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", config_defaults.DEFAULT_SWAP_MEMORY, type = int)
+        config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", config_defaults.DEFAULT_SHARED_MEMORY, type = int)
+        config["cpuCount"] = clickPrompt("Enter the number of CPUs the container will use (press enter to use default)", config_defaults.DEFAULT_CPU_COUNT, type = int)
+        config["allowDocker"] = clickPrompt("Allow Node to access system docker? This is a security risk! (Y/n)", config_defaults.DEFAULT_ALLOW_DOCKER, type = bool)
+        config["secretsKey"] = clickPrompt("Enter a key used for decrypting your Coretex Secrets", config_defaults.DEFAULT_SECRETS_KEY, type = str, hide_input = True)
         config["initScript"] = _configureInitScript()
 
         nodeMode, modelId = selectNodeMode(config["storagePath"])

@@ -124,7 +124,7 @@ start_node() {{
     $DOCKER_PATH network create --driver bridge $NETWORK_NAME
 
     echo "Starting the node with the latest image"
-    start_command="$DOCKER_PATH run -d --env CTX_API_URL=$SERVER_URL --env CTX_STORAGE_PATH=$STORAGE_PATH --env CTX_NODE_ACCESS_TOKEN=$NODE_ACCESS_TOKEN --env CTX_NODE_MODE=$NODE_MODE --restart $RESTART_POLICY -p $PORTS --cap-add $CAP_ADD --network $NETWORK_NAME --memory $RAM_MEMORY --memory-swap $SWAP_MEMORY --shm-size $SHARED_MEMORY --cpus $CPU_COUNT --name $CONTAINER_NAME $IMAGE"
+    start_command="$DOCKER_PATH run -d --env CTX_API_URL=$SERVER_URL --env CTX_STORAGE_PATH=$STORAGE_PATH --env CTX_NODE_ACCESS_TOKEN=$NODE_ACCESS_TOKEN --env CTX_NODE_MODE=$NODE_MODE --restart $RESTART_POLICY -p $PORTS --cap-add $CAP_ADD --network $NETWORK_NAME --memory $RAM_MEMORY --memory-swap $SWAP_MEMORY --shm-size $SHARED_MEMORY --cpus $CPU_COUNT --name $CONTAINER_NAME"
 
     if [ $IMAGE_TYPE = "gpu" ]; then
         # Run Docker command with GPU support
@@ -143,6 +143,8 @@ start_node() {{
         start_command+=" -v $INIT_SCRIPT:/script/init.sh"
     fi
 
+    # Docker image must always be the last parameter of docker run command
+    start_command+=" $IMAGE"
     eval "$start_command"
 }}
 
