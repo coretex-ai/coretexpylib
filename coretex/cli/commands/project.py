@@ -22,7 +22,7 @@ import click
 from ..modules import ui, project_utils, utils, user
 from ..modules.ui import clickPrompt, errorEcho, successEcho, progressEcho
 from ...entities import Project, ProjectType, ProjectVisibility
-from ...networking import NetworkRequestError, EntityNotCreated
+from ...networking import NetworkRequestError, EntityNotCreated, networkManager
 from ...configuration import loadConfig, saveConfig
 
 
@@ -75,7 +75,13 @@ def edit(name: Optional[str], description: Optional[str], visibility: Optional[i
         visibility = project_utils.selectProjectVisibility()
 
     try:
-        selectedProject.update(name = name, description = description, visibility = visibility)
+        selectedProject.update(name = name, description = description)
+        networkManager.post("entity-visibility", {
+            "entity_id": config["projectId"],
+            "type": 1,
+            "visibility": visibility,
+            "user_ids": ["uuid"]
+        })
     except NetworkRequestError:
         raise click.ClickException(f"Failed to create project \"{name}\".")
 
