@@ -19,8 +19,6 @@ from typing import Any, List, Dict, Optional, Union
 
 from tabulate import tabulate
 
-import os
-
 import click
 import inquirer
 
