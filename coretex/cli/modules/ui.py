@@ -19,10 +19,11 @@ from typing import Any, List, Dict, Optional, Union
 
 from tabulate import tabulate
 
+import os
+
 import click
 import inquirer
 
-from .node import DEFAULT_CPU_COUNT
 from .node_mode import NodeMode
 
 
@@ -65,7 +66,7 @@ def previewConfig(config: Dict[str, Any]) -> None:
         ["RAM",                 f"{config['nodeRam']}GB"],
         ["SWAP memory",         f"{config['nodeSwap']}GB"],
         ["POSIX shared memory", f"{config['nodeSharedMemory']}GB"],
-        ["CPU cores allocated", config.get("cpuCount", DEFAULT_CPU_COUNT)],
+        ["CPU cores allocated", config.get("cpuCount", os.cpu_count())],
         ["Coretex Node mode",   f"{NodeMode(config['nodeMode']).name}"],
         ["Docker access",       allowDocker],
         ["Secrets key",         secretsKey],
