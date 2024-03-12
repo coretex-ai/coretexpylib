@@ -22,8 +22,8 @@ from tabulate import tabulate
 import click
 import inquirer
 
-from .node import DEFAULT_CPU_COUNT
 from .node_mode import NodeMode
+from .config_defaults import DEFAULT_CPU_COUNT
 
 
 def clickPrompt(

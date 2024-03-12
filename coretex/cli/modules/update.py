@@ -21,8 +21,9 @@ from pathlib import Path
 
 import requests
 
+from . import config_defaults
 from .cron import jobExists, scheduleJob
-from .node import DOCKER_CONTAINER_NAME, DOCKER_CONTAINER_NETWORK, DEFAULT_CPU_COUNT, getRepoFromImageUrl, getTagFromImageUrl
+from .node import getRepoFromImageUrl, getTagFromImageUrl
 from ..resources import RESOURCES_DIR
 from ...utils import command
 from ...configuration import CONFIG_DIR, getInitScript
@@ -56,15 +57,15 @@ def generateUpdateScript(config: Dict[str, Any]) -> str:
         nodeAccessToken = config["nodeAccessToken"],
         nodeMode = config["nodeMode"],
         modelId = config.get("modelId"),
-        containerName = DOCKER_CONTAINER_NAME,
-        networkName = DOCKER_CONTAINER_NETWORK,
+        containerName = config_defaults.DOCKER_CONTAINER_NAME,
+        networkName = config_defaults.DOCKER_CONTAINER_NETWORK,
         restartPolicy = "always",
         ports = "21000:21000",
         capAdd = "SYS_PTRACE",
         ramMemory = config["nodeRam"],
         swapMemory = config["nodeSwap"],
         sharedMemory = config["nodeSharedMemory"],
-        cpuCount = config.get("cpuCount", DEFAULT_CPU_COUNT),
+        cpuCount = config.get("cpuCount", config_defaults.DEFAULT_CPU_COUNT),
         imageType = "cpu" if config["allowGpu"] is False else "gpu",
         allowDocker = config.get("allowDocker", False),
         initScript = getInitScript(config)
