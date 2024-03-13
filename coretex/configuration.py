@@ -90,7 +90,7 @@ def _syncConfigWithEnv() -> None:
     if not isCliRuntime():
         os.environ["CTX_STORAGE_PATH"] = config["storagePath"]
     else:
-        os.environ["CTX_STORAGE_PATH"] = str(CONFIG_DIR)
+        os.environ["CTX_STORAGE_PATH"] = f"{CONFIG_DIR}/data"
 
 
 def saveConfig(config: Dict[str, Any]) -> None:
