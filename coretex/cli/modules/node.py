@@ -59,6 +59,15 @@ def exists() -> bool:
     return docker.containerExists(config_defaults.DOCKER_CONTAINER_NAME)
 
 
+def validateResources(config: Dict[str, Any], cpus: int, ram: int, swap: int) -> None:
+    if cpus < config["cpuCount"]:
+        stdEcho(f"WARNING: CPU limit in Docker Desktop ({cpus}) is lower than the configured value ({config['cpuCount']}). Please adjust resource limitations in Docker Desktop settings.")
+    if ram < config["nodeRam"]:
+        stdEcho(f"WARNING: RAM limit in Docker Desktop ({ram}) is lower than the configured value ({config['nodeRam']}). Please adjust resource limitations in Docker Desktop settings.")
+    if swap < config["nodeSwap"]:
+        stdEcho(f"WARNING: Swap limit in Docker Desktop ({swap}) is lower than the configured value ({config['nodeSwap']}). Please adjust resource limitations in Docker Desktop settings.")
+
+
 def start(dockerImage: str, config: Dict[str, Any]) -> None:
     try:
         progressEcho("Starting Coretex Node...")
@@ -90,14 +99,17 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
         if initScript is not None:
             volumes.append((str(initScript), "/script/init.sh"))
 
+        limitedCpus, limitedRam, limitedSwap = docker.dockerInfo()
+        validateResources(config, limitedCpus, limitedRam, limitedSwap)
+
         docker.start(
             config_defaults.DOCKER_CONTAINER_NAME,
             dockerImage,
             config["allowGpu"],
-            config["nodeRam"],
-            config["nodeSwap"],
+            limitedRam if config["nodeRam"] >= limitedRam and limitedRam > 0 else config["limitedRam"],
+            limitedSwap if config["nodeSwap"] >= limitedSwap and limitedSwap > 0 else config["limitedSwap"],
             config["nodeSharedMemory"],
-            config["cpuCount"],
+            limitedCpus if config["cpuCount"] >= limitedCpus and limitedCpus > 0 else config["cpuCount"],
             environ,
             volumes
         )

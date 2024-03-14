@@ -1,5 +1,6 @@
 from typing import Dict, Any, List, Tuple
 
+import re
 import json
 
 from .process import command, CommandException
@@ -123,3 +124,17 @@ def imageInspect(image: str) -> Dict[str, Any]:
         raise TypeError(f"Invalid function result type \"{type(jsonOutput[0])}\". Expected: \"dict\"")
 
     return jsonOutput[0]
+
+
+def dockerInfo() -> Tuple[int, int, int]:
+    _, output, _ = command(["docker", "info"], ignoreStdout = True, ignoreStderr = True)
+
+    cpuMatch = re.search(r"CPUs:\s+(\d+)", output)
+    ramMatch = re.search(r"Total Memory:\s+([\d.]+[KMG]iB)", output)
+    swapMatch = re.search(r"Swap Limit:\s+([\d.]+[KMG]iB)", output)
+
+    cpuLimit = int(cpuMatch.group(1)) if cpuMatch else 0
+    ramLimit = int(ramMatch.group(1)) if ramMatch else 0
+    swapLimit = int(swapMatch.group(1)) if swapMatch else 0
+
+    return cpuLimit, ramLimit, swapLimit
