@@ -25,7 +25,8 @@ from .commands.project import project
 from .modules.intercept import ClickExceptionInterceptor
 
 
-@click.group(cls = ClickExceptionInterceptor)
+# @click.group(cls = ClickExceptionInterceptor)
+@click.group()
 def cli() -> None:
     pass
 

@@ -126,15 +126,8 @@ def imageInspect(image: str) -> Dict[str, Any]:
     return jsonOutput[0]
 
 
-def dockerInfo() -> Tuple[int, int, int]:
-    _, output, _ = command(["docker", "info"], ignoreStdout = True, ignoreStderr = True)
+def getResourceLimits() -> Tuple[int, int]:
+    _, output, _ = command(["docker", "info", "--format", "{{json .}}"], ignoreStdout = True, ignoreStderr = True)
+    jsonOutput = json.loads(output)
 
-    cpuMatch = re.search(r"CPUs:\s+(\d+)", output)
-    ramMatch = re.search(r"Total Memory:\s+([\d.]+[KMG]iB)", output)
-    swapMatch = re.search(r"Swap Limit:\s+([\d.]+[KMG]iB)", output)
-
-    cpuLimit = int(cpuMatch.group(1)) if cpuMatch else 0
-    ramLimit = int(ramMatch.group(1)) if ramMatch else 0
-    swapLimit = int(swapMatch.group(1)) if swapMatch else 0
-
-    return cpuLimit, ramLimit, swapLimit
+    return jsonOutput["NCPU"], round(jsonOutput["MemTotal"] / (1024**3), 0)

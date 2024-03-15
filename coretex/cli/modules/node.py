@@ -99,17 +99,14 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
         if initScript is not None:
             volumes.append((str(initScript), "/script/init.sh"))
 
-        limitedCpus, limitedRam, limitedSwap = docker.dockerInfo()
-        validateResources(config, limitedCpus, limitedRam, limitedSwap)
-
         docker.start(
             config_defaults.DOCKER_CONTAINER_NAME,
             dockerImage,
             config["allowGpu"],
-            limitedRam if config["nodeRam"] >= limitedRam and limitedRam > 0 else config["limitedRam"],
-            limitedSwap if config["nodeSwap"] >= limitedSwap and limitedSwap > 0 else config["limitedSwap"],
+            config["nodeRam"],
+            config["nodeSwap"],
             config["nodeSharedMemory"],
-            limitedCpus if config["cpuCount"] >= limitedCpus and limitedCpus > 0 else config["cpuCount"],
+            config["cpuCount"],
             environ,
             volumes
         )
@@ -267,8 +264,61 @@ def _configureInitScript() -> str:
     return str(path)
 
 
+def validateConfiguration(config: Dict[str, Any]) -> None:
+    cpuLimit, ramLimit = docker.getResourceLimits()
+
+    if not isinstance(config["username"], str):
+        raise TypeError(f"Invalid config \"username\" field type \"{type(config['username'])}\". Expected: \"str\"")
+
+    if not isinstance(config["password"], str):
+        raise TypeError(f"Invalid config \"password\" field type \"{type(config['password'])}\". Expected: \"str\"")
+
+    if not isinstance(config["token"], str):
+        raise TypeError(f"Invalid config \"token\" field type \"{type(config['token'])}\". Expected: \"str\"")
+
+    if not isinstance(config["refreshToken"], str):
+        raise TypeError(f"Invalid config \"refreshToken\" field type \"{type(config['refreshToken'])}\". Expected: \"str\"")
+
+    if not isinstance(config["storagePath"], str):
+        raise TypeError(f"Invalid config \"storagePath\" field type \"{type(config['storagePath'])}\". Expected: \"str\"")
+
+    if not isinstance(config["tokenExpirationDate"], str):
+        raise TypeError(f"Invalid config \"tokenExpirationDate\" field type \"{type(config['tokenExpirationDate'])}\". Expected: \"str\"")
+
+    if not isinstance(config["refreshTokenExpirationDate"], str):
+        raise TypeError(f"Invalid config \"refreshTokenExpirationDate\" field type \"{type(config['refreshTokenExpirationDate'])}\". Expected: \"str\"")
+
+    if config.get("projectId") is not None and not isinstance(config["projectId"], int):
+        raise TypeError(f"Invalid config \"projectId\" field type \"{type(config['projectId'])}\". Expected: \"int\"")
+
+    if not isinstance(config["allowGpu"], bool):
+        raise TypeError(f"Invalid config \"allowGpu\" field type \"{type(config['allowGpu'])}\". Expected: \"bool\"")
+
+    if not isinstance(config["nodeRam"], int):
+        raise TypeError(f"Invalid config \"nodeRam\" field type \"{type(config['nodeRam'])}\". Expected: \"int\"")
+
+    if not isinstance(config["nodeSwap"], int):
+        raise TypeError(f"Invalid config \"nodeSwap\" field type \"{type(config['nodeSwap'])}\". Expected: \"int\"")
+
+    if not isinstance(config["nodeSharedMemory"], int):
+        raise TypeError(f"Invalid config \"nodeSharedMemory\" field type \"{type(config['nodeSharedMemory'])}\". Expected: \"int\"")
+
+    if not isinstance(config["cpuCount"], int):
+        raise TypeError(f"Invalid config \"cpuCount\" field type \"{type(config['cpuCount'])}\". Expected: \"int\"")
+
+    if not isinstance(config["nodeMode"], int):
+        raise TypeError(f"Invalid config \"nodeMode\" field type \"{type(config['nodeMode'])}\". Expected: \"int\"")
+
+    if cpuLimit < config["cpuCount"]:
+        raise RuntimeError(f"Configuration not valid. CPU limit in Docker Desktop ({cpuLimit}) is lower than the configured value ({config['cpuCount']})")
+
+    if ramLimit < config["nodeRam"]:
+        raise RuntimeError(f"Configuration not valid. RAM limit in Docker Desktop ({ramLimit}) is lower than the configured value ({config['nodeRam']})")
+
+
 def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     highlightEcho("[Node Configuration]")
+    cpuLimit, ramLimit = docker.getResourceLimits()
     config["nodeName"] = clickPrompt("Node name", type = str)
     config["nodeAccessToken"] = registerNode(config["nodeName"])
 
@@ -288,10 +338,10 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
         config["image"] += f":latest-{tag}"
 
     config["storagePath"] = config_defaults.DEFAULT_STORAGE_PATH
-    config["nodeRam"] = config_defaults.DEFAULT_RAM_MEMORY
+    config["nodeRam"] = config_defaults.DEFAULT_RAM_MEMORY if config_defaults.DEFAULT_RAM_MEMORY <= ramLimit else ramLimit
     config["nodeSwap"] = config_defaults.DEFAULT_SWAP_MEMORY
     config["nodeSharedMemory"] = config_defaults.DEFAULT_SHARED_MEMORY
-    config["cpuCount"] = config_defaults.DEFAULT_CPU_COUNT
+    config["cpuCount"] = config_defaults.DEFAULT_CPU_COUNT if config_defaults.DEFAULT_CPU_COUNT is not None and config_defaults.DEFAULT_CPU_COUNT <= cpuLimit else cpuLimit
     config["nodeMode"] = config_defaults.DEFAULT_NODE_MODE
     config["allowDocker"] = config_defaults.DEFAULT_ALLOW_DOCKER
     config["secretsKey"] = config_defaults.DEFAULT_SECRETS_KEY
@@ -299,10 +349,21 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
 
     if verbose:
         config["storagePath"] = clickPrompt("Storage path (press enter to use default)", config_defaults.DEFAULT_STORAGE_PATH, type = str)
-        config["nodeRam"] = clickPrompt("Node RAM memory limit in GB (press enter to use default)", config_defaults.DEFAULT_RAM_MEMORY, type = int)
+
+        cpuCount = clickPrompt("Enter the number of CPUs the container will use (press enter to use default)", config_defaults.DEFAULT_CPU_COUNT, type = int)
+        if cpuCount > cpuLimit:
+            stdEcho(f"WARNING: CPU limit in Docker Desktop ({cpuLimit}) is lower than the configured value ({config['cpuCount']}). Please adjust resource limitations in Docker Desktop settings.")
+            cpuCount = cpuLimit
+        config["cpuCount"] = cpuCount
+
+        nodeRam = clickPrompt("Node RAM memory limit in GB (press enter to use default)", config_defaults.DEFAULT_RAM_MEMORY, type = int)
+        if nodeRam > ramLimit:
+            stdEcho(f"WARNING: CPU limit in Docker Desktop ({cpuLimit}) is lower than the configured value ({config['cpuCount']}). Please adjust resource limitations in Docker Desktop settings.")
+            nodeRam = ramLimit
+        config["nodeRam"] = nodeRam
+
         config["nodeSwap"] = clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", config_defaults.DEFAULT_SWAP_MEMORY, type = int)
         config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", config_defaults.DEFAULT_SHARED_MEMORY, type = int)
-        config["cpuCount"] = clickPrompt("Enter the number of CPUs the container will use (press enter to use default)", config_defaults.DEFAULT_CPU_COUNT, type = int)
         config["allowDocker"] = clickPrompt("Allow Node to access system docker? This is a security risk! (Y/n)", config_defaults.DEFAULT_ALLOW_DOCKER, type = bool)
         config["secretsKey"] = clickPrompt("Enter a key used for decrypting your Coretex Secrets", config_defaults.DEFAULT_SECRETS_KEY, type = str, hide_input = True)
         config["initScript"] = _configureInitScript()
@@ -320,6 +381,8 @@ def initializeNodeConfiguration() -> None:
 
     if isNodeConfigured(config):
         return
+
+    validateConfiguration(config)
 
     errorEcho("Node configuration not found.")
     if isRunning():
