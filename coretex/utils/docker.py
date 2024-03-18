@@ -1,6 +1,5 @@
 from typing import Dict, Any, List, Tuple
 
-import re
 import json
 
 from .process import command, CommandException

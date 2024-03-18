@@ -338,10 +338,10 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
         config["image"] += f":latest-{tag}"
 
     config["storagePath"] = config_defaults.DEFAULT_STORAGE_PATH
-    config["nodeRam"] = config_defaults.DEFAULT_RAM_MEMORY if config_defaults.DEFAULT_RAM_MEMORY <= ramLimit else ramLimit
+    config["nodeRam"] = config_defaults.DEFAULT_RAM_MEMORY
     config["nodeSwap"] = config_defaults.DEFAULT_SWAP_MEMORY
     config["nodeSharedMemory"] = config_defaults.DEFAULT_SHARED_MEMORY
-    config["cpuCount"] = config_defaults.DEFAULT_CPU_COUNT if config_defaults.DEFAULT_CPU_COUNT is not None and config_defaults.DEFAULT_CPU_COUNT <= cpuLimit else cpuLimit
+    config["cpuCount"] = config_defaults.DEFAULT_CPU_COUNT
     config["nodeMode"] = config_defaults.DEFAULT_NODE_MODE
     config["allowDocker"] = config_defaults.DEFAULT_ALLOW_DOCKER
     config["secretsKey"] = config_defaults.DEFAULT_SECRETS_KEY
@@ -375,14 +375,16 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     else:
         stdEcho("To configure node manually run coretex node config with --verbose flag.")
 
+    validateConfiguration(config)
+
 
 def initializeNodeConfiguration() -> None:
     config = loadConfig()
 
     if isNodeConfigured(config):
+        validateConfiguration(config)
         return
 
-    validateConfiguration(config)
 
     errorEcho("Node configuration not found.")
     if isRunning():
