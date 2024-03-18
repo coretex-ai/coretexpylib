@@ -59,15 +59,6 @@ def exists() -> bool:
     return docker.containerExists(config_defaults.DOCKER_CONTAINER_NAME)
 
 
-def validateResources(config: Dict[str, Any], cpus: int, ram: int, swap: int) -> None:
-    if cpus < config["cpuCount"]:
-        stdEcho(f"WARNING: CPU limit in Docker Desktop ({cpus}) is lower than the configured value ({config['cpuCount']}). Please adjust resource limitations in Docker Desktop settings.")
-    if ram < config["nodeRam"]:
-        stdEcho(f"WARNING: RAM limit in Docker Desktop ({ram}) is lower than the configured value ({config['nodeRam']}). Please adjust resource limitations in Docker Desktop settings.")
-    if swap < config["nodeSwap"]:
-        stdEcho(f"WARNING: Swap limit in Docker Desktop ({swap}) is lower than the configured value ({config['nodeSwap']}). Please adjust resource limitations in Docker Desktop settings.")
-
-
 def start(dockerImage: str, config: Dict[str, Any]) -> None:
     try:
         progressEcho("Starting Coretex Node...")
