@@ -1,4 +1,21 @@
-import os
+#     Copyright (C) 2023  Coretex LLC
+
+#     This file is part of Coretex.ai
+
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU Affero General Public License as
+#     published by the Free Software Foundation, either version 3 of the
+#     License, or (at your option) any later version.
+
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU Affero General Public License for more details.
+
+#     You should have received a copy of the GNU Affero General Public License
+#     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+from typing import Optional
 
 import click
 
@@ -12,12 +29,9 @@ from ...utils import docker
 
 
 @click.command()
+@click.option("--image", type = str, help = "Docker image url")
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
-def start() -> None:
-    config = loadConfig()
-    repository = node_module.getRepository()
-    tag = f"latest-{config['image']}"
-
+def start(image: Optional[str]) -> None:
     if node_module.isRunning():
         if not clickPrompt(
             "Node is already running. Do you wish to restart the Node? (Y/n)",
@@ -29,10 +43,21 @@ def start() -> None:
 
         node_module.stop()
 
-    if node_module.shouldUpdate(repository, tag):
-        node_module.pull("coretexai/coretex-node", f"latest-{config['image']}")
+    if node_module.exists():
+        node_module.clean()
 
-    node_module.start(f"{repository}:{tag}", config)
+    config = loadConfig()
+
+    if image is not None:
+        config["image"] = image  # store forced image (flagged) so we can run autoupdate afterwards
+        saveConfig(config)
+
+    dockerImage = config["image"]
+
+    if node_module.shouldUpdate(dockerImage):
+        node_module.pull(dockerImage)
+
+    node_module.start(dockerImage, config)
 
     activateAutoUpdate(CONFIG_DIR, config)
 
@@ -46,12 +71,11 @@ def stop() -> None:
     node_module.stop()
 
 
-@click.command
+@click.command()
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def update() -> None:
     config = loadConfig()
-    repository = node_module.getRepository()
-    tag = f"latest-{config['image']}"
+    dockerImage = config["image"]
 
     nodeStatus = getNodeStatus()
 
@@ -74,11 +98,11 @@ def update() -> None:
 
         node_module.stop()
 
-    if not node_module.shouldUpdate(repository, tag):
+    if not node_module.shouldUpdate(dockerImage):
         successEcho("Node is already up to date.")
         return
 
-    node_module.pull(repository, tag)
+    node_module.pull(dockerImage)
 
     if getNodeStatus() == NodeStatus.busy:
         if not clickPrompt(
@@ -91,7 +115,7 @@ def update() -> None:
 
     node_module.stop()
 
-    node_module.start(f"{repository}:{tag}", config)
+    node_module.start(dockerImage, config)
 
 
 @click.command()

@@ -20,9 +20,19 @@ from datetime import datetime
 from . import folder_manager
 from .entities import LogSeverity
 from .logging import initializeLogger
-from .utils import DATE_FORMAT
+from .configuration import CONFIG_DIR
 
 
 def _initializeDefaultLogger() -> None:
-    logPath = folder_manager.coretexpylibLogs / f"{datetime.now().strftime(DATE_FORMAT)}.log"
+    logName = datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f%z")
+    logPath = folder_manager.coretexpylibLogs.joinpath(logName).with_suffix(".log")
+
     initializeLogger(LogSeverity.info, logPath)
+
+
+def _initializeCLILogger() -> None:
+    logName = datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f%z")
+    logPath = CONFIG_DIR / "logs"
+    logPath.mkdir(exist_ok = True)
+
+    initializeLogger(LogSeverity.info, logPath.joinpath(logName).with_suffix(".log"))

@@ -124,7 +124,7 @@ class TaskRunWorker:
         logging.getLogger("coretexpylib").info(f">> [Coretex] {message}")
 
     def stop(self) -> None:
-        logging.getLogger("coretexpylib").debug(">> [Coretex] Stopping the worker process")
+        logging.getLogger("coretexpylib").info(">> [Coretex] Stopping the worker process")
 
         self.__process.terminate()
         self.__process.join()
@@ -140,4 +140,9 @@ class TaskRunWorker:
         exceptionTraceback: Optional[TracebackType]
     ) -> None:
 
-        self.stop()
+        if self.__process.is_alive():
+            self.stop()
+
+    def kill(self) -> None:
+        logging.getLogger("coretexpylib").info(">> [Coretex] Killing the worker process")
+        self.__process.kill()

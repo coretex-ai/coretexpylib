@@ -1,56 +1,68 @@
+#     Copyright (C) 2023  Coretex LLC
+
+#     This file is part of Coretex.ai
+
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU Affero General Public License as
+#     published by the Free Software Foundation, either version 3 of the
+#     License, or (at your option) any later version.
+
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU Affero General Public License for more details.
+
+#     You should have received a copy of the GNU Affero General Public License
+#     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from typing import Any, Dict, Tuple, Optional
+from enum import Enum
 from pathlib import Path
 
-import os
 import logging
 
+from . import config_defaults
 from .utils import isGPUAvailable
 from .ui import clickPrompt, arrowPrompt, highlightEcho, errorEcho, progressEcho, successEcho, stdEcho
 from .node_mode import NodeMode
 from ...networking import networkManager, NetworkRequestError
-from ...statistics import getAvailableRamMemory
-from ...configuration import loadConfig, saveConfig, isNodeConfigured
+from ...configuration import loadConfig, saveConfig, isNodeConfigured, getInitScript
 from ...utils import CommandException, docker
 from ...entities.model import Model
-
-
-DOCKER_CONTAINER_NAME = "coretex_node"
-DOCKER_CONTAINER_NETWORK = "coretex_node"
-DEFAULT_STORAGE_PATH = str(Path.home() / ".coretex")
-DEFAULT_RAM_MEMORY = getAvailableRamMemory()
-DEFAULT_SWAP_MEMORY = DEFAULT_RAM_MEMORY * 2
-DEFAULT_SHARED_MEMORY = 2
-DEFAULT_NODE_MODE = NodeMode.execution
-DEFAULT_ALLOW_DOCKER = False
-DEFAULT_SECRETS_KEY = ""
 
 
 class NodeException(Exception):
     pass
 
 
-def getRepository() -> str:
-    return os.environ.get("CTX_NODE_IMAGE_REPO", "coretexai/coretex-node")
+class ImageType(Enum):
+
+    official = "official"
+    custom = "custom"
 
 
-def pull(repository: str, tag: str) -> None:
+def pull(image: str) -> None:
     try:
-        progressEcho("Fetching latest node version...")
-        docker.imagePull(f"{repository}:{tag}")
-        successEcho("Latest node version successfully fetched.")
+        progressEcho(f"Fetching image {image}...")
+        docker.imagePull(image)
+        successEcho(f"Image {image} successfully fetched.")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to fetch latest node version.")
 
 
 def isRunning() -> bool:
-    return docker.containerExists(DOCKER_CONTAINER_NAME)
+    return docker.containerRunning(config_defaults.DOCKER_CONTAINER_NAME)
+
+
+def exists() -> bool:
+    return docker.containerExists(config_defaults.DOCKER_CONTAINER_NAME)
 
 
 def start(dockerImage: str, config: Dict[str, Any]) -> None:
     try:
         progressEcho("Starting Coretex Node...")
-        docker.createNetwork(DOCKER_CONTAINER_NETWORK)
+        docker.createNetwork(config_defaults.DOCKER_CONTAINER_NETWORK)
 
         environ = {
             "CTX_API_URL": config["serverUrl"],
@@ -63,8 +75,8 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
         if isinstance(modelId, int):
             environ["CTX_MODEL_ID"] = modelId
 
-        secretsKey = config.get("secretsKey", DEFAULT_SECRETS_KEY)
-        if isinstance(secretsKey, str) and secretsKey != DEFAULT_SECRETS_KEY:
+        secretsKey = config.get("secretsKey", config_defaults.DEFAULT_SECRETS_KEY)
+        if isinstance(secretsKey, str) and secretsKey != config_defaults.DEFAULT_SECRETS_KEY:
             environ["CTX_SECRETS_KEY"] = secretsKey
 
         volumes = [
@@ -74,13 +86,18 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
         if config.get("allowDocker", False):
             volumes.append(("/var/run/docker.sock", "/var/run/docker.sock"))
 
+        initScript = getInitScript(config)
+        if initScript is not None:
+            volumes.append((str(initScript), "/script/init.sh"))
+
         docker.start(
-            DOCKER_CONTAINER_NAME,
+            config_defaults.DOCKER_CONTAINER_NAME,
             dockerImage,
-            config["image"] == "gpu",
+            config["allowGpu"],
             config["nodeRam"],
             config["nodeSwap"],
             config["nodeSharedMemory"],
+            config["cpuCount"],
             environ,
             volumes
         )
@@ -91,29 +108,60 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
         raise NodeException("Failed to start Coretex Node.")
 
 
+def clean() -> None:
+    try:
+        docker.removeContainer(config_defaults.DOCKER_CONTAINER_NAME)
+        docker.removeNetwork(config_defaults.DOCKER_CONTAINER_NETWORK)
+    except BaseException as ex:
+        logging.getLogger("cli").debug(ex, exc_info = ex)
+        raise NodeException("Failed to clean inactive Coretex Node.")
+
+
 def stop() -> None:
     try:
         progressEcho("Stopping Coretex Node...")
-
-        docker.stopContainer(DOCKER_CONTAINER_NAME)
-        docker.removeContainer(DOCKER_CONTAINER_NAME)
-        docker.removeNetwork(DOCKER_CONTAINER_NETWORK)
-
-        successEcho("Successfully stopped Coretex Node.")
+        docker.stopContainer(config_defaults.DOCKER_CONTAINER_NAME)
+        clean()
+        successEcho("Successfully stopped Coretex Node....")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to stop Coretex Node.")
 
 
-def shouldUpdate(repository: str, tag: str) -> bool:
+def getRepoFromImageUrl(image: str) -> str:
+    imageName = image.split("/")[-1]
+    if not ":" in imageName:
+        return image
+
+    tagIndex = image.rfind(":")
+    if tagIndex != -1:
+        return image[:tagIndex]
+    else:
+        return image
+
+
+def getTagFromImageUrl(image: str) -> str:
+    imageName = image.split("/")[-1]
+    if not ":" in imageName:
+        return "latest"
+
+    tagIndex = image.rfind(":")
+    if tagIndex != -1:
+        return image[tagIndex + 1:]
+    else:
+        return "latest"
+
+
+def shouldUpdate(image: str) -> bool:
+    repository = getRepoFromImageUrl(image)
     try:
-        imageJson = docker.imageInspect(repository, tag)
+        imageJson = docker.imageInspect(image)
     except CommandException:
         # imageInspect() will raise an error if image doesn't exist locally
         return True
 
     try:
-        manifestJson = docker.manifestInspect(repository, tag)
+        manifestJson = docker.manifestInspect(image)
     except CommandException:
         return False
 
@@ -140,6 +188,18 @@ def registerNode(name: str) -> str:
     return accessToken
 
 
+def selectImageType() -> ImageType:
+    availableImages = {
+        "Official Coretex image": ImageType.official,
+        "Custom image": ImageType.custom,
+    }
+
+    choices = list(availableImages.keys())
+    selectedImage = arrowPrompt(choices, "Please select image that you want to use (use arrow keys to select an option):")
+
+    return availableImages[selectedImage]
+
+
 def selectModelId(storagePath: str, retryCount: int = 0) -> int:
     if retryCount >= 3:
         raise RuntimeError("Failed to fetch Coretex Model. Terminating...")
@@ -161,14 +221,13 @@ def selectModelId(storagePath: str, retryCount: int = 0) -> int:
 
 def selectNodeMode(storagePath: str) -> Tuple[int, Optional[int]]:
     availableNodeModes = {
-        "Execution": NodeMode.execution,
-        "Function exclusive": NodeMode.functionExclusive,
-        "Function shared": NodeMode.functionShared
+        "Run workflows (worker)": NodeMode.execution,
+        "Serve a single endpoint (dedicated inference)": NodeMode.functionExclusive,
+        "Serve multiple endpoints (shared inference)": NodeMode.functionShared
     }
     choices = list(availableNodeModes.keys())
 
-    stdEcho("Please select Coretex Node mode:")
-    selectedMode = arrowPrompt(choices)
+    selectedMode = arrowPrompt(choices, "Please select Coretex Node mode (use arrow keys to select an option):")
 
     if availableNodeModes[selectedMode] == NodeMode.functionExclusive:
         modelId = selectModelId(storagePath)
@@ -177,32 +236,64 @@ def selectNodeMode(storagePath: str) -> Tuple[int, Optional[int]]:
     return availableNodeModes[selectedMode], None
 
 
+def _configureInitScript() -> str:
+    initScript = clickPrompt("Enter a path to sh script which will be executed before Node starts", config_defaults.DEFAULT_INIT_SCRIPT, type = str)
+
+    if initScript == config_defaults.DEFAULT_INIT_SCRIPT:
+        return config_defaults.DEFAULT_INIT_SCRIPT
+
+    path = Path(initScript).expanduser().absolute()
+
+    if path.is_dir():
+        errorEcho("Provided path is pointing to a directory, file expected!")
+        return _configureInitScript()
+
+    if not path.exists():
+        errorEcho("Provided file does not exist!")
+        return _configureInitScript()
+
+    return str(path)
+
+
 def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     highlightEcho("[Node Configuration]")
     config["nodeName"] = clickPrompt("Node name", type = str)
     config["nodeAccessToken"] = registerNode(config["nodeName"])
 
-    if isGPUAvailable():
-        isGPU = clickPrompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
-        config["image"] = "gpu" if isGPU else "cpu"
+    imageType = selectImageType()
+    if imageType == ImageType.custom:
+        config["image"] = clickPrompt("Specify URL of docker image that you want to use:", type = str)
     else:
-        config["image"] = "cpu"
+        config["image"] = "coretexai/coretex-node"
 
-    config["storagePath"] = DEFAULT_STORAGE_PATH
-    config["nodeRam"] = DEFAULT_RAM_MEMORY
-    config["nodeSwap"] = DEFAULT_SWAP_MEMORY
-    config["nodeSharedMemory"] = DEFAULT_SHARED_MEMORY
-    config["nodeMode"] = DEFAULT_NODE_MODE
-    config["allowDocker"] = DEFAULT_ALLOW_DOCKER
-    config["secretsKey"] = DEFAULT_SECRETS_KEY
+    if isGPUAvailable():
+        config["allowGpu"] = clickPrompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
+    else:
+        config["allowGpu"] = False
+
+    if imageType == ImageType.official:
+        tag = "gpu" if config["allowGpu"] else "cpu"
+        config["image"] += f":latest-{tag}"
+
+    config["storagePath"] = config_defaults.DEFAULT_STORAGE_PATH
+    config["nodeRam"] = config_defaults.DEFAULT_RAM_MEMORY
+    config["nodeSwap"] = config_defaults.DEFAULT_SWAP_MEMORY
+    config["nodeSharedMemory"] = config_defaults.DEFAULT_SHARED_MEMORY
+    config["cpuCount"] = config_defaults.DEFAULT_CPU_COUNT
+    config["nodeMode"] = config_defaults.DEFAULT_NODE_MODE
+    config["allowDocker"] = config_defaults.DEFAULT_ALLOW_DOCKER
+    config["secretsKey"] = config_defaults.DEFAULT_SECRETS_KEY
+    config["initScript"] = config_defaults.DEFAULT_INIT_SCRIPT
 
     if verbose:
-        config["storagePath"] = clickPrompt("Storage path (press enter to use default)", DEFAULT_STORAGE_PATH, type = str)
-        config["nodeRam"] = clickPrompt("Node RAM memory limit in GB (press enter to use default)", DEFAULT_RAM_MEMORY, type = int)
-        config["nodeSwap"] = clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", DEFAULT_SWAP_MEMORY, type = int)
-        config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", DEFAULT_SHARED_MEMORY, type = int)
-        config["allowDocker"] = clickPrompt("Allow Node to access system docker? This is a security risk! (Y/n)", DEFAULT_ALLOW_DOCKER, type = bool)
-        config["secretsKey"] = clickPrompt("Enter a key used for decrypting your Coretex Secrets", DEFAULT_SECRETS_KEY, type = str)
+        config["storagePath"] = clickPrompt("Storage path (press enter to use default)", config_defaults.DEFAULT_STORAGE_PATH, type = str)
+        config["nodeRam"] = clickPrompt("Node RAM memory limit in GB (press enter to use default)", config_defaults.DEFAULT_RAM_MEMORY, type = int)
+        config["nodeSwap"] = clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", config_defaults.DEFAULT_SWAP_MEMORY, type = int)
+        config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", config_defaults.DEFAULT_SHARED_MEMORY, type = int)
+        config["cpuCount"] = clickPrompt("Enter the number of CPUs the container will use (press enter to use default)", config_defaults.DEFAULT_CPU_COUNT, type = int)
+        config["allowDocker"] = clickPrompt("Allow Node to access system docker? This is a security risk! (Y/n)", config_defaults.DEFAULT_ALLOW_DOCKER, type = bool)
+        config["secretsKey"] = clickPrompt("Enter a key used for decrypting your Coretex Secrets", config_defaults.DEFAULT_SECRETS_KEY, type = str, hide_input = True)
+        config["initScript"] = _configureInitScript()
 
         nodeMode, modelId = selectNodeMode(config["storagePath"])
         config["nodeMode"] = nodeMode

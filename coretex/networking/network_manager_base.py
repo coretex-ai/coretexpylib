@@ -39,7 +39,7 @@ from .file_data import FileData
 
 
 REQUEST_TIMEOUT = 5
-MAX_RETRY_COUNT = 3
+MAX_RETRY_COUNT = 5
 LOGIN_ENDPOINT = "user/login"
 REFRESH_ENDPOINT = "user/refresh"
 API_TOKEN_HEADER = "api-token"

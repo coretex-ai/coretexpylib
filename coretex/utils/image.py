@@ -64,3 +64,27 @@ def resizeWithPadding(image: np.ndarray, width: int, height: int) -> Tuple[np.nd
     paddedImage.paste(resizedImage, (left, top))
 
     return np.array(paddedImage), top, left
+
+
+def cropToWidth(image: np.ndarray) -> np.ndarray:
+    """
+        Crops the image to width while maintaining the center
+
+        Parameters
+        ----------
+        image : np.ndarray
+            Input image as an array
+
+        Returns
+        -------
+        np.ndarray -> Output image that has been croped vertically
+        to width
+    """
+
+    height, width = image.shape[:2]
+    if height > width:
+        startY = (height - width) // 2
+        endY = startY + width
+        image = image[startY:endY, 0:width]
+
+    return image

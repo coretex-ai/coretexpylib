@@ -23,6 +23,7 @@ import logging
 
 from .formatter import CTXFormatter
 from ..entities import LogSeverity
+from ..utils import createFileHandler
 
 
 def createFormatter(
@@ -80,7 +81,7 @@ def initializeLogger(
             includeTime = False
         ))
 
-    fileHandler = logging.FileHandler(logPath)
+    fileHandler = createFileHandler(logPath)
     fileHandler.setLevel(logging.DEBUG)
     fileHandler.setFormatter(createFormatter(includeColor = False))
 
