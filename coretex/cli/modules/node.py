@@ -332,7 +332,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
         config["image"] += f":latest-{tag}"
 
     config["storagePath"] = config_defaults.DEFAULT_STORAGE_PATH
-    config["nodeRam"] = ramLimit
+    config["nodeRam"] = ramLimit if config_defaults.DEFAULT_RAM_MEMORY > ramLimit else config_defaults.DEFAULT_RAM_MEMORY
     config["nodeSwap"] = config_defaults.DEFAULT_SWAP_MEMORY
     config["nodeSharedMemory"] = config_defaults.DEFAULT_SHARED_MEMORY
     config["cpuCount"] = config_defaults.DEFAULT_CPU_COUNT
