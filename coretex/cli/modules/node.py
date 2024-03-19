@@ -258,53 +258,20 @@ def _configureInitScript() -> str:
 def validateConfiguration(config: Dict[str, Any]) -> None:
     cpuLimit, ramLimit = docker.getResourceLimits()
 
-    if not isinstance(config["username"], str):
-        raise TypeError(f"Invalid config \"username\" field type \"{type(config['username'])}\". Expected: \"str\"")
-
-    if not isinstance(config["password"], str):
-        raise TypeError(f"Invalid config \"password\" field type \"{type(config['password'])}\". Expected: \"str\"")
-
-    if not isinstance(config["token"], str):
-        raise TypeError(f"Invalid config \"token\" field type \"{type(config['token'])}\". Expected: \"str\"")
-
-    if not isinstance(config["refreshToken"], str):
-        raise TypeError(f"Invalid config \"refreshToken\" field type \"{type(config['refreshToken'])}\". Expected: \"str\"")
-
-    if not isinstance(config["storagePath"], str):
-        raise TypeError(f"Invalid config \"storagePath\" field type \"{type(config['storagePath'])}\". Expected: \"str\"")
-
-    if not isinstance(config["tokenExpirationDate"], str):
-        raise TypeError(f"Invalid config \"tokenExpirationDate\" field type \"{type(config['tokenExpirationDate'])}\". Expected: \"str\"")
-
-    if not isinstance(config["refreshTokenExpirationDate"], str):
-        raise TypeError(f"Invalid config \"refreshTokenExpirationDate\" field type \"{type(config['refreshTokenExpirationDate'])}\". Expected: \"str\"")
-
-    if config.get("projectId") is not None and not isinstance(config["projectId"], int):
-        raise TypeError(f"Invalid config \"projectId\" field type \"{type(config['projectId'])}\". Expected: \"int\"")
-
-    if not isinstance(config["allowGpu"], bool):
-        raise TypeError(f"Invalid config \"allowGpu\" field type \"{type(config['allowGpu'])}\". Expected: \"bool\"")
-
     if not isinstance(config["nodeRam"], int):
         raise TypeError(f"Invalid config \"nodeRam\" field type \"{type(config['nodeRam'])}\". Expected: \"int\"")
 
-    if not isinstance(config["nodeSwap"], int):
-        raise TypeError(f"Invalid config \"nodeSwap\" field type \"{type(config['nodeSwap'])}\". Expected: \"int\"")
-
-    if not isinstance(config["nodeSharedMemory"], int):
-        raise TypeError(f"Invalid config \"nodeSharedMemory\" field type \"{type(config['nodeSharedMemory'])}\". Expected: \"int\"")
-
     if not isinstance(config["cpuCount"], int):
         raise TypeError(f"Invalid config \"cpuCount\" field type \"{type(config['cpuCount'])}\". Expected: \"int\"")
-
-    if not isinstance(config["nodeMode"], int):
-        raise TypeError(f"Invalid config \"nodeMode\" field type \"{type(config['nodeMode'])}\". Expected: \"int\"")
 
     if cpuLimit < config["cpuCount"]:
         raise RuntimeError(f"Configuration not valid. CPU limit in Docker Desktop ({cpuLimit}) is lower than the configured value ({config['cpuCount']})")
 
     if ramLimit < config["nodeRam"]:
         raise RuntimeError(f"Configuration not valid. RAM limit in Docker Desktop ({ramLimit}) is lower than the configured value ({config['nodeRam']})")
+
+    if config_defaults.MINIMUM_RAM_MEMORY > config["nodeRam"]:
+        raise RuntimeError(f"Configuration not valid. Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}) is higher than the configured value ({config['nodeRam']})")
 
 
 def configureNode(config: Dict[str, Any], verbose: bool) -> None:
@@ -347,6 +314,9 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
             cpuCount = cpuLimit
         config["cpuCount"] = cpuCount
 
+        if config_defaults.DEFAULT_RAM_MEMORY < config_defaults.MINIMUM_RAM_MEMORY:
+            errorEcho("Minimum Node RAM requirement is 6GB.")
+            return
         nodeRam = clickPrompt("Node RAM memory limit in GB (press enter to use default)", config_defaults.DEFAULT_RAM_MEMORY, type = int)
         if nodeRam > ramLimit:
             stdEcho(f"WARNING: CPU limit in Docker Desktop ({cpuLimit}) is lower than the configured value ({config['cpuCount']}). Please adjust resource limitations in Docker Desktop settings.")
@@ -375,7 +345,6 @@ def initializeNodeConfiguration() -> None:
     if isNodeConfigured(config):
         validateConfiguration(config)
         return
-
 
     errorEcho("Node configuration not found.")
     if isRunning():
