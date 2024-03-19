@@ -412,6 +412,7 @@ class NetworkManagerBase(ABC):
             headers = self._headers("multipart/form-data")
             del headers["Content-Type"]
 
+            timeout: TimeoutType
             if len(files) == 0:
                 timeout = REQUEST_TIMEOUT
             else:
