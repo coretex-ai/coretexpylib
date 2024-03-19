@@ -236,6 +236,23 @@ def selectNodeMode(storagePath: str) -> Tuple[int, Optional[int]]:
     return availableNodeModes[selectedMode], None
 
 
+def promptRam(config: Dict[str, Any], ramLimit: int, retryCount: int = 0) -> int:
+    nodeRam: int = clickPrompt("Node RAM memory limit in GB (press enter to use default)", config_defaults.DEFAULT_RAM_MEMORY, type = int)
+
+    if ramLimit < config_defaults.MINIMUM_RAM_MEMORY:
+        raise RuntimeError(f"Minimum Node RAM requirement ({ramLimit}GB) is higher than your current Docker desktop RAM limit ({ramLimit}GB). Please adjust resource limitations in Docker Desktop settings to match Node requirements.")
+
+    if nodeRam > ramLimit:
+        errorEcho(f"WARNING: RAM limit in Docker Desktop ({ramLimit}GB) is lower than the configured value ({config['ramLimit']}GB). Please adjust resource limitations in Docker Desktop settings.")
+        return promptRam(config, ramLimit, retryCount + 1)
+
+    if nodeRam < config_defaults.MINIMUM_RAM_MEMORY:
+        errorEcho(f"WARNING: Configured RAM ({config['ramLimit']}GB) is lower than the minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB).")
+        return promptRam(config, ramLimit, retryCount + 1)
+
+    return nodeRam
+
+
 def _configureInitScript() -> str:
     initScript = clickPrompt("Enter a path to sh script which will be executed before Node starts", config_defaults.DEFAULT_INIT_SCRIPT, type = str)
 
@@ -255,23 +272,31 @@ def _configureInitScript() -> str:
     return str(path)
 
 
-def validateConfiguration(config: Dict[str, Any]) -> None:
+def isConfigurationValid(config: Dict[str, Any]) -> bool:
+    isValid = True
     cpuLimit, ramLimit = docker.getResourceLimits()
 
     if not isinstance(config["nodeRam"], int):
-        raise TypeError(f"Invalid config \"nodeRam\" field type \"{type(config['nodeRam'])}\". Expected: \"int\"")
+        errorEcho(f"Invalid config \"nodeRam\" field type \"{type(config['nodeRam'])}\". Expected: \"int\"")
+        isValid = False
 
     if not isinstance(config["cpuCount"], int):
-        raise TypeError(f"Invalid config \"cpuCount\" field type \"{type(config['cpuCount'])}\". Expected: \"int\"")
+        errorEcho(f"Invalid config \"cpuCount\" field type \"{type(config['cpuCount'])}\". Expected: \"int\"")
+        isValid = False
 
     if cpuLimit < config["cpuCount"]:
-        raise RuntimeError(f"Configuration not valid. CPU limit in Docker Desktop ({cpuLimit}) is lower than the configured value ({config['cpuCount']})")
+        errorEcho(f"Configuration not valid. CPU limit in Docker Desktop ({cpuLimit}) is lower than the configured value ({config['cpuCount']})")
+        isValid = False
 
     if ramLimit < config["nodeRam"]:
-        raise RuntimeError(f"Configuration not valid. RAM limit in Docker Desktop ({ramLimit}) is lower than the configured value ({config['nodeRam']})")
+        errorEcho(f"Configuration not valid. RAM limit in Docker Desktop ({ramLimit}) is lower than the configured value ({config['nodeRam']})")
+        isValid = False
 
     if config_defaults.MINIMUM_RAM_MEMORY > config["nodeRam"]:
-        raise RuntimeError(f"Configuration not valid. Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}) is higher than the configured value ({config['nodeRam']})")
+        errorEcho(f"Configuration not valid. Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}) is higher than the configured value ({config['nodeRam']})")
+        isValid = False
+
+    return isValid
 
 
 def configureNode(config: Dict[str, Any], verbose: bool) -> None:
@@ -314,13 +339,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
             cpuCount = cpuLimit
         config["cpuCount"] = cpuCount
 
-        if config_defaults.DEFAULT_RAM_MEMORY < config_defaults.MINIMUM_RAM_MEMORY:
-            errorEcho("Minimum Node RAM requirement is 6GB.")
-            return
-        nodeRam = clickPrompt("Node RAM memory limit in GB (press enter to use default)", config_defaults.DEFAULT_RAM_MEMORY, type = int)
-        if nodeRam > ramLimit:
-            stdEcho(f"WARNING: CPU limit in Docker Desktop ({cpuLimit}) is lower than the configured value ({config['cpuCount']}). Please adjust resource limitations in Docker Desktop settings.")
-            nodeRam = ramLimit
+        nodeRam = promptRam(config, ramLimit)
         config["nodeRam"] = nodeRam
 
         config["nodeSwap"] = clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", config_defaults.DEFAULT_SWAP_MEMORY, type = int)
@@ -336,15 +355,15 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     else:
         stdEcho("To configure node manually run coretex node config with --verbose flag.")
 
-    validateConfiguration(config)
-
 
 def initializeNodeConfiguration() -> None:
     config = loadConfig()
 
     if isNodeConfigured(config):
-        validateConfiguration(config)
-        return
+        if isConfigurationValid(config):
+            return
+        else:
+            raise RuntimeError(f"Invalid configuration. Please run \"coretex node config\" command to configure Node.")
 
     errorEcho("Node configuration not found.")
     if isRunning():
