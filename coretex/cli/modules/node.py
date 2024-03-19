@@ -272,6 +272,13 @@ def _configureInitScript() -> str:
     return str(path)
 
 
+def checkResourceLimitations() -> None:
+    _, ramLimit = docker.getResourceLimits()
+
+    if ramLimit < config_defaults.MINIMUM_RAM_MEMORY:
+        raise RuntimeError(f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) is higher than your current Docker desktop RAM limit ({ramLimit}GB). Please adjust resource limitations in Docker Desktop settings to match Node requirements.")
+
+
 def isConfigurationValid(config: Dict[str, Any]) -> bool:
     isValid = True
     cpuLimit, ramLimit = docker.getResourceLimits()
@@ -289,11 +296,15 @@ def isConfigurationValid(config: Dict[str, Any]) -> bool:
         isValid = False
 
     if ramLimit < config["nodeRam"]:
-        errorEcho(f"Configuration not valid. RAM limit in Docker Desktop ({ramLimit}) is lower than the configured value ({config['nodeRam']})")
+        errorEcho(f"Configuration not valid. RAM limit in Docker Desktop ({ramLimit}GB) is lower than the configured value ({config['nodeRam']}GB)")
+        isValid = False
+
+    if ramLimit < config_defaults.MINIMUM_RAM_MEMORY:
+        errorEcho(f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) is higher than your current Docker desktop RAM limit ({ramLimit}GB). Please adjust resource limitations in Docker Desktop settings to match Node requirements.")
         isValid = False
 
     if config_defaults.MINIMUM_RAM_MEMORY > config["nodeRam"]:
-        errorEcho(f"Configuration not valid. Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}) is higher than the configured value ({config['nodeRam']})")
+        errorEcho(f"Configuration not valid. Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) is higher than the configured value ({config['nodeRam']}GB)")
         isValid = False
 
     return isValid
