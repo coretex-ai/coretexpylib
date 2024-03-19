@@ -39,3 +39,25 @@ def mathematicalRound(value: float, decimalPlaces: int) -> float:
     places = Decimal(10) ** -decimalPlaces
 
     return float(decimal.quantize(places, rounding = ROUND_HALF_UP))
+
+
+def formatBytes(value: int, precision = 2):
+    """
+    Format a size in bytes into a human-readable format.
+
+    Parameters:
+        value (int): The size in bytes.
+        precision (int): Number of decimal places (default is 2).
+
+    Returns:
+        str: Formatted string with size and appropriate unit.
+    """
+
+    suffixes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+    index = 0
+
+    while value >= 1024 and index < len(suffixes) - 1:
+        index += 1
+        value /= 1024.0
+
+    return f"{value:.{precision}f} {suffixes[index]}"
