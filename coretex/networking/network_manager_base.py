@@ -34,7 +34,7 @@ import requests.adapters
 
 from .utils import RequestBodyType, RequestFormType, logFilesData, logRequestFailure
 from .request_type import RequestType
-from .network_response import NetworkResponse
+from .network_response import NetworkResponse, NetworkRequestError
 from .file_data import FileData
 
 
@@ -416,10 +416,9 @@ class NetworkManagerBase(ABC):
             if len(files) == 0:
                 timeout = REQUEST_TIMEOUT
             else:
+                timeout = None
                 if self.request(endpoint, RequestType.options, timeout = REQUEST_TIMEOUT).hasFailed():
-                    raise ConnectionError(">> [Coretex] Could not establish a connection with the server")
-
-                timeout = (600, 300)
+                    raise NetworkRequestError(">> [Coretex] Could not establish a connection with the server")
 
             return self.request(endpoint, RequestType.post, headers, body = params, files = filesData, timeout = timeout)
 
