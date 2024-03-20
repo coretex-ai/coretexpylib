@@ -59,10 +59,12 @@ def formatBytes(value: int, precision: int = 2) -> str:
     """
 
     suffixes = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"]
-    index = 0
+    index: int = 0
+    unitBase: int = 1000
+    adjustedValue = float(value)
 
-    while value >= 1024 and index < len(suffixes) - 1:
+    while adjustedValue >= unitBase and index < len(suffixes) - 1:
         index += 1
-        value /= 1024.0
+        adjustedValue /= unitBase
 
-    return f"{value:.{precision}f} {suffixes[index]}"
+    return f"{adjustedValue:.{precision}f} {suffixes[index]}"
