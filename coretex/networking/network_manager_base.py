@@ -52,7 +52,7 @@ RETRY_STATUS_CODES = [
     HTTPStatus.SERVICE_UNAVAILABLE
 ]
 
-TimeoutType = Union[int, Tuple[int, int]]
+TimeoutType = Optional[Union[int, Tuple[int, int]]]
 
 
 def getDelayBeforeRetry(retryCount: int) -> int:
@@ -416,9 +416,11 @@ class NetworkManagerBase(ABC):
             if len(files) == 0:
                 timeout = REQUEST_TIMEOUT
             else:
+                response = self.request(endpoint, RequestType.options, timeout = REQUEST_TIMEOUT)
+                if response.hasFailed():
+                    raise NetworkRequestError(response, ">> [Coretex] Could not establish a connection with the server")
+
                 timeout = None
-                if self.request(endpoint, RequestType.options, timeout = REQUEST_TIMEOUT).hasFailed():
-                    raise NetworkRequestError(">> [Coretex] Could not establish a connection with the server")
 
             return self.request(endpoint, RequestType.post, headers, body = params, files = filesData, timeout = timeout)
 
