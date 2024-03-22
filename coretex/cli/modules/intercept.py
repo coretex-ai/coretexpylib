@@ -39,5 +39,5 @@ class ClickExceptionInterceptor(click.Group):
             self.handleException(ctx, exc)
 
     def handleException(self, ctx: click.Context, exc: BaseException) -> None:
-        errorEcho(str(exc))
+        click.echo(click.style(str(exc), fg = "red"))
         logging.getLogger("cli").debug(exc, exc_info = exc)
