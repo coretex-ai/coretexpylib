@@ -236,19 +236,28 @@ def selectNodeMode(storagePath: str) -> Tuple[int, Optional[int]]:
     return availableNodeModes[selectedMode], None
 
 
-def promptRam(config: Dict[str, Any], ramLimit: int, retryCount: int = 0) -> int:
+def promptCpu(config: Dict[str, Any], cpuLimit: int) -> int:
+    cpuCount: int = clickPrompt("Enter the number of CPUs the container will use (press enter to use default)", config_defaults.DEFAULT_CPU_COUNT, type = int)
+
+    if cpuCount > cpuLimit:
+        errorEcho(f"ERRROR: CPU limit in Docker Desktop ({cpuLimit}) is lower than the specified value ({cpuCount})")
+        return promptCpu(config, cpuLimit)
+
+    return cpuCount
+
+def promptRam(config: Dict[str, Any], ramLimit: int) -> int:
     nodeRam: int = clickPrompt("Node RAM memory limit in GB (press enter to use default)", config_defaults.DEFAULT_RAM_MEMORY, type = int)
 
     if ramLimit < config_defaults.MINIMUM_RAM_MEMORY:
         raise RuntimeError(f"Minimum Node RAM requirement ({ramLimit}GB) is higher than your current Docker desktop RAM limit ({ramLimit}GB). Please adjust resource limitations in Docker Desktop settings to match Node requirements.")
 
     if nodeRam > ramLimit:
-        errorEcho(f"WARNING: RAM limit in Docker Desktop ({ramLimit}GB) is lower than the configured value ({config['ramLimit']}GB). Please adjust resource limitations in Docker Desktop settings.")
-        return promptRam(config, ramLimit, retryCount + 1)
+        errorEcho(f"ERROR: RAM limit in Docker Desktop ({ramLimit}GB) is lower than the configured value ({config['ramLimit']}GB). Please adjust resource limitations in Docker Desktop settings.")
+        return promptRam(config, ramLimit)
 
     if nodeRam < config_defaults.MINIMUM_RAM_MEMORY:
-        errorEcho(f"WARNING: Configured RAM ({config['ramLimit']}GB) is lower than the minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB).")
-        return promptRam(config, ramLimit, retryCount + 1)
+        errorEcho(f"ERROR: Configured RAM ({config['ramLimit']}GB) is lower than the minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB).")
+        return promptRam(config, ramLimit)
 
     return nodeRam
 
@@ -291,19 +300,20 @@ def isConfigurationValid(config: Dict[str, Any]) -> bool:
         errorEcho(f"Invalid config \"cpuCount\" field type \"{type(config['cpuCount'])}\". Expected: \"int\"")
         isValid = False
 
-    if cpuLimit < config["cpuCount"]:
+    if config["cpuCount"] > cpuLimit:
         errorEcho(f"Configuration not valid. CPU limit in Docker Desktop ({cpuLimit}) is lower than the configured value ({config['cpuCount']})")
-        isValid = False
-
-    if ramLimit < config["nodeRam"]:
-        errorEcho(f"Configuration not valid. RAM limit in Docker Desktop ({ramLimit}GB) is lower than the configured value ({config['nodeRam']}GB)")
         isValid = False
 
     if ramLimit < config_defaults.MINIMUM_RAM_MEMORY:
         errorEcho(f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) is higher than your current Docker desktop RAM limit ({ramLimit}GB). Please adjust resource limitations in Docker Desktop settings to match Node requirements.")
         isValid = False
 
-    if config_defaults.MINIMUM_RAM_MEMORY > config["nodeRam"]:
+    if config["nodeRam"] > ramLimit:
+        errorEcho(f"Configuration not valid. RAM limit in Docker Desktop ({ramLimit}GB) is lower than the configured value ({config['nodeRam']}GB)")
+        isValid = False
+
+
+    if config["nodeRam"] < config_defaults.MINIMUM_RAM_MEMORY:
         errorEcho(f"Configuration not valid. Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) is higher than the configured value ({config['nodeRam']}GB)")
         isValid = False
 
@@ -312,7 +322,9 @@ def isConfigurationValid(config: Dict[str, Any]) -> bool:
 
 def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     highlightEcho("[Node Configuration]")
+
     cpuLimit, ramLimit = docker.getResourceLimits()
+
     config["nodeName"] = clickPrompt("Node name", type = str)
     config["nodeAccessToken"] = registerNode(config["nodeName"])
 
@@ -332,7 +344,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
         config["image"] += f":latest-{tag}"
 
     config["storagePath"] = config_defaults.DEFAULT_STORAGE_PATH
-    config["nodeRam"] = ramLimit if config_defaults.DEFAULT_RAM_MEMORY > ramLimit else config_defaults.DEFAULT_RAM_MEMORY
+    config["nodeRam"] = min(ramLimit, config_defaults.DEFAULT_RAM_MEMORY)
     config["nodeSwap"] = config_defaults.DEFAULT_SWAP_MEMORY
     config["nodeSharedMemory"] = config_defaults.DEFAULT_SHARED_MEMORY
     config["cpuCount"] = config_defaults.DEFAULT_CPU_COUNT
@@ -344,14 +356,9 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     if verbose:
         config["storagePath"] = clickPrompt("Storage path (press enter to use default)", config_defaults.DEFAULT_STORAGE_PATH, type = str)
 
-        cpuCount = clickPrompt("Enter the number of CPUs the container will use (press enter to use default)", config_defaults.DEFAULT_CPU_COUNT, type = int)
-        if cpuCount > cpuLimit:
-            stdEcho(f"WARNING: CPU limit in Docker Desktop ({cpuLimit}) is lower than the configured value ({config['cpuCount']}). Please adjust resource limitations in Docker Desktop settings.")
-            cpuCount = cpuLimit
-        config["cpuCount"] = cpuCount
+        config["cpuCount"] = promptCpu(config, cpuLimit)
 
-        nodeRam = promptRam(config, ramLimit)
-        config["nodeRam"] = nodeRam
+        config["nodeRam"] = promptRam(config, ramLimit)
 
         config["nodeSwap"] = clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", config_defaults.DEFAULT_SWAP_MEMORY, type = int)
         config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", config_defaults.DEFAULT_SHARED_MEMORY, type = int)
