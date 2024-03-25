@@ -28,6 +28,7 @@ def create(name: str, path: str, project: Optional[str], accuracy: float) -> Non
     model.upload(path)
 
     ui.successEcho(f"Model \"{model.name}\" created successfully")
+    ui.outputUrl(config, "model", model.id)
 
 
 @click.group()

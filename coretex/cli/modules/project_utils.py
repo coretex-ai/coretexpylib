@@ -23,7 +23,7 @@ def selectProjectType() -> ProjectType:
     return selectedProjectType
 
 
-def promptProjectCreate(message: str, name: str) -> Optional[Project]:
+def promptProjectCreate(config: Dict[str, Any], message: str, name: str) -> Optional[Project]:
     if not click.confirm(message, default = True):
         raise RuntimeError
 
@@ -32,7 +32,7 @@ def promptProjectCreate(message: str, name: str) -> Optional[Project]:
     try:
         project = Project.createProject(name, selectedProjectType)
         ui.successEcho(f"Project \"{name}\" created successfully.")
-
+        ui.outputUrl(config, "project", project.id)
         return project
     except EntityNotCreated:
         raise click.ClickException(f"Failed to create project \"{name}\".")

@@ -77,6 +77,17 @@ def previewConfig(config: Dict[str, Any]) -> None:
     stdEcho(tabulate(table))
 
 
+def outputUrl(config: Dict[str, Any], entity: str, id: int) -> None:
+    if entity == "model":
+        stdEcho(f"{config.get('serverUrl')}/model-item?id={id}")
+
+    if entity == "project":
+        stdEcho(f"{config.get('serverUrl')}/project/{id}")
+
+    if entity == "run":
+        stdEcho(f"{config.get('serverUrl')}/run?id={id}")
+
+
 def stdEcho(text: str) -> None:
     click.echo(click.style(f"\n{text}", fg = "cyan"))
 

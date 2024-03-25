@@ -35,6 +35,7 @@ def selectProject(projectId: int) -> None:
 @click.option("--name", "-n", type = str, help = "Project name")
 @click.option("--id", type = int, help = "Project ID")
 def select(name: Optional[str], id: Optional[int]) -> None:
+    config = loadConfig()
     if name is None and id is None:
         raise click.UsageError("Please use either --name / -n (for project name) or --id (for project ID)")
 
@@ -49,7 +50,7 @@ def select(name: Optional[str], id: Optional[int]) -> None:
             selectProject(project.id)
         except ValueError:
             ui.errorEcho(f"Project \"{name}\" not found.")
-            project = project_utils.promptProjectCreate("Do you want to create a project with that name?", name)
+            project = project_utils.promptProjectCreate(config, "Do you want to create a project with that name?", name)
 
     if id is not None:
         ui.progressEcho("Validating project...")
