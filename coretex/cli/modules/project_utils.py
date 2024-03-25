@@ -40,7 +40,7 @@ def selectProjectVisibility() -> ProjectVisibility:
 
 def promptProjectCreate(message: str, name: str) -> Optional[Project]:
     if not click.confirm(message, default = True):
-        raise RuntimeError
+        return None
 
     selectedProjectType = selectProjectType()
 

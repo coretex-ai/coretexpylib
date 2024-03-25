@@ -24,6 +24,6 @@ class ProjectVisibility(IntEnum):
         List of visibility types of Project on Coretex.ai
     """
 
-    private        = 1
-    shared         = 2
-    public         = 3
+    public  = 1
+    private = 2
+    shared  = 3

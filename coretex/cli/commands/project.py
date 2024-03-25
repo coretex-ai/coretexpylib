@@ -22,7 +22,7 @@ import click
 from ..modules import ui, project_utils, utils, user
 from ..modules.ui import clickPrompt, errorEcho, successEcho, progressEcho
 from ...entities import Project, ProjectType, ProjectVisibility
-from ...networking import NetworkRequestError, EntityNotCreated, networkManager
+from ...networking import NetworkRequestError, EntityNotCreated, networkManager, RequestFailedError
 from ...configuration import loadConfig, saveConfig
 
 
@@ -33,7 +33,7 @@ def selectProject(projectId: int) -> None:
 
 
 @click.command()
-@click.option("--name", "-n", type = str, help = "Project name")
+@click.option("--project", "-p", type = str, help = "Project name")
 @click.option("--type", "-t", type = int, help = "Project type")
 @click.option("--description", "-d", type = str, help = "Project description")
 @click.option("--visibility", "-v", type = str, help = "Project visibility")
@@ -51,22 +51,36 @@ def create(name: Optional[str], type: Optional[int], description: Optional[str],
         visibility = project_utils.selectProjectVisibility()
 
     try:
-        Project.createProject(name, ProjectType(type), description, ProjectVisibility(int(visibility)))
-        ui.successEcho(f"Project \"{name}\" created successfully.")
+        project = Project.createProject(name, ProjectType(type), description, ProjectVisibility(int(visibility)))
+
+        if project is not None:
+            ui.successEcho(f"Project \"{name}\" created successfully.")
+            selectProject = clickPrompt("Do you want to select new project as default? (Y/n)", type = bool, default = True)
+
+            if selectProject:
+                selectProject(project.id)
+                successEcho(f"Project \"{project.name}\" successfully selected.")
+
     except EntityNotCreated:
         raise click.ClickException(f"Failed to create project \"{name}\".")
 
 
 @click.command()
-@click.option("--name", "-n", type = str, help = "Project name")
+@click.option("--project", "-p", type = str, help = "Project name")
 @click.option("--visibility", "-v", type = int, help = "Project visibility")
 @click.option("--description", "-d", type = str, help = "Project description")
 def edit(name: Optional[str], description: Optional[str], visibility: Optional[int]) -> None:
     config = loadConfig()
-    selectedProject = Project.fetchById(config["projectId"])
+    defaultProjectId = config.get("projectId")
+    if defaultProjectId is None and name is None:
+        errorEcho(f"To use edit command you need to specifiy project name using \"--project\" or \"-p\" flag, or you can select default project using \"coretex project select\" command.")
+
+    defaultProject = Project.fetchById(config["projectId"])
 
     if name is None:
-        name = clickPrompt("Please enter new name for your project", type = str, default = selectedProject.name)
+        selectedProject = defaultProject
+    else:
+        selectedProject = Project.fetchOne(name = project)
 
     if description is None:
         description = clickPrompt("Please enter new description for your project", type = str, default = selectedProject.description)
@@ -75,20 +89,23 @@ def edit(name: Optional[str], description: Optional[str], visibility: Optional[i
         visibility = project_utils.selectProjectVisibility()
 
     try:
-        selectedProject.update(name = name, description = description)
-        networkManager.post("entity-visibility", {
+        selectedProject.update(name = selectedProject.name, description = description)
+        response = networkManager.post("entity-visibility", {
             "entity_id": config["projectId"],
-            "type": 1,
+            "type": 1,  # this number represents Project Entity enum value on backend side
             "visibility": visibility,
-            "user_ids": ["uuid"]
         })
-    except NetworkRequestError:
-        raise click.ClickException(f"Failed to create project \"{name}\".")
+
+        if response.statusCode == 403:  # status code that backend returns when user doesn't have permission to use Public Visibility type
+            errorEcho("Changing project visibility to \"Public\" is forbidden!")
+
+        successEcho(f"Project id \"{config['projectId']}\" successfully edited.")
+    except RequestFailedError:
+        raise click.ClickException(f"Failed to edit project \"{selectedProject.name}\".")
 
 
 @click.command()
-@click.option("--name", "-n", type = str, help = "Project name")
-@click.option("--id", type = int, help = "Project ID")
+@click.option("--project", "-p", type = str, help = "Project name")
 def select(name: Optional[str], id: Optional[int]) -> None:
     if name is None and id is None:
         raise click.UsageError("Please use either --name / -n (for project name) or --id (for project ID)")
@@ -105,6 +122,8 @@ def select(name: Optional[str], id: Optional[int]) -> None:
         except ValueError:
             errorEcho(f"Project \"{name}\" not found.")
             project = project_utils.promptProjectCreate("Do you want to create a project with that name?", name)
+            if project is None:
+                return
 
     if id is not None:
         progressEcho("Validating project...")
