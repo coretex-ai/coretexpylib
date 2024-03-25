@@ -418,7 +418,7 @@ class NetworkManagerBase(ABC):
             else:
                 response = self.request(endpoint, RequestType.options, timeout = REQUEST_TIMEOUT)
                 if response.hasFailed():
-                    raise NetworkRequestError(response, ">> [Coretex] Could not establish a connection with the server")
+                    raise NetworkRequestError(response, "Could not establish a connection with the server")
 
                 timeout = None
 
