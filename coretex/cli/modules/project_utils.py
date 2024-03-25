@@ -27,7 +27,6 @@ def selectProjectType() -> ProjectType:
 def selectProjectVisibility() -> ProjectVisibility:
     availableProjectVisibilities = {
         "Private": ProjectVisibility.private,
-        "Shared": ProjectVisibility.shared,
         "Public": ProjectVisibility.public,
     }
 
