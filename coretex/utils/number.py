@@ -44,7 +44,7 @@ def mathematicalRound(value: float, decimalPlaces: int) -> float:
 def formatBytes(value: int, precision: int = 2) -> str:
     """
         Formats a size in bytes into a human-readable format
-        Ex. value 1444 will be formatted as 1.41 KB
+        Ex. value 1444 will be formatted as 1.44 KB
 
         Parameters
         ----------
@@ -59,8 +59,8 @@ def formatBytes(value: int, precision: int = 2) -> str:
     """
 
     suffixes = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"]
-    index: int = 0
-    unitBase: int = 1000
+    index = 0
+    unitBase = 1000
     adjustedValue = float(value)
 
     while adjustedValue >= unitBase and index < len(suffixes) - 1:
