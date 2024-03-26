@@ -5,6 +5,13 @@ import click
 from . import ui
 from ...entities import Project, ProjectType, ProjectVisibility
 from ...networking import EntityNotCreated
+from ...configuration import loadConfig, saveConfig
+
+
+def selectProject(projectId: int) -> None:
+    config = loadConfig()
+    config["projectId"] = projectId
+    saveConfig(config)
 
 
 def selectProjectType() -> ProjectType:
