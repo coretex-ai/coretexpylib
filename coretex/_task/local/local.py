@@ -67,7 +67,8 @@ def processLocal(args: Optional[List[str]] = None) -> Tuple[int, LocalTaskCallba
         namespace.saveSnapshot,
         namespace.name,
         namespace.description,
-        [parameter.encode() for parameter in parameters]
+        [parameter.encode() for parameter in parameters],
+        namespace.entryPoint
     )
 
     logging.getLogger("coretexpylib").info(f">> [Coretex] Created local run with ID \"{taskRun.id}\"")
