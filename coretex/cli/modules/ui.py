@@ -79,13 +79,13 @@ def previewConfig(config: Dict[str, Any]) -> None:
 
 def outputUrl(config: Dict[str, Any], entity: str, id: int) -> None:
     if entity == "model":
-        stdEcho(f"{config.get('serverUrl')}/model-item?id={id}")
+        stdEcho(f"{config.get('serverUrl')}model-item?id={id}")
 
     if entity == "project":
-        stdEcho(f"{config.get('serverUrl')}/project/{id}")
+        stdEcho(f"{config.get('serverUrl')}project/{id}")
 
     if entity == "run":
-        stdEcho(f"{config.get('serverUrl')}/run?id={id}")
+        stdEcho(f"{config.get('serverUrl')}run?id={id}")
 
 
 def stdEcho(text: str) -> None:
