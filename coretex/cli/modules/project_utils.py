@@ -43,7 +43,7 @@ def getProject(name: Optional[str], config: Dict[str, Any]) -> Optional[Project]
         try:
             return Project.fetchOne(name = name)
         except:
-            return promptProjectCreate("Project not found. Do you want to create a new Project with that name?", name)
+            return promptProjectCreate(config, "Project not found. Do you want to create a new Project with that name?", name)
 
     projectId = config.get("projectId")
     if projectId is not None:
