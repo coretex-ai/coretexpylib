@@ -15,7 +15,6 @@ def selectProject(projectId: int) -> None:
 
 
 def selectProjectType() -> ProjectType:
-    print('la ?')
     availableProjectTypes = {
         "Computer Vision": ProjectType.computerVision,
         "Motion Recognition": ProjectType.motionRecognition,
