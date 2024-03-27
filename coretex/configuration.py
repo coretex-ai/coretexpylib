@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from pathlib import Path
 
 import os
@@ -33,7 +33,7 @@ def isCliRuntime() -> bool:
 
 def getEnvVar(key: str, default: str) -> str:
     if os.environ.get(key) is None:
-        os.environ[key] = default
+        return default
 
     return os.environ[key]
 
@@ -67,9 +67,6 @@ def loadConfig() -> Dict[str, Any]:
         if not key in config:
             config[key] = value
 
-    # CTX_API_URL can be overrided through environment variable
-    config["serverUrl"] = getEnvVar("CTX_API_URL", config["serverUrl"])
-
     return config
 
 
@@ -83,7 +80,8 @@ def _syncConfigWithEnv() -> None:
 
     saveConfig(config)
 
-    os.environ["CTX_API_URL"] = config["serverUrl"]
+    if not "CTX_API_URL" in os.environ:
+        os.environ["CTX_API_URL"] = config["serverUrl"]
 
     secretsKey = config.get("secretsKey")
     if isinstance(secretsKey, str) and secretsKey != "":
@@ -92,7 +90,7 @@ def _syncConfigWithEnv() -> None:
     if not isCliRuntime():
         os.environ["CTX_STORAGE_PATH"] = config["storagePath"]
     else:
-        os.environ["CTX_STORAGE_PATH"] = str(CONFIG_DIR)
+        os.environ["CTX_STORAGE_PATH"] = f"{CONFIG_DIR}/data"
 
 
 def saveConfig(config: Dict[str, Any]) -> None:
@@ -121,3 +119,19 @@ def isNodeConfigured(config: Dict[str, Any]) -> bool:
         config.get("nodeSharedMemory") is not None and
         config.get("nodeMode") is not None
     )
+
+
+def getInitScript(config: Dict[str, Any]) -> Optional[Path]:
+    value = config.get("initScript")
+
+    if not isinstance(value, str):
+        return None
+
+    if value == "":
+        return None
+
+    path = Path(value).expanduser().absolute()
+    if not path.exists():
+        return None
+
+    return path

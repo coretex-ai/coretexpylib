@@ -38,7 +38,7 @@ from .network_response import NetworkResponse
 from .file_data import FileData
 
 
-MAX_RETRY_COUNT = 3
+MAX_RETRY_COUNT = 5
 LOGIN_ENDPOINT = "user/login"
 REFRESH_ENDPOINT = "user/refresh"
 API_TOKEN_HEADER = "api-token"

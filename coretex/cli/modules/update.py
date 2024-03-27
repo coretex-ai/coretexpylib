@@ -1,14 +1,32 @@
+#     Copyright (C) 2023  Coretex LLC
+
+#     This file is part of Coretex.ai
+
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU Affero General Public License as
+#     published by the Free Software Foundation, either version 3 of the
+#     License, or (at your option) any later version.
+
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU Affero General Public License for more details.
+
+#     You should have received a copy of the GNU Affero General Public License
+#     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from typing import Dict, Any
 from enum import IntEnum
 from pathlib import Path
 
 import requests
 
+from . import config_defaults
 from .cron import jobExists, scheduleJob
-from .node import DOCKER_CONTAINER_NAME, DOCKER_CONTAINER_NETWORK, getRepository
+from .node import getRepoFromImageUrl, getTagFromImageUrl
 from ..resources import RESOURCES_DIR
 from ...utils import command
-from ...configuration import CONFIG_DIR
+from ...configuration import CONFIG_DIR, getInitScript
 
 
 UPDATE_SCRIPT_NAME = "ctx_node_update.sh"
@@ -32,22 +50,25 @@ def generateUpdateScript(config: Dict[str, Any]) -> str:
 
     return bashScriptTemplate.format(
         dockerPath = dockerPath.strip(),
-        repository = getRepository(),
-        tag = f"latest-{config['image']}",
+        repository = getRepoFromImageUrl(config["image"]),
+        tag = getTagFromImageUrl(config["image"]),
         serverUrl = config["serverUrl"],
         storagePath = config["storagePath"],
         nodeAccessToken = config["nodeAccessToken"],
         nodeMode = config["nodeMode"],
         modelId = config.get("modelId"),
-        containerName = DOCKER_CONTAINER_NAME,
-        networkName = DOCKER_CONTAINER_NETWORK,
+        containerName = config_defaults.DOCKER_CONTAINER_NAME,
+        networkName = config_defaults.DOCKER_CONTAINER_NETWORK,
         restartPolicy = "always",
         ports = "21000:21000",
         capAdd = "SYS_PTRACE",
         ramMemory = config["nodeRam"],
         swapMemory = config["nodeSwap"],
         sharedMemory = config["nodeSharedMemory"],
-        imageType = config["image"]
+        cpuCount = config.get("cpuCount", config_defaults.DEFAULT_CPU_COUNT),
+        imageType = "cpu" if config["allowGpu"] is False else "gpu",
+        allowDocker = config.get("allowDocker", False),
+        initScript = getInitScript(config)
     )
 
 
