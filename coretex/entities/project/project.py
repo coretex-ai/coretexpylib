@@ -110,3 +110,6 @@ class Project(BaseObject):
 
         self.tasks.append(task)
         return True
+
+    def entityUrl(self) -> str:
+        return super().entityUrl()

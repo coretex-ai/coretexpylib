@@ -32,7 +32,7 @@ def promptProjectCreate(config: Dict[str, Any], message: str, name: str) -> Opti
     try:
         project = Project.createProject(name, selectedProjectType)
         ui.successEcho(f"Project \"{name}\" created successfully.")
-        ui.outputUrl(config, "project", project.id)
+        ui.outputUrl(project.entityUrl())
         return project
     except EntityNotCreated:
         raise click.ClickException(f"Failed to create project \"{name}\".")

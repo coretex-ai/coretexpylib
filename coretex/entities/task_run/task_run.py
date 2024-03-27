@@ -174,6 +174,9 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
     def _endpoint(cls) -> str:
         return "model-queue"
 
+    def entityUrl(self) -> str:
+        return f"run?id={self.id}"
+
     def onDecode(self) -> None:
         super().onDecode()
 
