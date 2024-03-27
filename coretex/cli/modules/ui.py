@@ -52,24 +52,24 @@ def arrowPrompt(choices: List[Any], message: str) -> Any:
 def previewConfig(config: Dict[str, Any]) -> None:
     allowDocker = "Yes" if config.get("allowDocker", False) else "No"
 
-    if config.get("secretsKey") is None or config.get("secretsKey") == "":
-        secretsKey = ""
+    if config.get("nodeSecret") is None or config.get("nodeSecret") == "":
+        nodeSecret = ""
     else:
-        secretsKey = "********"
+        nodeSecret = "********"
 
     table = [
-        ["Node name",           config["nodeName"]],
-        ["Server URL",          config["serverUrl"]],
-        ["Coretex Node type",   config["image"]],
-        ["Storage path",        config["storagePath"]],
-        ["RAM",                 f"{config['nodeRam']}GB"],
-        ["SWAP memory",         f"{config['nodeSwap']}GB"],
-        ["POSIX shared memory", f"{config['nodeSharedMemory']}GB"],
-        ["CPU cores allocated", config.get("cpuCount", DEFAULT_CPU_COUNT)],
-        ["Coretex Node mode",   f"{NodeMode(config['nodeMode']).name}"],
-        ["Docker access",       allowDocker],
-        ["Secrets key",         secretsKey],
-        ["Node init script",    config.get("initScript", "")]
+        ["Node name",                   config["nodeName"]],
+        ["Server URL",                  config["serverUrl"]],
+        ["Coretex Node type",           config["image"]],
+        ["Storage path",                config["storagePath"]],
+        ["RAM",                         f"{config['nodeRam']}GB"],
+        ["SWAP memory",                 f"{config['nodeSwap']}GB"],
+        ["POSIX shared memory",         f"{config['nodeSharedMemory']}GB"],
+        ["CPU cores allocated",         config.get("cpuCount", DEFAULT_CPU_COUNT)],
+        ["Coretex Node mode",           f"{NodeMode(config['nodeMode']).name}"],
+        ["Docker access",               allowDocker],
+        ["Coretex Node secret",         nodeSecret],
+        ["Coretex Node init script",    config.get("initScript", "")]
     ]
     if config.get("modelId") is not None:
         table.append(["Coretex Model ID", config["modelId"]])

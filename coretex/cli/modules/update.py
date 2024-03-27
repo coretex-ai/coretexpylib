@@ -68,7 +68,8 @@ def generateUpdateScript(config: Dict[str, Any]) -> str:
         cpuCount = config.get("cpuCount", config_defaults.DEFAULT_CPU_COUNT),
         imageType = "cpu" if config["allowGpu"] is False else "gpu",
         allowDocker = config.get("allowDocker", False),
-        initScript = getInitScript(config)
+        initScript = getInitScript(config),
+        nodeSecret = config.get("nodeSecret", config_defaults.DEFAULT_NODE_SECRET)
     )
 
 
