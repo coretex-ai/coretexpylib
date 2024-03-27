@@ -1,5 +1,4 @@
-from typing import Dict, Any, Optional, TypeVar
-from pathlib import Path
+from typing import Dict, Any, Optional
 from datetime import datetime, timezone
 
 import os
@@ -7,9 +6,6 @@ import json
 
 from ..utils import decodeDate
 from ..configuration import CONFIG_DIR
-
-
-PropertyType = TypeVar("PropertyType")
 
 
 USER_CONFIG_PATH = CONFIG_DIR / "user_config.json"
@@ -158,7 +154,7 @@ class UserConfiguration:
         value = self._raw.get(configKey)
 
         if not isinstance(value, str):
-            raise InvalidUserConfiguration(f"Invalid username type \"{type(value)}\", expected: \"str\".")
+            raise InvalidUserConfiguration(f"Invalid f{configKey} type \"{type(value)}\", expected: \"str\".")
 
         return value
 
@@ -169,6 +165,6 @@ class UserConfiguration:
         value = self._raw.get(configKey)
 
         if not isinstance(value, int):
-            raise InvalidUserConfiguration(f"Invalid username type \"{type(value)}\", expected: \"str\".")
+            raise InvalidUserConfiguration(f"Invalid f{configKey} type \"{type(value)}\", expected: \"str\".")
 
         return value
