@@ -123,3 +123,10 @@ def imageInspect(image: str) -> Dict[str, Any]:
         raise TypeError(f"Invalid function result type \"{type(jsonOutput[0])}\". Expected: \"dict\"")
 
     return jsonOutput[0]
+
+
+def getResourceLimits() -> Tuple[int, int]:
+    _, output, _ = command(["docker", "info", "--format", "{{json .}}"], ignoreStdout = True, ignoreStderr = True)
+    jsonOutput = json.loads(output)
+
+    return jsonOutput["NCPU"], round(jsonOutput["MemTotal"] / (1024 ** 3), 0)
