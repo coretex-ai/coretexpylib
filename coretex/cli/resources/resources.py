@@ -19,3 +19,4 @@ from pathlib import Path
 
 
 RESOURCES_DIR = Path(__file__).resolve().parent
+LOCAL_EXEC_PATH = Path(__file__).resolve().parent / "_coretex.py"

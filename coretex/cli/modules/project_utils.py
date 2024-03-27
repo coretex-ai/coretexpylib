@@ -3,6 +3,7 @@ from typing import Optional, Dict, Any
 import click
 
 from . import ui
+from ...configuration import loadConfig
 from ...entities import Project, ProjectType
 from ...networking import EntityNotCreated
 
@@ -55,3 +56,15 @@ def getProject(name: Optional[str], config: Dict[str, Any]) -> Optional[Project]
         "Project can be selected globally by using \"coretex project select\" command\n"
         "or you can pass the Project directly to this command using \"--project\" option"
     )
+
+
+def isProjectSelected() -> None:
+    config = loadConfig()
+
+    if config.get("projectId") is None:
+        raise RuntimeError("Project not selected, please use \"coretex project select\" command first.")
+
+    try:
+        Project.fetchById(config["projectId"])
+    except:
+        raise RuntimeError("Selected project is not valid, please use \"coretex project select\" and select a valid project.")
