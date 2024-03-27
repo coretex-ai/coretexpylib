@@ -22,7 +22,6 @@ import sys
 
 import click
 
-from ...utils.process import command
 from ..modules.user import initializeUserSession
 from ..modules.utils import onBeforeCommandExecute
 from ..modules.project_utils import isProjectSelected
