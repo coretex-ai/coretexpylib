@@ -27,4 +27,5 @@ class RequestType(Enum):
     get = "GET"
     post = "POST"
     put = "PUT"
-    delete = 'DELETE'
+    delete = "DELETE"
+    options = "OPTIONS"
