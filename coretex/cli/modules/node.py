@@ -18,6 +18,7 @@
 from typing import Any, Dict, Tuple, Optional
 from enum import Enum
 from pathlib import Path
+from base64 import b64encode
 
 import logging
 
@@ -25,6 +26,7 @@ from . import config_defaults
 from .utils import isGPUAvailable
 from .ui import clickPrompt, arrowPrompt, highlightEcho, errorEcho, progressEcho, successEcho, stdEcho
 from .node_mode import NodeMode
+from ...cryptography import rsa
 from ...networking import networkManager, NetworkRequestError
 from ...configuration import loadConfig, saveConfig, isNodeConfigured, getInitScript
 from ...utils import CommandException, docker
@@ -75,9 +77,9 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
         if isinstance(modelId, int):
             environ["CTX_MODEL_ID"] = modelId
 
-        secretsKey = config.get("secretsKey", config_defaults.DEFAULT_SECRETS_KEY)
-        if isinstance(secretsKey, str) and secretsKey != config_defaults.DEFAULT_SECRETS_KEY:
-            environ["CTX_SECRETS_KEY"] = secretsKey
+        nodeSecret = config.get("nodeSecret", config_defaults.DEFAULT_NODE_SECRET)
+        if isinstance(nodeSecret, str) and nodeSecret != config_defaults.DEFAULT_NODE_SECRET:
+            environ["CTX_NODE_SECRET"] = nodeSecret
 
         volumes = [
             (config["storagePath"], "/root/.coretex")
@@ -172,10 +174,15 @@ def shouldUpdate(image: str) -> bool:
     return True
 
 
-def registerNode(name: str) -> str:
-    response = networkManager.post("service", {
+def registerNode(name: str, publicKey: Optional[bytes] = None) -> str:
+    params = {
         "machine_name": name,
-    })
+    }
+
+    if publicKey is not None:
+        params["public_key"] = b64encode(publicKey).decode("utf-8")
+
+    response = networkManager.post("service", params)
 
     if response.hasFailed():
         raise NetworkRequestError(response, "Failed to configure node. Please try again...")
@@ -258,7 +265,6 @@ def _configureInitScript() -> str:
 def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     highlightEcho("[Node Configuration]")
     config["nodeName"] = clickPrompt("Node name", type = str)
-    config["nodeAccessToken"] = registerNode(config["nodeName"])
 
     imageType = selectImageType()
     if imageType == ImageType.custom:
@@ -282,8 +288,10 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     config["cpuCount"] = config_defaults.DEFAULT_CPU_COUNT
     config["nodeMode"] = config_defaults.DEFAULT_NODE_MODE
     config["allowDocker"] = config_defaults.DEFAULT_ALLOW_DOCKER
-    config["secretsKey"] = config_defaults.DEFAULT_SECRETS_KEY
+    config["nodeSecret"] = config_defaults.DEFAULT_NODE_SECRET
     config["initScript"] = config_defaults.DEFAULT_INIT_SCRIPT
+
+    publicKey: Optional[bytes] = None
 
     if verbose:
         config["storagePath"] = clickPrompt("Storage path (press enter to use default)", config_defaults.DEFAULT_STORAGE_PATH, type = str)
@@ -292,15 +300,23 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
         config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", config_defaults.DEFAULT_SHARED_MEMORY, type = int)
         config["cpuCount"] = clickPrompt("Enter the number of CPUs the container will use (press enter to use default)", config_defaults.DEFAULT_CPU_COUNT, type = int)
         config["allowDocker"] = clickPrompt("Allow Node to access system docker? This is a security risk! (Y/n)", config_defaults.DEFAULT_ALLOW_DOCKER, type = bool)
-        config["secretsKey"] = clickPrompt("Enter a key used for decrypting your Coretex Secrets", config_defaults.DEFAULT_SECRETS_KEY, type = str, hide_input = True)
         config["initScript"] = _configureInitScript()
 
         nodeMode, modelId = selectNodeMode(config["storagePath"])
         config["nodeMode"] = nodeMode
         if modelId is not None:
             config["modelId"] = modelId
+
+        nodeSecret: str = clickPrompt("Enter a secret which will be used to generate RSA key-pair for Node", config_defaults.DEFAULT_NODE_SECRET, type = str, hide_input = True)
+        config["nodeSecret"] = nodeSecret
+
+        progressEcho("Generating RSA key-pair using provided node secret...")
+        rsaKey = rsa.generateKey(2048, nodeSecret.encode("utf-8"))
+        publicKey = rsa.getPublicKeyBytes(rsaKey.public_key())
     else:
         stdEcho("To configure node manually run coretex node config with --verbose flag.")
+
+    config["nodeAccessToken"] = registerNode(config["nodeName"], publicKey)
 
 
 def initializeNodeConfiguration() -> None:

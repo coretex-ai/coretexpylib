@@ -40,6 +40,7 @@ CPU_COUNT={cpuCount}
 IMAGE_TYPE={imageType}
 ALLOW_DOCKER={allowDocker}
 INIT_SCRIPT={initScript}
+NODE_SECRET={nodeSecret}
 
 NODE_STATUS_ENDPOINT="http://localhost:21000/status"
 
@@ -133,6 +134,10 @@ start_node() {{
 
     if [ $MODEL_ID != "None" ]; then
         start_command+=" --env CTX_MODEL_ID=$MODEL_ID"
+    fi
+
+    if [ $NODE_SECRET != "" ]; then
+        start_command+=" --env CTX_NODE_SECRET=$NODE_SECRET"
     fi
 
     if [ $ALLOW_DOCKER == "True" ]; then

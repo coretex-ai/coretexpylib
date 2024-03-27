@@ -23,6 +23,7 @@ tabulate = "*"
 inquirer = "*"
 docker = "*"
 cryptography = "*"
+pycryptodome = "*"
 
 [dev-packages]
 mypy = "*"
