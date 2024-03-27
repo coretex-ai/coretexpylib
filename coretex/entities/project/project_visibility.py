@@ -15,7 +15,15 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .project import Project
-from .project_type import ProjectType
-from .project_visibility import ProjectVisibility
-from .task import Task
+from enum import IntEnum
+
+
+class ProjectVisibility(IntEnum):
+
+    """
+        List of visibility types of Project on Coretex.ai
+    """
+
+    public  = 1
+    private = 2
+    shared  = 3

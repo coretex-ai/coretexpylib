@@ -3,8 +3,15 @@ from typing import Optional, Dict, Any
 import click
 
 from . import ui
-from ...entities import Project, ProjectType
+from ...entities import Project, ProjectType, ProjectVisibility
 from ...networking import EntityNotCreated
+from ...configuration import loadConfig, saveConfig
+
+
+def selectProject(projectId: int) -> None:
+    config = loadConfig()
+    config["projectId"] = projectId
+    saveConfig(config)
 
 
 def selectProjectType() -> ProjectType:
@@ -23,9 +30,23 @@ def selectProjectType() -> ProjectType:
     return selectedProjectType
 
 
+def selectProjectVisibility() -> ProjectVisibility:
+    availableProjectVisibilities = {
+        "Private": ProjectVisibility.private,
+        "Public": ProjectVisibility.public,
+    }
+
+    choices = list(availableProjectVisibilities.keys())
+    selectedChoice = ui.arrowPrompt(choices, "Specify visibility of project:")
+
+    selectedProjectVisibility = availableProjectVisibilities[selectedChoice]
+    ui.stdEcho(f"You've chosen: {selectedChoice}")
+    return selectedProjectVisibility
+
+
 def promptProjectCreate(message: str, name: str) -> Optional[Project]:
     if not click.confirm(message, default = True):
-        raise RuntimeError
+        return None
 
     selectedProjectType = selectProjectType()
 
