@@ -130,10 +130,8 @@ class Project(BaseObject):
             RuntimeError -> If the Project with specified name is not found
         """
 
-        results = cls.fetchAll(name = name)
+        results = cls.fetchAll(name = f"={name}")
+        if len(results) == 0:
+            raise ValueError(f"Project with name \"{name}\" not found.")
 
-        for project in results:
-            if project.name == name:
-                return project
-
-        raise ValueError(f"Project with name \"{name}\" not found.")
+        return results[0]
