@@ -44,7 +44,7 @@ def select(name: Optional[str], id: Optional[int]) -> None:
         ui.progressEcho("Validating project...")
 
         try:
-            project = Project.fetchOne(name = name)
+            project = Project.fetchByName(name = name)
             ui.successEcho(f"Project \"{name}\" selected successfully!")
             selectProject(project.id)
         except ValueError:

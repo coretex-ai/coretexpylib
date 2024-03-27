@@ -110,3 +110,30 @@ class Project(BaseObject):
 
         self.tasks.append(task)
         return True
+
+    @classmethod
+    def fetchByName(cls, name: str) -> Self:
+        """
+            Fetches Project based on specified name
+
+            Parameters
+            ----------
+            name : str
+                The name of the Project to fetch
+
+            Returns
+            -------
+            Self -> Fetched Project
+
+            Raises
+            ------
+            RuntimeError -> If the Project with specified name is not found
+        """
+
+        results = cls.fetchAll(name = name)
+
+        for project in results:
+            if project.name == name:
+                return project
+
+        raise ValueError(f"Project with name \"{name}\" not found.")

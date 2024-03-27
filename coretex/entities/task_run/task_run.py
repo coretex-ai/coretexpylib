@@ -631,8 +631,6 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
         if entryPoint is not None:
             params["entry_point"] = entryPoint
 
-        print(params)
-
         # Create snapshot
         if saveSnapshot:
             files = [FileData.createFromPath("file", createSnapshot())]

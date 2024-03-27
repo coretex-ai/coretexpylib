@@ -61,7 +61,6 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
          str(LOCAL_EXEC_PATH),
          "--taskRunId", str(taskRunId),
          "--refreshToken", config["refreshToken"],
-         "--projectId", str(config["projectId"]),
-         "--entryPoint", path],
+         "--projectId", str(config["projectId"])],
         cwd = str(Path.cwd())
     )

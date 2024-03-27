@@ -51,7 +51,8 @@ class LocalArgumentParser(Tap):
         self.add_argument("--description", nargs = "?", type = str, default = None)
 
         self.add_argument("--saveSnapshot", action = 'store_const', const = True, default = False)
-        self.add_argument("--entryPoint", type = str, default = None)
+        self.add_argument("--taskRunId", type = int)
+        self.add_argument("--refreshToken", nargs = "?", type = str, default = None)
 
         for parameter in self.parameters:
             if parameter.dataType in [ParameterType.dataset, ParameterType.enum, ParameterType.enumList, ParameterType.imuVectors, ParameterType.range, ParameterType.boolean]:
