@@ -23,7 +23,7 @@ def selectProjectType() -> ProjectType:
     return selectedProjectType
 
 
-def promptProjectCreate(message: str, name: str) -> Optional[Project]:
+def promptProjectCreate(config: Dict[str, Any], message: str, name: str) -> Optional[Project]:
     if not click.confirm(message, default = True):
         raise RuntimeError
 
@@ -32,7 +32,7 @@ def promptProjectCreate(message: str, name: str) -> Optional[Project]:
     try:
         project = Project.createProject(name, selectedProjectType)
         ui.successEcho(f"Project \"{name}\" created successfully.")
-
+        ui.outputUrl(project.entityUrl())
         return project
     except EntityNotCreated:
         raise click.ClickException(f"Failed to create project \"{name}\".")
@@ -43,7 +43,7 @@ def getProject(name: Optional[str], config: Dict[str, Any]) -> Optional[Project]
         try:
             return Project.fetchOne(name = name)
         except:
-            return promptProjectCreate("Project not found. Do you want to create a new Project with that name?", name)
+            return promptProjectCreate(config, "Project not found. Do you want to create a new Project with that name?", name)
 
     projectId = config.get("projectId")
     if projectId is not None:

@@ -243,6 +243,9 @@ class Model(NetworkObject):
         with modelDescriptorPath.open("w", encoding = "utf-8") as file:
             json.dump(contents, file, ensure_ascii = False, indent = 4)
 
+    def entityUrl(self) -> str:
+        return f'model-item?id={self.id}'
+
     def download(self, path: Optional[Path] = None, ignoreCache: bool = False) -> None:
         """
             Downloads and extracts the model zip file from Coretex.ai

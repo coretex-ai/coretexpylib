@@ -71,6 +71,18 @@ class NetworkObject(Codable):
 
         return inflection.underscore(cls.__name__)
 
+    def entityUrl(self) -> str:
+        """
+            Maps the entity url to overriden value, else
+            creates entity url
+
+            Returns
+            -------
+            str -> The URL path on Coretex for the entity.
+        """
+
+        return f"{type(self).__name__}/{self.id}"
+
     def __eq__(self, __o: object) -> bool:
         """
             Checks if the NetworkObjects which have id property
