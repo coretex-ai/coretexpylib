@@ -1,11 +1,17 @@
 from typing import Optional, Dict, Any
+from enum import IntEnum
 
 import click
 
 from . import ui
 from ...entities import Project, ProjectType, ProjectVisibility
-from ...networking import EntityNotCreated
+from ...networking import EntityNotCreated, NetworkResponse, networkManager
 from ...configuration import loadConfig, saveConfig
+
+
+class EntityVisibilityType(IntEnum):
+    project = 1
+    node    = 2
 
 
 def selectProject(projectId: int) -> None:
@@ -42,6 +48,14 @@ def selectProjectVisibility() -> ProjectVisibility:
     selectedProjectVisibility = availableProjectVisibilities[selectedChoice]
     ui.stdEcho(f"You've chosen: {selectedChoice}")
     return selectedProjectVisibility
+
+
+def changeProjectVisibility(id: int, visibility: ProjectVisibility) -> NetworkResponse:
+    return networkManager.post("entity-visibility", {
+        "entity_id": id,
+        "type": EntityVisibilityType.project,  # this number represents Project Entity enum value on backend side
+        "visibility": visibility,
+    })
 
 
 def promptProjectCreate(message: str, name: str) -> Optional[Project]:

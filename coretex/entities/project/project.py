@@ -41,8 +41,8 @@ class Project(BaseObject):
         cls,
         name: str,
         projectType: ProjectType,
-        description: Optional[str] = None,
-        visiblity: Optional[ProjectVisibility] = ProjectVisibility.private
+        visiblity: ProjectVisibility = ProjectVisibility.private,
+        description: Optional[str] = None
     ) -> Self:
         """
             Creates a new project with the provided name and description
