@@ -112,7 +112,7 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
             FileData.createFromPath("file", filePath, mimeType = mimeType)
         ]
 
-        response = networkManager.formData("session/import", parameters, files)
+        response = networkManager.formData("session/import", parameters, files, (5, 300))
         if response.hasFailed():
             return None
 

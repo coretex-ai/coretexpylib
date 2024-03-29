@@ -370,7 +370,8 @@ class NetworkManagerBase(ABC):
         self,
         endpoint: str,
         params: Optional[Dict[str, Any]] = None,
-        files: Optional[List[FileData]] = None
+        files: Optional[List[FileData]] = None,
+        timeout: TimeoutType = REQUEST_TIMEOUT
     ) -> NetworkResponse:
 
         """
@@ -412,10 +413,7 @@ class NetworkManagerBase(ABC):
             headers = self._headers("multipart/form-data")
             del headers["Content-Type"]
 
-            timeout: TimeoutType
-            if len(files) == 0:
-                timeout = REQUEST_TIMEOUT
-            else:
+            if len(files) > 0:
                 response = self.request(endpoint, RequestType.options, timeout = REQUEST_TIMEOUT)
                 if response.hasFailed():
                     raise NetworkRequestError(response, "Could not establish a connection with the server")
