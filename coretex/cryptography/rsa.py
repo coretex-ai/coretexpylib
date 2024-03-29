@@ -19,12 +19,28 @@ from typing import Tuple
 
 from Crypto.PublicKey import RSA
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import rsa, padding
+from cryptography.hazmat.primitives.asymmetric import rsa
 
 from .random_generator import Random
 
 
 def _generateRsaNumbers(bits: int, seed: bytes) -> Tuple[int, int, int, int, int]:
+    """
+        Randomly generates numbers used for calculating RSA public
+        and private keys
+
+        Parameters
+        ----------
+        bits : int
+            # of bits in the "n" public number
+        seeed : bytes
+            Array of bytes which represent seed for generating key in a deterministic way.
+            The entropy of the generated key is equal to the entropy of the seed.
+
+        Returns
+        Tuple[int, int, int, int, int] -> p, q, n, e, d RSA values, e is always equal to 65537
+    """
+
     random = Random(seed, hashes.SHA256())
     numbers = RSA.generate(bits, randfunc = random.getRandomBytes, e = 65537)
 
@@ -32,6 +48,22 @@ def _generateRsaNumbers(bits: int, seed: bytes) -> Tuple[int, int, int, int, int
 
 
 def generateKey(length: int, seed: bytes) -> rsa.RSAPrivateKey:
+    """
+        Generates RSA key-pair with the provided length and seed
+
+        Parameters
+        ----------
+        length : int
+            length of the key-pair
+        seed : bytes
+            Array of bytes which represent seed for generating key in a deterministic way.
+            The entropy of the generated key is equal to the entropy of the seed.
+
+        Returns
+        -------
+        RSAPrivateKey -> cryptography.hazmat.primitives.asymmetric.rsa.RSAPrivateKey object
+    """
+
     # p -> large random prime number
     # q -> large random prime number
     # n -> p * q
@@ -48,6 +80,20 @@ def generateKey(length: int, seed: bytes) -> rsa.RSAPrivateKey:
 
 
 def getPrivateKeyBytes(key: rsa.RSAPrivateKey) -> bytes:
+    """
+        Converts the provided key into a byte array.
+        Encoding is PEM, Format is PKCS8
+
+        Parameters
+        ----------
+        key : RSAPrivateKey
+            cryptography.hazmat.primitives.asymmetric.rsa.RSAPrivateKey object
+
+        Returns
+        -------
+        bytes -> RSA private key serialized to bytes
+    """
+
     return key.private_bytes(
         encoding = serialization.Encoding.PEM,
         format = serialization.PrivateFormat.PKCS8,
@@ -56,11 +102,21 @@ def getPrivateKeyBytes(key: rsa.RSAPrivateKey) -> bytes:
 
 
 def getPublicKeyBytes(key: rsa.RSAPublicKey) -> bytes:
+    """
+        Converts the provided key into a byte array.
+        Encoding is PEM, Format is PKCS1
+
+        Parameters
+        ----------
+        key : RSAPublicKey
+            cryptography.hazmat.primitives.asymmetric.rsa.RSAPublicKey object
+
+        Returns
+        -------
+        bytes -> RSA public key serialized to bytes
+    """
+
     return key.public_bytes(
         encoding = serialization.Encoding.PEM,
         format = serialization.PublicFormat.PKCS1
     )
-
-
-def decrypt(key: rsa.RSAPrivateKey, encryptedData: bytes) -> bytes:
-    return key.decrypt(encryptedData, padding = padding.PKCS1v15())
