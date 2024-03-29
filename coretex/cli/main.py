@@ -20,7 +20,7 @@ import click
 from .commands.login import login
 # from .commands.model import model
 from .commands.node import node
-# from .commands.project import project
+from .commands.project import project
 
 from .modules.intercept import ClickExceptionInterceptor
 
@@ -31,5 +31,5 @@ def cli() -> None:
 
 cli.add_command(login)
 # cli.add_command(model)
-# cli.add_command(project)
+cli.add_command(project)
 cli.add_command(node)

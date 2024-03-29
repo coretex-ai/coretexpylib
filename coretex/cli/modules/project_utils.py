@@ -5,6 +5,7 @@ import click
 from . import ui
 from ...entities import Project, ProjectType
 from ...networking import EntityNotCreated
+from ...configuration import UserConfiguration
 
 
 def selectProjectType() -> ProjectType:
@@ -38,16 +39,15 @@ def promptProjectCreate(message: str, name: str) -> Optional[Project]:
         raise click.ClickException(f"Failed to create project \"{name}\".")
 
 
-def getProject(name: Optional[str], config: Dict[str, Any]) -> Optional[Project]:
+def getProject(name: Optional[str], config: UserConfiguration) -> Optional[Project]:
     if name is not None:
         try:
             return Project.fetchOne(name = name)
         except:
             return promptProjectCreate("Project not found. Do you want to create a new Project with that name?", name)
 
-    projectId = config.get("projectId")
-    if projectId is not None:
-        return Project.fetchById(projectId)
+    if config.projectId is not None:
+        return Project.fetchById(config.projectId)
 
     # Generic message on how to specify the Project
     raise click.ClickException(

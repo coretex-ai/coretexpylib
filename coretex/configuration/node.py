@@ -1,12 +1,27 @@
-from typing import Dict, Any, Optional, TypeVar
+#     Copyright (C) 2023  Coretex LLC
+
+#     This file is part of Coretex.ai
+
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU Affero General Public License as
+#     published by the Free Software Foundation, either version 3 of the
+#     License, or (at your option) any later version.
+
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU Affero General Public License for more details.
+
+#     You should have received a copy of the GNU Affero General Public License
+#     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+from typing import Dict, Any, Optional
 from pathlib import Path
 
 import os
 import sys
 
 from .base import BaseConfiguration, CONFIG_DIR
-
-
 
 
 def getEnvVar(key: str, default: str) -> str:
@@ -176,6 +191,30 @@ class NodeConfiguration(BaseConfiguration):
         self._raw["modelId"] = value
 
     def isNodeConfigured(self) -> bool:
+        if self._raw.get("nodeName") is not None and isinstance("nodeName", str):
+            return True
+
+        if self._raw.get("password") is not None and isinstance("password", str):
+            return True
+
+        if self._raw.get("image") is not None and isinstance("image", str):
+            return True
+
+        if self._raw.get("nodeAccessToken") is not None and isinstance("nodeAccessToken", str):
+            return True
+
+        if self._raw.get("nodeRam") is not None and isinstance("nodeRam", int):
+            return True
+
+        if self._raw.get("nodeSwap") is not None and isinstance("nodeSwap", int):
+            return True
+
+        if self._raw.get("nodeSharedMemory") is not None and isinstance("nodeSharedMemory", int):
+            return True
+
+        if self._raw.get("nodeMode") is not None and isinstance("nodeMode", int):
+            return True
+
         return False
 
     def getInitScriptPath(self) -> Optional[Path]:

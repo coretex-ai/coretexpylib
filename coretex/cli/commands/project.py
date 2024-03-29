@@ -22,13 +22,13 @@ import click
 from ..modules import ui, project_utils, utils, user
 from ...entities import Project
 from ...networking import NetworkRequestError
-from ...configuration import loadConfig, saveConfig
+from ...configuration import UserConfiguration
 
 
 def selectProject(projectId: int) -> None:
-    config = loadConfig()
-    config["projectId"] = projectId
-    saveConfig(config)
+    nodeConfig = UserConfiguration()
+    nodeConfig.projectId = projectId
+    nodeConfig.save()
 
 
 @click.command()
