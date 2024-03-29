@@ -310,9 +310,10 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
         nodeSecret: str = clickPrompt("Enter a secret which will be used to generate RSA key-pair for Node", config_defaults.DEFAULT_NODE_SECRET, type = str, hide_input = True)
         config["nodeSecret"] = nodeSecret
 
-        progressEcho("Generating RSA key-pair using provided node secret...")
-        rsaKey = rsa.generateKey(2048, nodeSecret.encode("utf-8"))
-        publicKey = rsa.getPublicKeyBytes(rsaKey.public_key())
+        if nodeSecret != config_defaults.DEFAULT_NODE_SECRET:
+            progressEcho("Generating RSA key-pair (2048 bits long) using provided node secret...")
+            rsaKey = rsa.generateKey(2048, nodeSecret.encode("utf-8"))
+            publicKey = rsa.getPublicKeyBytes(rsaKey.public_key())
     else:
         stdEcho("To configure node manually run coretex node config with --verbose flag.")
 
