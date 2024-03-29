@@ -78,7 +78,7 @@ def previewConfig(config: Dict[str, Any]) -> None:
 
 
 def outputUrl(entityUrl: str) -> None:
-    stdEcho(f"app.coretex.ai/{entityUrl}")
+    stdEcho(f"https://app.coretex.ai/{entityUrl}")
 
 
 def stdEcho(text: str) -> None:

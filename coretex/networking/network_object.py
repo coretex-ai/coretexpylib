@@ -73,15 +73,14 @@ class NetworkObject(Codable):
 
     def entityUrl(self) -> str:
         """
-            Maps the entity url to overriden value, else
-            creates entity url
+            Maps the entity url to the frontend page url
 
             Returns
             -------
             str -> The URL path on Coretex for the entity.
         """
 
-        return f"{type(self).__name__}/{self.id}"
+        return f"{type(self).__name__.lower()}/{self.id}"
 
     def __eq__(self, __o: object) -> bool:
         """
