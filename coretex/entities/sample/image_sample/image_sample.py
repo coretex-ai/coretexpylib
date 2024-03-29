@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, Union
+from typing import Optional, Union, Any, Dict
 from typing_extensions import Self
 from pathlib import Path
 
@@ -56,6 +56,10 @@ class ImageSample(NetworkSample[AnnotatedImageSampleData], LocalImageSample):
     def annotationPath(self) -> Path:
         return Path(self.path) / "annotations.json"
 
+    @property
+    def metadataPath(self) -> Path:
+        return Path(self.path) / "metadata.json"
+
     def saveAnnotation(self, coretexAnnotation: CoretexImageAnnotation) -> bool:
         # Only save annotation locally if it is downloaded
         if self.zipPath.exists() and self.path.exists():
@@ -67,6 +71,15 @@ class ImageSample(NetworkSample[AnnotatedImageSampleData], LocalImageSample):
         }
 
         response = networkManager.post("session/save-annotations", parameters)
+        return not response.hasFailed()
+
+    def saveMetadata(self, metadata: Dict[str, Any]) -> bool:
+        parameters = {
+            "id": self.id,
+            "data": metadata
+        }
+
+        response = networkManager.post("session/save-metadata", parameters)
         return not response.hasFailed()
 
     @classmethod
