@@ -1,176 +1,194 @@
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, TypeVar
+from pathlib import Path
 
 import os
-import json
+import sys
 
-from ..configuration import CONFIG_DIR
+from .base import BaseConfiguration, CONFIG_DIR
+
+
+
+
+def getEnvVar(key: str, default: str) -> str:
+    if os.environ.get(key) is None:
+        return default
+
+    return os.environ[key]
 
 
 NODE_CONFIG_PATH = CONFIG_DIR / "node_config.json"
+NODE_DEFAULT_CONFIG = {
+    "nodeName": os.environ.get("CTX_NODE_NAME"),
+    "nodeAccessToken": None,
+    "storagePath": getEnvVar("CTX_STORAGE_PATH", "~/.coretex"),
+    "image": "coretexai/coretex-node:latest-cpu",
+    "allowGpu": False,
+    "nodeRam": None,
+    "nodeSharedMemory": None,
+    "cpuCount": None,
+    "nodeMode": None,
+    "allowDocker": False,
+    "secretsKey": None,
+    "initScript": None,
+    "modelId": None,
+}
+
+
+def isCliRuntime() -> bool:
+    executablePath = sys.argv[0]
+    return (
+        executablePath.endswith("/bin/coretex") and
+        os.access(executablePath, os.X_OK)
+    )
 
 
 class InvalidNodeConfiguration(Exception):
     pass
 
 
-def initializeConfig() -> Dict[str, Any]:
-    config = {
-        "nodeName": os.environ.get("CTX_NODE_NAME"),
-        "nodeAccessToken": None,
-        "image": "coretexai/coretex-node:latest-cpu",
-        "allowGpu": False,
-        "nodeRam": None,
-        "nodeSharedMemory": None,
-        "cpuCount": None,
-        "nodeMode": None,
-        "allowDocker": False,
-        "secretsKey": None,
-        "initScript": None
-    }
-
-    if not NODE_CONFIG_PATH.exists():
-            with NODE_CONFIG_PATH.open("w") as configFile:
-                json.dump(config, configFile, indent = 4)
-    else:
-        with open(NODE_CONFIG_PATH, "r") as file:
-            config = json.load(file)
-
-    if not isinstance(config, dict):
-        raise InvalidNodeConfiguration(f"Invalid config type \"{type(config)}\", expected: \"dict\".")
-
-    return config
-
-
-class NodeConfiguration:
+class NodeConfiguration(BaseConfiguration):
 
     def __init__(self) -> None:
-        self._raw = initializeConfig()
+        super().__init__(NODE_CONFIG_PATH)
+        secretsKey = self.secretsKey
+        if isinstance(secretsKey, str) and secretsKey != "":
+            os.environ["CTX_SECRETS_KEY"] = secretsKey
+
+        if not isCliRuntime():
+            os.environ["CTX_STORAGE_PATH"] = self.storagePath
+        else:
+            os.environ["CTX_STORAGE_PATH"] = f"{CONFIG_DIR}/data"
+
+    @classmethod
+    def getDefaultConfig(cls) -> Dict[str, Any]:
+        return NODE_DEFAULT_CONFIG
 
     @property
     def nodeName(self) -> str:
-        return self.getStrValue("nodeName", "CTX_NODE_NAME")
+        return self.getValue("nodeName", str, "CTX_NODE_NAME")
 
     @nodeName.setter
-    def nodeName(self, value: Optional[str]) -> None:
+    def nodeName(self, value: str) -> None:
         self._raw["nodeName"] = value
 
     @property
     def nodeAccessToken(self) -> str:
-        return self.getStrValue("nodeAccessToken")
+        return self.getValue("nodeAccessToken", str)
 
     @nodeAccessToken.setter
-    def nodeAccessToken(self, value: Optional[str]) -> None:
+    def nodeAccessToken(self, value: str) -> None:
         self._raw["nodeAccessToken"] = value
 
     @property
+    def storagePath(self) -> str:
+        return self.getValue("storagePath", str, "CTX_STORAGE_PATH")
+
+    @storagePath.setter
+    def storagePath(self, value: Optional[str]) -> None:
+        self._raw["storagePath"] = value
+
+    @property
     def image(self) -> str:
-        return self.getStrValue("image", "CTX_NODE_NAME")
+        return self.getValue("image", str)
 
     @image.setter
-    def image(self, value: Optional[str]) -> None:
+    def image(self, value: str) -> None:
         self._raw["image"] = value
 
     @property
-    def allowGpu(self) -> str:
-        return self.getStrValue("allowGpu")
+    def allowGpu(self) -> bool:
+        return self.getValue("allowGpu", bool)
 
     @allowGpu.setter
-    def allowGpu(self, value: Optional[bool]) -> None:
+    def allowGpu(self, value: bool) -> None:
         self._raw["allowGpu"] = value
 
     @property
     def nodeRam(self) -> int:
-        return self.getIntValue("nodeRam")
+        return self.getValue("nodeRam", int)
 
     @nodeRam.setter
-    def nodeRam(self, value: Optional[int]) -> None:
+    def nodeRam(self, value: int) -> None:
         self._raw["nodeRam"] = value
 
     @property
     def nodeSwap(self) -> int:
-        return self.getIntValue("nodeSwap")
+        return self.getValue("nodeSwap", int)
 
     @nodeSwap.setter
-    def nodeSwap(self, value: Optional[int]) -> None:
+    def nodeSwap(self, value: int) -> None:
         self._raw["nodeSwap"] = value
 
     @property
     def nodeSharedMemory(self) -> int:
-        return self.getIntValue("nodeSharedMemory")
+        return self.getValue("nodeSharedMemory", int)
 
     @nodeSharedMemory.setter
-    def nodeSharedMemory(self, value: Optional[int]) -> None:
+    def nodeSharedMemory(self, value: int) -> None:
         self._raw["nodeSharedMemory"] = value
 
     @property
     def cpuCount(self) -> int:
-        return self.getIntValue("cpuCount")
+        return self.getValue("cpuCount", int)
 
     @cpuCount.setter
-    def cpuCount(self, value: Optional[int]) -> None:
+    def cpuCount(self, value: int) -> None:
         self._raw["cpuCount"] = value
 
     @property
     def nodeMode(self) -> int:
-        return self.getIntValue("nodeMode")
+        return self.getValue("nodeMode", int)
 
     @nodeMode.setter
-    def nodeMode(self, value: Optional[int]) -> None:
+    def nodeMode(self, value: int) -> None:
         self._raw["nodeMode"] = value
 
     @property
     def allowDocker(self) -> bool:
-        return self.getBoolValue("allowDocker")
+        return self.getValue("allowDocker", bool)
 
     @allowDocker.setter
-    def allowDocker(self, value: Optional[bool]) -> None:
+    def allowDocker(self, value: bool) -> None:
         self._raw["allowDocker"] = value
 
     @property
-    def secretsKey(self) -> str:
-        return self.getStrValue("secretsKey")
+    def secretsKey(self) -> Optional[str]:
+        return self.getOptValue("secretsKey", str)
 
     @secretsKey.setter
     def secretsKey(self, value: Optional[str]) -> None:
         self._raw["secretsKey"] = value
 
     @property
-    def initScript(self) -> str:
-        return self.getStrValue("initScript")
+    def initScript(self) -> Optional[str]:
+        return self.getOptValue("initScript", str)
 
     @initScript.setter
     def initScript(self, value: Optional[str]) -> None:
         self._raw["initScript"] = value
 
-    def getStrValue(self, configKey: str, envKey: Optional[str] = None) -> str:
-        if envKey is not None and envKey in os.environ:
-            return os.environ[envKey]
+    @property
+    def modelId(self) -> Optional[int]:
+        return self.getOptValue("modelId", int)
 
-        value = self._raw.get(configKey)
+    @modelId.setter
+    def modelId(self, value: Optional[int]) -> None:
+        self._raw["modelId"] = value
+
+    def isNodeConfigured(self) -> bool:
+        return False
+
+    def getInitScriptPath(self) -> Optional[Path]:
+        value = self._raw.get("initScript")
 
         if not isinstance(value, str):
-            raise InvalidNodeConfiguration(f"Invalid f{configKey} type \"{type(value)}\", expected: \"str\".")
+            return None
 
-        return value
+        if value == "":
+            return None
 
-    def getIntValue(self, configKey: str, envKey: Optional[str] = None) -> int:
-        if envKey is not None and envKey in os.environ:
-            return int(os.environ[envKey])
+        path = Path(value).expanduser().absolute()
+        if not path.exists():
+            return None
 
-        value = self._raw.get(configKey)
-
-        if not isinstance(value, int):
-            raise InvalidNodeConfiguration(f"Invalid f{configKey} type \"{type(value)}\", expected: \"int\".")
-
-        return value
-
-    def getBoolValue(self, configKey: str, envKey: Optional[str] = None) -> bool:
-        if envKey is not None and envKey in os.environ:
-            return bool(os.environ[envKey])
-
-        value = self._raw.get(configKey)
-
-        if not isinstance(value, bool):
-            raise InvalidNodeConfiguration(f"Invalid f{configKey} type \"{type(value)}\", expected: \"bool\".")
-
-        return value
+        return path

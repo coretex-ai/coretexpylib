@@ -24,7 +24,7 @@ from ..modules.ui import clickPrompt, successEcho, errorEcho, previewConfig
 from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate, dumpScript, UPDATE_SCRIPT_NAME
 from ..modules.utils import onBeforeCommandExecute
 from ..modules.user import initializeUserSession
-from ...configuration import loadConfig, saveConfig, CONFIG_DIR, isNodeConfigured
+from ...configuration import UserConfiguration, NodeConfiguration, CONFIG_DIR
 from ...utils import docker
 
 
@@ -46,20 +46,21 @@ def start(image: Optional[str]) -> None:
     if node_module.exists():
         node_module.clean()
 
-    config = loadConfig()
+    nodeConfig = NodeConfiguration()
+    userConfig = UserConfiguration()
 
     if image is not None:
-        config["image"] = image  # store forced image (flagged) so we can run autoupdate afterwards
-        saveConfig(config)
+        nodeConfig.image = image  # store forced image (flagged) so we can run autoupdate afterwards
+        nodeConfig.save()
 
-    dockerImage = config["image"]
+    dockerImage = nodeConfig.image
 
     if node_module.shouldUpdate(dockerImage):
         node_module.pull(dockerImage)
 
-    node_module.start(dockerImage, config)
+    node_module.start(dockerImage, userConfig, nodeConfig)
 
-    activateAutoUpdate(CONFIG_DIR, config)
+    activateAutoUpdate(CONFIG_DIR, userConfig, nodeConfig)
 
 
 @click.command()
@@ -74,8 +75,8 @@ def stop() -> None:
 @click.command()
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def update() -> None:
-    config = loadConfig()
-    dockerImage = config["image"]
+    userConfig = UserConfiguration()
+    nodeConfig = NodeConfiguration()
 
     nodeStatus = getNodeStatus()
 
@@ -98,11 +99,11 @@ def update() -> None:
 
         node_module.stop()
 
-    if not node_module.shouldUpdate(dockerImage):
+    if not node_module.shouldUpdate(nodeConfig.image):
         successEcho("Node is already up to date.")
         return
 
-    node_module.pull(dockerImage)
+    node_module.pull(nodeConfig.image)
 
     if getNodeStatus() == NodeStatus.busy:
         if not clickPrompt(
@@ -115,7 +116,7 @@ def update() -> None:
 
     node_module.stop()
 
-    node_module.start(dockerImage, config)
+    node_module.start(nodeConfig.image, userConfig, nodeConfig)
 
 
 @click.command()
@@ -133,9 +134,10 @@ def config(verbose: bool) -> None:
 
         node_module.stop()
 
-    config = loadConfig()
+    userConfig = UserConfiguration()
+    nodeConfig = NodeConfiguration()
 
-    if isNodeConfigured(config):
+    if nodeConfig.isNodeConfigured():
         if not clickPrompt(
             "Node configuration already exists. Would you like to update? (Y/n)",
             type = bool,
@@ -144,12 +146,12 @@ def config(verbose: bool) -> None:
         ):
             return
 
-    node_module.configureNode(config, verbose)
-    saveConfig(config)
-    previewConfig(config)
+    node_module.configureNode(nodeConfig, verbose)
+    nodeConfig.save()
+    previewConfig(userConfig, nodeConfig)
 
     # Updating auto-update script since node configuration is changed
-    dumpScript(CONFIG_DIR / UPDATE_SCRIPT_NAME, config)
+    dumpScript(CONFIG_DIR / UPDATE_SCRIPT_NAME, userConfig, nodeConfig)
 
     successEcho("Node successfully configured.")
 

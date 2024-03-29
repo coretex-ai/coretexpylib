@@ -26,10 +26,9 @@ from .utils import isGPUAvailable
 from .ui import clickPrompt, arrowPrompt, highlightEcho, errorEcho, progressEcho, successEcho, stdEcho
 from .node_mode import NodeMode
 from ...networking import networkManager, NetworkRequestError
-from ...configuration import loadConfig, saveConfig, isNodeConfigured, getInitScript
 from ...utils import CommandException, docker
 from ...entities.model import Model
-
+from ...configuration import UserConfiguration, NodeConfiguration
 
 class NodeException(Exception):
     pass
@@ -59,45 +58,44 @@ def exists() -> bool:
     return docker.containerExists(config_defaults.DOCKER_CONTAINER_NAME)
 
 
-def start(dockerImage: str, config: Dict[str, Any]) -> None:
+def start(dockerImage: str, userConfig: UserConfiguration, nodeConfig: NodeConfiguration) -> None:
     try:
         progressEcho("Starting Coretex Node...")
         docker.createNetwork(config_defaults.DOCKER_CONTAINER_NETWORK)
 
         environ = {
-            "CTX_API_URL": config["serverUrl"],
+            "CTX_API_URL": userConfig.serverUrl,
             "CTX_STORAGE_PATH": "/root/.coretex",
-            "CTX_NODE_ACCESS_TOKEN": config["nodeAccessToken"],
-            "CTX_NODE_MODE": config["nodeMode"]
+            "CTX_NODE_ACCESS_TOKEN": nodeConfig.nodeAccessToken,
+            "CTX_NODE_MODE": str(nodeConfig.nodeMode)
         }
 
-        modelId = config.get("modelId")
-        if isinstance(modelId, int):
-            environ["CTX_MODEL_ID"] = modelId
+        if isinstance(nodeConfig.modelId, int):
+            environ["CTX_MODEL_ID"] = str(nodeConfig.modelId)
 
-        secretsKey = config.get("secretsKey", config_defaults.DEFAULT_SECRETS_KEY)
+        secretsKey = nodeConfig.secretsKey
         if isinstance(secretsKey, str) and secretsKey != config_defaults.DEFAULT_SECRETS_KEY:
             environ["CTX_SECRETS_KEY"] = secretsKey
 
         volumes = [
-            (config["storagePath"], "/root/.coretex")
+            (nodeConfig.storagePath, "/root/.coretex")
         ]
 
-        if config.get("allowDocker", False):
+        if nodeConfig.allowDocker:
             volumes.append(("/var/run/docker.sock", "/var/run/docker.sock"))
 
-        initScript = getInitScript(config)
+        initScript = nodeConfig.getInitScriptPath()
         if initScript is not None:
             volumes.append((str(initScript), "/script/init.sh"))
 
         docker.start(
             config_defaults.DOCKER_CONTAINER_NAME,
             dockerImage,
-            config["allowGpu"],
-            config["nodeRam"],
-            config["nodeSwap"],
-            config["nodeSharedMemory"],
-            config["cpuCount"],
+            nodeConfig.allowGpu,
+            nodeConfig.nodeRam,
+            nodeConfig.nodeSwap,
+            nodeConfig.nodeSharedMemory,
+            nodeConfig.cpuCount,
             environ,
             volumes
         )
@@ -255,58 +253,58 @@ def _configureInitScript() -> str:
     return str(path)
 
 
-def configureNode(config: Dict[str, Any], verbose: bool) -> None:
+def configureNode(config: NodeConfiguration, verbose: bool) -> None:
     highlightEcho("[Node Configuration]")
-    config["nodeName"] = clickPrompt("Node name", type = str)
-    config["nodeAccessToken"] = registerNode(config["nodeName"])
+    config.nodeName = clickPrompt("Node name", type = str)
+    config.nodeAccessToken = registerNode(config.nodeName)
 
     imageType = selectImageType()
     if imageType == ImageType.custom:
-        config["image"] = clickPrompt("Specify URL of docker image that you want to use:", type = str)
+        config.image = clickPrompt("Specify URL of docker image that you want to use:", type = str)
     else:
-        config["image"] = "coretexai/coretex-node"
+        config.image = "coretexai/coretex-node"
 
     if isGPUAvailable():
-        config["allowGpu"] = clickPrompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
+        config.allowGpu = clickPrompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
     else:
-        config["allowGpu"] = False
+        config.allowGpu = False
 
     if imageType == ImageType.official:
-        tag = "gpu" if config["allowGpu"] else "cpu"
-        config["image"] += f":latest-{tag}"
+        tag = "gpu" if config.allowGpu else "cpu"
+        config.image += f":latest-{tag}"
 
-    config["storagePath"] = config_defaults.DEFAULT_STORAGE_PATH
-    config["nodeRam"] = config_defaults.DEFAULT_RAM_MEMORY
-    config["nodeSwap"] = config_defaults.DEFAULT_SWAP_MEMORY
-    config["nodeSharedMemory"] = config_defaults.DEFAULT_SHARED_MEMORY
-    config["cpuCount"] = config_defaults.DEFAULT_CPU_COUNT
-    config["nodeMode"] = config_defaults.DEFAULT_NODE_MODE
-    config["allowDocker"] = config_defaults.DEFAULT_ALLOW_DOCKER
-    config["secretsKey"] = config_defaults.DEFAULT_SECRETS_KEY
-    config["initScript"] = config_defaults.DEFAULT_INIT_SCRIPT
+    config.storagePath = config_defaults.DEFAULT_STORAGE_PATH
+    config.nodeRam = config_defaults.DEFAULT_RAM_MEMORY
+    config.nodeSwap = config_defaults.DEFAULT_SWAP_MEMORY
+    config.nodeSharedMemory = config_defaults.DEFAULT_SHARED_MEMORY
+    config.cpuCount = config_defaults.DEFAULT_CPU_COUNT if config_defaults.DEFAULT_CPU_COUNT is not None else 0  #  is this fine?
+    config.nodeMode = config_defaults.DEFAULT_NODE_MODE
+    config.allowDocker = config_defaults.DEFAULT_ALLOW_DOCKER
+    config.secretsKey = config_defaults.DEFAULT_SECRETS_KEY
+    config.initScript = config_defaults.DEFAULT_INIT_SCRIPT
 
     if verbose:
-        config["storagePath"] = clickPrompt("Storage path (press enter to use default)", config_defaults.DEFAULT_STORAGE_PATH, type = str)
-        config["nodeRam"] = clickPrompt("Node RAM memory limit in GB (press enter to use default)", config_defaults.DEFAULT_RAM_MEMORY, type = int)
-        config["nodeSwap"] = clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", config_defaults.DEFAULT_SWAP_MEMORY, type = int)
-        config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", config_defaults.DEFAULT_SHARED_MEMORY, type = int)
-        config["cpuCount"] = clickPrompt("Enter the number of CPUs the container will use (press enter to use default)", config_defaults.DEFAULT_CPU_COUNT, type = int)
-        config["allowDocker"] = clickPrompt("Allow Node to access system docker? This is a security risk! (Y/n)", config_defaults.DEFAULT_ALLOW_DOCKER, type = bool)
-        config["secretsKey"] = clickPrompt("Enter a key used for decrypting your Coretex Secrets", config_defaults.DEFAULT_SECRETS_KEY, type = str, hide_input = True)
-        config["initScript"] = _configureInitScript()
+        config.storagePath = clickPrompt("Storage path (press enter to use default)", config_defaults.DEFAULT_STORAGE_PATH, type = str)
+        config.nodeRam = clickPrompt("Node RAM memory limit in GB (press enter to use default)", config_defaults.DEFAULT_RAM_MEMORY, type = int)
+        config.nodeSwap = clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", config_defaults.DEFAULT_SWAP_MEMORY, type = int)
+        config.nodeSharedMemory = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", config_defaults.DEFAULT_SHARED_MEMORY, type = int)
+        config.cpuCount = clickPrompt("Enter the number of CPUs the container will use (press enter to use default)", config_defaults.DEFAULT_CPU_COUNT, type = int)
+        config.allowDocker = clickPrompt("Allow Node to access system docker? This is a security risk! (Y/n)", config_defaults.DEFAULT_ALLOW_DOCKER, type = bool)
+        config.secretsKey = clickPrompt("Enter a key used for decrypting your Coretex Secrets", config_defaults.DEFAULT_SECRETS_KEY, type = str, hide_input = True)
+        config.initScript = _configureInitScript()
 
-        nodeMode, modelId = selectNodeMode(config["storagePath"])
-        config["nodeMode"] = nodeMode
+        nodeMode, modelId = selectNodeMode(config.storagePath)
+        config.nodeMode = nodeMode
         if modelId is not None:
-            config["modelId"] = modelId
+            config.modelId = modelId
     else:
         stdEcho("To configure node manually run coretex node config with --verbose flag.")
 
 
 def initializeNodeConfiguration() -> None:
-    config = loadConfig()
+    config = NodeConfiguration()
 
-    if isNodeConfigured(config):
+    if config.isNodeConfigured():
         return
 
     errorEcho("Node configuration not found.")
@@ -325,4 +323,4 @@ def initializeNodeConfiguration() -> None:
         stop()
 
     configureNode(config, verbose = False)
-    saveConfig(config)
+    config.save()

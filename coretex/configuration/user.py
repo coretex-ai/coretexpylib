@@ -1,43 +1,39 @@
 from typing import Dict, Any, Optional
 from datetime import datetime, timezone
+from dataclasses import dataclass
 
 import os
-import json
 
+from .base import BaseConfiguration, CONFIG_DIR
 from ..utils import decodeDate
-from ..configuration import CONFIG_DIR
 
 
 USER_CONFIG_PATH = CONFIG_DIR / "user_config.json"
+USER_DEFAULT_CONFIG = {
+    "username": os.environ.get("CTX_USERNAME"),
+    "password": os.environ.get("CTX_PASSWORD"),
+    "token": None,
+    "refreshToken": None,
+    "tokenExpirationDate": None,
+    "refreshTokenExpirationDate": None,
+    "serverUrl": os.environ.get("CTX_API_URL", "https://api.coretex.ai/"),
+    "projectId": os.environ.get("CTX_PROJECT_ID")
+}
 
 
 class InvalidUserConfiguration(Exception):
     pass
 
 
-def initializeConfig() -> Dict[str, Any]:
-    config = {
-        "username": os.environ.get("CTX_USERNAME"),
-        "password": os.environ.get("CTX_PASSWORD"),
-        "token": None,
-        "refreshToken": None,
-        "tokenExpirationDate": None,
-        "refreshTokenExpirationDate": None,
-        "serverUrl": os.environ.get("CTX_API_URL", "https://api.coretex.ai/"),
-        "projectId": os.environ.get("CTX_PROJECT_ID")
-    }
+@dataclass
+class LoginInfo:
 
-    if not USER_CONFIG_PATH.exists():
-            with USER_CONFIG_PATH.open("w") as configFile:
-                json.dump(config, configFile, indent = 4)
-    else:
-        with open(USER_CONFIG_PATH, "r") as file:
-            config = json.load(file)
-
-    if not isinstance(config, dict):
-        raise InvalidUserConfiguration(f"Invalid config type \"{type(config)}\", expected: \"dict\".")
-
-    return config
+    username: str
+    password: str
+    token: str
+    tokenExpirationDate: str
+    refreshToken: str
+    refreshTokenExpirationDate: str
 
 
 def hasExpired(tokenExpirationDate: Optional[str]) -> bool:
@@ -48,54 +44,60 @@ def hasExpired(tokenExpirationDate: Optional[str]) -> bool:
     return currentDate >= decodeDate(tokenExpirationDate)
 
 
-class UserConfiguration:
+class UserConfiguration(BaseConfiguration):
 
     def __init__(self) -> None:
-        self._raw = initializeConfig()
+        super().__init__(USER_CONFIG_PATH)
+        if not "CTX_API_URL" in os.environ:
+            os.environ["CTX_API_URL"] = self.serverUrl
+
+    @classmethod
+    def getDefaultConfig(cls) -> Dict[str, Any]:
+        return USER_DEFAULT_CONFIG
 
     @property
     def username(self) -> str:
-        return self.getStrValue("username", "CTX_USERNAME")
+        return self.getValue("username", str, "CTX_USERNAME")
 
     @username.setter
-    def username(self, value: Optional[str]) -> None:
+    def username(self, value: str) -> None:
         self._raw["username"] = value
 
     @property
     def password(self) -> str:
-        return self.getStrValue("password", "CTX_PASSWORD")
+        return self.getValue("password", str, "CTX_PASSWORD")
 
     @password.setter
-    def password(self, value: Optional[str]) -> None:
+    def password(self, value: str) -> None:
         self._raw["password"] = value
 
     @property
-    def token(self) -> str:
-        return self.getStrValue("token")
+    def token(self) -> Optional[str]:
+        return self.getOptValue("token", str)
 
     @token.setter
     def token(self, value: Optional[str]) -> None:
         self._raw["token"] = value
 
     @property
-    def refreshToken(self) -> str:
-        return self.getStrValue("refreshToken")
+    def refreshToken(self) -> Optional[str]:
+        return self.getOptValue("refreshToken", str)
 
     @refreshToken.setter
     def refreshToken(self, value: Optional[str]) -> None:
         self._raw["refreshToken"] = value
 
     @property
-    def tokenExpirationDate(self) -> str:
-        return self.getStrValue("tokenExpirationDate")
+    def tokenExpirationDate(self) -> Optional[str]:
+        return self.getOptValue("tokenExpirationDate", str)
 
     @tokenExpirationDate.setter
     def tokenExpirationDate(self, value: Optional[str]) -> None:
         self._raw["tokenExpirationDate"] = value
 
     @property
-    def refreshTokenExpirationDate(self) -> str:
-        return self.getStrValue("refreshTokenExpirationDate")
+    def refreshTokenExpirationDate(self) -> Optional[str]:
+        return self.getOptValue("refreshTokenExpirationDate", str)
 
     @refreshTokenExpirationDate.setter
     def refreshTokenExpirationDate(self, value: Optional[str]) -> None:
@@ -103,15 +105,15 @@ class UserConfiguration:
 
     @property
     def serverUrl(self) -> str:
-        return self.getStrValue("serverUrl", "CTX_API_URL")
+        return self.getValue("serverUrl", str, "CTX_API_URL")
 
     @serverUrl.setter
-    def serverUrl(self, value: Optional[str]) -> None:
+    def serverUrl(self, value: str) -> None:
         self._raw["serverUrl"] = value
 
     @property
-    def projectId(self) -> int:
-        return self.getIntValue("projectId", "CTX_PROJECT_ID")
+    def projectId(self) -> Optional[int]:
+        return self.getOptValue("projectId", int, "CTX_PROJECT_ID")
 
     @projectId.setter
     def projectId(self, value: Optional[int]) -> None:
@@ -123,48 +125,37 @@ class UserConfiguration:
 
     @property
     def hasTokenExpired(self) -> bool:
-        if self._raw.get("token") is None:
+        if self.token is None:
             return True
 
-        tokenExpirationDate = self._raw.get("tokenExpirationDate")
-        if tokenExpirationDate is None:
+        if self.tokenExpirationDate is None:
             return True
 
-        return hasExpired(tokenExpirationDate)
+        return hasExpired(self.tokenExpirationDate)
 
     @property
     def hasRefreshTokenExpired(self) -> bool:
-        if self._raw.get("refreshToken") is None:
+        if self.refreshToken is None:
             return True
 
-        refreshTokenExpirationDate = self._raw.get("refreshTokenExpirationDate")
-        if refreshTokenExpirationDate is None:
+        if self.refreshTokenExpirationDate is None:
             return True
 
-        return hasExpired(refreshTokenExpirationDate)
+        return hasExpired(self.refreshTokenExpirationDate)
 
-    def save(self) -> None:
-        with USER_CONFIG_PATH.open("w") as configFile:
-            json.dump(self.__dict__, configFile, indent = 4)
+    def isUserConfigured(self) -> bool:
+        # ovako??
+        if not isinstance(self._raw.get("username"), str):
+            return False
 
-    def getStrValue(self, configKey: str, envKey: Optional[str] = None) -> str:
-        if envKey is not None and envKey in os.environ:
-            return os.environ[envKey]
+        return True
 
-        value = self._raw.get(configKey)
+    def saveLoginData(self, loginInfo: LoginInfo) -> None:
+        self.username = loginInfo.username
+        self.password = loginInfo.password
+        self.token = loginInfo.token
+        self.tokenExpirationDate = loginInfo.tokenExpirationDate
+        self.refreshToken = loginInfo.refreshToken
+        self.refreshTokenExpirationDate = loginInfo.refreshTokenExpirationDate
 
-        if not isinstance(value, str):
-            raise InvalidUserConfiguration(f"Invalid f{configKey} type \"{type(value)}\", expected: \"str\".")
-
-        return value
-
-    def getIntValue(self, configKey: str, envKey: Optional[str] = None) -> int:
-        if envKey is not None and envKey in os.environ:
-            return int(os.environ[envKey])
-
-        value = self._raw.get(configKey)
-
-        if not isinstance(value, int):
-            raise InvalidUserConfiguration(f"Invalid f{configKey} type \"{type(value)}\", expected: \"str\".")
-
-        return value
+        self.save()

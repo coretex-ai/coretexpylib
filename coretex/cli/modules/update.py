@@ -15,7 +15,6 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Dict, Any
 from enum import IntEnum
 from pathlib import Path
 
@@ -26,7 +25,7 @@ from .cron import jobExists, scheduleJob
 from .node import getRepoFromImageUrl, getTagFromImageUrl
 from ..resources import RESOURCES_DIR
 from ...utils import command
-from ...configuration import CONFIG_DIR, getInitScript
+from ...configuration import CONFIG_DIR, UserConfiguration, NodeConfiguration
 
 
 UPDATE_SCRIPT_NAME = "ctx_node_update.sh"
@@ -41,7 +40,7 @@ class NodeStatus(IntEnum):
     reconnecting = 5
 
 
-def generateUpdateScript(config: Dict[str, Any]) -> str:
+def generateUpdateScript(userConfig: UserConfiguration, nodeConfig: NodeConfiguration) -> str:
     _, dockerPath, _ = command(["which", "docker"], ignoreStdout = True, ignoreStderr = True)
     bashScriptTemplatePath = RESOURCES_DIR / "update_script_template.sh"
 
@@ -50,38 +49,38 @@ def generateUpdateScript(config: Dict[str, Any]) -> str:
 
     return bashScriptTemplate.format(
         dockerPath = dockerPath.strip(),
-        repository = getRepoFromImageUrl(config["image"]),
-        tag = getTagFromImageUrl(config["image"]),
-        serverUrl = config["serverUrl"],
-        storagePath = config["storagePath"],
-        nodeAccessToken = config["nodeAccessToken"],
-        nodeMode = config["nodeMode"],
-        modelId = config.get("modelId"),
+        repository = getRepoFromImageUrl(nodeConfig.image),
+        tag = getTagFromImageUrl(nodeConfig.image),
+        serverUrl = userConfig.serverUrl,
+        storagePath = nodeConfig.storagePath,
+        nodeAccessToken = nodeConfig.nodeAccessToken,
+        nodeMode = nodeConfig.nodeMode,
+        modelId = nodeConfig.modelId,
         containerName = config_defaults.DOCKER_CONTAINER_NAME,
         networkName = config_defaults.DOCKER_CONTAINER_NETWORK,
         restartPolicy = "always",
         ports = "21000:21000",
         capAdd = "SYS_PTRACE",
-        ramMemory = config["nodeRam"],
-        swapMemory = config["nodeSwap"],
-        sharedMemory = config["nodeSharedMemory"],
-        cpuCount = config.get("cpuCount", config_defaults.DEFAULT_CPU_COUNT),
-        imageType = "cpu" if config["allowGpu"] is False else "gpu",
-        allowDocker = config.get("allowDocker", False),
-        initScript = getInitScript(config)
+        ramMemory = nodeConfig.nodeRam,
+        swapMemory = nodeConfig.nodeSwap,
+        sharedMemory = nodeConfig.nodeSharedMemory,
+        cpuCount = nodeConfig.cpuCount,
+        imageType = "cpu" if nodeConfig.allowGpu is False else "gpu",
+        allowDocker = nodeConfig.allowDocker,
+        initScript = nodeConfig.getInitScriptPath()
     )
 
 
-def dumpScript(updateScriptPath: Path, config: Dict[str, Any]) -> None:
+def dumpScript(updateScriptPath: Path, userConfig: UserConfiguration, nodeConfig: NodeConfiguration) -> None:
     with updateScriptPath.open("w") as scriptFile:
-        scriptFile.write(generateUpdateScript(config))
+        scriptFile.write(generateUpdateScript(userConfig, nodeConfig))
 
     command(["chmod", "+x", str(updateScriptPath)], ignoreStdout = True)
 
 
-def activateAutoUpdate(configDir: Path, config: Dict[str, Any]) -> None:
+def activateAutoUpdate(configDir: Path, userConfig: UserConfiguration, nodeConfig: NodeConfiguration) -> None:
     updateScriptPath = CONFIG_DIR / UPDATE_SCRIPT_NAME
-    dumpScript(updateScriptPath, config)
+    dumpScript(updateScriptPath, userConfig, nodeConfig)
 
     if not jobExists(UPDATE_SCRIPT_NAME):
         scheduleJob(configDir, UPDATE_SCRIPT_NAME)

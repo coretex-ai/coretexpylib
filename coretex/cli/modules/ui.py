@@ -24,6 +24,7 @@ import inquirer
 
 from .node_mode import NodeMode
 from .config_defaults import DEFAULT_CPU_COUNT
+from ...configuration import UserConfiguration, NodeConfiguration
 
 
 def clickPrompt(
@@ -49,30 +50,30 @@ def arrowPrompt(choices: List[Any], message: str) -> Any:
     return answers["option"]
 
 
-def previewConfig(config: Dict[str, Any]) -> None:
-    allowDocker = "Yes" if config.get("allowDocker", False) else "No"
+def previewConfig(userConfig: UserConfiguration, nodeConfig: NodeConfiguration) -> None:
+    allowDocker = "Yes" if nodeConfig.allowDocker else "No"
 
-    if config.get("secretsKey") is None or config.get("secretsKey") == "":
+    if nodeConfig.secretsKey is None or nodeConfig.secretsKey == "":
         secretsKey = ""
     else:
         secretsKey = "********"
 
     table = [
-        ["Node name",           config["nodeName"]],
-        ["Server URL",          config["serverUrl"]],
-        ["Coretex Node type",   config["image"]],
-        ["Storage path",        config["storagePath"]],
-        ["RAM",                 f"{config['nodeRam']}GB"],
-        ["SWAP memory",         f"{config['nodeSwap']}GB"],
-        ["POSIX shared memory", f"{config['nodeSharedMemory']}GB"],
-        ["CPU cores allocated", config.get("cpuCount", DEFAULT_CPU_COUNT)],
-        ["Coretex Node mode",   f"{NodeMode(config['nodeMode']).name}"],
+        ["Node name",           nodeConfig.nodeName],
+        ["Server URL",          userConfig.serverUrl],
+        ["Coretex Node type",   nodeConfig.image],
+        ["Storage path",        nodeConfig.storagePath],
+        ["RAM",                 f"{nodeConfig.nodeRam}GB"],
+        ["SWAP memory",         f"{nodeConfig.nodeSwap}GB"],
+        ["POSIX shared memory", f"{nodeConfig.nodeSharedMemory}GB"],
+        ["CPU cores allocated", f"{nodeConfig.cpuCount}"],
+        ["Coretex Node mode",   f"{NodeMode(nodeConfig.nodeMode).name}"],
         ["Docker access",       allowDocker],
         ["Secrets key",         secretsKey],
-        ["Node init script",    config.get("initScript", "")]
+        ["Node init script",    nodeConfig.initScript if nodeConfig.initScript is not None else ""]
     ]
-    if config.get("modelId") is not None:
-        table.append(["Coretex Model ID", config["modelId"]])
+    if nodeConfig.modelId is not None:
+        table.append(["Coretex Model ID", f"{nodeConfig.modelId}"])
 
     stdEcho(tabulate(table))
 

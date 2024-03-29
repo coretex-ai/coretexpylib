@@ -15,21 +15,13 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import click
-
-from .commands.login import login
-# from .commands.model import model
-from .commands.node import node
-# from .commands.project import project
-
-from .modules.intercept import ClickExceptionInterceptor
+import os
+import sys
 
 
-@click.group(cls = ClickExceptionInterceptor)
-def cli() -> None:
-    pass
-
-cli.add_command(login)
-# cli.add_command(model)
-# cli.add_command(project)
-cli.add_command(node)
+def isCliRuntime() -> bool:
+    executablePath = sys.argv[0]
+    return (
+        executablePath.endswith("/bin/coretex") and
+        os.access(executablePath, os.X_OK)
+    )
