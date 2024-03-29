@@ -103,8 +103,13 @@ class ImageSample(NetworkSample[AnnotatedImageSampleData], LocalImageSample):
             Loads sample metadata into a dictionary
         """
 
-        with self.metadataPath.open("w") as metadataFile:
-            return json.load(metadataFile)
+        try:
+            with self.metadataPath.open("r") as metadataFile:
+                metadata: Dict[str, Any] = json.load(metadataFile)
+                return metadata
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Metadata file \"{self.metadataPath}\" was not found")
+
 
     @classmethod
     def createImageSample(cls, datasetId: int, imagePath: Union[Path, str]) -> Optional[Self]:
