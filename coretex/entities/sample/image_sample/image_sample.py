@@ -19,12 +19,14 @@ from typing import Optional, Union, Any, Dict
 from typing_extensions import Self
 from pathlib import Path
 
+import json
+
 from .image_sample_data import AnnotatedImageSampleData
 from .local_image_sample import LocalImageSample
 from .image_format import ImageFormat
 from ..network_sample import NetworkSample
 from ...annotation import CoretexImageAnnotation
-from ....networking import networkManager
+from ....networking import networkManager, NetworkRequestError
 
 
 class ImageSample(NetworkSample[AnnotatedImageSampleData], LocalImageSample):
@@ -73,14 +75,36 @@ class ImageSample(NetworkSample[AnnotatedImageSampleData], LocalImageSample):
         response = networkManager.post("session/save-annotations", parameters)
         return not response.hasFailed()
 
-    def saveMetadata(self, metadata: Dict[str, Any]) -> bool:
+    def saveMetadata(self, metadata: Dict[str, Any]) -> None:
+        """
+            Saves a json object as metadata for the sample
+
+            Parameters
+            ----------
+            metadata : dict[str, Any]
+                Json object containing sample metadata
+
+            Raises
+            ------
+            NetworkRequestError -> if metadata upload failed
+        """
+
         parameters = {
             "id": self.id,
             "data": metadata
         }
 
         response = networkManager.post("session/save-metadata", parameters)
-        return not response.hasFailed()
+        if response.hasFailed():
+            raise NetworkRequestError(response, f"Failed to upload metadata for sample {self.name}")
+
+    def loadMetadata(self) -> Dict[str, Any]:
+        """
+            Loads sample metadata into a dictionary
+        """
+
+        with self.metadataPath.open("w") as metadataFile:
+            return json.load(metadataFile)
 
     @classmethod
     def createImageSample(cls, datasetId: int, imagePath: Union[Path, str]) -> Optional[Self]:
