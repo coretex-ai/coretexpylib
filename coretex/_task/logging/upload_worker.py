@@ -22,7 +22,7 @@ from concurrent.futures import ThreadPoolExecutor
 import time
 import logging
 
-from ...entities import Log
+from ...logging import Log
 from ...networking import networkManager
 
 

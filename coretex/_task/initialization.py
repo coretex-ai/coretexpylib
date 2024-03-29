@@ -24,8 +24,9 @@ from .remote import processRemote
 from .local import processLocal
 from .current_task_run import setCurrentTaskRun
 from .. import folder_manager
-from ..entities import TaskRun, TaskRunStatus, LogSeverity
+from ..entities import TaskRun, TaskRunStatus
 from ..logging import createFormatter, initializeLogger
+from ..severity import LogSeverity
 from ..networking import RequestFailedError
 
 

@@ -21,7 +21,7 @@ from pathlib import Path
 import logging
 import subprocess
 
-from ..entities import LogSeverity
+from ..severity import LogSeverity
 
 
 def logProcessOutput(output: bytes, severity: LogSeverity) -> None:

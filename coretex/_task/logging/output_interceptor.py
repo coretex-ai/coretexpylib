@@ -18,8 +18,11 @@
 from typing import TextIO
 from io import StringIO
 
+import json
+
 from .upload_worker import LoggerUploadWorker
-from ...entities import Log, LogSeverity
+from ...logging import Log
+from ...severity import LogSeverity
 
 
 class OutputInterceptor(StringIO):
@@ -33,12 +36,30 @@ class OutputInterceptor(StringIO):
         self.worker.start()
 
     def write(self, value: str) -> int:
-        self.worker.add(Log.create(value.rstrip(), LogSeverity.info))
+        try:
+            jsonLog = json.loads(value)
 
-        self.stream.write(value)
+            if not isinstance(jsonLog, dict):
+                raise ValueError
+
+            if len(jsonLog) != 2:
+                raise ValueError
+
+            log = Log(
+                LogSeverity(jsonLog["severity"]),
+                jsonLog["message"]
+            )
+        except:
+            log = Log(LogSeverity.info, value.rstrip())
+
+        # Enqueue log for upload to backend
+        self.worker.add(log)
+
+        # Print out the log to console
+        self.stream.write(log.message)
         self.stream.flush()
 
-        return super().write(value)
+        return super().write(log.message)
 
     def flushLogs(self) -> bool:
         return self.worker.uploadLogs()

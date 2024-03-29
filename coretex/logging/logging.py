@@ -22,14 +22,15 @@ import sys
 import logging
 
 from .formatter import CTXFormatter
-from ..entities import LogSeverity
+from ..severity import LogSeverity
 from ..utils import createFileHandler
 
 
 def createFormatter(
     includeTime: bool = True,
     includeLevel: bool = True,
-    includeColor: bool = True
+    includeColor: bool = True,
+    jsonOutput: bool = True
 ) -> logging.Formatter:
 
     fmt: List[str] = []
@@ -49,7 +50,8 @@ def createFormatter(
         fmt = " ".join(fmt),
         datefmt= "%Y-%m-%d %H:%M:%S",
         style = "%",
-        color = includeColor
+        color = includeColor,
+        jsonOutput = jsonOutput
     )
 
 

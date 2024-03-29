@@ -18,9 +18,9 @@
 from datetime import datetime
 
 from . import folder_manager
-from .entities import LogSeverity
 from .logging import initializeLogger
 from .configuration import CONFIG_DIR
+from .severity import LogSeverity
 
 
 def _initializeDefaultLogger() -> None:
