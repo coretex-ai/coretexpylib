@@ -237,16 +237,17 @@ def selectNodeMode(storagePath: str) -> Tuple[int, Optional[int]]:
 
 
 def promptCpu(config: Dict[str, Any], cpuLimit: int) -> int:
-    cpuCount: int = clickPrompt("Enter the number of CPUs the container will use (press enter to use default)", cpuLimit, type = int)
+    cpuCount: int = clickPrompt(f"Enter the number of CPUs the container will use (Maximum: {cpuLimit}) (press enter to use default)", cpuLimit, type = int)
 
     if cpuCount > cpuLimit:
-        errorEcho(f"ERRROR: CPU limit in Docker Desktop ({cpuLimit}) is lower than the specified value ({cpuCount})")
+        errorEcho(f"ERROR: CPU limit in Docker Desktop ({cpuLimit}) is lower than the specified value ({cpuCount})")
         return promptCpu(config, cpuLimit)
 
     return cpuCount
 
+
 def promptRam(config: Dict[str, Any], ramLimit: int) -> int:
-    nodeRam: int = clickPrompt("Node RAM memory limit in GB (press enter to use default)", ramLimit, type = int)
+    nodeRam: int = clickPrompt(f"Node RAM memory limit in GB (Minimum: 6GB, Maximum: {ramLimit})(press enter to use default)", ramLimit, type = int)
 
     if nodeRam > ramLimit:
         errorEcho(f"ERROR: RAM limit in Docker Desktop ({ramLimit}GB) is lower than the configured value ({config['ramLimit']}GB). Please adjust resource limitations in Docker Desktop settings.")
@@ -374,26 +375,24 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
 def initializeNodeConfiguration() -> None:
     config = loadConfig()
 
-    if isNodeConfigured(config):
-        if isConfigurationValid(config):
-            return
-        else:
-            raise RuntimeError(f"Invalid configuration. Please run \"coretex node config\" command to configure Node.")
+    if isNodeConfigured(config) and not isConfigurationValid(config):
+        raise RuntimeError(f"Invalid configuration. Please run \"coretex node config\" command to configure Node.")
 
-    errorEcho("Node configuration not found.")
-    if isRunning():
-        stopNode = clickPrompt(
-            "Node is already running. Do you wish to stop the Node? (Y/n)",
-            type = bool,
-            default = True,
-            show_default = False
-        )
+    if not isNodeConfigured(config):
+        errorEcho("Node configuration not found.")
+        if isRunning():
+            stopNode = clickPrompt(
+                "Node is already running. Do you wish to stop the Node? (Y/n)",
+                type = bool,
+                default = True,
+                show_default = False
+            )
 
-        if not stopNode:
-            errorEcho("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
-            return
+            if not stopNode:
+                errorEcho("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
+                return
 
-        stop()
+            stop()
 
-    configureNode(config, verbose = False)
-    saveConfig(config)
+        configureNode(config, verbose = False)
+        saveConfig(config)
