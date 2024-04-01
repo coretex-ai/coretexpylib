@@ -10,6 +10,7 @@ from ...configuration import loadConfig, saveConfig
 
 
 class EntityVisibilityType(IntEnum):
+
     project = 1
     node    = 2
 
@@ -53,7 +54,7 @@ def selectProjectVisibility() -> ProjectVisibility:
 def changeProjectVisibility(id: int, visibility: ProjectVisibility) -> NetworkResponse:
     return networkManager.post("entity-visibility", {
         "entity_id": id,
-        "type": EntityVisibilityType.project,  # this number represents Project Entity enum value on backend side
+        "type": EntityVisibilityType.project,
         "visibility": visibility,
     })
 

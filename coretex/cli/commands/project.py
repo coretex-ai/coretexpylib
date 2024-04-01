@@ -27,20 +27,22 @@ from ...configuration import loadConfig
 
 @click.command()
 @click.option("--name", "-n", type = str, help = "Project name")
-@click.option("--type", "-t", type = int, help = "Project type")
+@click.option("--type", "-t", "projectType", type = int, help = "Project type")
 @click.option("--description", "-d", type = str, help = "Project description")
-def create(name: Optional[str], type: Optional[int], description: Optional[str], visibility: Optional[int]) -> None:
+def create(name: Optional[str], projectType: Optional[int], description: Optional[str]) -> None:
     if name is None:
         name = ui.clickPrompt("Please enter name of the project you want to create:", type = str)
 
-    if type is None:
-        type = project_utils.selectProjectType()
+    if projectType is None:
+        projectType = project_utils.selectProjectType()
+    else:
+        projectType = ProjectType(projectType)
 
     if description is None:
-        description = ui.clickPrompt("Please enter your project's description:", type = str)
+        description = ui.clickPrompt("Please enter your project's description:", type = str, default = "", show_default = False)
 
     try:
-        project = Project.createProject(name, ProjectType(type), description = description)
+        project = Project.createProject(name, projectType, description = description)
         ui.successEcho(f"Project \"{name}\" created successfully.")
         selectNewProject = ui.clickPrompt("Do you want to select new project as default? (Y/n)", type = bool, default = True)
 
@@ -52,21 +54,26 @@ def create(name: Optional[str], type: Optional[int], description: Optional[str],
 
 
 @click.command()
-@click.option("--name", "-n", type = str, help = "Project name")
-@click.option("--description", "-d", type = str, help = "Project description")
-def edit(name: Optional[str], description: Optional[str], visibility: Optional[int]) -> None:
+@click.option("--project", "-p", type = str, help = "Project name")
+@click.option("--name", "-n", type = str, help = "New Project name")
+@click.option("--description", "-d", type = str, help = "New Project description")
+def edit(project: Optional[str], name: Optional[str], description: Optional[str]) -> None:
     config = loadConfig()
     defaultProjectId = config.get("projectId")
-    if defaultProjectId is None and name is None:
+    if defaultProjectId is None and project is None:
         ui.errorEcho(f"To use edit command you need to specifiy project name using \"--project\" or \"-p\" flag, or you can select default project using \"coretex project select\" command.")
+        return
 
-    if name is None and defaultProjectId is not None:
+    if project is None and defaultProjectId is not None:
         selectedProject = Project.fetchById(defaultProjectId)
     else:
-        selectedProject = Project.fetchOne(name = name)
+        selectedProject = Project.fetchOne(name = project)
+
+    if name is None:
+        name = ui.clickPrompt("Please enter new name for your project", type = str, default = selectedProject.name)
 
     if description is None:
-        description = ui.clickPrompt("Please enter new description for your project", type = str, default = selectedProject.description)
+        description = ui.clickPrompt("Please enter new description for your project", type = str, default = selectedProject.description, show_default = False)
 
     try:
         selectedProject.update(name = selectedProject.name, description = description)
