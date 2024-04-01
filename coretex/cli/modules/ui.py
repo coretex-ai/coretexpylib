@@ -77,8 +77,8 @@ def previewConfig(config: Dict[str, Any]) -> None:
     stdEcho(tabulate(table))
 
 
-def outputUrl(entityUrl: str) -> None:
-    stdEcho(f"https://app.coretex.ai/{entityUrl}")
+def outputUrl(entityUrl: str) -> str:
+    return f"https://app.coretex.ai/{entityUrl}"
 
 
 def stdEcho(text: str) -> None:

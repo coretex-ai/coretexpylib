@@ -171,6 +171,7 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
         return descriptors
 
     @classmethod
+    @override
     def _endpoint(cls) -> str:
         return "model-queue"
 
