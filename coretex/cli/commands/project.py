@@ -87,27 +87,22 @@ def edit(project: Optional[str], name: Optional[str], description: Optional[str]
 
 
 @click.command()
-@click.option("--name", "-n", type = str, help = "Project name")
-def select(name: Optional[str]) -> None:
-    if name is None:
-        raise click.UsageError("Please use  \"--name\" or \"-n\" flag (for project name).")
-
+@click.argument("name", type = str)
+def select(name: str) -> None:
     project: Optional[Project] = None
 
-    if name is not None:
-        ui.progressEcho("Validating project...")
+    ui.progressEcho("Validating project...")
 
-        try:
-            project = Project.fetchOne(name = name)
-            ui.successEcho(f"Project \"{name}\" selected successfully!")
-            project_utils.selectProject(project.id)
-        except ValueError:
-            ui.errorEcho(f"Project \"{name}\" not found.")
-            project = project_utils.promptProjectCreate("Do you want to create a project with that name?", name)
-            if project is None:
-                return
+    try:
+        project = Project.fetchOne(name = name)
+        ui.successEcho(f"Project \"{name}\" selected successfully!")
+        project_utils.selectProject(project.id)
+    except ValueError:
+        ui.errorEcho(f"Project \"{name}\" not found.")
+        project = project_utils.promptProjectCreate("Do you want to create a project with that name?", name)
+        if project is None:
+            return
 
-    if project is not None:
         project_utils.selectProject(project.id)
 
 

@@ -51,6 +51,10 @@ class Project(BaseObject):
             ----------
             name : str
                 project name
+            projectType : ProjectType
+                project type of created object
+            visibility : ProjectVisibility
+                visibility type of created object
             description : Optional[str]
                 project description
 
