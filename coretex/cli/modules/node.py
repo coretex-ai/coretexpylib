@@ -237,7 +237,7 @@ def selectNodeMode(storagePath: str) -> Tuple[int, Optional[int]]:
 
 
 def promptCpu(config: Dict[str, Any], cpuLimit: int) -> int:
-    cpuCount: int = clickPrompt("Enter the number of CPUs the container will use (press enter to use default)", config_defaults.DEFAULT_CPU_COUNT, type = int)
+    cpuCount: int = clickPrompt("Enter the number of CPUs the container will use (press enter to use default)", cpuLimit, type = int)
 
     if cpuCount > cpuLimit:
         errorEcho(f"ERRROR: CPU limit in Docker Desktop ({cpuLimit}) is lower than the specified value ({cpuCount})")
@@ -246,10 +246,7 @@ def promptCpu(config: Dict[str, Any], cpuLimit: int) -> int:
     return cpuCount
 
 def promptRam(config: Dict[str, Any], ramLimit: int) -> int:
-    nodeRam: int = clickPrompt("Node RAM memory limit in GB (press enter to use default)", config_defaults.DEFAULT_RAM_MEMORY, type = int)
-
-    if ramLimit < config_defaults.MINIMUM_RAM_MEMORY:
-        raise RuntimeError(f"Minimum Node RAM requirement ({ramLimit}GB) is higher than your current Docker desktop RAM limit ({ramLimit}GB). Please adjust resource limitations in Docker Desktop settings to match Node requirements.")
+    nodeRam: int = clickPrompt("Node RAM memory limit in GB (press enter to use default)", ramLimit, type = int)
 
     if nodeRam > ramLimit:
         errorEcho(f"ERROR: RAM limit in Docker Desktop ({ramLimit}GB) is lower than the configured value ({config['ramLimit']}GB). Please adjust resource limitations in Docker Desktop settings.")
