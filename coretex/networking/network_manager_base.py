@@ -385,6 +385,8 @@ class NetworkManagerBase(ABC):
                 form data parameters
             files : Optional[List[FileData]]
                 form data files
+            timeout : Optional[Union[int, Tuple[int, int]]]
+                timeout for the request
 
             Returns
             -------
