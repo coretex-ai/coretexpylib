@@ -588,7 +588,7 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
         description: Optional[str] = None,
         parameters: Optional[List[Dict[str, Any]]] = None,
         entryPoint: Optional[str] = None
-        ) -> Self:
+    ) -> Self:
 
         """
             Creates TaskRun on Coretex.ai with the provided parameters,
