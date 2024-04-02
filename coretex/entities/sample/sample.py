@@ -47,11 +47,12 @@ class Sample(ABC, Generic[SampleDataType]):
         pass
 
     @abstractmethod
-    def download(self, ignoreCache: bool = False) -> None:
+    def download(self, decrypt: bool = False, ignoreCache: bool = False) -> None:
         """
             Downloads the Sample if it is an instance or a subclass of NetworkSample
             Ignored for instances and subclasses of LocalSample
         """
+
         pass
 
     def __unzipSample(self) -> None:

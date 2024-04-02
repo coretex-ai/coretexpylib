@@ -246,7 +246,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
 
         return self.update(name = self.name, state = DatasetState.final)
 
-    def download(self, ignoreCache: bool = False) -> None:
+    def download(self, decrypt: bool = False, ignoreCache: bool = False) -> None:
         """
             Downloads dataset from Coretex
 
@@ -267,7 +267,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
         self.path.mkdir(exist_ok = True)
 
         def sampleDownloader(sample: SampleType) -> None:
-            sample.download(ignoreCache)
+            sample.download(decrypt, ignoreCache)
 
             sampleHardLinkPath = self.path / sample.zipPath.name
             if not sampleHardLinkPath.exists():

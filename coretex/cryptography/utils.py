@@ -15,4 +15,33 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .utils import getProjectKey
+from base64 import b64decode
+
+import os
+
+
+def _projectKeyEnvName(projectId: int) -> str:
+    return f"CTX_PROJECT_KEY_{projectId}"
+
+
+def getProjectKey(projectId: int) -> bytes:
+    """
+        Retrieves encryption key for provided project if
+        the executing machine has been authorized to access it
+
+        Parameters
+        ----------
+        projectId : int
+            project whose key is being retrieved
+
+        Returns
+        -------
+        bytes -> encryption key
+    """
+
+    envName = _projectKeyEnvName(projectId)
+    if envName not in os.environ:
+        raise RuntimeError(f"Not authorized to access project: {projectId}")
+
+    encodedKey = os.environ[envName]
+    return b64decode(encodedKey)

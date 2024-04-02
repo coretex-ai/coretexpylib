@@ -29,6 +29,7 @@ from ... import folder_manager
 from ...codable import KeyDescriptor
 from ...networking import NetworkObject, networkManager, FileData, NetworkRequestError
 from ...utils import TIME_ZONE
+from ...cryptography import getProjectKey, aes
 
 
 SampleDataType = TypeVar("SampleDataType")
@@ -42,8 +43,10 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
     """
 
     isLocked: bool
+    projectId: int
     projectType: ProjectType
     lastModified: datetime
+    isEncrypted: bool
 
     @property
     def path(self) -> Path:
@@ -64,6 +67,16 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
         """
 
         return self.path.with_suffix(".zip")
+
+    @property
+    def downloadPath(self) -> Path:
+        """
+            Returns
+            -------
+            Path -> path to which the network sample is downloaded to
+        """
+
+        return self.path.with_suffix(".bin") if self.isEncrypted else self.zipPath
 
     @classmethod
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
@@ -132,13 +145,48 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
             FileNotFoundError -> sample file cannot be found
         """
 
-        if not self.zipPath.exists():
-            raise FileNotFoundError(f">> [Coretex] Sample file could not be found at {self.zipPath}. Cannot check if file has been modified since last download")
+        if not self.downloadPath.exists():
+            raise FileNotFoundError(
+                f">> [Coretex] Sample file could not be found at {self.downloadPath}. "
+                "Cannot check if file has been modified since last download"
+            )
 
-        lastModified = datetime.fromtimestamp(self.zipPath.stat().st_mtime).astimezone(TIME_ZONE)
+        lastModified = datetime.fromtimestamp(self.downloadPath.stat().st_mtime).astimezone(TIME_ZONE)
         return self.lastModified > lastModified
 
-    def download(self, ignoreCache: bool = False) -> None:
+    def decrypt(self, ignoreCache: bool = False) -> None:
+        """
+            Decrypts the content of this Sample and caches
+            the results. Is ignored if the "isEncrypted" value is False.
+
+            Parameters
+            ----------
+            ignoreCache : bool
+                defines if content should be decrypted if a cache for decryption
+                already exists
+        """
+
+        if not self.isEncrypted:
+            return
+
+        if ignoreCache and self.zipPath.exists():
+            self.zipPath.unlink()
+
+        if not ignoreCache and self.zipPath.exists():
+            return
+
+        aes.decryptFile(getProjectKey(self.projectId), self.downloadPath, self.zipPath)
+
+    def _relinkSample(self) -> None:
+        for datasetPath in folder_manager.datasetsFolder.iterdir():
+            sampleHardLinkPath = datasetPath / self.zipPath.name
+            if not sampleHardLinkPath.exists():
+                continue
+
+            sampleHardLinkPath.unlink()
+            os.link(self.zipPath, sampleHardLinkPath)
+
+    def download(self, decrypt: bool = False, ignoreCache: bool = False) -> None:
         """
             Downloads sample from Coretex.ai
 
@@ -148,32 +196,40 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
             the download process
         """
 
-        if self.zipPath.exists() and self.modifiedSinceLastDownload():
+        if self.downloadPath.exists() and self.modifiedSinceLastDownload():
             ignoreCache = True
 
-        if ignoreCache and self.zipPath.exists():
-            self.zipPath.unlink()
+        if ignoreCache and self.downloadPath.exists():
+            self.downloadPath.unlink()
 
-        if not ignoreCache and self.zipPath.exists():
+        if not ignoreCache and self.downloadPath.exists():
             return
 
-        response = networkManager.streamDownload(f"{self._endpoint()}/export", self.zipPath, {
+        if decrypt and not self.isEncrypted:
+            # Change to false if sample is not encrypted
+            decrypt = False
+
+        params = {
             "id": self.id
-        })
+        }
+
+        response = networkManager.streamDownload(
+            f"{self._endpoint()}/export",
+            self.downloadPath,
+            params
+        )
 
         if response.hasFailed():
             raise NetworkRequestError(response, f"Failed to download Sample \"{self.name}\"")
 
+        if decrypt:
+            self.decrypt(ignoreCache)
+
+        # Update sample download time to now
+        os.utime(self.downloadPath, (os.stat(self.downloadPath).st_atime, time.time()))
+
         # If sample was downloaded succesfully relink it to datasets to which it is linked
-        os.utime(self.zipPath, (os.stat(self.zipPath).st_atime, time.time()))
-
-        for datasetPath in folder_manager.datasetsFolder.iterdir():
-            sampleHardLinkPath = datasetPath / self.zipPath.name
-            if not sampleHardLinkPath.exists():
-                continue
-
-            sampleHardLinkPath.unlink()
-            os.link(self.zipPath, sampleHardLinkPath)
+        self._relinkSample()
 
     def load(self) -> SampleDataType:
         return super().load()  # type: ignore

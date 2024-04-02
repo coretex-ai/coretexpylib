@@ -111,5 +111,5 @@ class LocalDataset(Generic[SampleType], Dataset[SampleType]):
 
         return self.__path
 
-    def download(self, ignoreCache: bool = False) -> None:
+    def download(self, decrypt: bool = False, ignoreCache: bool = False) -> None:
         logging.getLogger("coretexpylib").warning(">> [Coretex] Local dataset cannot be downloaded")

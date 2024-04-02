@@ -105,10 +105,10 @@ class SequenceDataset(BaseSequenceDataset, NetworkDataset[SequenceSample]):
 
         return cls.fetchById(dataset.id)
 
-    def download(self, ignoreCache: bool = False) -> None:
-        super().download(ignoreCache)
+    def download(self, decrypt: bool = False, ignoreCache: bool = False) -> None:
+        super().download(decrypt, ignoreCache)
 
-        self.metadata.download(ignoreCache)
+        self.metadata.download(decrypt, ignoreCache)
 
     def isPairedEnd(self) -> bool:
         """
