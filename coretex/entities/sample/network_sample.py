@@ -15,8 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Any, TypeVar, Optional, Generic, Dict, Union
-from typing_extensions import Self
+from typing import TypeVar, Generic, Dict
 from datetime import datetime
 from pathlib import Path
 
@@ -27,7 +26,7 @@ from .sample import Sample
 from ..project import ProjectType
 from ... import folder_manager
 from ...codable import KeyDescriptor
-from ...networking import NetworkObject, networkManager, FileData, NetworkRequestError
+from ...networking import NetworkObject, networkManager, NetworkRequestError
 from ...utils import TIME_ZONE
 from ...cryptography import getProjectKey, aes
 
@@ -90,46 +89,6 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
     @classmethod
     def _endpoint(cls) -> str:
         return "session"
-
-    @classmethod
-    def _createSample(
-        cls,
-        parameters: Dict[str, Any],
-        filePath: Union[Path, str],
-        mimeType: Optional[str] = None
-    ) -> Optional[Self]:
-        """
-            Uploads sample to Coretex.ai
-
-            Parametrs
-            ---------
-            endpoint : str
-                API endpoint
-            parameters : Dict[str, Any]
-                parameters which will be sent as request body
-            filePath : Union[Path, str]
-                path to sample
-            mimeType : Optional[str]
-                mimeType (not required)
-
-            Returns
-            -------
-            Optional[Self] -> created sample object if request
-            was successful, None otherwise
-        """
-
-        if isinstance(filePath, str):
-            filePath = Path(filePath)
-
-        files = [
-            FileData.createFromPath("file", filePath, mimeType = mimeType)
-        ]
-
-        response = networkManager.formData("session/import", parameters, files)
-        if response.hasFailed():
-            return None
-
-        return cls.decode(response.getJson(dict))
 
     def modifiedSinceLastDownload(self) -> bool:
         """

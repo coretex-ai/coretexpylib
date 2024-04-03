@@ -15,18 +15,16 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import TypeVar, Dict, List, Any
-from typing_extensions import Self
+from typing import Dict, List, Any
+from typing_extensions import Self, override
+from pathlib import Path
 
 from .base import BaseImageDataset
 from ..network_dataset import NetworkDataset
 from ...sample import ImageSample
 from ...annotation import ImageDatasetClass, ImageDatasetClasses
 from ....codable import KeyDescriptor, Codable
-from ....networking import networkManager
-
-
-SampleType = TypeVar("SampleType", bound = "ImageSample")
+from ....networking import networkManager, FileData, NetworkRequestError
 
 
 class ClassDistribution(Codable):
@@ -36,7 +34,7 @@ class ClassDistribution(Codable):
     count: int
 
 
-class ImageDataset(BaseImageDataset[SampleType], NetworkDataset[SampleType]):  # type: ignore
+class ImageDataset(BaseImageDataset[ImageSample], NetworkDataset[ImageSample]):  # type: ignore
 
     """
         Represents the Image Dataset class \n
@@ -45,6 +43,9 @@ class ImageDataset(BaseImageDataset[SampleType], NetworkDataset[SampleType]):  #
     """
 
     classDistribution: List[ClassDistribution]
+
+    def __init__(self) -> None:
+        super().__init__(ImageSample)
 
     @classmethod
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
@@ -79,3 +80,19 @@ class ImageDataset(BaseImageDataset[SampleType], NetworkDataset[SampleType]):  #
             return super().saveClasses(classes)
 
         return not response.hasFailed()
+
+    @override
+    def _uploadSample(self, path: Path) -> ImageSample:
+        params = {
+            "dataset_id": self.id
+        }
+
+        files = [
+            FileData.createFromPath("file", path)
+        ]
+
+        response = networkManager.formData("session/import", params, files)
+        if response.hasFailed():
+            raise NetworkRequestError(response, f"Failed to create image Sample from \"{path}\"")
+
+        return self._sampleType.decode(response.getJson(dict))

@@ -20,13 +20,15 @@ from typing_extensions import Self
 from pathlib import Path
 
 import logging
+import uuid
 
 from .base import BaseSequenceDataset
-from ..utils import createDataset
-from ..network_dataset import NetworkDataset
-from ..custom_dataset import CustomDataset
+from ..network_dataset import NetworkDataset, _chunkSampleImport, _encryptedSampleImport
 from ...sample import SequenceSample, CustomSample
+from .... import folder_manager
 from ....codable import KeyDescriptor
+from ....cryptography import getProjectKey
+from ....utils import file as file_utils
 
 
 class SequenceDataset(BaseSequenceDataset, NetworkDataset[SequenceSample]):
@@ -37,6 +39,9 @@ class SequenceDataset(BaseSequenceDataset, NetworkDataset[SequenceSample]):
     """
 
     metadata: CustomSample
+
+    def __init__(self) -> None:
+        super().__init__(SequenceSample)
 
     @classmethod
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
@@ -93,17 +98,14 @@ class SequenceDataset(BaseSequenceDataset, NetworkDataset[SequenceSample]):
         if isinstance(metadataPath, str):
             metadataPath = Path(metadataPath)
 
-        with createDataset(CustomDataset, name, projectId, meta) as dataset:
-            if CustomSample.createCustomSample(
-                "_metadata",
-                dataset.id,
-                metadataPath
-            ) is None:
+        dataset = cls.createDataset(name, projectId, meta)
 
-                logging.getLogger("coretexpylib").warning(">> [Coretex] Failed to create _metadata sample")
-                return None
+        if dataset.isEncrypted:
+            dataset.metadata = _encryptedSampleImport(CustomSample, metadataPath, dataset.id, getProjectKey(dataset.projectId))
+        else:
+            dataset.metadata = _chunkSampleImport(CustomSample, metadataPath, dataset.id)
 
-        return cls.fetchById(dataset.id)
+        return dataset
 
     def download(self, decrypt: bool = False, ignoreCache: bool = False) -> None:
         super().download(decrypt, ignoreCache)
@@ -135,3 +137,18 @@ class SequenceDataset(BaseSequenceDataset, NetworkDataset[SequenceSample]):
             return False
 
         raise ValueError(">> [Coretex] Dataset contains a mix of paired-end and single-end sequences. It should contain either one or the other")
+
+    def _uploadSample(self, samplePath: Path) -> SequenceSample:
+        if not self._sampleType.isValidSequenceFile(samplePath):
+            raise ValueError(f"\"{samplePath}\" is not a valid sequence")
+
+        if file_utils.isArchive(samplePath):
+            sample = _chunkSampleImport(self._sampleType, samplePath, self.id)
+        else:
+            with folder_manager.tempFile(str(uuid.uuid4())) as archivePath:
+                logging.getLogger("coretexpylib").info(f">> [Coretex] Provided Sample \"{samplePath}\" is not an archive, zipping...")
+                file_utils.archive(samplePath, archivePath)
+
+                sample = _chunkSampleImport(self._sampleType, archivePath, self.id)
+
+        return sample

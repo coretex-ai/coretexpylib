@@ -15,8 +15,6 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, Union
-from typing_extensions import Self
 from pathlib import Path
 
 from .image_sample_data import AnnotatedImageSampleData
@@ -68,35 +66,3 @@ class ImageSample(NetworkSample[AnnotatedImageSampleData], LocalImageSample):
 
         response = networkManager.post("session/save-annotations", parameters)
         return not response.hasFailed()
-
-    @classmethod
-    def createImageSample(cls, datasetId: int, imagePath: Union[Path, str]) -> Optional[Self]:
-        """
-            Creates a new image sample with specified properties\n
-            For creating custom sample, sample must be an image of supported format
-
-            Parameters
-            ----------
-            datasetId : int
-                id of dataset in which image sample will be created
-            imagePath : Union[Path, str]
-                path to the image sample
-
-            Returns
-            -------
-            The created image sample object
-
-            Example
-            -------
-            >>> from coretex import ImageSample
-            \b
-            >>> sample = ImageSample.createImageSample(1023, "path/to/file.jpeg")
-            >>> if sample is None:
-                    print("Failed to create image sample")
-        """
-
-        parameters = {
-            "dataset_id": datasetId
-        }
-
-        return cls._createSample(parameters, imagePath)

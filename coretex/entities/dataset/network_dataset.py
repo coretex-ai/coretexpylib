@@ -15,22 +15,27 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, TypeVar, Generic, List, Dict, Any
-from typing_extensions import Self
+from typing import Optional, TypeVar, Generic, List, Dict, Any, Type, Union
+from typing_extensions import Self, override
 from datetime import datetime
 from pathlib import Path
+from abc import ABC, abstractmethod
 
 import hashlib
 import base64
 import logging
+import uuid
 
 from .dataset import Dataset
 from .state import DatasetState
 from ..sample import NetworkSample
 from ... import folder_manager
 from ...codable import KeyDescriptor
-from ...networking import EntityNotCreated, NetworkObject, networkManager
+from ...networking import EntityNotCreated, NetworkObject, \
+    ChunkUploadSession, MAX_CHUNK_SIZE, networkManager, NetworkRequestError
 from ...threading import MultithreadedDataProcessor
+from ...utils import file as file_utils
+from ...cryptography import aes, getProjectKey
 
 
 SampleType = TypeVar("SampleType", bound = "NetworkSample")
@@ -44,7 +49,33 @@ def _hashDependencies(dependencies: List[str]) -> str:
     return base64.b64encode(hash.digest()).decode("ascii").replace("+", "0")
 
 
-class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
+def _chunkSampleImport(sampleType: Type[SampleType], samplePath: Path, datasetId: int) -> SampleType:
+    if not file_utils.isArchive(samplePath):
+        raise ValueError("File must be a compressed archive [.zip, .tar.gz]")
+
+    uploadSession = ChunkUploadSession(MAX_CHUNK_SIZE, samplePath)
+    uploadId = uploadSession.run()
+
+    parameters = {
+        "name": samplePath.stem,
+        "dataset_id": datasetId,
+        "file_id": uploadId
+    }
+
+    response = networkManager.formData("session/import", parameters)
+    if response.hasFailed():
+        raise NetworkRequestError(response, f"Failed to create sample from \"{samplePath}\"")
+
+    return sampleType.decode(response.getJson(dict))
+
+
+def _encryptedSampleImport(sampleType: Type[SampleType], samplePath: Path, datasetId: int, key: bytes) -> SampleType:
+    with folder_manager.tempFile(str(uuid.uuid4())) as encryptedPath:
+        aes.encryptFile(key, samplePath, encryptedPath)
+        return _chunkSampleImport(sampleType, encryptedPath, datasetId)
+
+
+class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, ABC):
 
     """
         Represents the base class for all Dataset classes which are
@@ -64,10 +95,11 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
     createdOn: datetime
     createdById: str
     isLocked: bool
+    isEncrypted: bool
     meta: Optional[Dict[str, Any]]
 
-    def __init__(self) -> None:
-        pass
+    def __init__(self, sampleType: Type[SampleType]) -> None:
+        self._sampleType = sampleType
 
     @property
     def path(self) -> Path:
@@ -290,3 +322,38 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
             return super().rename(name)
 
         return success
+
+    @abstractmethod
+    def _uploadSample(self, samplePath: Path) -> SampleType:
+        # Override in data specific classes (ImageDataset, SequenceDataset, etc...)
+        # to implement a specific way of uploading samples
+        pass
+
+    @override
+    def add(self, samplePath: Union[Path, str]) -> SampleType:
+        """
+            Uploads the provided archive (.zip, .tar.gz) as Sample to
+            Coretex.ai as a part of this Dataset.
+
+            Parametrs
+            ---------
+            path : Union[Path, str]
+                path to data which will be uploaded
+
+            Returns
+            -------
+            SampleType -> created Sample
+        """
+
+        if isinstance(samplePath, str):
+            samplePath = Path(samplePath)
+
+        if self.isEncrypted:
+            sample = _encryptedSampleImport(self._sampleType, samplePath, self.id, getProjectKey(self.projectId))
+        else:
+            sample = self._uploadSample(samplePath)
+
+        # Append the newly created sample to the list of samples
+        self.samples.append(sample)
+
+        return sample

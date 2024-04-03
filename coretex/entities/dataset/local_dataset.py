@@ -15,9 +15,8 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from __future__ import annotations
-
-from typing import TypeVar, Generic, Type, Generator, Optional
+from typing import TypeVar, Generic, Type, Generator, Optional, Union
+from typing_extensions import override
 from pathlib import Path
 
 import logging
@@ -61,12 +60,13 @@ class LocalDataset(Generic[SampleType], Dataset[SampleType]):
             generator = _generateZippedSamples(path, sampleClass)
 
         self.__path = path
+        self.__sampleClass = sampleClass
 
         self.name = path.stem
         self.samples = list(generator)
 
     @staticmethod
-    def default(path: Path) -> LocalDataset:
+    def default(path: Path) -> 'LocalDataset':
         """
             Creates Local Dataset object
 
@@ -83,7 +83,7 @@ class LocalDataset(Generic[SampleType], Dataset[SampleType]):
         return LocalDataset(path, LocalSample)
 
     @staticmethod
-    def custom(path: Path, generator: SampleGenerator) -> LocalDataset:
+    def custom(path: Path, generator: SampleGenerator) -> 'LocalDataset':
         """
             Creates Custom Local Dataset object
 
@@ -113,3 +113,13 @@ class LocalDataset(Generic[SampleType], Dataset[SampleType]):
 
     def download(self, decrypt: bool = False, ignoreCache: bool = False) -> None:
         logging.getLogger("coretexpylib").warning(">> [Coretex] Local dataset cannot be downloaded")
+
+    @override
+    def add(self, filePath: Union[Path, str]) -> SampleType:
+        if isinstance(filePath, str):
+            filePath = Path(filePath)
+
+        sample = self.__sampleClass(filePath)
+        self.samples.append(sample)
+
+        return sample

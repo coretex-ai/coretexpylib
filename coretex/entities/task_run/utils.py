@@ -23,10 +23,10 @@ import logging
 
 import git
 
-from ..dataset import *
+from ..dataset import Dataset, LocalDataset, NetworkDataset, LocalCustomDataset, \
+    CustomDataset, LocalImageDataset, ImageDataset
 from ..project import ProjectType
 from ... import folder_manager
-from ...networking import FileData
 
 
 def getDatasetType(type_: ProjectType, isLocal: bool) -> Type[Dataset]:
@@ -36,17 +36,11 @@ def getDatasetType(type_: ProjectType, isLocal: bool) -> Type[Dataset]:
 
         return CustomDataset
 
-    if type_ == ProjectType.imageSegmentation:
+    if type_ in [ProjectType.computerVision, ProjectType.imageSegmentation]:
         if isLocal:
-            return LocalImageSegmentationDataset
+            return LocalImageDataset
 
-        return ImageSegmentationDataset
-
-    if type_ == ProjectType.computerVision:
-        if isLocal:
-            return LocalComputerVisionDataset
-
-        return ComputerVisionDataset
+        return ImageDataset
 
     logging.getLogger("coretexpylib").debug(f">> [Coretex] ProjectType ({type_}) does not have a dataset type using CustomDataset")
 
