@@ -16,7 +16,7 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import Any, Dict, Union, Optional
-from typing_extensions import Self
+from typing_extensions import Self, override
 from datetime import datetime
 from zipfile import ZipFile
 from pathlib import Path
@@ -242,6 +242,10 @@ class Model(NetworkObject):
 
         with modelDescriptorPath.open("w", encoding = "utf-8") as file:
             json.dump(contents, file, ensure_ascii = False, indent = 4)
+
+    @override
+    def entityUrl(self) -> str:
+        return f'model-item?id={self.id}'
 
     def download(self, path: Optional[Path] = None, ignoreCache: bool = False) -> None:
         """
