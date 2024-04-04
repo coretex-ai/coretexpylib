@@ -15,16 +15,18 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, Union
+from typing import Optional, Union, Any, Dict
 from typing_extensions import Self
 from pathlib import Path
+
+import json
 
 from .image_sample_data import AnnotatedImageSampleData
 from .local_image_sample import LocalImageSample
 from .image_format import ImageFormat
 from ..network_sample import NetworkSample
 from ...annotation import CoretexImageAnnotation
-from ....networking import networkManager
+from ....networking import networkManager, NetworkRequestError
 
 
 class ImageSample(NetworkSample[AnnotatedImageSampleData], LocalImageSample):
@@ -56,6 +58,10 @@ class ImageSample(NetworkSample[AnnotatedImageSampleData], LocalImageSample):
     def annotationPath(self) -> Path:
         return Path(self.path) / "annotations.json"
 
+    @property
+    def metadataPath(self) -> Path:
+        return Path(self.path) / "metadata.json"
+
     def saveAnnotation(self, coretexAnnotation: CoretexImageAnnotation) -> bool:
         # Only save annotation locally if it is downloaded
         if self.zipPath.exists() and self.path.exists():
@@ -68,6 +74,53 @@ class ImageSample(NetworkSample[AnnotatedImageSampleData], LocalImageSample):
 
         response = networkManager.post("session/save-annotations", parameters)
         return not response.hasFailed()
+
+    def saveMetadata(self, metadata: Dict[str, Any]) -> None:
+        """
+            Saves a json object as metadata for the sample
+
+            Parameters
+            ----------
+            metadata : dict[str, Any]
+                Json object containing sample metadata
+
+            Raises
+            ------
+            NetworkRequestError -> if metadata upload failed
+        """
+
+        parameters = {
+            "id": self.id,
+            "data": metadata
+        }
+
+        response = networkManager.post("session/save-metadata", parameters)
+        if response.hasFailed():
+            raise NetworkRequestError(response, f"Failed to upload metadata for sample {self.name}")
+
+    def loadMetadata(self) -> Dict[str, Any]:
+        """
+            Loads sample metadata into a dictionary
+
+            Returns
+            -------
+            dict[str, Any] -> the metadata as a dict object
+
+            Raises
+            ------
+            FileNotFoundError -> if metadata file is missing\n
+            ValueError -> if json in the metadata file is list
+        """
+
+        if not self.metadataPath.exists():
+            raise FileNotFoundError(f"Metadata file \"{self.metadataPath}\" was not found")
+
+        with self.metadataPath.open("r") as metadataFile:
+            metadata = json.load(metadataFile)
+            if not isinstance(metadata, dict):
+                raise ValueError(f"Metatada for sample \"{self.name}\" is a list. Expected dictionary")
+
+            return metadata
 
     @classmethod
     def createImageSample(cls, datasetId: int, imagePath: Union[Path, str]) -> Optional[Self]:
