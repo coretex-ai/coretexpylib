@@ -22,4 +22,3 @@ from .sample import Sample
 from .local_sample import LocalSample
 from .network_sample import NetworkSample
 from .sequence_sample import LocalSequenceSample, SequenceSample
-from .utils import chunkSampleImport
