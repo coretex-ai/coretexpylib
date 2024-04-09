@@ -26,6 +26,7 @@ from ...entities import Log
 from ...networking import networkManager
 
 
+MAX_LOG_BATCH_SIZE = 1024
 MAX_WAIT_TIME_BEFORE_UPDATE = 5
 
 
@@ -62,32 +63,38 @@ class LoggerUploadWorker(Thread):
         self.__stopped.set()
         self.__queue.shutdown(wait = True)
 
+    def __uploadLogs(self) -> bool:
+        if len(self.__pendingLogs) == 0:
+            return True
+
+        response = networkManager.post("model-queue/add-console-log", {
+            "model_queue_id": self.taskRunId,
+            "logs": [log.encode() for log in self.__pendingLogs]
+        })
+
+        # Only clear logs if they were successfully uploaded to coretex
+        if not response.hasFailed():
+            self.__pendingLogs.clear()
+
+        return not response.hasFailed()
+
     def add(self, log: Log) -> None:
         if self.isStopped:
             return
 
-        self.__queue.submit(self.__pendingLogs.append, log)
+        def worker() -> None:
+            self.__pendingLogs.append(log)
+
+            if len(self.__pendingLogs) >= MAX_LOG_BATCH_SIZE:
+                self.__uploadLogs()
+
+        self.__queue.submit(worker)
 
     def uploadLogs(self) -> bool:
         if self.isStopped:
             return False
 
-        def worker() -> bool:
-            if len(self.__pendingLogs) == 0:
-                return True
-
-            response = networkManager.post("model-queue/add-console-log", {
-                "model_queue_id": self.taskRunId,
-                "logs": [log.encode() for log in self.__pendingLogs]
-            })
-
-            # Only clear logs if they were successfully uploaded to coretex
-            if not response.hasFailed():
-                self.__pendingLogs.clear()
-
-            return not response.hasFailed()
-
-        future = self.__queue.submit(worker)
+        future = self.__queue.submit(self.__uploadLogs)
 
         exception = future.exception()
         if exception is not None:
