@@ -30,7 +30,7 @@ from ...networking import NetworkRequestError
 
 def createSample(name: str, dataset: CustomDataset, path: Path, taskRun: TaskRun, stepName: str, retryCount: int = 0) -> CustomSample:
     try:
-        sample = dataset.add(path)
+        sample = dataset.add(path, name)
     except NetworkRequestError:
         if retryCount < 3:
             logging.info(f">> [Coretex] Retry count: {retryCount}")
