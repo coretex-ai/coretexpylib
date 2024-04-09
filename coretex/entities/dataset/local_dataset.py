@@ -16,7 +16,6 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import TypeVar, Generic, Type, Generator, Optional, Union
-from typing_extensions import override
 from pathlib import Path
 
 import logging
@@ -111,15 +110,14 @@ class LocalDataset(Generic[SampleType], Dataset[SampleType]):
 
         return self.__path
 
-    def download(self, decrypt: bool = False, ignoreCache: bool = False) -> None:
+    def download(self, decrypt: bool = True, ignoreCache: bool = False) -> None:
         logging.getLogger("coretexpylib").warning(">> [Coretex] Local dataset cannot be downloaded")
 
-    @override
-    def add(self, filePath: Union[Path, str]) -> SampleType:
-        if isinstance(filePath, str):
-            filePath = Path(filePath)
+    def add(self, samplePath: Union[Path, str], sampleName: Optional[str] = None) -> SampleType:
+        if isinstance(samplePath, str):
+            samplePath = Path(samplePath)
 
-        sample = self.__sampleClass(filePath)
+        sample = self.__sampleClass(samplePath)
         self.samples.append(sample)
 
         return sample

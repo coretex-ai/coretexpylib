@@ -45,5 +45,5 @@ class CustomDataset(BaseCustomDataset, NetworkDataset[CustomSample]):
         return descriptors
 
     @override
-    def _uploadSample(self, samplePath: Path) -> CustomSample:
-        return _chunkSampleImport(self._sampleType, samplePath, self.id)
+    def _uploadSample(self, samplePath: Path, sampleName: str) -> CustomSample:
+        return _chunkSampleImport(self._sampleType, sampleName, samplePath, self.id)

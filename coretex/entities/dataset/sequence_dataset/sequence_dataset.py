@@ -101,13 +101,13 @@ class SequenceDataset(BaseSequenceDataset, NetworkDataset[SequenceSample]):
         dataset = cls.createDataset(name, projectId, meta)
 
         if dataset.isEncrypted:
-            dataset.metadata = _encryptedSampleImport(CustomSample, metadataPath, dataset.id, getProjectKey(dataset.projectId))
+            dataset.metadata = _encryptedSampleImport(CustomSample, "_metadata", metadataPath, dataset.id, getProjectKey(dataset.projectId))
         else:
-            dataset.metadata = _chunkSampleImport(CustomSample, metadataPath, dataset.id)
+            dataset.metadata = _chunkSampleImport(CustomSample, "_metadata", metadataPath, dataset.id)
 
         return dataset
 
-    def download(self, decrypt: bool = False, ignoreCache: bool = False) -> None:
+    def download(self, decrypt: bool = True, ignoreCache: bool = False) -> None:
         super().download(decrypt, ignoreCache)
 
         self.metadata.download(decrypt, ignoreCache)
@@ -138,17 +138,17 @@ class SequenceDataset(BaseSequenceDataset, NetworkDataset[SequenceSample]):
 
         raise ValueError(">> [Coretex] Dataset contains a mix of paired-end and single-end sequences. It should contain either one or the other")
 
-    def _uploadSample(self, samplePath: Path) -> SequenceSample:
+    def _uploadSample(self, samplePath: Path, sampleName: str) -> SequenceSample:
         if not self._sampleType.isValidSequenceFile(samplePath):
             raise ValueError(f"\"{samplePath}\" is not a valid sequence")
 
         if file_utils.isArchive(samplePath):
-            sample = _chunkSampleImport(self._sampleType, samplePath, self.id)
+            sample = _chunkSampleImport(self._sampleType, sampleName, samplePath, self.id)
         else:
             with folder_manager.tempFile(str(uuid.uuid4())) as archivePath:
                 logging.getLogger("coretexpylib").info(f">> [Coretex] Provided Sample \"{samplePath}\" is not an archive, zipping...")
                 file_utils.archive(samplePath, archivePath)
 
-                sample = _chunkSampleImport(self._sampleType, archivePath, self.id)
+                sample = _chunkSampleImport(self._sampleType, sampleName, archivePath, self.id)
 
         return sample

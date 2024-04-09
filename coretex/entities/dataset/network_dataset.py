@@ -16,7 +16,7 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import Optional, TypeVar, Generic, List, Dict, Any, Type, Union
-from typing_extensions import Self, override
+from typing_extensions import Self
 from datetime import datetime
 from pathlib import Path
 from abc import ABC, abstractmethod
@@ -34,7 +34,6 @@ from ...codable import KeyDescriptor
 from ...networking import EntityNotCreated, NetworkObject, \
     ChunkUploadSession, MAX_CHUNK_SIZE, networkManager, NetworkRequestError
 from ...threading import MultithreadedDataProcessor
-from ...utils import file as file_utils
 from ...cryptography import aes, getProjectKey
 
 
@@ -49,15 +48,15 @@ def _hashDependencies(dependencies: List[str]) -> str:
     return base64.b64encode(hash.digest()).decode("ascii").replace("+", "0")
 
 
-def _chunkSampleImport(sampleType: Type[SampleType], samplePath: Path, datasetId: int) -> SampleType:
-    if not file_utils.isArchive(samplePath):
-        raise ValueError("File must be a compressed archive [.zip, .tar.gz]")
+def _chunkSampleImport(sampleType: Type[SampleType], sampleName: str, samplePath: Path, datasetId: int) -> SampleType:
+    if not samplePath.is_file():
+        raise ValueError(f"{samplePath} is not a file")
 
     uploadSession = ChunkUploadSession(MAX_CHUNK_SIZE, samplePath)
     uploadId = uploadSession.run()
 
     parameters = {
-        "name": samplePath.stem,
+        "name": sampleName,
         "dataset_id": datasetId,
         "file_id": uploadId
     }
@@ -69,10 +68,10 @@ def _chunkSampleImport(sampleType: Type[SampleType], samplePath: Path, datasetId
     return sampleType.decode(response.getJson(dict))
 
 
-def _encryptedSampleImport(sampleType: Type[SampleType], samplePath: Path, datasetId: int, key: bytes) -> SampleType:
+def _encryptedSampleImport(sampleType: Type[SampleType], sampleName: str, samplePath: Path, datasetId: int, key: bytes) -> SampleType:
     with folder_manager.tempFile(str(uuid.uuid4())) as encryptedPath:
         aes.encryptFile(key, samplePath, encryptedPath)
-        return _chunkSampleImport(sampleType, encryptedPath, datasetId)
+        return _chunkSampleImport(sampleType, sampleName, encryptedPath, datasetId)
 
 
 class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, ABC):
@@ -278,7 +277,14 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
 
         return self.update(name = self.name, state = DatasetState.final)
 
-    def download(self, decrypt: bool = False, ignoreCache: bool = False) -> None:
+    def _linkSamplePath(self, samplePath: Path) -> None:
+        linkPath = self.path / samplePath.name
+        if linkPath.exists():
+            linkPath.unlink()
+
+        samplePath.link_to(linkPath)
+
+    def download(self, decrypt: bool = True, ignoreCache: bool = False) -> None:
         """
             Downloads dataset from Coretex
 
@@ -301,9 +307,11 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
         def sampleDownloader(sample: SampleType) -> None:
             sample.download(decrypt, ignoreCache)
 
-            sampleHardLinkPath = self.path / sample.zipPath.name
-            if not sampleHardLinkPath.exists():
-                sample.zipPath.link_to(sampleHardLinkPath)
+            if sample.downloadPath.exists():
+                self._linkSamplePath(sample.downloadPath)
+
+            if sample.zipPath.exists():
+                self._linkSamplePath(sample.zipPath)
 
             logging.getLogger("coretexpylib").info(f"\tDownloaded \"{sample.name}\"")
 
@@ -324,13 +332,12 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
         return success
 
     @abstractmethod
-    def _uploadSample(self, samplePath: Path) -> SampleType:
+    def _uploadSample(self, samplePath: Path, sampleName: str) -> SampleType:
         # Override in data specific classes (ImageDataset, SequenceDataset, etc...)
         # to implement a specific way of uploading samples
         pass
 
-    @override
-    def add(self, samplePath: Union[Path, str]) -> SampleType:
+    def add(self, samplePath: Union[Path, str], sampleName: Optional[str] = None) -> SampleType:
         """
             Uploads the provided archive (.zip, .tar.gz) as Sample to
             Coretex.ai as a part of this Dataset.
@@ -348,10 +355,13 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
         if isinstance(samplePath, str):
             samplePath = Path(samplePath)
 
+        if sampleName is None:
+            sampleName = samplePath.stem
+
         if self.isEncrypted:
-            sample = _encryptedSampleImport(self._sampleType, samplePath, self.id, getProjectKey(self.projectId))
+            sample = _encryptedSampleImport(self._sampleType, sampleName, samplePath, self.id, getProjectKey(self.projectId))
         else:
-            sample = self._uploadSample(samplePath)
+            sample = self._uploadSample(samplePath, sampleName)
 
         # Append the newly created sample to the list of samples
         self.samples.append(sample)

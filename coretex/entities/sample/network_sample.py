@@ -16,6 +16,7 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import TypeVar, Generic, Dict
+from typing_extensions import override
 from datetime import datetime
 from pathlib import Path
 
@@ -32,6 +33,16 @@ from ...cryptography import getProjectKey, aes
 
 
 SampleDataType = TypeVar("SampleDataType")
+
+
+def _relinkSample(samplePath: Path) -> None:
+    for datasetPath in folder_manager.datasetsFolder.iterdir():
+        linkPath = datasetPath / samplePath.name
+        if not linkPath.exists():
+            continue
+
+        linkPath.unlink()
+        os.link(samplePath, linkPath)
 
 
 class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObject):
@@ -134,27 +145,13 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
         if not ignoreCache and self.zipPath.exists():
             return
 
+        # Decrypt sample
         aes.decryptFile(getProjectKey(self.projectId), self.downloadPath, self.zipPath)
 
-    def _relinkSample(self) -> None:
-        for datasetPath in folder_manager.datasetsFolder.iterdir():
-            sampleHardLinkPath = datasetPath / self.zipPath.name
-            if not sampleHardLinkPath.exists():
-                continue
+        # Relink sample to all datasets to which it belongs
+        _relinkSample(self.zipPath)
 
-            sampleHardLinkPath.unlink()
-            os.link(self.zipPath, sampleHardLinkPath)
-
-    def download(self, decrypt: bool = False, ignoreCache: bool = False) -> None:
-        """
-            Downloads sample from Coretex.ai
-
-            Raises
-            ------
-            NetworkRequestError -> if some kind of error happened during
-            the download process
-        """
-
+    def _download(self, ignoreCache: bool = False) -> None:
         if self.downloadPath.exists() and self.modifiedSinceLastDownload():
             ignoreCache = True
 
@@ -163,10 +160,6 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
 
         if not ignoreCache and self.downloadPath.exists():
             return
-
-        if decrypt and not self.isEncrypted:
-            # Change to false if sample is not encrypted
-            decrypt = False
 
         params = {
             "id": self.id
@@ -181,14 +174,44 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
         if response.hasFailed():
             raise NetworkRequestError(response, f"Failed to download Sample \"{self.name}\"")
 
+    @override
+    def download(self, decrypt: bool = True, ignoreCache: bool = False) -> None:
+        """
+            Downloads and optionally decrypts sample from Coretex.ai
+
+            Raises
+            ------
+            NetworkRequestError -> if some kind of error happened during
+            the download process
+        """
+
+        if decrypt and not self.isEncrypted:
+            # Change to false if sample is not encrypted
+            decrypt = False
+
+        # Download the sample
+        self._download(ignoreCache)
+
         if decrypt:
+            # Decrypt the sample
             self.decrypt(ignoreCache)
 
         # Update sample download time to now
         os.utime(self.downloadPath, (os.stat(self.downloadPath).st_atime, time.time()))
 
         # If sample was downloaded succesfully relink it to datasets to which it is linked
-        self._relinkSample()
+        _relinkSample(self.downloadPath)
 
+    @override
+    def unzip(self, ignoreCache: bool = False) -> None:
+        if not self.downloadPath.exists():
+            raise RuntimeError("You must first download the Sample before you can unzip it")
+
+        if not self.zipPath.exists() and self.isEncrypted:
+            raise RuntimeError("You must first decrypt the Sample before you can unzip it")
+
+        super().unzip(ignoreCache)
+
+    @override
     def load(self) -> SampleDataType:
         return super().load()  # type: ignore

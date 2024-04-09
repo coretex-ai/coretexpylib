@@ -82,17 +82,17 @@ class ImageDataset(BaseImageDataset[ImageSample], NetworkDataset[ImageSample]): 
         return not response.hasFailed()
 
     @override
-    def _uploadSample(self, path: Path) -> ImageSample:
+    def _uploadSample(self, samplePath: Path, sampleName: str) -> ImageSample:
         params = {
             "dataset_id": self.id
         }
 
         files = [
-            FileData.createFromPath("file", path)
+            FileData.createFromPath("file", samplePath)
         ]
 
         response = networkManager.formData("session/import", params, files)
         if response.hasFailed():
-            raise NetworkRequestError(response, f"Failed to create image Sample from \"{path}\"")
+            raise NetworkRequestError(response, f"Failed to create image Sample from \"{samplePath}\"")
 
         return self._sampleType.decode(response.getJson(dict))

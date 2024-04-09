@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, TypeVar, Generic, List, Callable, Any
+from typing import Optional, TypeVar, Generic, List, Callable
 from abc import ABC, abstractmethod
 from pathlib import Path
 
@@ -59,7 +59,7 @@ class Dataset(ABC, Generic[SampleType]):
         pass
 
     @abstractmethod
-    def download(self, decrypt: bool = False, ignoreCache: bool = False) -> None:
+    def download(self, decrypt: bool = True, ignoreCache: bool = False) -> None:
         pass
 
     def rename(self, name: str) -> bool:
@@ -114,7 +114,3 @@ class Dataset(ABC, Generic[SampleType]):
                 filteredSamples.append(sample)
 
         return filteredSamples
-
-    @abstractmethod
-    def add(self, *args: Any, **kwargs: Any) -> SampleType:
-        pass
