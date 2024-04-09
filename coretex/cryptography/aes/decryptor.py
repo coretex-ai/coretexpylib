@@ -80,8 +80,15 @@ class StreamDecryptor:
         chunk = self._decryptor.update(chunk) + self._decryptor.finalize()
 
         # Unpad chunk
-        unpadder = padding.PKCS7(AES_BLOCK_SIZE * 8).unpadder()
-        return unpadder.update(chunk) + unpadder.finalize()
+        try:
+            unpadder = padding.PKCS7(AES_BLOCK_SIZE * 8).unpadder()
+            return unpadder.update(chunk) + unpadder.finalize()
+        except ValueError:
+            # If unpadding failed either the key is wrong or
+            # the padding was not performed during encryption
+            # because ciphertext bytes were divisible by AES
+            # block size so there was no need for padding
+            return chunk
 
 
 def decryptFile(key: bytes, sourcePath: Path, destinationPath: Path) -> None:
