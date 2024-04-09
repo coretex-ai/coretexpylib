@@ -28,6 +28,7 @@ def create(name: str, path: str, project: Optional[str], accuracy: float) -> Non
     model.upload(path)
 
     ui.successEcho(f"Model \"{model.name}\" created successfully")
+    ui.stdEcho(f"A new model has been created. You can open it by clicking on this URL {ui.outputUrl(model.entityUrl())}.")
 
 
 @click.group()
