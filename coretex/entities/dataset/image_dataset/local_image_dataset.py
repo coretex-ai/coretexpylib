@@ -15,7 +15,6 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import TypeVar, Type
 from pathlib import Path
 
 import json
@@ -26,10 +25,7 @@ from ...sample import LocalImageSample
 from ...annotation import ImageDatasetClass, ImageDatasetClasses
 
 
-SampleType = TypeVar("SampleType", bound = "LocalImageSample")
-
-
-class LocalImageDataset(BaseImageDataset[SampleType], LocalDataset[SampleType]):  # type: ignore
+class LocalImageDataset(BaseImageDataset[LocalImageSample], LocalDataset[LocalImageSample]):  # type: ignore
 
     """
         Represents the Local Image Dataset class \n
@@ -45,8 +41,8 @@ class LocalImageDataset(BaseImageDataset[SampleType], LocalDataset[SampleType]):
             path to classes.json file
     """
 
-    def __init__(self, path: Path, sampleClass: Type[SampleType]) -> None:
-        super().__init__(path, sampleClass)
+    def __init__(self, path: Path) -> None:
+        super().__init__(path, LocalImageSample)
 
         self.classes = ImageDatasetClasses()
 

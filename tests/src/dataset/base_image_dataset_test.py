@@ -19,15 +19,15 @@ from typing import TypeVar, Generic, Union
 
 import json
 
-from coretex import ComputerVisionDataset, LocalComputerVisionDataset, ImageDatasetClasses, ImageDatasetClass
+from coretex import ImageDataset, LocalImageDataset, ImageDatasetClasses, ImageDatasetClass
 
 from .base_dataset_test import BaseDatasetTest
 
 
-DatasetType = TypeVar("DatasetType", bound = Union[ComputerVisionDataset, LocalComputerVisionDataset])
+DatasetType = TypeVar("DatasetType", bound = Union[ImageDataset, LocalImageDataset])
 
 
-class BaseComputerVisionDatasetTest:
+class BaseImageDatasetTest:
 
     class Base(BaseDatasetTest.Base[DatasetType], Generic[DatasetType]):
 

@@ -17,21 +17,21 @@
 
 import unittest
 
-from coretex import LocalComputerVisionSample, LocalComputerVisionDataset, ProjectType
+from coretex import LocalImageSample, LocalImageDataset, ProjectType
 
-from ..base_computer_vision_sample_test import BaseComputerVisionSampleTest
+from ..base_image_sample_test import BaseImageSampleTest
 from ...utils import createLocalEnvironmentFor
 
 
-class TestComputerVisionSampleLocal(BaseComputerVisionSampleTest.Base):
+class TestImageSampleLocal(BaseImageSampleTest.Base):
 
-    sample: LocalComputerVisionSample
+    sample: LocalImageSample
 
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
 
-        dataset = createLocalEnvironmentFor(ProjectType.computerVision, LocalComputerVisionDataset)
+        dataset = createLocalEnvironmentFor(ProjectType.computerVision, LocalImageDataset)
         cls.sample = dataset.samples[0]
 
 
