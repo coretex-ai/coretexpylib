@@ -20,7 +20,6 @@ from typing_extensions import Self
 from pathlib import Path
 
 import logging
-import uuid
 
 from .base import BaseSequenceDataset
 from ..network_dataset import NetworkDataset, _chunkSampleImport, _encryptedSampleImport
@@ -145,7 +144,7 @@ class SequenceDataset(BaseSequenceDataset, NetworkDataset[SequenceSample]):
         if file_utils.isArchive(samplePath):
             sample = _chunkSampleImport(self._sampleType, sampleName, samplePath, self.id)
         else:
-            with folder_manager.tempFile(str(uuid.uuid4())) as archivePath:
+            with folder_manager.tempFile() as archivePath:
                 logging.getLogger("coretexpylib").info(f">> [Coretex] Provided Sample \"{samplePath}\" is not an archive, zipping...")
                 file_utils.archive(samplePath, archivePath)
 

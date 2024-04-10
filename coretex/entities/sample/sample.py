@@ -117,4 +117,17 @@ class Sample(ABC, Generic[SampleDataType]):
         if isinstance(other, str):
             other = Path(other)
 
-        return Path(self.path) / other
+        return self.path / other
+
+    def _updateArchive(self) -> None:
+        oldZipPath = self.zipPath.parent / f"{self.zipPath.stem}-old.zip"
+        self.zipPath.rename(oldZipPath)
+
+        with ZipFile(self.zipPath, "w") as zipFile:
+            for value in self.path.rglob("*"):
+                if not value.is_file():
+                    continue
+
+                zipFile.write(value, value.relative_to(self.path))
+
+        oldZipPath.unlink()

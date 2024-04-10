@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import TypeVar, Generic, Dict
+from typing import TypeVar, Generic, Dict, Any, List
 from typing_extensions import override
 from datetime import datetime
 from pathlib import Path
@@ -27,7 +27,8 @@ from .sample import Sample
 from ..project import ProjectType
 from ... import folder_manager
 from ...codable import KeyDescriptor
-from ...networking import NetworkObject, networkManager, NetworkRequestError
+from ...networking import NetworkObject, networkManager, NetworkRequestError, \
+    fileChunkUpload, MAX_CHUNK_SIZE, FileData
 from ...utils import TIME_ZONE
 from ...cryptography import getProjectKey, aes
 
@@ -215,3 +216,36 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
     @override
     def load(self) -> SampleDataType:
         return super().load()  # type: ignore
+
+    @override
+    def _updateArchive(self) -> None:
+        super()._updateArchive()
+
+        if self.isEncrypted:
+            aes.encryptFile(getProjectKey(self.projectId), self.zipPath, self.downloadPath)
+
+    def _overwriteSample(self, samplePath: Path) -> None:
+        if not self.isEncrypted:
+            raise RuntimeError("Only encrypted samples can be overwriten.")
+
+        with folder_manager.tempFile() as encryptedPath:
+            aes.encryptFile(getProjectKey(self.projectId), samplePath, encryptedPath)
+
+            params: Dict[str, Any] = {
+                "id": self.id
+            }
+
+            files: List[FileData] = []
+
+            # Use chunk upload if file is larger than MAX_CHUNK_SIZE
+            # Use normal upload if file is smaller than MAX_CHUNK_SIZE
+            size = encryptedPath.stat().st_size
+
+            if size > MAX_CHUNK_SIZE:
+                params["file_id"] = fileChunkUpload(encryptedPath)
+            else:
+                files.append(FileData.createFromPath("file", encryptedPath))
+
+            response = networkManager.formData(f"{self._endpoint()}/upload", params, files, timeout = (5, 300))
+            if response.hasFailed():
+                raise NetworkRequestError(response, f"Failed to overwrite Sample \"{self.name}\"")

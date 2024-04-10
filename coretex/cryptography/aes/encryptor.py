@@ -104,6 +104,10 @@ def encryptFile(key: bytes, sourcePath: Path, destinationPath: Path) -> None:
             path to the file which will be encrypted
         destinationPath : Path
             path to the encrypted file
+
+        Raises
+        ------
+        RuntimeError -> if file size % AES_BLOCK_SIZE has remainder
     """
 
     with sourcePath.open("rb") as source, destinationPath.open("wb") as destination:
@@ -115,3 +119,6 @@ def encryptFile(key: bytes, sourcePath: Path, destinationPath: Path) -> None:
                 destination.write(encryptedData)
 
         destination.write(encryptor.flush())
+
+    if destinationPath.stat().st_size % AES_BLOCK_SIZE != 0:
+        raise RuntimeError("File was corrupted during encryption")

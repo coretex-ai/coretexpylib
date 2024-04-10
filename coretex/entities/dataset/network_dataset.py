@@ -20,11 +20,11 @@ from typing_extensions import Self
 from datetime import datetime
 from pathlib import Path
 from abc import ABC, abstractmethod
+from contextlib import ExitStack
 
 import hashlib
 import base64
 import logging
-import uuid
 
 from .dataset import Dataset
 from .state import DatasetState
@@ -32,9 +32,10 @@ from ..sample import NetworkSample
 from ... import folder_manager
 from ...codable import KeyDescriptor
 from ...networking import EntityNotCreated, NetworkObject, \
-    ChunkUploadSession, MAX_CHUNK_SIZE, networkManager, NetworkRequestError
+    fileChunkUpload, networkManager, NetworkRequestError
 from ...threading import MultithreadedDataProcessor
 from ...cryptography import aes, getProjectKey
+from ...utils.file import isArchive, archive
 
 
 SampleType = TypeVar("SampleType", bound = "NetworkSample")
@@ -49,16 +50,10 @@ def _hashDependencies(dependencies: List[str]) -> str:
 
 
 def _chunkSampleImport(sampleType: Type[SampleType], sampleName: str, samplePath: Path, datasetId: int) -> SampleType:
-    if not samplePath.is_file():
-        raise ValueError(f"{samplePath} is not a file")
-
-    uploadSession = ChunkUploadSession(MAX_CHUNK_SIZE, samplePath)
-    uploadId = uploadSession.run()
-
     parameters = {
         "name": sampleName,
         "dataset_id": datasetId,
-        "file_id": uploadId
+        "file_id": fileChunkUpload(samplePath)
     }
 
     response = networkManager.formData("session/import", parameters, timeout = (5, 300))
@@ -69,9 +64,23 @@ def _chunkSampleImport(sampleType: Type[SampleType], sampleName: str, samplePath
 
 
 def _encryptedSampleImport(sampleType: Type[SampleType], sampleName: str, samplePath: Path, datasetId: int, key: bytes) -> SampleType:
-    with folder_manager.tempFile(str(uuid.uuid4())) as encryptedPath:
-        aes.encryptFile(key, samplePath, encryptedPath)
+    with ExitStack() as stack:
+        if isArchive(samplePath):
+            archivePath = samplePath
+        else:
+            archivePath = stack.enter_context(folder_manager.tempFile())
+            archive(samplePath, archivePath)
+
+        encryptedPath = stack.enter_context(folder_manager.tempFile())
+        aes.encryptFile(key, archivePath, encryptedPath)
+
         return _chunkSampleImport(sampleType, sampleName, encryptedPath, datasetId)
+
+    # ExitStack is marked as something that can "swallow" exceptions raised
+    # in "with" block. In this case ExitStack does not enter any context
+    # which can swallow the exceptions so this is not reachable, but mypy
+    # is complaning about this and we silence it by raising an exception here
+    raise RuntimeError("Unreachable statement was reached.")
 
 
 class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, ABC):
