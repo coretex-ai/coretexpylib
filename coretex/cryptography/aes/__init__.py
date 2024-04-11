@@ -15,17 +15,5 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from coretex import LocalComputerVisionDataset, LocalComputerVisionSample, ProjectType
-
-from ..base_computer_vision_dataset_test import BaseComputerVisionDatasetTest
-from ...utils import createLocalEnvironmentFor
-
-
-class TestLocalComputerVisionDataset(BaseComputerVisionDatasetTest.Base[LocalComputerVisionDataset]):
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        super().setUpClass()
-
-        cls.dataset = createLocalEnvironmentFor(ProjectType.computerVision, LocalComputerVisionDataset)
-        cls.sampleType = LocalComputerVisionSample
+from .encryptor import StreamEncryptor, encryptFile
+from .decryptor import StreamDecryptor, decryptFile

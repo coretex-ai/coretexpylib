@@ -15,5 +15,8 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .image_segmentation_sample import ImageSegmentationSample
-from .local_image_segmentation_sample import LocalImageSegmentationSample
+DEFAULT_CHUNK_SIZE = 64 * 1024 ** 2  # 64 MB
+
+AES_KEY_SIZE   = 32  # bytes
+IV_SIZE        = 16  # bytes
+AES_BLOCK_SIZE = 16  # bytes

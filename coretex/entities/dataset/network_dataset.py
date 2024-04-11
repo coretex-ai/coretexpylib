@@ -15,10 +15,12 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, TypeVar, Generic, List, Dict, Any
+from typing import Optional, TypeVar, Generic, List, Dict, Any, Type, Union
 from typing_extensions import Self
 from datetime import datetime
 from pathlib import Path
+from abc import ABC, abstractmethod
+from contextlib import ExitStack
 
 import hashlib
 import base64
@@ -29,8 +31,11 @@ from .state import DatasetState
 from ..sample import NetworkSample
 from ... import folder_manager
 from ...codable import KeyDescriptor
-from ...networking import EntityNotCreated, NetworkObject, networkManager
+from ...networking import EntityNotCreated, NetworkObject, \
+    fileChunkUpload, networkManager, NetworkRequestError
 from ...threading import MultithreadedDataProcessor
+from ...cryptography import aes, getProjectKey
+from ...utils.file import isArchive, archive
 
 
 SampleType = TypeVar("SampleType", bound = "NetworkSample")
@@ -44,7 +49,41 @@ def _hashDependencies(dependencies: List[str]) -> str:
     return base64.b64encode(hash.digest()).decode("ascii").replace("+", "0")
 
 
-class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
+def _chunkSampleImport(sampleType: Type[SampleType], sampleName: str, samplePath: Path, datasetId: int) -> SampleType:
+    parameters = {
+        "name": sampleName,
+        "dataset_id": datasetId,
+        "file_id": fileChunkUpload(samplePath)
+    }
+
+    response = networkManager.formData("session/import", parameters, timeout = (5, 300))
+    if response.hasFailed():
+        raise NetworkRequestError(response, f"Failed to create sample from \"{samplePath}\"")
+
+    return sampleType.decode(response.getJson(dict))
+
+
+def _encryptedSampleImport(sampleType: Type[SampleType], sampleName: str, samplePath: Path, datasetId: int, key: bytes) -> SampleType:
+    with ExitStack() as stack:
+        if isArchive(samplePath):
+            archivePath = samplePath
+        else:
+            archivePath = stack.enter_context(folder_manager.tempFile())
+            archive(samplePath, archivePath)
+
+        encryptedPath = stack.enter_context(folder_manager.tempFile())
+        aes.encryptFile(key, archivePath, encryptedPath)
+
+        return _chunkSampleImport(sampleType, sampleName, encryptedPath, datasetId)
+
+    # ExitStack is marked as something that can "swallow" exceptions raised
+    # in "with" block. In this case ExitStack does not enter any context
+    # which can swallow the exceptions so this is not reachable, but mypy
+    # is complaning about this and we silence it by raising an exception here
+    raise RuntimeError("Unreachable statement was reached.")
+
+
+class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, ABC):
 
     """
         Represents the base class for all Dataset classes which are
@@ -64,10 +103,11 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
     createdOn: datetime
     createdById: str
     isLocked: bool
+    isEncrypted: bool
     meta: Optional[Dict[str, Any]]
 
-    def __init__(self) -> None:
-        pass
+    def __init__(self, sampleType: Type[SampleType]) -> None:
+        self._sampleType = sampleType
 
     @property
     def path(self) -> Path:
@@ -246,7 +286,14 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
 
         return self.update(name = self.name, state = DatasetState.final)
 
-    def download(self, ignoreCache: bool = False) -> None:
+    def _linkSamplePath(self, samplePath: Path) -> None:
+        linkPath = self.path / samplePath.name
+        if linkPath.exists():
+            linkPath.unlink()
+
+        samplePath.link_to(linkPath)
+
+    def download(self, decrypt: bool = True, ignoreCache: bool = False) -> None:
         """
             Downloads dataset from Coretex
 
@@ -267,11 +314,13 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
         self.path.mkdir(exist_ok = True)
 
         def sampleDownloader(sample: SampleType) -> None:
-            sample.download(ignoreCache)
+            sample.download(decrypt, ignoreCache)
 
-            sampleHardLinkPath = self.path / sample.zipPath.name
-            if not sampleHardLinkPath.exists():
-                sample.zipPath.link_to(sampleHardLinkPath)
+            if sample.downloadPath.exists():
+                self._linkSamplePath(sample.downloadPath)
+
+            if sample.zipPath.exists():
+                self._linkSamplePath(sample.zipPath)
 
             logging.getLogger("coretexpylib").info(f"\tDownloaded \"{sample.name}\"")
 
@@ -290,3 +339,40 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject):
             return super().rename(name)
 
         return success
+
+    @abstractmethod
+    def _uploadSample(self, samplePath: Path, sampleName: str) -> SampleType:
+        # Override in data specific classes (ImageDataset, SequenceDataset, etc...)
+        # to implement a specific way of uploading samples
+        pass
+
+    def add(self, samplePath: Union[Path, str], sampleName: Optional[str] = None) -> SampleType:
+        """
+            Uploads the provided archive (.zip, .tar.gz) as Sample to
+            Coretex.ai as a part of this Dataset.
+
+            Parametrs
+            ---------
+            path : Union[Path, str]
+                path to data which will be uploaded
+
+            Returns
+            -------
+            SampleType -> created Sample
+        """
+
+        if isinstance(samplePath, str):
+            samplePath = Path(samplePath)
+
+        if sampleName is None:
+            sampleName = samplePath.stem
+
+        if self.isEncrypted:
+            sample = _encryptedSampleImport(self._sampleType, sampleName, samplePath, self.id, getProjectKey(self.projectId))
+        else:
+            sample = self._uploadSample(samplePath, sampleName)
+
+        # Append the newly created sample to the list of samples
+        self.samples.append(sample)
+
+        return sample

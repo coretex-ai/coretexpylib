@@ -15,23 +15,25 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Dict
+import unittest
 
-from ..image_dataset import ImageDataset
-from ...sample import ComputerVisionSample
-from ....codable import KeyDescriptor
+from coretex import LocalImageSample, LocalImageDataset, ProjectType
+
+from ..base_image_sample_test import BaseImageSampleTest
+from ...utils import createLocalEnvironmentFor
 
 
-class ComputerVisionDataset(ImageDataset[ComputerVisionSample]):
+class TestImageSampleLocal(BaseImageSampleTest.Base):
 
-    """
-        Represents the Computer Vision Dataset class
-        which is used for working with Computer Vision Task type
-    """
+    sample: LocalImageSample
 
     @classmethod
-    def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
-        descriptors = super()._keyDescriptors()
-        descriptors["samples"] = KeyDescriptor("sessions", ComputerVisionSample, list)
+    def setUpClass(cls) -> None:
+        super().setUpClass()
 
-        return descriptors
+        dataset = createLocalEnvironmentFor(ProjectType.computerVision, LocalImageDataset)
+        cls.sample = dataset.samples[0]
+
+
+if __name__ == "__main__":
+    unittest.main()

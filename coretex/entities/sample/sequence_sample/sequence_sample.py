@@ -16,16 +16,10 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import Union
-from typing_extensions import Self
 from pathlib import Path
 
-import logging
-
 from .local_sequence_sample import LocalSequenceSample
-from ..utils import chunkSampleImport
 from ..network_sample import NetworkSample
-from .... import folder_manager
-from ....utils import file as file_utils
 
 
 class SequenceSample(NetworkSample, LocalSequenceSample):
@@ -39,64 +33,20 @@ class SequenceSample(NetworkSample, LocalSequenceSample):
         NetworkSample.__init__(self)
 
     @classmethod
-    def createSequenceSample(cls, path: Union[Path, str], datasetId: int) -> Self:
+    def isValidSequenceFile(cls, path: Union[Path, str]) -> bool:
         """
-            Creates a new sequence sample and adds it to the specified dataset
-
-            Parameters
-            ----------
-            datasetId : int
-                id of dataset to which the sample will be added
-            path : Union[Path, str]
-                path to the sample
-
-            Returns
-            -------
-            Optional[Self] -> The created sample object or None if creation failed
-
-            Raises
-            ------
-            NetworkRequestError, ValueError -> if some kind of error happened during
-            the upload of the provided file
-
-            Example
-            -------
-            >>> from coretex import SequenceSample
-            \b
-            >>> sample = SequenceSample.createSequenceSample("path/to/file", 1023)
-            >>> print(sample.id)
+            Checks whether the file is a valid sequence file or not.
+            File is a valid sequence file if it ends with any of these extensions:
+                - .fasta
+                - .fastq
+                - .fa
+                - .fq
         """
 
-        if isinstance(path, str):
+        if not isinstance(path, Path):
             path = Path(path)
 
-        archivePath = path
-        isTemp = False
+        supportedExtensions = cls.supportedExtensions()
+        supportedExtensions.extend([f"{extension}.gz" for extension in cls.supportedExtensions()])
 
-        if not file_utils.isArchive(path):
-            # Check if the file is valid sequence file
-            if not path.suffix in cls.supportedExtensions():
-                # If not check if file is valid compressed sequence file
-                if len(path.suffixes) < 2:
-                    raise ValueError(f">> [Coretex] \"{path}\" is not a valid sequence file, supported extensions are \"{cls.supportedExtensions()}\"")
-
-                if not path.suffixes[-2] in cls.supportedExtensions():
-                    raise ValueError(f">> [Coretex] \"{path}\" is not a valid sequence file, supported extensions are \"{cls.supportedExtensions()}\"")
-
-                if not path.suffix == ".gz":
-                    raise ValueError(f">> [Coretex] \"{path}\" is not a valid sequence file, supported extensions are \"{cls.supportedExtensions()}\"")
-
-            logging.getLogger("coretexpylib").info(f">> [Coretex] Provided path \"{path}\" is not an archive, zipping...")
-
-            archivePath = folder_manager.temp / f"{path.stem}.zip"
-            file_utils.archive(path, archivePath)
-
-            isTemp = True
-
-        response = chunkSampleImport(path.stem, datasetId, archivePath)
-
-        # Delete the archive if we created it
-        if isTemp:
-            archivePath.unlink()
-
-        return cls.decode(response.getJson(dict))
+        return any(path.name.endswith(extension) for extension in supportedExtensions)
