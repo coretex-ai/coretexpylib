@@ -77,7 +77,7 @@ def edit(project: Optional[str], name: Optional[str], description: Optional[str]
 
     try:
         selectedProject.update(name = selectedProject.name, description = description)
-        response = project_utils.changeProjectVisibility(selectedProject.id, ProjectVisibility.private)
+        response = selectedProject.changeVisibility(ProjectVisibility.private)
 
         if not response.hasFailed():
             ui.successEcho(f"Project id \"{config['projectId']}\" successfully edited.")

@@ -24,7 +24,8 @@ from .base import BaseObject
 from .task import Task
 from .project_type import ProjectType
 from .project_visibility import ProjectVisibility
-
+from ..entity_visibility_type import EntityVisibilityType
+from ...networking import networkManager, NetworkResponse
 
 class Project(BaseObject):
 
@@ -123,3 +124,10 @@ class Project(BaseObject):
 
         self.tasks.append(task)
         return True
+
+    def changeVisibility(self, visibility: ProjectVisibility) -> NetworkResponse:
+        return networkManager.post("entity-visibility", {
+            "entity_id": self.id,
+            "type": EntityVisibilityType.project,
+            "visibility": visibility,
+        })
