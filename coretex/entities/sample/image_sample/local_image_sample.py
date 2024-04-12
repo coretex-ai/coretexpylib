@@ -15,13 +15,13 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from typing import Dict, Any
 from pathlib import Path
-from zipfile import ZipFile
 
 import json
-import os
 
 from .image_sample_data import AnnotatedImageSampleData
+from .image_format import ImageFormat
 from ..local_sample import LocalSample
 from ...annotation import CoretexImageAnnotation
 
@@ -35,6 +35,25 @@ class LocalImageSample(LocalSample[AnnotatedImageSampleData]):
         manipulate local image data and annotations
     """
 
+    @property
+    def imagePath(self) -> Path:
+        for format in ImageFormat:
+            imagePaths = list(self.path.glob(f"*.{format.extension}"))
+            imagePaths = [path for path in imagePaths if not "thumbnail" in str(path)]
+
+            if len(imagePaths) > 0:
+                return Path(imagePaths[0])
+
+        raise FileNotFoundError
+
+    @property
+    def annotationPath(self) -> Path:
+        return self.path / "annotations.json"
+
+    @property
+    def metadataPath(self) -> Path:
+        return self.path / "metadata.json"
+
     def load(self) -> AnnotatedImageSampleData:
         """
             Loads image and its annotation if it exists
@@ -44,7 +63,31 @@ class LocalImageSample(LocalSample[AnnotatedImageSampleData]):
             AnnotatedImageSampleData -> image data and annotation in Coretex.ai format
         """
 
-        return AnnotatedImageSampleData(Path(self.path))
+        return AnnotatedImageSampleData(self.path)
+
+    def loadMetadata(self) -> Dict[str, Any]:
+        """
+            Loads sample metadata into a dictionary
+
+            Returns
+            -------
+            dict[str, Any] -> the metadata as a dict object
+
+            Raises
+            ------
+            FileNotFoundError -> if metadata file is missing\n
+            ValueError -> if json in the metadata file is list
+        """
+
+        if not self.metadataPath.exists():
+            raise FileNotFoundError(f"Metadata file \"{self.metadataPath}\" not found")
+
+        with self.metadataPath.open("r") as metadataFile:
+            metadata = json.load(metadataFile)
+            if not isinstance(metadata, dict):
+                raise ValueError(f"Metatada for sample \"{self.name}\" is a list. Expected dictionary")
+
+            return metadata
 
     def saveAnnotation(self, coretexAnnotation: CoretexImageAnnotation) -> bool:
         """
@@ -55,18 +98,23 @@ class LocalImageSample(LocalSample[AnnotatedImageSampleData]):
             bool -> returns True if successful, False otherwise
         """
 
-        with open(Path(self.path) / "annotations.json", "w") as file:
+        with self.annotationPath.open("w") as file:
             json.dump(coretexAnnotation.encode(), file)
 
-        zipPath = Path(self.zipPath)
-
-        oldZipPath = zipPath.parent / f"{zipPath.stem}-old.zip"
-        zipPath.rename(oldZipPath)
-
-        with ZipFile(zipPath, "w") as zipFile:
-            path = Path(self.path)
-            for element in os.listdir(path):
-                zipFile.write(path / element, arcname = element)
-
-        oldZipPath.unlink()
+        self._updateArchive()
         return True
+
+    def saveMetadata(self, metadata: Dict[str, Any]) -> None:
+        """
+            Saves a json object as metadata for the sample
+
+            Parameters
+            ----------
+            metadata : dict[str, Any]
+                Json object containing sample metadata
+        """
+
+        with self.metadataPath.open("w") as file:
+            json.dump(metadata, file)
+
+        self._updateArchive()

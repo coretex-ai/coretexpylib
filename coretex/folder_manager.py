@@ -15,10 +15,13 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from typing import Iterator, Optional
 from pathlib import Path
+from contextlib import contextmanager
 
 import os
 import shutil
+import uuid
 
 from .utils import file as file_utils
 
@@ -161,3 +164,33 @@ def getRunLogsDir(taskRunId: int) -> Path:
     taskRunLogsDir.mkdir(parents = True, exist_ok = True)
 
     return taskRunLogsDir
+
+
+@contextmanager
+def tempFile(name: Optional[str] = None) -> Iterator[Path]:
+    """
+        Returns a path to temporary file and deletes
+        it if it exists once the context is exited.
+
+        Parameters
+        ----------
+        name : Optional[str]
+            Name of the file. If not specified a random uuid4
+            will be generated and used as the name
+
+        Returns
+        -------
+        Iterator[Path] -> path to the file
+    """
+
+    if name is None:
+        name = str(uuid.uuid4())
+
+    path = temp / name
+    if path.exists():
+        raise FileExistsError(path)
+
+    try:
+        yield path
+    finally:
+        path.unlink(missing_ok = True)

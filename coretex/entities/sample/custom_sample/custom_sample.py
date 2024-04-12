@@ -15,13 +15,8 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, Union
-from typing_extensions import Self
-from pathlib import Path
-
 from .custom_sample_data import CustomSampleData
 from .local_custom_sample import LocalCustomSample
-from ..utils import chunkSampleImport
 from ..network_sample import NetworkSample
 
 
@@ -35,44 +30,3 @@ class CustomSample(NetworkSample[CustomSampleData], LocalCustomSample):
 
     def __init__(self) -> None:
         NetworkSample.__init__(self)
-
-    @classmethod
-    def createCustomSample(
-        cls,
-        name: str,
-        datasetId: int,
-        filePath: Union[Path, str]
-    ) -> Optional[Self]:
-        """
-            Creates a new custom sample with specified properties\n
-            For creating custom sample, sample must be an archive
-
-            Parameters
-            ----------
-            name : str
-                sample name
-            datasetId : int
-                id of dataset to which the sample will be added
-            filePath : Union[Path, str]
-                path to the sample
-
-            Returns
-            -------
-            Optional[Self] -> The created sample object or None if creation failed
-
-            Raises
-            ------
-            NetworkRequestError, ValueError -> if some kind of error happened during
-            the upload of the provided file
-
-            Example
-            -------
-            >>> from coretex import CustomSample
-            \b
-            >>> sample = CustomSample.createCustomSample("name", 1023, "path/to/file")
-            >>> if sample is None:
-                    print("Failed to create custom sample")
-        """
-
-        response = chunkSampleImport(name, datasetId, filePath)
-        return cls.decode(response.getJson(dict))

@@ -47,11 +47,12 @@ class Sample(ABC, Generic[SampleDataType]):
         pass
 
     @abstractmethod
-    def download(self, ignoreCache: bool = False) -> None:
+    def download(self, decrypt: bool = True, ignoreCache: bool = False) -> None:
         """
             Downloads the Sample if it is an instance or a subclass of NetworkSample
             Ignored for instances and subclasses of LocalSample
         """
+
         pass
 
     def __unzipSample(self) -> None:
@@ -71,6 +72,9 @@ class Sample(ABC, Generic[SampleDataType]):
                 if set to false performs unzip action even if
                 sample is previously unzipped
         """
+
+        if not self.zipPath.exists():
+            raise FileNotFoundError(f"Sample \"{self.name}\" archive does not exist at path \"{self.zipPath}\"")
 
         if self.path.exists() and not ignoreCache:
             return
@@ -113,4 +117,17 @@ class Sample(ABC, Generic[SampleDataType]):
         if isinstance(other, str):
             other = Path(other)
 
-        return Path(self.path) / other
+        return self.path / other
+
+    def _updateArchive(self) -> None:
+        oldZipPath = self.zipPath.parent / f"{self.zipPath.stem}-old.zip"
+        self.zipPath.rename(oldZipPath)
+
+        with ZipFile(self.zipPath, "w") as zipFile:
+            for value in self.path.rglob("*"):
+                if not value.is_file():
+                    continue
+
+                zipFile.write(value, value.relative_to(self.path))
+
+        oldZipPath.unlink()

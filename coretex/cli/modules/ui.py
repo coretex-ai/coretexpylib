@@ -77,6 +77,10 @@ def previewConfig(config: Dict[str, Any]) -> None:
     stdEcho(tabulate(table))
 
 
+def outputUrl(entityUrl: str) -> str:
+    return f"https://app.coretex.ai/{entityUrl}"
+
+
 def stdEcho(text: str) -> None:
     click.echo(click.style(f"\n{text}", fg = "cyan"))
 

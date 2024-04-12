@@ -47,18 +47,15 @@ def guessMimeType(filePath: Union[Path, str]) -> str:
 
         Returns
         -------
-        str -> guessed mime type
-
-        Raises
-        ------
-        InvalidFileExtension -> if it is not possible to guess mime type
+        str -> guessed mime type, or "application/octet-stream" if
+        it was not possible to guess
     """
 
     mimeTypesResult = mimetypes.guess_type(filePath)
 
     mimeType = mimeTypesResult[0]
     if mimeType is None:
-        raise InvalidFileExtension
+        return "application/octet-stream"
 
     return mimeType
 
