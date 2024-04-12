@@ -21,10 +21,8 @@ from pathlib import Path
 import logging
 import subprocess
 
-from ..severity import LogSeverity
 
-
-def logProcessOutput(output: bytes, severity: LogSeverity) -> None:
+def logProcessOutput(output: bytes, level: int) -> None:
     decoded = output.decode("UTF-8")
 
     for line in decoded.split("\n"):
@@ -33,7 +31,7 @@ def logProcessOutput(output: bytes, severity: LogSeverity) -> None:
             continue
 
         # ignoring type for now, has to be fixed in coretexpylib
-        logging.getLogger("coretexpylib").log(severity.stdSeverity, line)
+        logging.getLogger("coretexpylib").log(level, line)
 
 
 class CommandException(Exception):
@@ -73,7 +71,7 @@ def command(
             line = stdout.readline()
             stdOutStr = "\n".join([stdOutStr, line.decode("utf-8")])
             if not ignoreStdout:
-                logProcessOutput(line, LogSeverity.info)
+                logProcessOutput(line, logging.INFO)
 
     if stderr is None and not ignoreStderr:
         commandArgs = " ".join(args)
@@ -83,7 +81,7 @@ def command(
         lines = stderr.readlines()
         stdErrStr = b"".join(lines).decode("utf-8")
         if not ignoreStderr:
-            logProcessOutput(b"".join(lines), LogSeverity.warning if returnCode == 0 else LogSeverity.fatal)
+            logProcessOutput(b"".join(lines), logging.WARNING if returnCode == 0 else logging.FATAL)
 
     if returnCode != 0 and check:
         commandArgs = " ".join(args)

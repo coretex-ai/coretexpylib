@@ -20,7 +20,7 @@ from logging import Formatter, LogRecord
 
 import json
 
-from ..severity import LogSeverity
+from .severity import LogSeverity
 
 
 FormatStyle = Literal["%", "{", "$"]
@@ -61,7 +61,7 @@ class CTXFormatter(Formatter):
         if self.jsonOutput:
             return json.dumps({
                 "severity": severity.value,
-                "message": formatted
+                "message": formatted + "\n"
             })
 
         return formatted

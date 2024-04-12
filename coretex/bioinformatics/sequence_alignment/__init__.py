@@ -23,7 +23,7 @@ import os
 
 from ...utils import command, logProcessOutput, CommandException
 from ...entities import CustomDataset
-from ...severity import LogSeverity
+from ...logging import LogSeverity
 
 
 def indexCommand(bwaPath: Path, sequencePath: Path, prefix: Path) -> None:

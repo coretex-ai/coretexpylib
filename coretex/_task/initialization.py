@@ -26,7 +26,7 @@ from .current_task_run import setCurrentTaskRun
 from .. import folder_manager
 from ..entities import TaskRun, TaskRunStatus
 from ..logging import createFormatter, initializeLogger
-from ..severity import LogSeverity
+from ..logging.severity import LogSeverity
 from ..networking import RequestFailedError
 
 
@@ -42,7 +42,8 @@ def _initializeLogger(taskRun: TaskRun) -> None:
     streamHandler.setLevel(severity.stdSeverity)
     streamHandler.setFormatter(createFormatter(
         includeTime = False,
-        includeLevel = taskRun.isLocal
+        includeLevel = taskRun.isLocal,
+        jsonOutput = True
     ))
 
     logPath = folder_manager.getRunLogsDir(taskRun.id) / "run.log"

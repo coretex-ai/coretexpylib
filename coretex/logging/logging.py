@@ -22,7 +22,7 @@ import sys
 import logging
 
 from .formatter import CTXFormatter
-from ..severity import LogSeverity
+from .severity import LogSeverity
 from ..utils import createFileHandler
 
 
@@ -58,7 +58,8 @@ def createFormatter(
 def initializeLogger(
     severity: LogSeverity,
     logPath: Path,
-    streamHandler: Optional[logging.StreamHandler] = None
+    streamHandler: Optional[logging.StreamHandler] = None,
+    jsonOutput: bool = False
 ) -> None:
 
     """
@@ -80,12 +81,13 @@ def initializeLogger(
         streamHandler.setLevel(severity.stdSeverity)
 
         streamHandler.setFormatter(createFormatter(
-            includeTime = False
+            includeTime = False,
+            jsonOutput = jsonOutput
         ))
 
     fileHandler = createFileHandler(logPath)
     fileHandler.setLevel(logging.DEBUG)
-    fileHandler.setFormatter(createFormatter(includeColor = False))
+    fileHandler.setFormatter(createFormatter(includeColor = False, jsonOutput = False))
 
     logging.basicConfig(
         level = logging.NOTSET,

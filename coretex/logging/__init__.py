@@ -17,3 +17,4 @@
 
 from .log import Log
 from .logging import createFormatter, initializeLogger
+from .severity import LogSeverity

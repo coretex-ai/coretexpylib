@@ -15,11 +15,13 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
+from typing_extensions import Self
 
 import time
+import json
 
-from ..severity import LogSeverity
+from .severity import LogSeverity
 from ..utils import mathematicalRound
 
 
@@ -41,12 +43,25 @@ class Log:
         self.severity = severity
         self.message = message
 
-        # Here for backwards compatibility
-        self.type = 1
-
     def encode(self) -> Dict[str, Any]:
         return {
             "timestamp": self.timestamp,
             "severity": self.severity.value,
-            "content": self.message
+            "content": self.message,
+            "type": 1  # Here for backwards compatibility
         }
+
+    @classmethod
+    def parse(cls, value: str) -> Tuple[Self, str]:
+        try:
+            jsonLog = json.loads(value)
+
+            if not isinstance(jsonLog, dict):
+                raise ValueError
+
+            if len(jsonLog) != 2:
+                raise ValueError
+
+            return cls(LogSeverity(jsonLog["severity"]), jsonLog["message"]), jsonLog["message"]
+        except:
+            return cls(LogSeverity.info, value.rstrip()), value
