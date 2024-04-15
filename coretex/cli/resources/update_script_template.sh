@@ -92,6 +92,8 @@ should_update() {{
 }}
 
 pull_image() {{
+    echo "Removing existing image..."
+    $DOCKER_PATH image rm "$IMAGE"
     if $DOCKER_PATH image pull "$IMAGE"; then
         echo "Image pulled successfully: $IMAGE"
         return 0

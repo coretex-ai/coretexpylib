@@ -45,6 +45,8 @@ class ImageType(Enum):
 
 def pull(image: str) -> None:
     try:
+        progressEcho(f"Deleting existing image...")
+        docker.removeImage(image)
         progressEcho(f"Fetching image {image}...")
         docker.imagePull(image)
         successEcho(f"Image {image} successfully fetched.")

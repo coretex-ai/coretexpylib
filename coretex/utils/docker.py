@@ -53,6 +53,10 @@ def removeNetwork(name: str) -> None:
     command(["docker", "network", "rm", name], ignoreStdout = True, ignoreStderr = True)
 
 
+def removeImage(image: str) -> None:
+    command(["docker", "image", "rm", image], ignoreStdout = True, ignoreStderr = True)
+
+
 def imagePull(image: str) -> None:
     command(["docker", "image", "pull", image])
 
