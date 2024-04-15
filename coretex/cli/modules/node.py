@@ -43,16 +43,30 @@ class ImageType(Enum):
     custom = "custom"
 
 
-def pull(image: str) -> None:
+def pull(image: str, containerRunning: bool = False) -> None:
     try:
-        progressEcho(f"Deleting existing image...")
-        docker.removeImage(image)
+
+        if not containerRunning:
+            progressEcho(f"Removing outdated existing image...")
+            docker.removeImage(image)
+
         progressEcho(f"Fetching image {image}...")
         docker.imagePull(image)
+
         successEcho(f"Image {image} successfully fetched.")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to fetch latest node version.")
+
+
+def removeOldImage() -> None:
+    try:
+        progressEcho(f"Removing outdated existing image...")
+        imageId = docker.fetchCurrentImageId(config_defaults.DOCKER_CONTAINER_NAME)
+        docker.removeImage(imageId)
+    except BaseException as ex:
+        logging.getLogger("cli").debug(ex, exc_info = ex)
+        raise NodeException("Failed to remove old image")
 
 
 def isRunning() -> bool:

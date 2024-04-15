@@ -20,7 +20,7 @@ from typing import Optional
 import click
 
 from ..modules import node as node_module
-from ..modules.ui import clickPrompt, successEcho, errorEcho, previewConfig
+from ..modules.ui import clickPrompt, stdEcho, successEcho, errorEcho, previewConfig
 from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate, dumpScript, UPDATE_SCRIPT_NAME
 from ..modules.utils import onBeforeCommandExecute
 from ..modules.user import initializeUserSession
@@ -54,8 +54,8 @@ def start(image: Optional[str]) -> None:
 
     dockerImage = config["image"]
 
-    # if node_module.shouldUpdate(dockerImage):
-    #     node_module.pull(dockerImage)
+    if node_module.shouldUpdate(dockerImage):
+        node_module.pull(dockerImage)
 
     node_module.start(dockerImage, config)
 
@@ -102,7 +102,8 @@ def update() -> None:
         successEcho("Node is already up to date.")
         return
 
-    node_module.pull(dockerImage)
+    stdEcho("Updating node...")
+    node_module.pull(dockerImage, containerRunning = True)
 
     if getNodeStatus() == NodeStatus.busy:
         if not clickPrompt(
@@ -114,6 +115,7 @@ def update() -> None:
             return
 
     node_module.stop()
+    node_module.removeOldImage()
 
     node_module.start(dockerImage, config)
 

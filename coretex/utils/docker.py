@@ -53,6 +53,10 @@ def removeNetwork(name: str) -> None:
     command(["docker", "network", "rm", name], ignoreStdout = True, ignoreStderr = True)
 
 
+def fetchCurrentImageId(containerName: str) -> str:
+    _, imageId, _ = command(["docker", "inspect", "-f", "'{{.Image}}'", containerName], ignoreStderr = True)
+    return imageId.strip()
+
 def removeImage(image: str) -> None:
     command(["docker", "image", "rm", image], ignoreStdout = True, ignoreStderr = True)
 
