@@ -2,7 +2,6 @@ from typing import List, Any
 from pathlib import Path
 from logging import Logger
 
-import logging
 import subprocess
 
 from threading import Thread
