@@ -20,3 +20,4 @@ from .current_task_run import currentTaskRun
 from .initialization import _prepareForExecution, initializeRTask
 from .worker import TaskRunWorker
 from .logging import LoggerUploadWorker
+from .process_utils import realtimeCommand

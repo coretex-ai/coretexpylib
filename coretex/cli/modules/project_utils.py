@@ -58,13 +58,14 @@ def getProject(name: Optional[str], config: Dict[str, Any]) -> Optional[Project]
     )
 
 
-def isProjectSelected() -> None:
+def isProjectSelected() -> bool:
     config = loadConfig()
 
     if config.get("projectId") is None:
-        raise RuntimeError("Project not selected, please use \"coretex project select\" command first.")
+        return False
 
     try:
         Project.fetchById(config["projectId"])
+        return True
     except:
-        raise RuntimeError("Selected project is not valid, please use \"coretex project select\" and select a valid project.")
+        return False

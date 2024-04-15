@@ -45,13 +45,13 @@ def command(
     ignoreStdout: bool = False,
     ignoreStderr: bool = False,
     shell: bool = False,
-    check: bool = True,
+    check: bool = True
 ) -> Tuple[int, str, str]:
 
     process = subprocess.Popen(
         args,
         shell = shell,
-        cwd = Path(__file__).parent,
+        cwd = Path.cwd(),
         stdout = subprocess.PIPE,
         stderr = subprocess.PIPE
     )
