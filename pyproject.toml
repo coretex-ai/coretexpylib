@@ -1,6 +1,6 @@
 [project]
 name = "coretex"
-version = "1.0.95"
+version = "1.0.107"
 authors = [
   { name="Duško Mirković", email="dmirkovic@coretex.ai" }
 ]
@@ -40,7 +40,8 @@ dependencies = [
   "tabulate",
   "inquirer",
   "docker",
-  "cryptography"
+  "cryptography",
+  "pycryptodome"
 ]
 
 [project.urls]

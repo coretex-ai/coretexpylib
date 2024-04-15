@@ -34,10 +34,11 @@ import requests.adapters
 
 from .utils import RequestBodyType, RequestFormType, logFilesData, logRequestFailure
 from .request_type import RequestType
-from .network_response import NetworkResponse
+from .network_response import NetworkResponse, NetworkRequestError
 from .file_data import FileData
 
 
+REQUEST_TIMEOUT = 5
 MAX_RETRY_COUNT = 5
 LOGIN_ENDPOINT = "user/login"
 REFRESH_ENDPOINT = "user/refresh"
@@ -50,6 +51,8 @@ RETRY_STATUS_CODES = [
     HTTPStatus.INTERNAL_SERVER_ERROR,
     HTTPStatus.SERVICE_UNAVAILABLE
 ]
+
+TimeoutType = Optional[Union[int, Tuple[int, int]]]
 
 
 def getDelayBeforeRetry(retryCount: int) -> int:
@@ -176,6 +179,7 @@ class NetworkManagerBase(ABC):
         body: Optional[RequestBodyType] = None,
         files: Optional[RequestFormType] = None,
         auth: Optional[Tuple[str, str]] = None,
+        timeout: Optional[TimeoutType] = REQUEST_TIMEOUT,
         stream: bool = False,
         retryCount: int = 0
     ) -> NetworkResponse:
@@ -242,6 +246,7 @@ class NetworkManagerBase(ABC):
                 params = query,
                 data = data,
                 auth = auth,
+                timeout = timeout,
                 files = files,
                 headers = headers
             )
@@ -261,7 +266,7 @@ class NetworkManagerBase(ABC):
 
                     time.sleep(delay)
 
-                return self.request(endpoint, requestType, headers, query, body, files, auth, stream, retryCount + 1)
+                return self.request(endpoint, requestType, headers, query, body, files, auth, timeout, stream, retryCount + 1)
 
             return response
         except BaseException as exception:
@@ -271,7 +276,7 @@ class NetworkManagerBase(ABC):
                 if self._apiToken is not None:
                     headers[API_TOKEN_HEADER] = self._apiToken
 
-                return self.request(endpoint, requestType, headers, query, body, files, auth, stream, retryCount + 1)
+                return self.request(endpoint, requestType, headers, query, body, files, auth, timeout, stream, retryCount + 1)
 
             raise RequestFailedError(endpoint, requestType)
 
@@ -365,7 +370,8 @@ class NetworkManagerBase(ABC):
         self,
         endpoint: str,
         params: Optional[Dict[str, Any]] = None,
-        files: Optional[List[FileData]] = None
+        files: Optional[List[FileData]] = None,
+        timeout: TimeoutType = REQUEST_TIMEOUT
     ) -> NetworkResponse:
 
         """
@@ -379,6 +385,8 @@ class NetworkManagerBase(ABC):
                 form data parameters
             files : Optional[List[FileData]]
                 form data files
+            timeout : Optional[Union[int, Tuple[int, int]]]
+                timeout for the request
 
             Returns
             -------
@@ -407,7 +415,14 @@ class NetworkManagerBase(ABC):
             headers = self._headers("multipart/form-data")
             del headers["Content-Type"]
 
-            return self.request(endpoint, RequestType.post, headers, body = params, files = filesData)
+            if len(files) > 0:
+                response = self.request(endpoint, RequestType.options, timeout = REQUEST_TIMEOUT)
+                if response.hasFailed():
+                    raise NetworkRequestError(response, "Could not establish a connection with the server")
+
+                timeout = None
+
+            return self.request(endpoint, RequestType.post, headers, body = params, files = filesData, timeout = timeout)
 
         # mypy is complaining about missing return statement but this code is unreachable
         # see: https://github.com/python/mypy/issues/7726

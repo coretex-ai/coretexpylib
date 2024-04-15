@@ -15,13 +15,25 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from ..image_sample import LocalImageSample
+import unittest
+
+from coretex import LocalImageSample, LocalImageDataset, ProjectType
+
+from ..base_image_sample_test import BaseImageSampleTest
+from ...utils import createLocalEnvironmentFor
 
 
-class LocalComputerVisionSample(LocalImageSample):
+class TestImageSampleLocal(BaseImageSampleTest.Base):
 
-    """
-        Represents local sample linked to task of type Computer Vision from Coretex.ai
-    """
+    sample: LocalImageSample
 
-    pass
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+
+        dataset = createLocalEnvironmentFor(ProjectType.computerVision, LocalImageDataset)
+        cls.sample = dataset.samples[0]
+
+
+if __name__ == "__main__":
+    unittest.main()

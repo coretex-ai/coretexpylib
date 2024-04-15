@@ -1,4 +1,4 @@
-from typing import Tuple, TypeVar, Type, Optional
+from typing import Tuple, TypeVar, Type
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -7,7 +7,8 @@ import json
 import shutil
 import zipfile
 
-from coretex import *
+from coretex import NetworkDataset, LocalDataset, ProjectType, NetworkSample, Project, \
+    ImageDataset, ImageDatasetClasses, ImageDatasetClass, createDataset
 
 
 RemoteDatasetType = TypeVar("RemoteDatasetType", bound = NetworkDataset)
@@ -30,9 +31,9 @@ def getDatasetPathForType(type_: ProjectType) -> Path:
     raise ValueError(f">> [Coretex] {type_.name} has no resources")
 
 
-def _createSampleFor(type_: ProjectType, datasetId: int, samplePath: Path) -> Optional[NetworkSample]:
+def _createSampleFor(type_: ProjectType, dataset: NetworkDataset[NetworkSample], samplePath: Path) -> NetworkSample:
     if type_ == ProjectType.other:
-        return CustomSample.createCustomSample(generateUniqueName(), datasetId, samplePath)
+        return dataset.add(samplePath, generateUniqueName())
 
     if type_ == ProjectType.computerVision:
         extractionDir = samplePath.parent / samplePath.stem
@@ -40,7 +41,7 @@ def _createSampleFor(type_: ProjectType, datasetId: int, samplePath: Path) -> Op
         with ZipFile(samplePath) as zipFile:
             zipFile.extractall(extractionDir)
 
-        sample = ImageSample.createImageSample(datasetId, extractionDir / "image.jpeg")
+        sample = dataset.add(extractionDir / "image.jpeg")
 
         shutil.rmtree(extractionDir)
         return sample
@@ -48,23 +49,23 @@ def _createSampleFor(type_: ProjectType, datasetId: int, samplePath: Path) -> Op
     raise ValueError(f">> [Coretex] Unsupported type {type_.name}")
 
 
-def createRemoteEnvironmentFor(Type_: ProjectType, datasetType: Type[RemoteDatasetType]) -> Tuple[Project, RemoteDatasetType]:
-    project = Project.createProject(generateUniqueName(), Type_)
+def createRemoteEnvironmentFor(type_: ProjectType, datasetType: Type[RemoteDatasetType]) -> Tuple[Project, RemoteDatasetType]:
+    project = Project.createProject(generateUniqueName(), type_)
     if project is None:
         raise ValueError(">> [Coretex] Failed to create project")
 
     with createDataset(datasetType, generateUniqueName(), project.id) as dataset:
-        datasetPath = getDatasetPathForType(Type_)
+        datasetPath = getDatasetPathForType(type_)
         for path in datasetPath.iterdir():
             # Gotta check this because macos creates .DS_store files
             if not zipfile.is_zipfile(path):
                 continue
 
-            sample = _createSampleFor(Type_, dataset.id, path)
+            sample = _createSampleFor(type_, dataset, path)
             if sample is None:
                 raise ValueError(">> [Coretex] Failed to create sample")
 
-        if isinstance(dataset, ComputerVisionDataset):
+        if isinstance(dataset, ImageDataset):
             with datasetPath.joinpath("classes.json").open("r") as classFile:
                 classes = ImageDatasetClasses(
                     [ImageDatasetClass.decode(element) for element in json.load(classFile)]
@@ -76,8 +77,8 @@ def createRemoteEnvironmentFor(Type_: ProjectType, datasetType: Type[RemoteDatas
     if not dataset.refresh():
         raise RuntimeError(">> [Coretex] Failed to fetch dataset")
 
-    return project, dataset  # type: ignore
+    return project, dataset
 
 
-def createLocalEnvironmentFor(Type_: ProjectType, datasetType: Type[LocalDatasetType]) -> LocalDatasetType:
-    return datasetType(getDatasetPathForType(Type_))  # type: ignore
+def createLocalEnvironmentFor(type_: ProjectType, datasetType: Type[LocalDatasetType]) -> LocalDatasetType:
+    return datasetType(getDatasetPathForType(type_))  # type: ignore

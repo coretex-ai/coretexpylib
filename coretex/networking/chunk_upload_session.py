@@ -141,3 +141,31 @@ class ChunkUploadSession:
             self.__uploadChunk(uploadId, start, end)
 
         return uploadId
+
+
+def fileChunkUpload(path: Path, chunkSize: int = MAX_CHUNK_SIZE) -> str:
+    """
+        Uploads file in chunks to Coretex.ai server.
+        Should be used when uploading large files.
+
+        Parameters
+        ----------
+        path : Path
+            File which will be uploaded in chunks
+        chunkSize : int
+            Size of the chunks into which file will be split
+            before uploading. Maximum value is 128 MiBs
+
+        Returns
+        -------
+        str -> id of the file which was uploaded
+    """
+
+    if not path.is_file():
+        raise ValueError(f"{path} is not a file")
+
+    if chunkSize > MAX_CHUNK_SIZE:
+        chunkSize = MAX_CHUNK_SIZE
+
+    uploadSession = ChunkUploadSession(MAX_CHUNK_SIZE, path)
+    return uploadSession.run()

@@ -15,18 +15,15 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Any, Final, Optional, List, Set
+from typing import Any, Final, List, Set
 from enum import Enum
 from abc import ABC, abstractmethod
 
 import logging
 
 from ..annotation import CoretexImageAnnotation
-from ...entities import ImageDataset, ImageSample, ImageDatasetClass
+from ...entities import ImageDataset, ImageDatasetClass
 from ...threading import MultithreadedDataProcessor
-
-
-ImageDatasetType = ImageDataset[ImageSample]
 
 
 class ConverterProcessorType(Enum):
@@ -64,20 +61,11 @@ class BaseConverter(ABC):
     """
 
     def __init__(self, datasetName: str, projectId: int, datasetPath: str) -> None:
-        dataset: ImageDatasetType = ImageDataset.createDataset(datasetName, projectId)
-
-        self._dataset: Final = dataset
+        self._dataset: Final = ImageDataset.createDataset(datasetName, projectId)
         self._datasetPath: Final = datasetPath
 
     def _saveImageAnnotationPair(self, imagePath: str, annotation: CoretexImageAnnotation) -> None:
-        # Create sample
-        sample = ImageSample.createImageSample(self._dataset.id, imagePath)
-        if sample is None:
-            logging.getLogger("coretexpylib").info(">> [Coretex] Failed to create sample")
-            return
-
-        # Add created sample to dataset
-        self._dataset.samples.append(sample)
+        sample = self._dataset.add(imagePath)
 
         # Attach annotation to sample
         if not sample.saveAnnotation(annotation):
@@ -95,7 +83,7 @@ class BaseConverter(ABC):
     def _extractSingleAnnotation(self, value: Any) -> None:
         pass
 
-    def convert(self) -> ImageDatasetType:
+    def convert(self) -> ImageDataset:
         """
             Converts the dataset to Coretex Format
 
