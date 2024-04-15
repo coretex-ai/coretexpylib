@@ -1,5 +1,6 @@
 from typing import List, Any
 from pathlib import Path
+from logging import Logger
 
 import logging
 import subprocess
@@ -10,7 +11,7 @@ from . import LoggerUploadWorker
 from ..entities import Log, LogSeverity
 
 
-def _handleOutput(process: subprocess.Popen, worker: LoggerUploadWorker) -> None:
+def _handleOutput(process: subprocess.Popen, worker: LoggerUploadWorker, logger: Logger) -> None:
     stdout = process.stdout
     if stdout is None:
         raise ValueError("stdout is None for subprocess")
@@ -21,10 +22,10 @@ def _handleOutput(process: subprocess.Popen, worker: LoggerUploadWorker) -> None
             continue
 
         worker.add(Log.create(line.rstrip(), LogSeverity.info))
-        logging.info(line.rstrip())
+        logger.info(line.rstrip())
 
 
-def _handleError(process: subprocess.Popen, worker: LoggerUploadWorker, isEnabled: bool) -> None:
+def _handleError(process: subprocess.Popen, worker: LoggerUploadWorker, isEnabled: bool, logger: Logger) -> None:
     stderr = process.stderr
     if stderr is None:
         raise ValueError("stderr is None for subprocess")
@@ -41,18 +42,19 @@ def _handleError(process: subprocess.Popen, worker: LoggerUploadWorker, isEnable
     # Dump stderr output at the end to perserve stdout order
     for line in lines:
         if isEnabled and process.returncode == 0:
-            logging.warning(line)
+            logger.warning(line)
         elif isEnabled:
-            logging.error(line)
+            logger.error(line)
         else:
             # We always want to know what gets logged to stderr
-            logging.debug(line)
+            logger.debug(line)
 
 
-def realtimeCommand(
+def executeProcess(
     args: List[str],
     worker: Any,
     captureErr: bool,
+    logger: Logger,
     cwd: Path = Path.cwd()
 ) -> int:
 
@@ -67,7 +69,7 @@ def realtimeCommand(
      # Run a thread which captures process stdout and prints it out to Coretex.ai console
     Thread(
         target = _handleOutput,
-        args = (process, worker),
+        args = (process, worker, logger),
         name = "Process stdout reader"
     ).start()
 
@@ -75,7 +77,7 @@ def realtimeCommand(
         # Run a thread which captures process stderr and dumps it out node log file
         Thread(
             target = _handleError,
-            args = (process, worker, captureErr),
+            args = (process, worker, captureErr, logger),
             name = "Process stderr reader"
         ).start()
 

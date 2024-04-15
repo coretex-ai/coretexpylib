@@ -15,4 +15,8 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .resources import RESOURCES_DIR
+
+from pathlib import Path
+
+
+PYTHON_ENTRY_POINT_PATH = Path.cwd().joinpath("coretex", "resources", "_coretex.py")

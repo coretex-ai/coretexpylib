@@ -19,17 +19,18 @@ from typing import Optional
 from pathlib import Path
 
 import sys
+import logging
 
 import click
 
-from ..resources import LOCAL_EXEC_PATH
 from ..modules.user import initializeUserSession
 from ..modules.utils import onBeforeCommandExecute
 from ..modules.project_utils import isProjectSelected
-from ..._task import TaskRunWorker, LoggerUploadWorker, realtimeCommand
+from ..._task import TaskRunWorker, LoggerUploadWorker, executeProcess
 from ..._task.local.task_config import readTaskConfig
 from ...configuration import loadConfig
 from ...entities import TaskRun, TaskRunStatus, Project
+from ...resources import PYTHON_ENTRY_POINT_PATH
 
 
 class RunException(Exception):
@@ -66,16 +67,17 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
 
     with TaskRunWorker(config["refreshToken"], taskRun.id) as worker:
         loggerUploadWorker = LoggerUploadWorker(taskRun.id)
-        returnCode = realtimeCommand(
+        returnCode = executeProcess(
         [
             sys.executable,
-            str(LOCAL_EXEC_PATH),
+            str(PYTHON_ENTRY_POINT_PATH),
             "--taskRunId", str(taskRun.id),
             "--refreshToken", config["refreshToken"],
             "--projectId", str(config["projectId"])
         ],
         loggerUploadWorker,
         True,
+        logging.getLogger("cli"),
         cwd=Path.cwd()
     )
 
