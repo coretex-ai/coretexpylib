@@ -43,13 +43,8 @@ class ImageType(Enum):
     custom = "custom"
 
 
-def pull(image: str, containerRunning: bool = False) -> None:
+def pull(image: str) -> None:
     try:
-
-        if not containerRunning:
-            progressEcho(f"Removing outdated existing image...")
-            docker.removeImage(image)
-
         progressEcho(f"Fetching image {image}...")
         docker.imagePull(image)
 
@@ -59,14 +54,14 @@ def pull(image: str, containerRunning: bool = False) -> None:
         raise NodeException("Failed to fetch latest node version.")
 
 
-def removeOldImage() -> None:
+def removeDanglingImages(repository: str) -> None:
     try:
-        progressEcho(f"Removing outdated existing image...")
-        imageId = docker.fetchCurrentImageId(config_defaults.DOCKER_CONTAINER_NAME)
-        docker.removeImage(imageId)
+        progressEcho(f"Removing outdated images...")
+        docker.removeDanglingImages(repository)
+
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
-        raise NodeException("Failed to remove old image")
+        raise NodeException("Failed to remove old images")
 
 
 def isRunning() -> bool:

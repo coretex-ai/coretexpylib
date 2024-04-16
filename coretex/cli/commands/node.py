@@ -53,11 +53,13 @@ def start(image: Optional[str]) -> None:
         saveConfig(config)
 
     dockerImage = config["image"]
+    repository = dockerImage.split(":")[0]
 
     if node_module.shouldUpdate(dockerImage):
         node_module.pull(dockerImage)
 
     node_module.start(dockerImage, config)
+    node_module.removeDanglingImages(repository)
 
     activateAutoUpdate(CONFIG_DIR, config)
 
@@ -76,6 +78,7 @@ def stop() -> None:
 def update() -> None:
     config = loadConfig()
     dockerImage = config["image"]
+    repository = dockerImage.split(":")[0]
 
     nodeStatus = getNodeStatus()
 
@@ -115,9 +118,9 @@ def update() -> None:
             return
 
     node_module.stop()
-    node_module.removeOldImage()
 
     node_module.start(dockerImage, config)
+    node_module.removeDanglingImages(repository)
 
 
 @click.command()
