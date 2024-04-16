@@ -247,7 +247,7 @@ def promptCpu(config: Dict[str, Any], cpuLimit: int) -> int:
 
 
 def promptRam(config: Dict[str, Any], ramLimit: int) -> int:
-    nodeRam: int = clickPrompt(f"Node RAM memory limit in GB (Minimum: 6GB, Maximum: {ramLimit}) (press enter to use default)", ramLimit, type = int)
+    nodeRam: int = clickPrompt(f"Node RAM memory limit in GB (Minimum: {config_defaults.MINIMUM_RAM_MEMORY}GB, Maximum: {ramLimit}GB) (press enter to use default)", ramLimit, type = int)
 
     if nodeRam > ramLimit:
         errorEcho(f"ERROR: RAM limit in Docker Desktop ({ramLimit}GB) is lower than the configured value ({config['ramLimit']}GB). Please adjust resource limitations in Docker Desktop settings.")
