@@ -25,7 +25,8 @@ from .task import Task
 from .project_type import ProjectType
 from .project_visibility import ProjectVisibility
 from ..entity_visibility_type import EntityVisibilityType
-from ...networking import networkManager, NetworkResponse
+from ...networking import networkManager, NetworkResponse, NetworkRequestError
+
 
 class Project(BaseObject):
 
@@ -53,9 +54,9 @@ class Project(BaseObject):
             name : str
                 project name
             projectType : ProjectType
-                project type of created object
+                type of the created Project
             visibility : ProjectVisibility
-                visibility type of created object
+                visibility of the created Project
             description : Optional[str]
                 project description
 
@@ -125,9 +126,33 @@ class Project(BaseObject):
         self.tasks.append(task)
         return True
 
-    def changeVisibility(self, visibility: ProjectVisibility) -> NetworkResponse:
-        return networkManager.post("entity-visibility", {
+    def updateVisibility(self, visibility: ProjectVisibility) -> bool:
+        """
+            Updates visibility of the project
+
+            Parameters
+            ----------
+            visibility : ProjectVisibility
+                visibility of the project
+
+            Returns
+            -------
+            bool -> True if the visibility of the Project is successfully updated
+
+            Raises
+            ------
+            NetworkRequestError -> If request for updating the Project visibility failed
+        """
+
+        parameters = {
             "entity_id": self.id,
             "type": EntityVisibilityType.project,
-            "visibility": visibility,
-        })
+            "visibility": visibility
+        }
+
+        response = networkManager.post("entity-visibility", parameters)
+
+        if response.hasFailed():
+            raise NetworkRequestError(response, "Failed to update visibility of the Project.")
+
+        return True
