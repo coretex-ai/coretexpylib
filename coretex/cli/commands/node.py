@@ -106,7 +106,7 @@ def update() -> None:
         return
 
     stdEcho("Updating node...")
-    node_module.pull(dockerImage, containerRunning = True)
+    node_module.pull(dockerImage)
 
     if getNodeStatus() == NodeStatus.busy:
         if not clickPrompt(
