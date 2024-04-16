@@ -84,8 +84,8 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
             cwd=Path.cwd()
         )
 
-    loggerUploadWorker.uploadLogs()
-    if returnCode != 0:
-        taskRun.updateStatus(TaskRunStatus.completedWithError)
-    else:
-        taskRun.updateStatus(TaskRunStatus.completedWithSuccess)
+        loggerUploadWorker.uploadLogs()
+        if returnCode != 0:
+            taskRun.updateStatus(TaskRunStatus.completedWithError)
+        else:
+            taskRun.updateStatus(TaskRunStatus.completedWithSuccess)

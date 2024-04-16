@@ -23,8 +23,9 @@ def _handleOutput(process: subprocess.Popen, worker: LoggerUploadWorker) -> None
         if line.strip() == "":
             continue
 
-        worker.add(Log.create(line.rstrip(), LogSeverity.info))
-        runLogger.info(line.rstrip())
+        line = line.rstrip()
+        worker.add(Log.create(line, LogSeverity.info))
+        runLogger.info(line)
 
 
 def _handleError(process: subprocess.Popen, worker: LoggerUploadWorker, isEnabled: bool) -> None:
@@ -38,18 +39,20 @@ def _handleError(process: subprocess.Popen, worker: LoggerUploadWorker, isEnable
         if line.strip() == "":
             continue
 
-        worker.add(Log.create(line.rstrip(), LogSeverity.error))
         lines.append(line.rstrip())
 
     # Dump stderr output at the end to perserve stdout order
     for line in lines:
         if isEnabled and process.returncode == 0:
-            runLogger.warning(line)
+            severity = LogSeverity.warning
         elif isEnabled:
-            runLogger.error(line)
+            severity = LogSeverity.debug
         else:
             # We always want to know what gets logged to stderr
-            runLogger.debug(line)
+            severity = LogSeverity.debug
+
+        worker.add(Log.create(line, severity))
+        runLogger.log(severity.stdSeverity, line)
 
 
 def executeProcess(

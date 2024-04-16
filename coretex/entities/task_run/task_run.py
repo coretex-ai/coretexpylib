@@ -613,7 +613,7 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
             parameters : Optional[List[Dict[str, Any]]]
                 list of parameters (not required)
             entryPoint : Optional[str]
-                name of the entry point script that will be executed (not required)
+                relative path to the script inside of the project
 
             Returns
             -------
