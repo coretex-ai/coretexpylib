@@ -5,7 +5,7 @@ import click
 from . import ui
 from ...configuration import loadConfig
 from ...entities import Project, ProjectType
-from ...networking import EntityNotCreated
+from ...networking import EntityNotCreated, NetworkRequestError
 
 
 def selectProjectType() -> ProjectType:
@@ -67,5 +67,5 @@ def isProjectSelected() -> bool:
     try:
         Project.fetchById(config["projectId"])
         return True
-    except:
+    except NetworkRequestError:
         return False

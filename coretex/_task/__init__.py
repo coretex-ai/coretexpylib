@@ -21,3 +21,4 @@ from .initialization import _prepareForExecution, initializeRTask
 from .worker import TaskRunWorker
 from .logging import LoggerUploadWorker
 from .process_utils import executeProcess
+from .local.task_config import readTaskConfig

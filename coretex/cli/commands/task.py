@@ -26,8 +26,7 @@ import click
 from ..modules.user import initializeUserSession
 from ..modules.utils import onBeforeCommandExecute
 from ..modules.project_utils import isProjectSelected
-from ..._task import TaskRunWorker, LoggerUploadWorker, executeProcess
-from ..._task.local.task_config import readTaskConfig
+from ..._task import TaskRunWorker, LoggerUploadWorker, executeProcess, readTaskConfig
 from ...configuration import loadConfig
 from ...entities import TaskRun, TaskRunStatus, Project
 from ...resources import PYTHON_ENTRY_POINT_PATH
@@ -67,19 +66,23 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
 
     with TaskRunWorker(config["refreshToken"], taskRun.id) as worker:
         loggerUploadWorker = LoggerUploadWorker(taskRun.id)
-        returnCode = executeProcess(
-        [
+        command = [
             sys.executable,
             str(PYTHON_ENTRY_POINT_PATH),
-            "--taskRunId", str(taskRun.id),
-            "--refreshToken", config["refreshToken"],
-            "--projectId", str(config["projectId"])
-        ],
-        loggerUploadWorker,
-        True,
-        logging.getLogger("cli"),
-        cwd=Path.cwd()
-    )
+            "--taskRunId",
+            str(taskRun.id),
+            "--refreshToken",
+            str(config["refreshToken"]),
+            "--projectId",
+            str(config["projectId"])
+        ]
+
+        returnCode = executeProcess(
+            command,
+            loggerUploadWorker,
+            True,
+            cwd=Path.cwd()
+        )
 
     loggerUploadWorker.uploadLogs()
     if returnCode != 0:

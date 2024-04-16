@@ -1,7 +1,7 @@
 from typing import List, Any
 from pathlib import Path
-from logging import Logger
 
+import logging
 import subprocess
 
 from threading import Thread
@@ -10,7 +10,10 @@ from . import LoggerUploadWorker
 from ..entities import Log, LogSeverity
 
 
-def _handleOutput(process: subprocess.Popen, worker: LoggerUploadWorker, logger: Logger) -> None:
+runLogger = logging.getLogger("coretex-run")
+
+
+def _handleOutput(process: subprocess.Popen, worker: LoggerUploadWorker) -> None:
     stdout = process.stdout
     if stdout is None:
         raise ValueError("stdout is None for subprocess")
@@ -21,10 +24,10 @@ def _handleOutput(process: subprocess.Popen, worker: LoggerUploadWorker, logger:
             continue
 
         worker.add(Log.create(line.rstrip(), LogSeverity.info))
-        logger.info(line.rstrip())
+        runLogger.info(line.rstrip())
 
 
-def _handleError(process: subprocess.Popen, worker: LoggerUploadWorker, isEnabled: bool, logger: Logger) -> None:
+def _handleError(process: subprocess.Popen, worker: LoggerUploadWorker, isEnabled: bool) -> None:
     stderr = process.stderr
     if stderr is None:
         raise ValueError("stderr is None for subprocess")
@@ -41,19 +44,18 @@ def _handleError(process: subprocess.Popen, worker: LoggerUploadWorker, isEnable
     # Dump stderr output at the end to perserve stdout order
     for line in lines:
         if isEnabled and process.returncode == 0:
-            logger.warning(line)
+            runLogger.warning(line)
         elif isEnabled:
-            logger.error(line)
+            runLogger.error(line)
         else:
             # We always want to know what gets logged to stderr
-            logger.debug(line)
+            runLogger.debug(line)
 
 
 def executeProcess(
     args: List[str],
     worker: Any,
     captureErr: bool,
-    logger: Logger,
     cwd: Path = Path.cwd()
 ) -> int:
 
@@ -68,7 +70,7 @@ def executeProcess(
      # Run a thread which captures process stdout and prints it out to Coretex.ai console
     Thread(
         target = _handleOutput,
-        args = (process, worker, logger),
+        args = (process, worker),
         name = "Process stdout reader"
     ).start()
 
@@ -76,10 +78,8 @@ def executeProcess(
         # Run a thread which captures process stderr and dumps it out node log file
         Thread(
             target = _handleError,
-            args = (process, worker, captureErr, logger),
+            args = (process, worker, captureErr),
             name = "Process stderr reader"
         ).start()
 
-    returnCode = process.wait()
-
-    return returnCode
+    return process.wait()
