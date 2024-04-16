@@ -18,6 +18,7 @@
 from typing import Any, Dict, Tuple, Optional
 from enum import Enum
 from pathlib import Path
+from base64 import b64encode
 
 import logging
 
@@ -25,6 +26,7 @@ from . import config_defaults
 from .utils import isGPUAvailable
 from .ui import clickPrompt, arrowPrompt, highlightEcho, errorEcho, progressEcho, successEcho, stdEcho
 from .node_mode import NodeMode
+from ...cryptography import rsa
 from ...networking import networkManager, NetworkRequestError
 from ...utils import CommandException, docker
 from ...entities.model import Model
@@ -73,9 +75,9 @@ def start(dockerImage: str, userConfig: UserConfiguration, nodeConfig: NodeConfi
         if isinstance(nodeConfig.modelId, int):
             environ["CTX_MODEL_ID"] = str(nodeConfig.modelId)
 
-        secretsKey = nodeConfig.secretsKey
-        if isinstance(secretsKey, str) and secretsKey != config_defaults.DEFAULT_SECRETS_KEY:
-            environ["CTX_SECRETS_KEY"] = secretsKey
+        nodeSecret = nodeConfig.nodeSecret # ("nodeSecret", config_defaults.DEFAULT_NODE_SECRET)
+        if isinstance(nodeSecret, str) and nodeSecret != config_defaults.DEFAULT_NODE_SECRET:
+            environ["CTX_NODE_SECRET"] = nodeSecret
 
         volumes = [
             (nodeConfig.storagePath, "/root/.coretex")
@@ -170,10 +172,15 @@ def shouldUpdate(image: str) -> bool:
     return True
 
 
-def registerNode(name: str) -> str:
-    response = networkManager.post("service", {
+def registerNode(name: str, publicKey: Optional[bytes] = None) -> str:
+    params = {
         "machine_name": name,
-    })
+    }
+
+    if publicKey is not None:
+        params["public_key"] = b64encode(publicKey).decode("utf-8")
+
+    response = networkManager.post("service", params)
 
     if response.hasFailed():
         raise NetworkRequestError(response, "Failed to configure node. Please try again...")
@@ -283,6 +290,8 @@ def configureNode(config: NodeConfiguration, verbose: bool) -> None:
     config.secretsKey = config_defaults.DEFAULT_SECRETS_KEY
     config.initScript = config_defaults.DEFAULT_INIT_SCRIPT
 
+    publicKey: Optional[bytes] = None
+
     if verbose:
         config.storagePath = clickPrompt("Storage path (press enter to use default)", config_defaults.DEFAULT_STORAGE_PATH, type = str)
         config.nodeRam = clickPrompt("Node RAM memory limit in GB (press enter to use default)", config_defaults.DEFAULT_RAM_MEMORY, type = int)
@@ -297,8 +306,18 @@ def configureNode(config: NodeConfiguration, verbose: bool) -> None:
         config.nodeMode = nodeMode
         if modelId is not None:
             config.modelId = modelId
+
+        nodeSecret: str = clickPrompt("Enter a secret which will be used to generate RSA key-pair for Node", config_defaults.DEFAULT_NODE_SECRET, type = str, hide_input = True)
+        config["nodeSecret"] = nodeSecret
+
+        if nodeSecret != config_defaults.DEFAULT_NODE_SECRET:
+            progressEcho("Generating RSA key-pair (2048 bits long) using provided node secret...")
+            rsaKey = rsa.generateKey(2048, nodeSecret.encode("utf-8"))
+            publicKey = rsa.getPublicKeyBytes(rsaKey.public_key())
     else:
         stdEcho("To configure node manually run coretex node config with --verbose flag.")
+
+    config["nodeAccessToken"] = registerNode(config["nodeName"], publicKey)
 
 
 def initializeNodeConfiguration() -> None:

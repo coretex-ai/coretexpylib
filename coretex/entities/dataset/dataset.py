@@ -59,7 +59,7 @@ class Dataset(ABC, Generic[SampleType]):
         pass
 
     @abstractmethod
-    def download(self, ignoreCache: bool = False) -> None:
+    def download(self, decrypt: bool = True, ignoreCache: bool = False) -> None:
         pass
 
     def rename(self, name: str) -> bool:

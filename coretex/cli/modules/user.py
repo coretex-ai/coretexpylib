@@ -65,7 +65,7 @@ def authenticate(retryCount: int = 0) -> LoginInfo:
 def initializeUserSession() -> None:
     config = UserConfiguration()
 
-    if config.isUserConfigured():
+    if not config.isUserConfigured():
         errorEcho("User configuration not found. Please authenticate with your credentials.")
         loginInfo = authenticate()
         config.saveLoginData(loginInfo)

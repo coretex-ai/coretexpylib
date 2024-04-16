@@ -67,7 +67,8 @@ def generateUpdateScript(userConfig: UserConfiguration, nodeConfig: NodeConfigur
         cpuCount = nodeConfig.cpuCount,
         imageType = "cpu" if nodeConfig.allowGpu is False else "gpu",
         allowDocker = nodeConfig.allowDocker,
-        initScript = nodeConfig.getInitScriptPath()
+        initScript = nodeConfig.getInitScriptPath(),
+        nodeSecret = nodeConfig.nodeSecret
     )
 
 

@@ -43,7 +43,7 @@ NODE_DEFAULT_CONFIG = {
     "cpuCount": None,
     "nodeMode": None,
     "allowDocker": False,
-    "secretsKey": None,
+    "nodeSecret": None,
     "initScript": None,
     "modelId": None,
 }
@@ -65,9 +65,9 @@ class NodeConfiguration(BaseConfiguration):
 
     def __init__(self) -> None:
         super().__init__(NODE_CONFIG_PATH)
-        secretsKey = self.secretsKey
-        if isinstance(secretsKey, str) and secretsKey != "":
-            os.environ["CTX_SECRETS_KEY"] = secretsKey
+        nodeSecret = self.nodeSecret
+        if isinstance(nodeSecret, str) and nodeSecret != "":
+            os.environ["CTX_SECRETS_KEY"] = nodeSecret
 
         if not isCliRuntime():
             os.environ["CTX_STORAGE_PATH"] = self.storagePath
@@ -167,12 +167,12 @@ class NodeConfiguration(BaseConfiguration):
         self._raw["allowDocker"] = value
 
     @property
-    def secretsKey(self) -> Optional[str]:
-        return self.getOptValue("secretsKey", str)
+    def nodeSecret(self) -> Optional[str]:
+        return self.getOptValue("nodeSecret", str)
 
-    @secretsKey.setter
-    def secretsKey(self, value: Optional[str]) -> None:
-        self._raw["secretsKey"] = value
+    @nodeSecret.setter
+    def nodeSecret(self, value: Optional[str]) -> None:
+        self._raw["nodeSecret"] = value
 
     @property
     def initScript(self) -> Optional[str]:

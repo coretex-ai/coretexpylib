@@ -16,7 +16,7 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import Optional, Any, List, Dict, Union, Tuple, TypeVar, Generic, Type
-from typing_extensions import Self
+from typing_extensions import Self, override
 from zipfile import ZipFile, ZIP_DEFLATED
 from pathlib import Path
 
@@ -171,8 +171,13 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
         return descriptors
 
     @classmethod
+    @override
     def _endpoint(cls) -> str:
         return "model-queue"
+
+    @override
+    def entityUrl(self) -> str:
+        return f"run?id={self.id}"
 
     def onDecode(self) -> None:
         super().onDecode()

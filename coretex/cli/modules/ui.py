@@ -53,10 +53,10 @@ def arrowPrompt(choices: List[Any], message: str) -> Any:
 def previewConfig(userConfig: UserConfiguration, nodeConfig: NodeConfiguration) -> None:
     allowDocker = "Yes" if nodeConfig.allowDocker else "No"
 
-    if nodeConfig.secretsKey is None or nodeConfig.secretsKey == "":
-        secretsKey = ""
+    if nodeConfig.nodeSecret is None or nodeConfig.nodeSecret == "":
+        nodeSecret = ""
     else:
-        secretsKey = "********"
+        nodeSecret = "********"
 
     table = [
         ["Node name",           nodeConfig.nodeName],
@@ -69,13 +69,17 @@ def previewConfig(userConfig: UserConfiguration, nodeConfig: NodeConfiguration) 
         ["CPU cores allocated", f"{nodeConfig.cpuCount}"],
         ["Coretex Node mode",   f"{NodeMode(nodeConfig.nodeMode).name}"],
         ["Docker access",       allowDocker],
-        ["Secrets key",         secretsKey],
-        ["Node init script",    nodeConfig.initScript if nodeConfig.initScript is not None else ""]
+        ["Coretex Node secret",         nodeSecret],
+        ["Coretex Node init script",    nodeConfig.initScript if nodeConfig.initScript is not None else ""]
     ]
     if nodeConfig.modelId is not None:
         table.append(["Coretex Model ID", f"{nodeConfig.modelId}"])
 
     stdEcho(tabulate(table))
+
+
+def outputUrl(entityUrl: str) -> str:
+    return f"https://app.coretex.ai/{entityUrl}"
 
 
 def stdEcho(text: str) -> None:

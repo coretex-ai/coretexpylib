@@ -22,7 +22,7 @@ from coretex import ImageSample, LocalImageSample, AnnotatedImageSampleData, Cor
 from .base_sample_test import BaseSampleTest
 
 
-class BaseComputerVisionSampleTest:
+class BaseImageSampleTest:
 
     class Base(BaseSampleTest.Base):
 

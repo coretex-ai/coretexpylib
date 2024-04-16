@@ -16,9 +16,11 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import Dict
+from typing_extensions import override
+from pathlib import Path
 
 from .base import BaseCustomDataset
-from ..network_dataset import NetworkDataset
+from ..network_dataset import NetworkDataset, _chunkSampleImport
 from ...sample import CustomSample
 from ....codable import KeyDescriptor
 
@@ -30,9 +32,18 @@ class CustomDataset(BaseCustomDataset, NetworkDataset[CustomSample]):
         Represents the collection of archived samples
     """
 
+    @override
+    def __init__(self) -> None:
+        super().__init__(CustomSample)
+
     @classmethod
+    @override
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
         descriptors = super()._keyDescriptors()
         descriptors["samples"] = KeyDescriptor("sessions", CustomSample, list)
 
         return descriptors
+
+    @override
+    def _uploadSample(self, samplePath: Path, sampleName: str) -> CustomSample:
+        return _chunkSampleImport(self._sampleType, sampleName, samplePath, self.id)

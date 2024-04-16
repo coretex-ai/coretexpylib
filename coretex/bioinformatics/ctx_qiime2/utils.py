@@ -23,18 +23,20 @@ import logging
 import shutil
 import gzip
 
-from ...entities import TaskRun, CustomSample, CustomDataset
 from ... import folder_manager
+from ...entities import TaskRun, CustomSample, CustomDataset
+from ...networking import NetworkRequestError
 
 
-def createSample(name: str, datasetId: int, path: Path, taskRun: TaskRun, stepName: str, retryCount: int = 0) -> CustomSample:
-    sample = CustomSample.createCustomSample(name, datasetId, str(path))
-    if sample is None:
+def createSample(name: str, dataset: CustomDataset, path: Path, taskRun: TaskRun, stepName: str, retryCount: int = 0) -> CustomSample:
+    try:
+        sample = dataset.add(path, name)
+    except NetworkRequestError:
         if retryCount < 3:
             logging.info(f">> [Coretex] Retry count: {retryCount}")
-            return createSample(name, datasetId, path, taskRun, stepName, retryCount + 1)
+            return createSample(name, dataset, path, taskRun, stepName, retryCount + 1)
 
-        raise ValueError(">> [Coretex] Failed to create sample")
+        raise
 
     taskRun.createQiimeArtifact(f"{stepName}/{name}", path)
 

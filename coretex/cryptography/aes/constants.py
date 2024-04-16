@@ -15,17 +15,8 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from coretex import LocalComputerVisionDataset, LocalComputerVisionSample, ProjectType
+DEFAULT_CHUNK_SIZE = 64 * 1024 ** 2  # 64 MB
 
-from ..base_computer_vision_dataset_test import BaseComputerVisionDatasetTest
-from ...utils import createLocalEnvironmentFor
-
-
-class TestLocalComputerVisionDataset(BaseComputerVisionDatasetTest.Base[LocalComputerVisionDataset]):
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        super().setUpClass()
-
-        cls.dataset = createLocalEnvironmentFor(ProjectType.computerVision, LocalComputerVisionDataset)
-        cls.sampleType = LocalComputerVisionSample
+AES_KEY_SIZE   = 32  # bytes
+IV_SIZE        = 16  # bytes
+AES_BLOCK_SIZE = 16  # bytes
