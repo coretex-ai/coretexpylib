@@ -155,6 +155,7 @@ def config(verbose: bool) -> None:
 
 
 @click.group()
+@onBeforeCommandExecute(node_module.checkResourceLimitations)
 @onBeforeCommandExecute(docker.isDockerAvailable)
 @onBeforeCommandExecute(initializeUserSession)
 def node() -> None:
