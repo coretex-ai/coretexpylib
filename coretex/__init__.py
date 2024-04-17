@@ -15,7 +15,6 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-print('sync1')
 # Internal - not for outside use
 from .configuration import _syncConfigWithEnv
 _syncConfigWithEnv()
@@ -23,7 +22,7 @@ _syncConfigWithEnv()
 
 # Internal - not for outside use
 from ._logger import _initializeDefaultLogger, _initializeCLILogger
-from .utils.misc import isCliRuntime
+from .utils import isCliRuntime
 
 
 if isCliRuntime():

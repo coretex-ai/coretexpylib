@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Any, List, Dict, Optional, Union
+from typing import Any, List, Optional, Union
 
 from tabulate import tabulate
 
@@ -23,7 +23,6 @@ import click
 import inquirer
 
 from .node_mode import NodeMode
-from .config_defaults import DEFAULT_CPU_COUNT
 from ...configuration import UserConfiguration, NodeConfiguration
 
 

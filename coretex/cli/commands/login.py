@@ -17,8 +17,7 @@
 
 import click
 
-from ..modules.user import authenticate
-from ..modules.ui import clickPrompt, stdEcho, successEcho
+from ..modules import user, ui
 from ...configuration import UserConfiguration
 
 
@@ -26,7 +25,7 @@ from ...configuration import UserConfiguration
 def login() -> None:
     config = UserConfiguration()
     if config.isUserConfigured():
-        if not clickPrompt(
+        if not ui.clickPrompt(
             f"User already logged in with username {config.username}.\nWould you like to log in with a different user (Y/n)?",
             type = bool,
             default = True,
@@ -34,8 +33,8 @@ def login() -> None:
         ):
             return
 
-    stdEcho("Please enter your credentials:")
-    loginInfo = authenticate()
+    ui.stdEcho("Please enter your credentials:")
+    loginInfo = user.authenticate()
     config.saveLoginData(loginInfo)
 
-    successEcho(f"User {config.username} successfully logged in.")
+    ui.successEcho(f"User {config.username} successfully logged in.")

@@ -15,16 +15,15 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Any, Dict, Tuple, Optional
-from enum import Enum
+from typing import Tuple, Optional
+from enum import Enum, IntEnum
 from pathlib import Path
 from base64 import b64encode
 
 import logging
+import requests
 
-from . import config_defaults
-from .utils import isGPUAvailable
-from .ui import clickPrompt, arrowPrompt, highlightEcho, errorEcho, progressEcho, successEcho, stdEcho
+from . import config_defaults, utils, ui
 from .node_mode import NodeMode
 from ...cryptography import rsa
 from ...networking import networkManager, NetworkRequestError
@@ -32,8 +31,18 @@ from ...utils import CommandException, docker
 from ...entities.model import Model
 from ...configuration import UserConfiguration, NodeConfiguration
 
+
 class NodeException(Exception):
     pass
+
+
+class NodeStatus(IntEnum):
+
+    inactive     = 1
+    active       = 2
+    busy         = 3
+    deleted      = 4
+    reconnecting = 5
 
 
 class ImageType(Enum):
@@ -44,9 +53,9 @@ class ImageType(Enum):
 
 def pull(image: str) -> None:
     try:
-        progressEcho(f"Fetching image {image}...")
+        ui.progressEcho(f"Fetching image {image}...")
         docker.imagePull(image)
-        successEcho(f"Image {image} successfully fetched.")
+        ui.successEcho(f"Image {image} successfully fetched.")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to fetch latest node version.")
@@ -62,7 +71,7 @@ def exists() -> bool:
 
 def start(dockerImage: str, userConfig: UserConfiguration, nodeConfig: NodeConfiguration) -> None:
     try:
-        progressEcho("Starting Coretex Node...")
+        ui.progressEcho("Starting Coretex Node...")
         docker.createNetwork(config_defaults.DOCKER_CONTAINER_NETWORK)
 
         environ = {
@@ -102,7 +111,7 @@ def start(dockerImage: str, userConfig: UserConfiguration, nodeConfig: NodeConfi
             volumes
         )
 
-        successEcho("Successfully started Coretex Node.")
+        ui.successEcho("Successfully started Coretex Node.")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to start Coretex Node.")
@@ -119,13 +128,22 @@ def clean() -> None:
 
 def stop() -> None:
     try:
-        progressEcho("Stopping Coretex Node...")
+        ui.progressEcho("Stopping Coretex Node...")
         docker.stopContainer(config_defaults.DOCKER_CONTAINER_NAME)
         clean()
-        successEcho("Successfully stopped Coretex Node....")
+        ui.successEcho("Successfully stopped Coretex Node....")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to stop Coretex Node.")
+
+
+def getNodeStatus() -> NodeStatus:
+    try:
+        response = requests.get(f"http://localhost:21000/status", timeout = 1)
+        status = response.json()["status"]
+        return NodeStatus(status)
+    except:
+        return NodeStatus.inactive
 
 
 def getRepoFromImageUrl(image: str) -> str:
@@ -200,7 +218,7 @@ def selectImageType() -> ImageType:
     }
 
     choices = list(availableImages.keys())
-    selectedImage = arrowPrompt(choices, "Please select image that you want to use (use arrow keys to select an option):")
+    selectedImage = ui.arrowPrompt(choices, "Please select image that you want to use (use arrow keys to select an option):")
 
     return availableImages[selectedImage]
 
@@ -209,12 +227,12 @@ def selectModelId(storagePath: str, retryCount: int = 0) -> int:
     if retryCount >= 3:
         raise RuntimeError("Failed to fetch Coretex Model. Terminating...")
 
-    modelId: int = clickPrompt("Specify Coretex Model ID that you want to use:", type = int)
+    modelId: int = ui.clickPrompt("Specify Coretex Model ID that you want to use:", type = int)
 
     try:
         model = Model.fetchById(modelId)
     except:
-        errorEcho(f"Failed to fetch model with id {modelId}.")
+        ui.errorEcho(f"Failed to fetch model with id {modelId}.")
         return selectModelId(storagePath, retryCount + 1)
 
     modelDir = Path(storagePath) / "models"
@@ -232,7 +250,7 @@ def selectNodeMode(storagePath: str) -> Tuple[int, Optional[int]]:
     }
     choices = list(availableNodeModes.keys())
 
-    selectedMode = arrowPrompt(choices, "Please select Coretex Node mode (use arrow keys to select an option):")
+    selectedMode = ui.arrowPrompt(choices, "Please select Coretex Node mode (use arrow keys to select an option):")
 
     if availableNodeModes[selectedMode] == NodeMode.functionExclusive:
         modelId = selectModelId(storagePath)
@@ -242,7 +260,7 @@ def selectNodeMode(storagePath: str) -> Tuple[int, Optional[int]]:
 
 
 def _configureInitScript() -> str:
-    initScript = clickPrompt("Enter a path to sh script which will be executed before Node starts", config_defaults.DEFAULT_INIT_SCRIPT, type = str)
+    initScript = ui.clickPrompt("Enter a path to sh script which will be executed before Node starts", config_defaults.DEFAULT_INIT_SCRIPT, type = str)
 
     if initScript == config_defaults.DEFAULT_INIT_SCRIPT:
         return config_defaults.DEFAULT_INIT_SCRIPT
@@ -250,29 +268,29 @@ def _configureInitScript() -> str:
     path = Path(initScript).expanduser().absolute()
 
     if path.is_dir():
-        errorEcho("Provided path is pointing to a directory, file expected!")
+        ui.errorEcho("Provided path is pointing to a directory, file expected!")
         return _configureInitScript()
 
     if not path.exists():
-        errorEcho("Provided file does not exist!")
+        ui.errorEcho("Provided file does not exist!")
         return _configureInitScript()
 
     return str(path)
 
 
 def configureNode(config: NodeConfiguration, verbose: bool) -> None:
-    highlightEcho("[Node Configuration]")
-    config.nodeName = clickPrompt("Node name", type = str)
+    ui.highlightEcho("[Node Configuration]")
+    config.nodeName = ui.clickPrompt("Node name", type = str)
     config.nodeAccessToken = registerNode(config.nodeName)
 
     imageType = selectImageType()
     if imageType == ImageType.custom:
-        config.image = clickPrompt("Specify URL of docker image that you want to use:", type = str)
+        config.image = ui.clickPrompt("Specify URL of docker image that you want to use:", type = str)
     else:
         config.image = "coretexai/coretex-node"
 
-    if isGPUAvailable():
-        config.allowGpu = clickPrompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
+    if utils.isGPUAvailable():
+        config.allowGpu = ui.clickPrompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
     else:
         config.allowGpu = False
 
@@ -293,13 +311,13 @@ def configureNode(config: NodeConfiguration, verbose: bool) -> None:
     publicKey: Optional[bytes] = None
 
     if verbose:
-        config.storagePath = clickPrompt("Storage path (press enter to use default)", config_defaults.DEFAULT_STORAGE_PATH, type = str)
-        config.nodeRam = clickPrompt("Node RAM memory limit in GB (press enter to use default)", config_defaults.DEFAULT_RAM_MEMORY, type = int)
-        config.nodeSwap = clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", config_defaults.DEFAULT_SWAP_MEMORY, type = int)
-        config.nodeSharedMemory = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", config_defaults.DEFAULT_SHARED_MEMORY, type = int)
-        config.cpuCount = clickPrompt("Enter the number of CPUs the container will use (press enter to use default)", config_defaults.DEFAULT_CPU_COUNT, type = int)
-        config.allowDocker = clickPrompt("Allow Node to access system docker? This is a security risk! (Y/n)", config_defaults.DEFAULT_ALLOW_DOCKER, type = bool)
-        config.nodeSecret = clickPrompt("Enter a key used for decrypting your Coretex Secrets", config_defaults.DEFAULT_NODE_SECRET, type = str, hide_input = True)
+        config.storagePath = ui.clickPrompt("Storage path (press enter to use default)", config_defaults.DEFAULT_STORAGE_PATH, type = str)
+        config.nodeRam = ui.clickPrompt("Node RAM memory limit in GB (press enter to use default)", config_defaults.DEFAULT_RAM_MEMORY, type = int)
+        config.nodeSwap = ui.clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", config_defaults.DEFAULT_SWAP_MEMORY, type = int)
+        config.nodeSharedMemory = ui.clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", config_defaults.DEFAULT_SHARED_MEMORY, type = int)
+        config.cpuCount = ui.clickPrompt("Enter the number of CPUs the container will use (press enter to use default)", config_defaults.DEFAULT_CPU_COUNT, type = int)
+        config.allowDocker = ui.clickPrompt("Allow Node to access system docker? This is a security risk! (Y/n)", config_defaults.DEFAULT_ALLOW_DOCKER, type = bool)
+        config.nodeSecret = ui.clickPrompt("Enter a key used for decrypting your Coretex Secrets", config_defaults.DEFAULT_NODE_SECRET, type = str, hide_input = True)
         config.initScript = _configureInitScript()
 
         nodeMode, modelId = selectNodeMode(config.storagePath)
@@ -307,15 +325,15 @@ def configureNode(config: NodeConfiguration, verbose: bool) -> None:
         if modelId is not None:
             config.modelId = modelId
 
-        nodeSecret: str = clickPrompt("Enter a secret which will be used to generate RSA key-pair for Node", config_defaults.DEFAULT_NODE_SECRET, type = str, hide_input = True)
+        nodeSecret: str = ui.clickPrompt("Enter a secret which will be used to generate RSA key-pair for Node", config_defaults.DEFAULT_NODE_SECRET, type = str, hide_input = True)
         config.nodeSecret = nodeSecret
 
         if nodeSecret != config_defaults.DEFAULT_NODE_SECRET:
-            progressEcho("Generating RSA key-pair (2048 bits long) using provided node secret...")
+            ui.progressEcho("Generating RSA key-pair (2048 bits long) using provided node secret...")
             rsaKey = rsa.generateKey(2048, nodeSecret.encode("utf-8"))
             publicKey = rsa.getPublicKeyBytes(rsaKey.public_key())
     else:
-        stdEcho("To configure node manually run coretex node config with --verbose flag.")
+        ui.stdEcho("To configure node manually run coretex node config with --verbose flag.")
 
     config.nodeAccessToken = registerNode(config.nodeName, publicKey)
 
@@ -326,9 +344,9 @@ def initializeNodeConfiguration() -> None:
     if config.isNodeConfigured():
         return
 
-    errorEcho("Node configuration not found.")
+    ui.errorEcho("Node configuration not found.")
     if isRunning():
-        stopNode = clickPrompt(
+        stopNode = ui.clickPrompt(
             "Node is already running. Do you wish to stop the Node? (Y/n)",
             type = bool,
             default = True,
@@ -336,7 +354,7 @@ def initializeNodeConfiguration() -> None:
         )
 
         if not stopNode:
-            errorEcho("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
+            ui.errorEcho("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
             return
 
         stop()

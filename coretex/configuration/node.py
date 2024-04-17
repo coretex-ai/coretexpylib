@@ -19,9 +19,9 @@ from typing import Dict, Any, Optional
 from pathlib import Path
 
 import os
-import sys
 
 from .base import BaseConfiguration, CONFIG_DIR
+from ..utils import isCliRuntime
 
 
 def getEnvVar(key: str, default: str) -> str:
@@ -47,14 +47,6 @@ NODE_DEFAULT_CONFIG = {
     "initScript": None,
     "modelId": None,
 }
-
-
-def isCliRuntime() -> bool:
-    executablePath = sys.argv[0]
-    return (
-        executablePath.endswith("/bin/coretex") and
-        os.access(executablePath, os.X_OK)
-    )
 
 
 class InvalidNodeConfiguration(Exception):

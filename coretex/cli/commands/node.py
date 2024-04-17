@@ -19,21 +19,19 @@ from typing import Optional
 
 import click
 
-from ..modules import node as node_module
-from ..modules.ui import clickPrompt, successEcho, errorEcho, previewConfig
-from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate, dumpScript, UPDATE_SCRIPT_NAME
-from ..modules.utils import onBeforeCommandExecute
-from ..modules.user import initializeUserSession
-from ...configuration import UserConfiguration, NodeConfiguration, CONFIG_DIR
 from ...utils import docker
+from ..modules import node as node_module
+from ..modules import update as update_module
+from ..modules import ui, user, utils
+from ...configuration import UserConfiguration, NodeConfiguration, CONFIG_DIR
 
 
 @click.command()
 @click.option("--image", type = str, help = "Docker image url")
-@onBeforeCommandExecute(node_module.initializeNodeConfiguration)
+@utils.onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def start(image: Optional[str]) -> None:
     if node_module.isRunning():
-        if not clickPrompt(
+        if not ui.clickPrompt(
             "Node is already running. Do you wish to restart the Node? (Y/n)",
             type = bool,
             default = True,
@@ -60,36 +58,36 @@ def start(image: Optional[str]) -> None:
 
     node_module.start(dockerImage, userConfig, nodeConfig)
 
-    activateAutoUpdate(CONFIG_DIR, userConfig, nodeConfig)
+    update_module.activateAutoUpdate(CONFIG_DIR, userConfig, nodeConfig)
 
 
 @click.command()
 def stop() -> None:
     if not node_module.isRunning():
-        errorEcho("Node is already offline.")
+        ui.errorEcho("Node is already offline.")
         return
 
     node_module.stop()
 
 
 @click.command()
-@onBeforeCommandExecute(node_module.initializeNodeConfiguration)
+@utils.onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def update() -> None:
     userConfig = UserConfiguration()
     nodeConfig = NodeConfiguration()
 
-    nodeStatus = getNodeStatus()
+    nodeStatus = node_module.getNodeStatus()
 
-    if nodeStatus == NodeStatus.inactive:
-        errorEcho("Node is not running. To update Node you need to start it first.")
+    if nodeStatus == node_module.NodeStatus.inactive:
+        ui.errorEcho("Node is not running. To update Node you need to start it first.")
         return
 
-    if nodeStatus == NodeStatus.reconnecting:
-        errorEcho("Node is reconnecting. Cannot update now.")
+    if nodeStatus == node_module.NodeStatus.reconnecting:
+        ui.errorEcho("Node is reconnecting. Cannot update now.")
         return
 
-    if nodeStatus == NodeStatus.busy:
-        if not clickPrompt(
+    if nodeStatus == node_module.NodeStatus.busy:
+        if not ui.clickPrompt(
             "Node is busy, do you wish to terminate the current execution to perform the update? (Y/n)",
             type = bool,
             default = True,
@@ -100,13 +98,13 @@ def update() -> None:
         node_module.stop()
 
     if not node_module.shouldUpdate(nodeConfig.image):
-        successEcho("Node is already up to date.")
+        ui.successEcho("Node is already up to date.")
         return
 
     node_module.pull(nodeConfig.image)
 
-    if getNodeStatus() == NodeStatus.busy:
-        if not clickPrompt(
+    if node_module.getNodeStatus() == node_module.NodeStatus.busy:
+        if not ui.clickPrompt(
             "Node is busy, do you wish to terminate the current execution to perform the update? (Y/n)",
             type = bool,
             default = True,
@@ -123,13 +121,13 @@ def update() -> None:
 @click.option("--verbose", is_flag = True, help = "Configure node settings manually.")
 def config(verbose: bool) -> None:
     if node_module.isRunning():
-        if not clickPrompt(
+        if not ui.clickPrompt(
             "Node is already running. Do you wish to stop the Node? (Y/n)",
             type = bool,
             default = True,
             show_default = False
         ):
-            errorEcho("If you wish to reconfigure your node, use coretex node stop commands first.")
+            ui.errorEcho("If you wish to reconfigure your node, use coretex node stop commands first.")
             return
 
         node_module.stop()
@@ -138,7 +136,7 @@ def config(verbose: bool) -> None:
     nodeConfig = NodeConfiguration()
 
     if nodeConfig.isNodeConfigured():
-        if not clickPrompt(
+        if not ui.clickPrompt(
             "Node configuration already exists. Would you like to update? (Y/n)",
             type = bool,
             default = True,
@@ -148,17 +146,17 @@ def config(verbose: bool) -> None:
 
     node_module.configureNode(nodeConfig, verbose)
     nodeConfig.save()
-    previewConfig(userConfig, nodeConfig)
+    ui.previewConfig(userConfig, nodeConfig)
 
     # Updating auto-update script since node configuration is changed
-    dumpScript(CONFIG_DIR / UPDATE_SCRIPT_NAME, userConfig, nodeConfig)
+    update_module.dumpScript(CONFIG_DIR / update_module.UPDATE_SCRIPT_NAME, userConfig, nodeConfig)
 
-    successEcho("Node successfully configured.")
+    ui.successEcho("Node successfully configured.")
 
 
 @click.group()
-@onBeforeCommandExecute(docker.isDockerAvailable)
-@onBeforeCommandExecute(initializeUserSession)
+@utils.onBeforeCommandExecute(docker.isDockerAvailable)
+@utils.onBeforeCommandExecute(user.initializeUserSession)
 def node() -> None:
     pass
 

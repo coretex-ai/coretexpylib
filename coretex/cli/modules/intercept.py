@@ -21,8 +21,6 @@ import logging
 
 import click
 
-from .ui import errorEcho
-
 
 class ClickExceptionInterceptor(click.Group):
 

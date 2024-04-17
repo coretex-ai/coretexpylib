@@ -17,10 +17,10 @@
 
 from datetime import datetime, timezone
 
-from .ui import clickPrompt, errorEcho, progressEcho
+from . import ui
 from ...utils import decodeDate
 from ...networking import networkManager, NetworkResponse, NetworkRequestError
-from ...configuration import LoginInfo, UserConfiguration
+from ...configuration import UserConfiguration, LoginInfo
 
 
 def authenticateUser(username: str, password: str) -> NetworkResponse:
@@ -40,14 +40,14 @@ def authenticate(retryCount: int = 0) -> LoginInfo:
     if retryCount >= 3:
         raise RuntimeError("Failed to authenticate. Terminating...")
 
-    username = clickPrompt("Email", type = str)
-    password = clickPrompt("Password", type = str, hide_input = True)
+    username = ui.clickPrompt("Email", type = str)
+    password = ui.clickPrompt("Password", type = str, hide_input = True)
 
-    progressEcho("Authenticating...")
+    ui.progressEcho("Authenticating...")
     response = networkManager.authenticate(username, password, False)
 
     if response.hasFailed():
-        errorEcho("Failed to authenticate. Please try again...")
+        ui.errorEcho("Failed to authenticate. Please try again...")
         return authenticate(retryCount + 1)
 
     jsonResponse = response.getJson(dict)
@@ -66,7 +66,7 @@ def initializeUserSession() -> None:
     config = UserConfiguration()
 
     if not config.isUserConfigured():
-        errorEcho("User configuration not found. Please authenticate with your credentials.")
+        ui.errorEcho("User configuration not found. Please authenticate with your credentials.")
         loginInfo = authenticate()
         config.saveLoginData(loginInfo)
     else:

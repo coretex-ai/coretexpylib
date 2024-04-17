@@ -15,10 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from enum import IntEnum
 from pathlib import Path
-
-import requests
 
 from . import config_defaults
 from .cron import jobExists, scheduleJob
@@ -29,15 +26,6 @@ from ...configuration import CONFIG_DIR, UserConfiguration, NodeConfiguration
 
 
 UPDATE_SCRIPT_NAME = "ctx_node_update.sh"
-
-
-class NodeStatus(IntEnum):
-
-    inactive     = 1
-    active       = 2
-    busy         = 3
-    deleted      = 4
-    reconnecting = 5
 
 
 def generateUpdateScript(userConfig: UserConfiguration, nodeConfig: NodeConfiguration) -> str:
@@ -85,12 +73,3 @@ def activateAutoUpdate(configDir: Path, userConfig: UserConfiguration, nodeConfi
 
     if not jobExists(UPDATE_SCRIPT_NAME):
         scheduleJob(configDir, UPDATE_SCRIPT_NAME)
-
-
-def getNodeStatus() -> NodeStatus:
-    try:
-        response = requests.get(f"http://localhost:21000/status", timeout = 1)
-        status = response.json()["status"]
-        return NodeStatus(status)
-    except:
-        return NodeStatus.inactive
