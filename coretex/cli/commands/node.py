@@ -53,7 +53,6 @@ def start(image: Optional[str]) -> None:
         saveConfig(config)
 
     dockerImage = config["image"]
-    repository = dockerImage.split(":")[0]
 
     if node_module.shouldUpdate(dockerImage):
         node_module.pull(dockerImage)
@@ -79,7 +78,6 @@ def stop() -> None:
 def update() -> None:
     config = loadConfig()
     dockerImage = config["image"]
-    repository = dockerImage.split(":")[0]
 
     nodeStatus = getNodeStatus()
 
