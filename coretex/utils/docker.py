@@ -53,23 +53,18 @@ def removeNetwork(name: str) -> None:
     command(["docker", "network", "rm", name], ignoreStdout = True, ignoreStderr = True)
 
 
+def removeImage(image: str) -> None:
+    command(["docker", "image", "rm", image], ignoreStdout = True, ignoreStderr = True)
+
+
 def removeDanglingImages(repository: str) -> None:
-    command([
-        "docker",
-        "images",
-        "|",
-        "grep",
-        repository,
-        "&&",
-        "docker",
-        "images",
-        "-q",
-        "-f",
-        "dangling=true",
-        "|",
-        "xargs",
-        "docker"
-    ])
+    _, output, _ = command(["docker", "image", "ls", "--format", "json"], ignoreStdout = True, ignoreStderr = True)
+    images = output.strip().split("\n")
+    for image in images:
+        if len(image) > 0:
+            jsonImg = json.loads(image)
+            if jsonImg["Tag"] == "<none>":
+                removeImage(jsonImg["ID"])
 
 
 def imagePull(image: str) -> None:

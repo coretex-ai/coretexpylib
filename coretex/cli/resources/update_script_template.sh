@@ -55,7 +55,6 @@ OUTPUT_FILE="$OUTPUT_DIR/ctx_autoupdate.log"
 exec >>"$OUTPUT_FILE" 2>&1
 
 running_container_image_id=""
-image_placeholder='{{.Image}}'
 
 fetch_node_status() {{
     fetched_status=0
@@ -65,7 +64,7 @@ fetch_node_status() {{
 }}
 
 store_running_container_image_id() {{
-    running_container_image_id=$($DOCKER_PATH inspect -f {{"$image_placeholder"}} "$CONTAINER_NAME")
+    running_container_image_id=$($DOCKER_PATH inspect -f '{{{{.Image}}}}' "$CONTAINER_NAME")
 }}
 
 should_update() {{
