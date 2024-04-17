@@ -60,9 +60,11 @@ def removeImage(image: str) -> None:
 def removeDanglingImages(repository: str, tag: str) -> None:
     _, output, _ = command(["docker", "image", "ls", repository, "--format", "json"], ignoreStdout = True, ignoreStderr = True)
     images = output.strip().split("\n")
+
     for image in images:
         if len(image) == 0:
             continue
+
         jsonImg = json.loads(image)
         if jsonImg["Tag"] != tag:
             removeImage(jsonImg["ID"])

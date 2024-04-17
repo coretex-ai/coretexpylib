@@ -54,15 +54,6 @@ def pull(image: str) -> None:
         raise NodeException("Failed to fetch latest node version.")
 
 
-def removeDanglingImages(repository: str) -> None:
-    try:
-        progressEcho(f"Removing outdated images...")
-        docker.removeDanglingImages(repository)
-    except CommandException as ex:
-        logging.getLogger("cli").debug(ex, exc_info = ex)
-        raise NodeException("Failed to remove old images")
-
-
 def isRunning() -> bool:
     return docker.containerRunning(config_defaults.DOCKER_CONTAINER_NAME)
 
