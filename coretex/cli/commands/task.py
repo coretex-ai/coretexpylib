@@ -81,7 +81,6 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
             command,
             loggerUploadWorker,
             True,
-            cwd=Path.cwd()
         )
 
         loggerUploadWorker.uploadLogs()
