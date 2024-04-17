@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, List, Optional, Tuple
 from pathlib import Path
 
 import os
@@ -197,37 +197,36 @@ class NodeConfiguration(BaseConfiguration):
             not isinstance(self._raw.get("nodeMode"), int)
         )
 
-    def isConfigurationValid(self) -> bool:
+    def isConfigurationValid(self) -> Tuple[bool, List[str]]:
         isValid = True
         errorMessages = []
         cpuLimit, ramLimit = docker.getResourceLimits()
 
-        if not isinstance(config["nodeRam"], int):
-            ui.errorEcho(f"Invalid config \"nodeRam\" field type \"{type(config['nodeRam'])}\". Expected: \"int\"")
+        if not isinstance(self._raw.get("nodeRam"), int):
+            errorMessages.append(f"Invalid config \"nodeRam\" field type \"{type(self._raw.get('nodeRam'))}\". Expected: \"int\"")
             isValid = False
 
-        if not isinstance(config["cpuCount"], int):
-            ui.errorEcho(f"Invalid config \"cpuCount\" field type \"{type(config['cpuCount'])}\". Expected: \"int\"")
+        if not isinstance(self._raw.get("cpuCount"), int):
+            errorMessages.append(f"Invalid config \"cpuCount\" field type \"{type(self._raw.get('cpuCount'))}\". Expected: \"int\"")
             isValid = False
 
-        if config["cpuCount"] > cpuLimit:
-            ui.errorEcho(f"Configuration not valid. CPU limit in Docker Desktop ({cpuLimit}) is lower than the configured value ({config['cpuCount']})")
+        if self.cpuCount > cpuLimit:
+            errorMessages.append(f"Configuration not valid. CPU limit in Docker Desktop ({cpuLimit}) is lower than the configured value ({self._raw.get('cpuCount')})")
             isValid = False
 
         if ramLimit < config_defaults.MINIMUM_RAM_MEMORY:
-            ui.errorEcho(f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) is higher than your current Docker desktop RAM limit ({ramLimit}GB). Please adjust resource limitations in Docker Desktop settings to match Node requirements.")
+            errorMessages.append(f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) is higher than your current Docker desktop RAM limit ({ramLimit}GB). Please adjust resource limitations in Docker Desktop settings to match Node requirements.")
             isValid = False
 
-        if config["nodeRam"] > ramLimit:
-            ui.errorEcho(f"Configuration not valid. RAM limit in Docker Desktop ({ramLimit}GB) is lower than the configured value ({config['nodeRam']}GB)")
+        if self.nodeRam > ramLimit:
+            errorMessages.append(f"Configuration not valid. RAM limit in Docker Desktop ({ramLimit}GB) is lower than the configured value ({self._raw.get('nodeRam')}GB)")
             isValid = False
 
-
-        if config["nodeRam"] < config_defaults.MINIMUM_RAM_MEMORY:
-            ui.errorEcho(f"Configuration not valid. Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) is higher than the configured value ({config['nodeRam']}GB)")
+        if self.nodeRam < config_defaults.MINIMUM_RAM_MEMORY:
+            errorMessages.append(f"Configuration not valid. Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) is higher than the configured value ({self._raw.get('nodeRam')}GB)")
             isValid = False
 
-        return isValid
+        return isValid, errorMessages
 
 
     def getInitScriptPath(self) -> Optional[Path]:

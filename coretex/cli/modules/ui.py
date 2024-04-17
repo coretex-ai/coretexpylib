@@ -22,7 +22,7 @@ from tabulate import tabulate
 import click
 import inquirer
 
-from .node_mode import NodeMode
+from ...entities import NodeMode
 from ...configuration import UserConfiguration, NodeConfiguration
 
 

@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Any, Dict, Tuple, Optional
+from typing import Tuple, Optional
 from enum import Enum, IntEnum
 from pathlib import Path
 from base64 import b64encode
@@ -23,13 +23,12 @@ from base64 import b64encode
 import logging
 import requests
 
-from . import config_defaults, utils, ui
-from .node_mode import NodeMode
+from . import utils, ui
 from ...cryptography import rsa
 from ...networking import networkManager, NetworkRequestError
 from ...utils import CommandException, docker
-from ...entities.model import Model
-from ...configuration import UserConfiguration, NodeConfiguration
+from ...entities import Model, NodeMode
+from ...configuration import config_defaults, UserConfiguration, NodeConfiguration
 
 
 class NodeException(Exception):
@@ -259,26 +258,26 @@ def selectNodeMode(storagePath: str) -> Tuple[int, Optional[int]]:
     return availableNodeModes[selectedMode], None
 
 
-def promptCpu(config: Dict[str, Any], cpuLimit: int) -> int:
+def promptCpu(cpuLimit: int) -> int:
     cpuCount: int = ui.clickPrompt(f"Enter the number of CPUs the container will use (Maximum: {cpuLimit}) (press enter to use default)", cpuLimit, type = int)
 
     if cpuCount > cpuLimit:
         ui.errorEcho(f"ERROR: CPU limit in Docker Desktop ({cpuLimit}) is lower than the specified value ({cpuCount})")
-        return promptCpu(config, cpuLimit)
+        return promptCpu(cpuLimit)
 
     return cpuCount
 
 
-def promptRam(config: Dict[str, Any], ramLimit: int) -> int:
+def promptRam(ramLimit: int) -> int:
     nodeRam: int = ui.clickPrompt(f"Node RAM memory limit in GB (Minimum: {config_defaults.MINIMUM_RAM_MEMORY}GB, Maximum: {ramLimit}GB) (press enter to use default)", ramLimit, type = int)
 
     if nodeRam > ramLimit:
-        ui.errorEcho(f"ERROR: RAM limit in Docker Desktop ({ramLimit}GB) is lower than the configured value ({config['ramLimit']}GB). Please adjust resource limitations in Docker Desktop settings.")
-        return promptRam(config, ramLimit)
+        ui.errorEcho(f"ERROR: RAM limit in Docker Desktop ({ramLimit}GB) is lower than the configured value ({nodeRam}GB). Please adjust resource limitations in Docker Desktop settings.")
+        return promptRam(ramLimit)
 
     if nodeRam < config_defaults.MINIMUM_RAM_MEMORY:
-        ui.errorEcho(f"ERROR: Configured RAM ({config['ramLimit']}GB) is lower than the minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB).")
-        return promptRam(config, ramLimit)
+        ui.errorEcho(f"ERROR: Configured RAM ({nodeRam}GB) is lower than the minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB).")
+        return promptRam(ramLimit)
 
     return nodeRam
 
@@ -309,38 +308,6 @@ def checkResourceLimitations() -> None:
         raise RuntimeError(f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) is higher than your current Docker desktop RAM limit ({ramLimit}GB). Please adjust resource limitations in Docker Desktop settings to match Node requirements.")
 
 
-def isConfigurationValid(config: Dict[str, Any]) -> bool:
-    isValid = True
-    cpuLimit, ramLimit = docker.getResourceLimits()
-
-    if not isinstance(config["nodeRam"], int):
-        ui.errorEcho(f"Invalid config \"nodeRam\" field type \"{type(config['nodeRam'])}\". Expected: \"int\"")
-        isValid = False
-
-    if not isinstance(config["cpuCount"], int):
-        ui.errorEcho(f"Invalid config \"cpuCount\" field type \"{type(config['cpuCount'])}\". Expected: \"int\"")
-        isValid = False
-
-    if config["cpuCount"] > cpuLimit:
-        ui.errorEcho(f"Configuration not valid. CPU limit in Docker Desktop ({cpuLimit}) is lower than the configured value ({config['cpuCount']})")
-        isValid = False
-
-    if ramLimit < config_defaults.MINIMUM_RAM_MEMORY:
-        ui.errorEcho(f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) is higher than your current Docker desktop RAM limit ({ramLimit}GB). Please adjust resource limitations in Docker Desktop settings to match Node requirements.")
-        isValid = False
-
-    if config["nodeRam"] > ramLimit:
-        ui.errorEcho(f"Configuration not valid. RAM limit in Docker Desktop ({ramLimit}GB) is lower than the configured value ({config['nodeRam']}GB)")
-        isValid = False
-
-
-    if config["nodeRam"] < config_defaults.MINIMUM_RAM_MEMORY:
-        ui.errorEcho(f"Configuration not valid. Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) is higher than the configured value ({config['nodeRam']}GB)")
-        isValid = False
-
-    return isValid
-
-
 def configureNode(config: NodeConfiguration, verbose: bool) -> None:
     ui.highlightEcho("[Node Configuration]")
 
@@ -367,7 +334,7 @@ def configureNode(config: NodeConfiguration, verbose: bool) -> None:
     config.nodeRam = min(ramLimit, config_defaults.DEFAULT_RAM_MEMORY)
     config.nodeSwap = config_defaults.DEFAULT_SWAP_MEMORY
     config.nodeSharedMemory = config_defaults.DEFAULT_SHARED_MEMORY
-    config.cpuCount = config_defaults.DEFAULT_CPU_COUNT
+    config.cpuCount = config_defaults.DEFAULT_CPU_COUNT if config_defaults.DEFAULT_CPU_COUNT is not None else 0
     config.nodeMode = config_defaults.DEFAULT_NODE_MODE
     config.allowDocker = config_defaults.DEFAULT_ALLOW_DOCKER
     config.nodeSecret = config_defaults.DEFAULT_NODE_SECRET
@@ -378,9 +345,9 @@ def configureNode(config: NodeConfiguration, verbose: bool) -> None:
     if verbose:
         configstoragePath = ui.clickPrompt("Storage path (press enter to use default)", config_defaults.DEFAULT_STORAGE_PATH, type = str)
 
-        config.cpuCount = promptCpu(config, cpuLimit)
+        config.cpuCount = promptCpu(cpuLimit)
 
-        config.nodeRam = promptRam(config, ramLimit)
+        config.nodeRam = promptRam(ramLimit)
 
         config.nodeSwap = ui.clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", config_defaults.DEFAULT_SWAP_MEMORY, type = int)
         config.nodeSharedMemory = ui.clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", config_defaults.DEFAULT_SHARED_MEMORY, type = int)
@@ -408,8 +375,12 @@ def configureNode(config: NodeConfiguration, verbose: bool) -> None:
 def initializeNodeConfiguration() -> None:
     config = NodeConfiguration()
 
-    if config.isNodeConfigured() and not isConfigurationValid(config):
-        raise RuntimeError(f"Invalid configuration. Please run \"coretex node config\" command to configure Node.")
+    if config.isNodeConfigured():
+        isConfigValid, errors = config.isConfigurationValid()
+        if not isConfigValid:
+            for error in errors:
+                ui.errorEcho(error)
+            raise RuntimeError(f"Invalid configuration. Please run \"coretex node config\" command to configure Node.")
 
     if not config.isNodeConfigured():
         ui.errorEcho("Node configuration not found.")

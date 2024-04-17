@@ -17,12 +17,11 @@
 
 from pathlib import Path
 
-from . import config_defaults
 from .cron import jobExists, scheduleJob
 from .node import getRepoFromImageUrl, getTagFromImageUrl
 from ..resources import RESOURCES_DIR
 from ...utils import command
-from ...configuration import CONFIG_DIR, UserConfiguration, NodeConfiguration
+from ...configuration import config_defaults, CONFIG_DIR, UserConfiguration, NodeConfiguration
 
 
 UPDATE_SCRIPT_NAME = "ctx_node_update.sh"
