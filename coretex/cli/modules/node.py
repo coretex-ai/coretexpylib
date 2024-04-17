@@ -287,7 +287,7 @@ def configureNode(config: NodeConfiguration, verbose: bool) -> None:
     config.cpuCount = config_defaults.DEFAULT_CPU_COUNT if config_defaults.DEFAULT_CPU_COUNT is not None else 0  #  is this fine?
     config.nodeMode = config_defaults.DEFAULT_NODE_MODE
     config.allowDocker = config_defaults.DEFAULT_ALLOW_DOCKER
-    config.secretsKey = config_defaults.DEFAULT_SECRETS_KEY
+    config.nodeSecret = config_defaults.DEFAULT_NODE_SECRET
     config.initScript = config_defaults.DEFAULT_INIT_SCRIPT
 
     publicKey: Optional[bytes] = None
@@ -299,7 +299,7 @@ def configureNode(config: NodeConfiguration, verbose: bool) -> None:
         config.nodeSharedMemory = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", config_defaults.DEFAULT_SHARED_MEMORY, type = int)
         config.cpuCount = clickPrompt("Enter the number of CPUs the container will use (press enter to use default)", config_defaults.DEFAULT_CPU_COUNT, type = int)
         config.allowDocker = clickPrompt("Allow Node to access system docker? This is a security risk! (Y/n)", config_defaults.DEFAULT_ALLOW_DOCKER, type = bool)
-        config.secretsKey = clickPrompt("Enter a key used for decrypting your Coretex Secrets", config_defaults.DEFAULT_SECRETS_KEY, type = str, hide_input = True)
+        config.nodeSecret = clickPrompt("Enter a key used for decrypting your Coretex Secrets", config_defaults.DEFAULT_NODE_SECRET, type = str, hide_input = True)
         config.initScript = _configureInitScript()
 
         nodeMode, modelId = selectNodeMode(config.storagePath)
@@ -308,7 +308,7 @@ def configureNode(config: NodeConfiguration, verbose: bool) -> None:
             config.modelId = modelId
 
         nodeSecret: str = clickPrompt("Enter a secret which will be used to generate RSA key-pair for Node", config_defaults.DEFAULT_NODE_SECRET, type = str, hide_input = True)
-        config["nodeSecret"] = nodeSecret
+        config.nodeSecret = nodeSecret
 
         if nodeSecret != config_defaults.DEFAULT_NODE_SECRET:
             progressEcho("Generating RSA key-pair (2048 bits long) using provided node secret...")
@@ -317,7 +317,7 @@ def configureNode(config: NodeConfiguration, verbose: bool) -> None:
     else:
         stdEcho("To configure node manually run coretex node config with --verbose flag.")
 
-    config["nodeAccessToken"] = registerNode(config["nodeName"], publicKey)
+    config.nodeAccessToken = registerNode(config.nodeName, publicKey)
 
 
 def initializeNodeConfiguration() -> None:
