@@ -20,7 +20,9 @@ from pathlib import Path
 
 import os
 
+from . import config_defaults
 from .base import BaseConfiguration, CONFIG_DIR
+from ..utils import docker
 from ..utils import isCliRuntime
 
 
@@ -183,32 +185,50 @@ class NodeConfiguration(BaseConfiguration):
         self._raw["modelId"] = value
 
     def isNodeConfigured(self) -> bool:
-        isConfigured = True
-        if self._raw.get("nodeName") is None or isinstance("nodeName", str):
-            isConfigured = False
+        return (
+            not isinstance(self._raw.get("nodeName"), str) or
+            not isinstance(self._raw.get("password"), str) or
+            not isinstance(self._raw.get("image"), str) or
+            not isinstance(self._raw.get("nodeAccessToken"), str) or
+            not isinstance(self._raw.get("cpuCount"), int) or
+            not isinstance(self._raw.get("nodeRam"), int) or
+            not isinstance(self._raw.get("nodeSwap"), int) or
+            not isinstance(self._raw.get("nodeSharedMemory"), int) or
+            not isinstance(self._raw.get("nodeMode"), int)
+        )
 
-        if self._raw.get("password") is None or isinstance("password", str):
-            isConfigured = False
+    def isConfigurationValid(self) -> bool:
+        isValid = True
+        errorMessages = []
+        cpuLimit, ramLimit = docker.getResourceLimits()
 
-        if self._raw.get("image") is None or isinstance("image", str):
-            isConfigured = False
+        if not isinstance(config["nodeRam"], int):
+            ui.errorEcho(f"Invalid config \"nodeRam\" field type \"{type(config['nodeRam'])}\". Expected: \"int\"")
+            isValid = False
 
-        if self._raw.get("nodeAccessToken") is None or isinstance("nodeAccessToken", str):
-            isConfigured = False
+        if not isinstance(config["cpuCount"], int):
+            ui.errorEcho(f"Invalid config \"cpuCount\" field type \"{type(config['cpuCount'])}\". Expected: \"int\"")
+            isValid = False
 
-        if self._raw.get("nodeRam") is None or isinstance("nodeRam", int):
-            isConfigured = False
+        if config["cpuCount"] > cpuLimit:
+            ui.errorEcho(f"Configuration not valid. CPU limit in Docker Desktop ({cpuLimit}) is lower than the configured value ({config['cpuCount']})")
+            isValid = False
 
-        if self._raw.get("nodeSwap") is None or isinstance("nodeSwap", int):
-            isConfigured = False
+        if ramLimit < config_defaults.MINIMUM_RAM_MEMORY:
+            ui.errorEcho(f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) is higher than your current Docker desktop RAM limit ({ramLimit}GB). Please adjust resource limitations in Docker Desktop settings to match Node requirements.")
+            isValid = False
 
-        if self._raw.get("nodeSharedMemory") is None or isinstance("nodeSharedMemory", int):
-            isConfigured = False
+        if config["nodeRam"] > ramLimit:
+            ui.errorEcho(f"Configuration not valid. RAM limit in Docker Desktop ({ramLimit}GB) is lower than the configured value ({config['nodeRam']}GB)")
+            isValid = False
 
-        if self._raw.get("nodeMode") is None or isinstance("nodeMode", int):
-            isConfigured = False
 
-        return isConfigured
+        if config["nodeRam"] < config_defaults.MINIMUM_RAM_MEMORY:
+            ui.errorEcho(f"Configuration not valid. Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) is higher than the configured value ({config['nodeRam']}GB)")
+            isValid = False
+
+        return isValid
+
 
     def getInitScriptPath(self) -> Optional[Path]:
         value = self._raw.get("initScript")
