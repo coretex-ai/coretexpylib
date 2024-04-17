@@ -183,31 +183,32 @@ class NodeConfiguration(BaseConfiguration):
         self._raw["modelId"] = value
 
     def isNodeConfigured(self) -> bool:
-        if self._raw.get("nodeName") is not None and isinstance("nodeName", str):
-            return True
+        isConfigured = True
+        if self._raw.get("nodeName") is None or isinstance("nodeName", str):
+            isConfigured = False
 
-        if self._raw.get("password") is not None and isinstance("password", str):
-            return True
+        if self._raw.get("password") is None or isinstance("password", str):
+            isConfigured = False
 
-        if self._raw.get("image") is not None and isinstance("image", str):
-            return True
+        if self._raw.get("image") is None or isinstance("image", str):
+            isConfigured = False
 
-        if self._raw.get("nodeAccessToken") is not None and isinstance("nodeAccessToken", str):
-            return True
+        if self._raw.get("nodeAccessToken") is None or isinstance("nodeAccessToken", str):
+            isConfigured = False
 
-        if self._raw.get("nodeRam") is not None and isinstance("nodeRam", int):
-            return True
+        if self._raw.get("nodeRam") is None or isinstance("nodeRam", int):
+            isConfigured = False
 
-        if self._raw.get("nodeSwap") is not None and isinstance("nodeSwap", int):
-            return True
+        if self._raw.get("nodeSwap") is None or isinstance("nodeSwap", int):
+            isConfigured = False
 
-        if self._raw.get("nodeSharedMemory") is not None and isinstance("nodeSharedMemory", int):
-            return True
+        if self._raw.get("nodeSharedMemory") is None or isinstance("nodeSharedMemory", int):
+            isConfigured = False
 
-        if self._raw.get("nodeMode") is not None and isinstance("nodeMode", int):
-            return True
+        if self._raw.get("nodeMode") is None or isinstance("nodeMode", int):
+            isConfigured = False
 
-        return False
+        return isConfigured
 
     def getInitScriptPath(self) -> Optional[Path]:
         value = self._raw.get("initScript")
