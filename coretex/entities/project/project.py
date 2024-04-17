@@ -140,8 +140,6 @@ class Project(BaseObject):
             NetworkRequestError -> If request for updating the Project visibility failed
         """
 
-        self.visibility = visibility
-
         parameters = {
             "entity_id": self.id,
             "type": EntityVisibilityType.project,
@@ -152,3 +150,5 @@ class Project(BaseObject):
 
         if response.hasFailed():
             raise NetworkRequestError(response, "Failed to update visibility of the Project.")
+
+        self.visibility = visibility
