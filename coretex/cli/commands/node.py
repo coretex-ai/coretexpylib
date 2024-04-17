@@ -60,7 +60,6 @@ def start(image: Optional[str]) -> None:
     node_module.start(dockerImage, config)
     docker.removeDanglingImages(node_module.getRepoFromImageUrl(dockerImage), node_module.getTagFromImageUrl(dockerImage))
 
-
     activateAutoUpdate(CONFIG_DIR, config)
 
 
@@ -120,6 +119,7 @@ def update() -> None:
 
     node_module.start(dockerImage, config)
     docker.removeDanglingImages(node_module.getRepoFromImageUrl(dockerImage), node_module.getTagFromImageUrl(dockerImage))
+
 
 @click.command()
 @click.option("--verbose", is_flag = True, help = "Configure node settings manually.")
