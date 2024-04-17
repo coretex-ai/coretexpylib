@@ -126,7 +126,7 @@ class Project(BaseObject):
         self.tasks.append(task)
         return True
 
-    def updateVisibility(self, visibility: ProjectVisibility) -> bool:
+    def updateVisibility(self, visibility: ProjectVisibility) -> None:
         """
             Updates visibility of the project
 
@@ -135,14 +135,12 @@ class Project(BaseObject):
             visibility : ProjectVisibility
                 visibility of the project
 
-            Returns
-            -------
-            bool -> True if the visibility of the Project is successfully updated
-
             Raises
             ------
             NetworkRequestError -> If request for updating the Project visibility failed
         """
+
+        self.visibility = visibility
 
         parameters = {
             "entity_id": self.id,
@@ -154,5 +152,3 @@ class Project(BaseObject):
 
         if response.hasFailed():
             raise NetworkRequestError(response, "Failed to update visibility of the Project.")
-
-        return True
