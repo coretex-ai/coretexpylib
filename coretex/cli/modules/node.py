@@ -27,7 +27,8 @@ from . import utils, ui
 from ...cryptography import rsa
 from ...networking import networkManager, NetworkRequestError
 from ...utils import CommandException, docker
-from ...entities import Model, NodeMode
+from ...entities import Model
+from ...node import NodeMode
 from ...configuration import config_defaults, UserConfiguration, NodeConfiguration
 
 
@@ -331,7 +332,7 @@ def configureNode(config: NodeConfiguration, verbose: bool) -> None:
         config.image += f":latest-{tag}"
 
     config.storagePath = config_defaults.DEFAULT_STORAGE_PATH
-    config.nodeRam = min(ramLimit, config_defaults.DEFAULT_RAM_MEMORY)
+    config.nodeRam = int(min(ramLimit, config_defaults.DEFAULT_RAM_MEMORY))
     config.nodeSwap = config_defaults.DEFAULT_SWAP_MEMORY
     config.nodeSharedMemory = config_defaults.DEFAULT_SHARED_MEMORY
     config.cpuCount = config_defaults.DEFAULT_CPU_COUNT if config_defaults.DEFAULT_CPU_COUNT is not None else 0
@@ -343,7 +344,7 @@ def configureNode(config: NodeConfiguration, verbose: bool) -> None:
     publicKey: Optional[bytes] = None
 
     if verbose:
-        configstoragePath = ui.clickPrompt("Storage path (press enter to use default)", config_defaults.DEFAULT_STORAGE_PATH, type = str)
+        config.storagePath = ui.clickPrompt("Storage path (press enter to use default)", config_defaults.DEFAULT_STORAGE_PATH, type = str)
 
         config.cpuCount = promptCpu(cpuLimit)
 

@@ -25,7 +25,5 @@ def _syncConfigWithEnv() -> None:
     # the necessary sync between config properties and corresponding
     # environment variables (e.g. storagePath -> CTX_STORAGE_PATH)
 
-    print('sync')
-
     UserConfiguration()
     NodeConfiguration()

@@ -19,7 +19,7 @@ from pathlib import Path
 
 import os
 
-from ..entities import NodeMode
+from ..node import NodeMode
 from ..statistics import getAvailableRamMemory
 
 
