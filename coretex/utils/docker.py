@@ -129,4 +129,4 @@ def getResourceLimits() -> Tuple[int, int]:
     _, output, _ = command(["docker", "info", "--format", "{{json .}}"], ignoreStdout = True, ignoreStderr = True)
     jsonOutput = json.loads(output)
 
-    return jsonOutput["NCPU"], round(jsonOutput["MemTotal"] / (1024 ** 3), None)
+    return jsonOutput["NCPU"], round(jsonOutput["MemTotal"] / (1024 ** 3))

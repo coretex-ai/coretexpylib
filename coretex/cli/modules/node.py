@@ -335,7 +335,7 @@ def configureNode(config: NodeConfiguration, verbose: bool) -> None:
     config.nodeRam = int(min(ramLimit, config_defaults.DEFAULT_RAM_MEMORY))
     config.nodeSwap = config_defaults.DEFAULT_SWAP_MEMORY
     config.nodeSharedMemory = config_defaults.DEFAULT_SHARED_MEMORY
-    config.cpuCount = config_defaults.DEFAULT_CPU_COUNT if config_defaults.DEFAULT_CPU_COUNT is not None else 0
+    config.cpuCount = int(min(cpuLimit, config_defaults.DEFAULT_CPU_COUNT))
     config.nodeMode = config_defaults.DEFAULT_NODE_MODE
     config.allowDocker = config_defaults.DEFAULT_ALLOW_DOCKER
     config.nodeSecret = config_defaults.DEFAULT_NODE_SECRET
@@ -373,31 +373,55 @@ def configureNode(config: NodeConfiguration, verbose: bool) -> None:
     config.nodeAccessToken = registerNode(config.nodeName, publicKey)
 
 
+def promptNodeConfiguration() -> bool:
+    if isRunning():
+        stopNode = ui.clickPrompt(
+            "Node is already running. Do you wish to stop the Node? (Y/n)",
+            type = bool,
+            default = True,
+            show_default = False
+        )
+
+        if not stopNode:
+            ui.errorEcho("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
+            return False
+
+        stop()
+
+    return True
+
+
 def initializeNodeConfiguration() -> None:
     config = NodeConfiguration()
 
     if config.isNodeConfigured():
         isConfigValid, errors = config.isConfigurationValid()
-        if not isConfigValid:
-            for error in errors:
-                ui.errorEcho(error)
-            raise RuntimeError(f"Invalid configuration. Please run \"coretex node config\" command to configure Node.")
+
+        if isConfigValid:
+            return
+
+        for error in errors:
+            ui.errorEcho(error)
+
+        if not ui.clickPrompt(
+            f"Existing node configuration is invalid. Would you like to update? (Y/n)",
+            type = bool,
+            default = True,
+            show_default = False
+        ):
+            return
+
+        if not promptNodeConfiguration():
+            return
+
+        configureNode(config, verbose = False)
+        config.save()
 
     if not config.isNodeConfigured():
         ui.errorEcho("Node configuration not found.")
-        if isRunning():
-            stopNode = ui.clickPrompt(
-                "Node is already running. Do you wish to stop the Node? (Y/n)",
-                type = bool,
-                default = True,
-                show_default = False
-            )
 
-            if not stopNode:
-                ui.errorEcho("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
-                return
-
-            stop()
+        if not promptNodeConfiguration():
+            return
 
         configureNode(config, verbose = False)
         config.save()
