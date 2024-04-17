@@ -58,7 +58,6 @@ def removeDanglingImages(repository: str) -> None:
     try:
         progressEcho(f"Removing outdated images...")
         docker.removeDanglingImages(repository)
-
     except CommandException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to remove old images")
