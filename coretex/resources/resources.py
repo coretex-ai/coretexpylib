@@ -17,5 +17,4 @@
 
 from pathlib import Path
 
-
-PYTHON_ENTRY_POINT_PATH = Path.cwd().joinpath("coretex", "resources", "_coretex.py")
+PYTHON_ENTRY_POINT_PATH = Path(__file__).resolve().parent.joinpath("_coretex.py")
