@@ -23,6 +23,9 @@ from coretex.networking import EntityNotCreated
 from .base import BaseObject
 from .task import Task
 from .project_type import ProjectType
+from .project_visibility import ProjectVisibility
+from ..entity_visibility_type import EntityVisibilityType
+from ...networking import networkManager, NetworkResponse, NetworkRequestError
 
 
 class Project(BaseObject):
@@ -33,9 +36,16 @@ class Project(BaseObject):
     """
 
     tasks: List[Task]
+    visibility: ProjectVisibility
 
     @classmethod
-    def createProject(cls, name: str, projectType: ProjectType, description: Optional[str] = None) -> Self:
+    def createProject(
+        cls,
+        name: str,
+        projectType: ProjectType,
+        visiblity: ProjectVisibility = ProjectVisibility.private,
+        description: Optional[str] = None
+    ) -> Self:
         """
             Creates a new project with the provided name and description
 
@@ -43,6 +53,10 @@ class Project(BaseObject):
             ----------
             name : str
                 project name
+            projectType : ProjectType
+                type of the created Project
+            visibility : ProjectVisibility
+                visibility of the created Project
             description : Optional[str]
                 project description
 
@@ -71,7 +85,8 @@ class Project(BaseObject):
         project = cls.create(
             name = name,
             project_task = projectType,
-            description = description
+            description = description,
+            visiblity = visiblity
         )
 
         if project is None:
@@ -110,3 +125,30 @@ class Project(BaseObject):
 
         self.tasks.append(task)
         return True
+
+    def updateVisibility(self, visibility: ProjectVisibility) -> None:
+        """
+            Updates visibility of the project
+
+            Parameters
+            ----------
+            visibility : ProjectVisibility
+                visibility of the project
+
+            Raises
+            ------
+            NetworkRequestError -> If request for updating the Project visibility failed
+        """
+
+        parameters = {
+            "entity_id": self.id,
+            "type": EntityVisibilityType.project,
+            "visibility": visibility
+        }
+
+        response = networkManager.post("entity-visibility", parameters)
+
+        if response.hasFailed():
+            raise NetworkRequestError(response, "Failed to update visibility of the Project.")
+
+        self.visibility = visibility
