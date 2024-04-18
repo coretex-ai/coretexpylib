@@ -21,7 +21,6 @@ import logging
 import sys
 
 from .remote import processRemote
-from .local import processLocal
 from .current_task_run import setCurrentTaskRun
 from .. import folder_manager
 from ..entities import TaskRun, TaskRunStatus, LogSeverity
@@ -72,10 +71,7 @@ def initializeRTask(mainFunction: Callable[[TaskRun], None], args: List[str]) ->
             list of command line arguments
     """
 
-    try:
-        taskRunId, callback = processRemote(args)
-    except:
-        taskRunId, callback = processLocal(args)
+    taskRunId, callback = processRemote(args)
 
     try:
         taskRun = _prepareForExecution(taskRunId)

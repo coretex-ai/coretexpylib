@@ -5,7 +5,7 @@ import click
 
 from . import ui
 from ...entities import Project, ProjectType, ProjectVisibility
-from ...networking import EntityNotCreated, NetworkResponse, networkManager
+from ...networking import EntityNotCreated, NetworkRequestError
 from ...configuration import loadConfig, saveConfig
 
 
@@ -77,3 +77,16 @@ def getProject(name: Optional[str], config: Dict[str, Any]) -> Optional[Project]
         "Project can be selected globally by using \"coretex project select\" command\n"
         "or you can pass the Project directly to this command using \"--project\" option"
     )
+
+
+def isProjectSelected() -> bool:
+    config = loadConfig()
+
+    if config.get("projectId") is None:
+        return False
+
+    try:
+        Project.fetchById(config["projectId"])
+        return True
+    except NetworkRequestError:
+        return False

@@ -21,7 +21,7 @@ import click
 
 from ..modules import ui, project_utils, utils, user
 from ...entities import Project, ProjectType, ProjectVisibility
-from ...networking import NetworkRequestError, EntityNotCreated, networkManager, RequestFailedError
+from ...networking import EntityNotCreated, RequestFailedError
 from ...configuration import loadConfig
 
 

@@ -51,7 +51,7 @@ def command(
     process = subprocess.Popen(
         args,
         shell = shell,
-        cwd = Path(__file__).parent,
+        cwd = Path.cwd(),
         stdout = subprocess.PIPE,
         stderr = subprocess.PIPE
     )
