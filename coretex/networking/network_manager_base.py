@@ -580,7 +580,7 @@ class NetworkManagerBase(ABC):
         if isinstance(destination, str):
             destination = Path(destination)
 
-        response = self.request(endpoint, RequestType.get, query = params, stream = True)
+        response = self.request(endpoint, RequestType.get, query = params, stream = True, timeout = (5, 60))
         if response.hasFailed():
             return response
 
