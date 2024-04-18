@@ -3,7 +3,7 @@ from pathlib import Path
 
 import json
 
-from PIL import Image
+from PIL import Image, ImageOps
 
 import numpy as np
 
@@ -40,7 +40,7 @@ def _findImage(path: Path) -> Path:
 
 
 def _readImageData(path: Path) -> np.ndarray:
-    image = Image.open(path)
+    image = ImageOps.exif_transpose(Image.open(path))
     if image.mode != "RGB":
         image = image.convert("RGB")
 
