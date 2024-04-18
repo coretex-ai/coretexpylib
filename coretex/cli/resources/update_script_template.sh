@@ -54,11 +54,17 @@ OUTPUT_FILE="$OUTPUT_DIR/ctx_autoupdate.log"
 # Redirect all output to the file
 exec >>"$OUTPUT_FILE" 2>&1
 
+running_container_image_id=""
+
 fetch_node_status() {{
     fetched_status=0
     api_response=$(curl -s "$NODE_STATUS_ENDPOINT")
     fetched_status=$(echo "$api_response" | sed -n 's/.*"status":\([^,}}]*\).*/\1/p')
     echo "$fetched_status"
+}}
+
+store_running_container_image_id() {{
+    running_container_image_id=$($DOCKER_PATH inspect -f '{{{{.Image}}}}' "$CONTAINER_NAME")
 }}
 
 should_update() {{
@@ -103,6 +109,7 @@ pull_image() {{
 
 # Define function to stop and remove the container
 stop_node() {{
+    store_running_container_image_id
     echo "Stopping and removing the container: $CONTAINER_NAME"
     $DOCKER_PATH stop "$CONTAINER_NAME" && $DOCKER_PATH rm "$CONTAINER_NAME"
 
@@ -112,6 +119,18 @@ stop_node() {{
     fi
 
     echo "Node successfully stopped."
+}}
+
+remove_image() {{
+    # Remove the image associated with the stopped container
+    echo "Removing old image..."
+
+    if [ -n "$running_container_image_id" ]; then
+        echo "Removing the image: $running_container_image_id"
+        $DOCKER_PATH image rm "$running_container_image_id"
+    else
+        echo "Unable to fetch the ID of the image associated with the container."
+    fi
 }}
 
 # Define function to start the node with the latest image
@@ -173,6 +192,10 @@ update_node() {{
     fi
 
     if ! stop_node; then
+        return 1
+    fi
+
+    if ! remove_image; then
         return 1
     fi
 
