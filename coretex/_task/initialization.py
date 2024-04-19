@@ -40,7 +40,7 @@ def _initializeLogger(taskRun: TaskRun) -> None:
     streamHandler.setLevel(severity.stdSeverity)
     streamHandler.setFormatter(createFormatter(
         includeTime = False,
-        includeLevel = taskRun.isLocal
+        includeLevel = False
     ))
 
     logPath = folder_manager.getRunLogsDir(taskRun.id) / "run.log"

@@ -1,6 +1,7 @@
 from typing import List, Any
 from pathlib import Path
 
+import os
 import logging
 import subprocess
 
@@ -67,7 +68,8 @@ def executeProcess(
         shell = False,
         cwd = cwd,
         stdout = subprocess.PIPE,
-        stderr = subprocess.PIPE
+        stderr = subprocess.PIPE,
+        env = os.environ
     )
 
      # Run a thread which captures process stdout and prints it out to Coretex.ai console

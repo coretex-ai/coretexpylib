@@ -19,6 +19,7 @@ if __name__ == "__main__":
         callback.onStart()
 
         logging.getLogger("coretexpylib").info(">> [Coretex] TaskRun execution started")
+        logging.getLogger("coretexpylib").info(f"\tPython: {sys.executable}")
 
         entryPointPath = Path(taskRun.entryPoint)
 
