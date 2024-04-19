@@ -47,7 +47,6 @@ def pull(image: str) -> None:
     try:
         progressEcho(f"Fetching image {image}...")
         docker.imagePull(image)
-
         successEcho(f"Image {image} successfully fetched.")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
@@ -248,11 +247,7 @@ def promptCpu(config: Dict[str, Any], cpuLimit: int) -> int:
     cpuCount: int = clickPrompt(f"Enter the number of CPUs the container will use (Maximum: {cpuLimit}) (press enter to use default)", cpuLimit, type = int)
 
     if cpuCount > cpuLimit:
-        errorEcho(f"ERROR: CPU limit in Docker Desktop ({cpuLimit}) is lower than the specified value ({cpuCount}). (Specify value between 0 - {cpuLimit})")
-        return promptCpu(config, cpuLimit)
-
-    if cpuCount > config_defaults.DEFAULT_CPU_COUNT:
-        errorEcho(f"ERROR: Specified value ({cpuCount}) for CPU cores is greater than your system has ({config_defaults.DEFAULT_CPU_COUNT}). (Specify value between 0 - {cpuLimit})")
+        errorEcho(f"ERROR: CPU limit in Docker Desktop ({cpuLimit}) is lower than the specified value ({cpuCount})")
         return promptCpu(config, cpuLimit)
 
     return cpuCount
