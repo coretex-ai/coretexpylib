@@ -1,4 +1,3 @@
-from typing import Union
 from pathlib import Path
 
 import sys
@@ -21,10 +20,16 @@ if __name__ == "__main__":
         logging.getLogger("coretexpylib").info(">> [Coretex] TaskRun execution started")
         logging.getLogger("coretexpylib").info(f"\tPython: {sys.executable}")
 
-        entryPointPath = Path(taskRun.entryPoint)
+        entryPointDir = str(Path(taskRun.entryPoint).parent)
+        if entryPointDir not in sys.path:
+            sys.path.append(entryPointDir)
+
+        _coretexPath = str(Path(__file__).resolve().parent)
+        if _coretexPath in sys.path:
+            sys.path.remove(_coretexPath)
 
         # Run the entry point script
-        runpy.run_path(str(entryPointPath), {}, "__main__")
+        runpy.run_path(taskRun.entryPoint, {}, "__main__")
 
         callback.onSuccess()
     except RequestFailedError:

@@ -47,7 +47,7 @@ def _handleError(process: subprocess.Popen, worker: LoggerUploadWorker, isEnable
         if isEnabled and process.returncode == 0:
             severity = LogSeverity.warning
         elif isEnabled:
-            severity = LogSeverity.debug
+            severity = LogSeverity.fatal
         else:
             # We always want to know what gets logged to stderr
             severity = LogSeverity.debug

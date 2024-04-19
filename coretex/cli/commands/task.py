@@ -17,8 +17,6 @@
 
 from typing import Optional
 
-import sys
-
 import click
 
 from ... import folder_manager
@@ -27,7 +25,7 @@ from ..modules.utils import onBeforeCommandExecute
 from ..modules.project_utils import getProject
 from ..._task import TaskRunWorker, LoggerUploadWorker, executeProcess, readTaskConfig
 from ...configuration import loadConfig
-from ...entities import TaskRun, TaskRunStatus, Project
+from ...entities import TaskRun, TaskRunStatus
 from ...resources import PYTHON_ENTRY_POINT_PATH
 
 
@@ -64,20 +62,15 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
     with TaskRunWorker(config["refreshToken"], taskRun.id) as worker:
         loggerUploadWorker = LoggerUploadWorker(taskRun.id)
         command = [
-            sys.executable,
-            str(PYTHON_ENTRY_POINT_PATH),
-            "--taskRunId",
-            str(taskRun.id),
-            "--refreshToken",
-            str(config["refreshToken"]),
-            "--projectId",
-            str(selectedProject.id)
+            "python", str(PYTHON_ENTRY_POINT_PATH),
+            "--taskRunId", str(taskRun.id),
+            "--refreshToken", str(config["refreshToken"])
         ]
 
         returnCode = executeProcess(
             command,
             loggerUploadWorker,
-            True,
+            captureErr = True
         )
 
     loggerUploadWorker.uploadLogs()
