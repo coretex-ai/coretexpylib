@@ -69,7 +69,6 @@ def executeProcess(
         cwd = cwd,
         stdout = subprocess.PIPE,
         stderr = subprocess.PIPE,
-        env = os.environ
     )
 
      # Run a thread which captures process stdout and prints it out to Coretex.ai console

@@ -47,6 +47,7 @@ def pull(image: str) -> None:
     try:
         progressEcho(f"Fetching image {image}...")
         docker.imagePull(image)
+
         successEcho(f"Image {image} successfully fetched.")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
