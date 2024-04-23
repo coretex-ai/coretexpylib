@@ -59,8 +59,7 @@ def getAvailableRamMemory() -> int:
 
 def getAvailableCpuCount() -> int:
     availableCPUs = os.cpu_count()
-    cpuCount = availableCPUs if availableCPUs is not None else 1
-    return cpuCount
+    return availableCPUs if availableCPUs is not None else 1
 
 
 def getGpuUsage() -> float:
