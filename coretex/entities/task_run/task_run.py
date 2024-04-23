@@ -591,7 +591,8 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
         saveSnapshot: bool,
         name: Optional[str],
         description: Optional[str] = None,
-        parameters: Optional[List[Dict[str, Any]]] = None
+        parameters: Optional[List[Dict[str, Any]]] = None,
+        entryPoint: Optional[str] = None
     ) -> Self:
 
         """
@@ -611,6 +612,8 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
                 TaskRun description (not required)
             parameters : Optional[List[Dict[str, Any]]]
                 list of parameters (not required)
+            entryPoint : Optional[str]
+                relative path to the script inside of the project
 
             Returns
             -------
@@ -631,6 +634,10 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
             "execution_type": ExecutionType.local.value,
             "parameters": json.dumps(parameters)
         }
+
+        if entryPoint is not None:
+            params["entry_point"] = entryPoint
+
         # Create snapshot
         if saveSnapshot:
             files = [FileData.createFromPath("file", createSnapshot())]

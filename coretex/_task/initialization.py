@@ -21,7 +21,6 @@ import logging
 import sys
 
 from .remote import processRemote
-from .local import processLocal
 from .current_task_run import setCurrentTaskRun
 from .. import folder_manager
 from ..entities import TaskRun, TaskRunStatus
@@ -42,7 +41,7 @@ def _initializeLogger(taskRun: TaskRun) -> None:
     streamHandler.setLevel(severity.stdSeverity)
     streamHandler.setFormatter(createFormatter(
         includeTime = False,
-        includeLevel = taskRun.isLocal,
+        includeLevel = False,
         jsonOutput = True
     ))
 
@@ -74,10 +73,7 @@ def initializeRTask(mainFunction: Callable[[TaskRun], None], args: List[str]) ->
             list of command line arguments
     """
 
-    try:
-        taskRunId, callback = processRemote(args)
-    except:
-        taskRunId, callback = processLocal(args)
+    taskRunId, callback = processRemote(args)
 
     try:
         taskRun = _prepareForExecution(taskRunId)

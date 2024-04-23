@@ -53,6 +53,23 @@ def removeNetwork(name: str) -> None:
     command(["docker", "network", "rm", name], ignoreStdout = True, ignoreStderr = True)
 
 
+def removeImage(image: str) -> None:
+    command(["docker", "image", "rm", image], ignoreStdout = True, ignoreStderr = True)
+
+
+def removeDanglingImages(repository: str, tag: str) -> None:
+    _, output, _ = command(["docker", "image", "ls", repository, "--format", "json"], ignoreStdout = True, ignoreStderr = True)
+    images = output.strip().split("\n")
+
+    for image in images:
+        if len(image) == 0:
+            continue
+
+        jsonImg = json.loads(image)
+        if jsonImg["Tag"] != tag:
+            removeImage(jsonImg["ID"])
+
+
 def imagePull(image: str) -> None:
     command(["docker", "image", "pull", image])
 
@@ -123,3 +140,10 @@ def imageInspect(image: str) -> Dict[str, Any]:
         raise TypeError(f"Invalid function result type \"{type(jsonOutput[0])}\". Expected: \"dict\"")
 
     return jsonOutput[0]
+
+
+def getResourceLimits() -> Tuple[int, int]:
+    _, output, _ = command(["docker", "info", "--format", "{{json .}}"], ignoreStdout = True, ignoreStderr = True)
+    jsonOutput = json.loads(output)
+
+    return jsonOutput["NCPU"], round(jsonOutput["MemTotal"] / (1024 ** 3))

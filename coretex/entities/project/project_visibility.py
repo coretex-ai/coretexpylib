@@ -15,23 +15,15 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import click
-
-from .commands.login import login
-from .commands.model import model
-from .commands.node import node
-from .commands.task import run
-from .commands.project import project
-
-from .modules.intercept import ClickExceptionInterceptor
+from enum import IntEnum
 
 
-@click.group(cls = ClickExceptionInterceptor)
-def cli() -> None:
-    pass
+class ProjectVisibility(IntEnum):
 
-cli.add_command(login)
-cli.add_command(model)
-cli.add_command(project)
-cli.add_command(node)
-cli.add_command(run)
+    """
+        List of visibility types of Project on Coretex.ai
+    """
+
+    public  = 1
+    private = 2
+    shared  = 3

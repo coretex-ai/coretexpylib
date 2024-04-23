@@ -17,6 +17,7 @@
 
 from typing import Tuple
 
+import os
 import logging
 import shutil
 
@@ -54,6 +55,11 @@ def getAvailableRamMemory() -> int:
 
     memory = psutil.virtual_memory()
     return int(memory.total / (1024 ** 3))
+
+
+def getAvailableCpuCount() -> int:
+    availableCPUs = os.cpu_count()
+    return availableCPUs if availableCPUs is not None else 1
 
 
 def getGpuUsage() -> float:

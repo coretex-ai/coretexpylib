@@ -17,4 +17,5 @@
 
 from .project import Project
 from .project_type import ProjectType
+from .project_visibility import ProjectVisibility
 from .task import Task
