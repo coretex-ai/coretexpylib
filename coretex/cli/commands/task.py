@@ -59,8 +59,10 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
 
     taskRun.updateStatus(TaskRunStatus.preparingToStart)
 
-    with TaskRunWorker(config["refreshToken"], taskRun.id) as worker:
+    with TaskRunWorker(config["refreshToken"], taskRun.id):
         loggerUploadWorker = LoggerUploadWorker(taskRun.id)
+        loggerUploadWorker.start()
+
         command = [
             "python", str(PYTHON_ENTRY_POINT_PATH),
             "--taskRunId", str(taskRun.id),
