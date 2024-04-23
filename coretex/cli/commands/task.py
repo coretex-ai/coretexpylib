@@ -16,19 +16,16 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import Optional
-from pathlib import Path
-
-import sys
-import logging
 
 import click
 
+from ... import folder_manager
 from ..modules.user import initializeUserSession
 from ..modules.utils import onBeforeCommandExecute
-from ..modules.project_utils import isProjectSelected
+from ..modules.project_utils import getProject
 from ..._task import TaskRunWorker, LoggerUploadWorker, executeProcess, readTaskConfig
 from ...configuration import loadConfig
-from ...entities import TaskRun, TaskRunStatus, Project
+from ...entities import TaskRun, TaskRunStatus
 from ...resources import PYTHON_ENTRY_POINT_PATH
 
 
@@ -38,7 +35,6 @@ class RunException(Exception):
 
 @click.command()
 @onBeforeCommandExecute(initializeUserSession)
-@onBeforeCommandExecute(isProjectSelected)
 @click.argument("path", type = click.Path(exists = True, dir_okay = False))
 @click.option("--name", type = str, default = None)
 @click.option("--description", type = str, default = None)
@@ -48,13 +44,12 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
     config = loadConfig()
     parameters = readTaskConfig()
 
-    if project is not None:
-        projectId = Project.fetchByName(project).id
-    else:
-        projectId = config["projectId"]
+    selectedProject = getProject(project, config)
+    if selectedProject is None:
+        return
 
     taskRun: TaskRun = TaskRun.runLocal(
-        projectId,
+        selectedProject.id,
         snapshot,
         name,
         description,
@@ -67,24 +62,21 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
     with TaskRunWorker(config["refreshToken"], taskRun.id) as worker:
         loggerUploadWorker = LoggerUploadWorker(taskRun.id)
         command = [
-            sys.executable,
-            str(PYTHON_ENTRY_POINT_PATH),
-            "--taskRunId",
-            str(taskRun.id),
-            "--refreshToken",
-            str(config["refreshToken"]),
-            "--projectId",
-            str(config["projectId"])
+            "python", str(PYTHON_ENTRY_POINT_PATH),
+            "--taskRunId", str(taskRun.id),
+            "--refreshToken", str(config["refreshToken"])
         ]
 
         returnCode = executeProcess(
             command,
             loggerUploadWorker,
-            True,
+            captureErr = True
         )
 
-        loggerUploadWorker.uploadLogs()
-        if returnCode != 0:
-            taskRun.updateStatus(TaskRunStatus.completedWithError)
-        else:
-            taskRun.updateStatus(TaskRunStatus.completedWithSuccess)
+    loggerUploadWorker.uploadLogs()
+    if returnCode != 0:
+        taskRun.updateStatus(TaskRunStatus.completedWithError)
+    else:
+        taskRun.updateStatus(TaskRunStatus.completedWithSuccess)
+
+    folder_manager.clearTempFiles()

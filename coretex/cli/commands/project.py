@@ -20,8 +20,8 @@ from typing import Optional
 import click
 
 from ..modules import ui, project_utils, utils, user
-from ...entities import Project, ProjectType, ProjectVisibility
-from ...networking import EntityNotCreated, RequestFailedError
+from ...entities import Project, ProjectVisibility
+from ...networking import RequestFailedError
 from ...configuration import loadConfig
 
 
@@ -30,27 +30,12 @@ from ...configuration import loadConfig
 @click.option("--type", "-t", "projectType", type = int, help = "Project type")
 @click.option("--description", "-d", type = str, help = "Project description")
 def create(name: Optional[str], projectType: Optional[int], description: Optional[str]) -> None:
-    if name is None:
-        name = ui.clickPrompt("Please enter name of the project you want to create:", type = str)
+    project = project_utils.createProject(name, projectType, description)
 
-    if projectType is None:
-        projectType = project_utils.selectProjectType()
-    else:
-        projectType = ProjectType(projectType)
-
-    if description is None:
-        description = ui.clickPrompt("Please enter your project's description:", type = str, default = "", show_default = False)
-
-    try:
-        project = Project.createProject(name, projectType, description = description)
-        ui.successEcho(f"Project \"{name}\" created successfully.")
-        selectNewProject = ui.clickPrompt("Do you want to select new project as default? (Y/n)", type = bool, default = True)
-
-        if selectNewProject:
-            project_utils.selectProject(project.id)
-            ui.successEcho(f"Project \"{project.name}\" successfully selected.")
-    except EntityNotCreated:
-        raise click.ClickException(f"Failed to create project \"{name}\".")
+    selectNewProject = ui.clickPrompt("Do you want to select the new project as default? (Y/n)", type = bool, default = True)
+    if selectNewProject:
+        project_utils.selectProject(project.id)
+        ui.successEcho(f"Project \"{project.name}\" successfully selected.")
 
 
 @click.command()
