@@ -60,8 +60,7 @@ class LogSeverity(IntEnum):
 
         raise RuntimeError(">> [Coretex] Invalid enum value")
 
-    @property
-    def stdSeverity(self) -> int:
+    def getLevel(self) -> int:
         """
             Converts Coretex log severity into the
             equivalent log level from python std module logging

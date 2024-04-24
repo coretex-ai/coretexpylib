@@ -16,8 +16,7 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import List
-from threading import Thread, Event
-from concurrent.futures import ThreadPoolExecutor
+from threading import Thread, Event, RLock
 
 import time
 import logging
@@ -50,7 +49,7 @@ class LoggerUploadWorker(Thread):
         self.taskRunId = taskRunId
 
         self.__stopped = Event()
-        self.__queue = ThreadPoolExecutor(max_workers = 1, thread_name_prefix = "LogQueue")
+        self.__lock = RLock()
         self.__waitTime = MAX_WAIT_TIME_BEFORE_UPDATE
         self.__pendingLogs: List[Log] = []
 
@@ -59,20 +58,21 @@ class LoggerUploadWorker(Thread):
         return self.__stopped.is_set()
 
     def stop(self) -> None:
-        self.__stopped.set()
-        self.__queue.shutdown(wait = True)
+        with self.__lock:
+            self.__stopped.set()
 
     def add(self, log: Log) -> None:
-        if self.isStopped:
-            return
+        with self.__lock:
+            if self.isStopped:
+                return
 
-        self.__queue.submit(self.__pendingLogs.append, log)
+            self.__pendingLogs.append(log)
 
     def uploadLogs(self) -> bool:
-        if self.isStopped:
-            return False
+        with self.__lock:
+            if self.isStopped:
+                return False
 
-        def worker() -> bool:
             if len(self.__pendingLogs) == 0:
                 return True
 
@@ -87,22 +87,14 @@ class LoggerUploadWorker(Thread):
 
             return not response.hasFailed()
 
-        future = self.__queue.submit(worker)
-
-        exception = future.exception()
-        if exception is not None:
-            logging.getLogger("coretexpylib").debug(">> [Coretex] Failed to upload logs", exc_info = exception)
-            return False
-
-        return future.result()
-
     def run(self) -> None:
         while not self.isStopped:
             time.sleep(self.__waitTime)
 
             try:
                 success = self.uploadLogs()
-            except:
+            except BaseException as exception:
+                logging.getLogger("coretexpylib").debug(">> [Coretex] Failed to upload logs", exc_info = exception)
                 success = False
 
             if success:

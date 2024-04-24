@@ -78,7 +78,7 @@ def initializeLogger(
 
     if streamHandler is None:
         streamHandler = logging.StreamHandler(sys.stdout)
-        streamHandler.setLevel(severity.stdSeverity)
+        streamHandler.setLevel(severity.getLevel())
 
         streamHandler.setFormatter(createFormatter(
             includeTime = False,

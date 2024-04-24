@@ -21,14 +21,10 @@ from logging import Formatter, LogRecord
 import json
 
 from .severity import LogSeverity
+from .utils import colorMessage
 
 
 FormatStyle = Literal["%", "{", "$"]
-
-
-def colorMessage(severity: LogSeverity, message: str) -> str:
-    fmt = "\033[%dm%s\033[0m"
-    return fmt % (severity.color, message)
 
 
 class CTXFormatter(Formatter):

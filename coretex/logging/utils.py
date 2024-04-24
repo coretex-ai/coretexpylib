@@ -15,10 +15,10 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .remote import processRemote
-from .current_task_run import currentTaskRun
-from .initialization import _prepareForExecution, initializeRTask
-from .worker import TaskRunWorker
-from .run_logger import runLogger
-from .process_utils import captureRunStdout, captureRunStderr, executeRunLocally
-from .local.task_config import readTaskConfig
+from .severity import LogSeverity
+
+
+def colorMessage(severity: LogSeverity, message: str) -> str:
+    fmt = "\033[%dm%s\033[0m"
+    return fmt % (severity.color, message)
+

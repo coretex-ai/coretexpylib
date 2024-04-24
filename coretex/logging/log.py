@@ -22,6 +22,7 @@ import time
 import json
 
 from .severity import LogSeverity
+from .utils import colorMessage
 from ..utils import mathematicalRound
 
 
@@ -41,7 +42,7 @@ class Log:
     def __init__(self, severity: LogSeverity, message: str) -> None:
         self.timestamp = mathematicalRound(time.time(), 6)
         self.severity = severity
-        self.message = message
+        self.message = colorMessage(severity, message)
 
     def encode(self) -> Dict[str, Any]:
         return {
@@ -62,6 +63,6 @@ class Log:
             if len(jsonLog) != 2:
                 raise ValueError
 
-            return cls(LogSeverity(jsonLog["severity"]), jsonLog["message"]), jsonLog["message"]
+            return cls(LogSeverity(jsonLog["severity"]), jsonLog["message"].rstrip()), jsonLog["message"]
         except:
             return cls(LogSeverity.info, value.rstrip()), value
