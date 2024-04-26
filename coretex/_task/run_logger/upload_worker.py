@@ -15,17 +15,17 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import List
+from typing import List, Callable
 from threading import Thread, Event, RLock
 
 import time
 import logging
 
 from ...logging import Log
-from ...networking import networkManager
 
 
 MAX_WAIT_TIME_BEFORE_UPDATE = 5
+UploadFunction = Callable[[List[Log]], bool]
 
 
 class LoggerUploadWorker(Thread):
@@ -39,15 +39,13 @@ class LoggerUploadWorker(Thread):
         If the upload request fails the wait time is doubled
     """
 
-    def __init__(self, taskRunId: int) -> None:
+    def __init__(self, uploadFunction: UploadFunction) -> None:
         super().__init__()
 
         self.setDaemon(True)
         self.setName("LoggerUploadWorker")
 
-        # Task run for which the logs are uploaded
-        self.taskRunId = taskRunId
-
+        self.__uploadFunction = uploadFunction
         self.__stopped = Event()
         self.__lock = RLock()
         self.__waitTime = MAX_WAIT_TIME_BEFORE_UPDATE
@@ -76,16 +74,14 @@ class LoggerUploadWorker(Thread):
             if len(self.__pendingLogs) == 0:
                 return True
 
-            response = networkManager.post("model-queue/add-console-log", {
-                "model_queue_id": self.taskRunId,
-                "logs": [log.encode() for log in self.__pendingLogs]
-            })
+            # Uploads logs to Coretex using the provided function
+            result = self.__uploadFunction(self.__pendingLogs)
 
             # Only clear logs if they were successfully uploaded to coretex
-            if not response.hasFailed():
+            if result:
                 self.__pendingLogs.clear()
 
-            return not response.hasFailed()
+            return result
 
     def run(self) -> None:
         while not self.isStopped:

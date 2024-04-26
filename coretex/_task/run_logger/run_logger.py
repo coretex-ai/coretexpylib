@@ -15,13 +15,15 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional
+from typing import Optional, List
 
 import logging
 import traceback
+import functools
 
 from .upload_worker import LoggerUploadWorker
 from ...logging import Log, LogSeverity
+from ...networking import networkManager
 
 
 def exceptionToString(exception: BaseException) -> str:
@@ -30,17 +32,28 @@ def exceptionToString(exception: BaseException) -> str:
     return "".join(tb)
 
 
+def uploadTaskRunLogs(taskRunId: int, logs: List[Log]) -> bool:
+    response = networkManager.post("model-queue/add-console-log", {
+        "model_queue_id": taskRunId,
+        "logs": [log.encode() for log in logs]
+    })
+
+    return not response.hasFailed()
+
+
 class RunLogger:
 
+    NAME = "coretex-run"
+
     def __init__(self) -> None:
-        self._logger = logging.getLogger("coretex-run")
+        self._logger = logging.getLogger(RunLogger.NAME)
         self._uploadWorker: Optional[LoggerUploadWorker] = None
 
     def attach(self, taskRunId: int) -> None:
         if self._uploadWorker is not None:
             raise ValueError("TaskRun is already attached to logger")
 
-        self._uploadWorker = LoggerUploadWorker(taskRunId)
+        self._uploadWorker = LoggerUploadWorker(functools.partial(uploadTaskRunLogs, taskRunId))
         self._uploadWorker.start()
 
     def reset(self) -> None:

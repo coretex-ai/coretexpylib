@@ -48,7 +48,7 @@ class CTXFormatter(Formatter):
         # INFO -> Info, ERROR -> Error, etc...
         record.levelname = record.levelname.lower().capitalize()
 
-        severity = LogSeverity.fromStd(record.levelno)
+        severity = LogSeverity.fromLevel(record.levelno)
         formatted = super().format(record)
 
         if self.color:

@@ -16,3 +16,4 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from .run_logger import runLogger
+from .upload_worker import LoggerUploadWorker

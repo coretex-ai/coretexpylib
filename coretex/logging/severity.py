@@ -107,7 +107,7 @@ class LogSeverity(IntEnum):
         return self.name.capitalize()
 
     @staticmethod
-    def fromStd(logLevel: int) -> LogSeverity:
+    def fromLevel(logLevel: int) -> LogSeverity:
         """
             Converts python std module logging level
             into the equivalent log severity from coretex
