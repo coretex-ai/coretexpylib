@@ -22,6 +22,7 @@ from pathlib import Path
 
 import os
 import time
+import shutil
 
 from .sample import Sample
 from ..project import ProjectType
@@ -158,6 +159,8 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
 
         if ignoreCache and self.downloadPath.exists():
             self.downloadPath.unlink()
+            if self.path.exists():
+                shutil.rmtree(self.path)
 
         if not ignoreCache and self.downloadPath.exists():
             return
