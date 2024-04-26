@@ -17,6 +17,7 @@
 
 from typing import Tuple
 
+from .type import SecretType
 from .secret import Secret
 
 
@@ -28,6 +29,9 @@ class CredentialsSecret(Secret):
 
     username: str
     password: str
+
+    def __init__(self) -> None:
+        super().__init__(SecretType.credentials)
 
     def _encryptedFields(self) -> Tuple[str, ...]:
         return ("username", "password")
