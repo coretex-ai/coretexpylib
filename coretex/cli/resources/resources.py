@@ -19,3 +19,4 @@ from pathlib import Path
 
 
 RESOURCES_DIR = Path(__file__).resolve().parent
+START_SCRIPT_NAME = "start_node.sh"

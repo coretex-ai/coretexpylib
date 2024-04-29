@@ -26,10 +26,11 @@ from . import config_defaults
 from .utils import isGPUAvailable
 from .ui import clickPrompt, arrowPrompt, highlightEcho, errorEcho, progressEcho, successEcho, stdEcho
 from .node_mode import NodeMode
+from ..resources import START_SCRIPT_NAME
 from ...cryptography import rsa
 from ...networking import networkManager, NetworkRequestError
-from ...configuration import loadConfig, saveConfig, isNodeConfigured, getInitScript
-from ...utils import CommandException, docker
+from ...configuration import loadConfig, saveConfig, isNodeConfigured, CONFIG_DIR
+from ...utils import CommandException, docker, command
 from ...entities.model import Model
 
 
@@ -65,48 +66,10 @@ def exists() -> bool:
 def start(dockerImage: str, config: Dict[str, Any]) -> None:
     try:
         progressEcho("Starting Coretex Node...")
-        docker.createNetwork(config_defaults.DOCKER_CONTAINER_NETWORK)
-
-        environ = {
-            "CTX_API_URL": config["serverUrl"],
-            "CTX_STORAGE_PATH": "/root/.coretex",
-            "CTX_NODE_ACCESS_TOKEN": config["nodeAccessToken"],
-            "CTX_NODE_MODE": config["nodeMode"]
-        }
-
-        modelId = config.get("modelId")
-        if isinstance(modelId, int):
-            environ["CTX_MODEL_ID"] = modelId
-
-        nodeSecret = config.get("nodeSecret", config_defaults.DEFAULT_NODE_SECRET)
-        if isinstance(nodeSecret, str) and nodeSecret != config_defaults.DEFAULT_NODE_SECRET:
-            environ["CTX_NODE_SECRET"] = nodeSecret
-
-        volumes = [
-            (config["storagePath"], "/root/.coretex")
-        ]
-
-        if config.get("allowDocker", False):
-            volumes.append(("/var/run/docker.sock", "/var/run/docker.sock"))
-
-        initScript = getInitScript(config)
-        if initScript is not None:
-            volumes.append((str(initScript), "/script/init.sh"))
-
-        docker.start(
-            config_defaults.DOCKER_CONTAINER_NAME,
-            dockerImage,
-            config["allowGpu"],
-            config["nodeRam"],
-            config["nodeSwap"],
-            config["nodeSharedMemory"],
-            config["cpuCount"],
-            environ,
-            volumes
-        )
+        command(["bash", str(CONFIG_DIR / START_SCRIPT_NAME), "--force"], ignoreStdout = True, ignoreStderr = True)
 
         successEcho("Successfully started Coretex Node.")
-    except BaseException as ex:
+    except CommandException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to start Coretex Node.")
 

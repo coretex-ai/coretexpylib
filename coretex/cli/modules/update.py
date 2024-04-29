@@ -24,12 +24,9 @@ import requests
 from . import config_defaults
 from .cron import jobExists, scheduleJob
 from .node import getRepoFromImageUrl, getTagFromImageUrl
-from ..resources import RESOURCES_DIR
+from ..resources import RESOURCES_DIR, START_SCRIPT_NAME
 from ...utils import command
 from ...configuration import CONFIG_DIR, getInitScript
-
-
-UPDATE_SCRIPT_NAME = "ctx_node_update.sh"
 
 
 class NodeStatus(IntEnum):
@@ -81,11 +78,11 @@ def dumpScript(updateScriptPath: Path, config: Dict[str, Any]) -> None:
 
 
 def activateAutoUpdate(configDir: Path, config: Dict[str, Any]) -> None:
-    updateScriptPath = CONFIG_DIR / UPDATE_SCRIPT_NAME
+    updateScriptPath = CONFIG_DIR / START_SCRIPT_NAME
     dumpScript(updateScriptPath, config)
 
-    if not jobExists(UPDATE_SCRIPT_NAME):
-        scheduleJob(configDir, UPDATE_SCRIPT_NAME)
+    if not jobExists(START_SCRIPT_NAME):
+        scheduleJob(configDir, START_SCRIPT_NAME)
 
 
 def getNodeStatus() -> NodeStatus:

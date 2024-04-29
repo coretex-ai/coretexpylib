@@ -49,7 +49,13 @@ OUTPUT_DIR="$HOME/.config/coretex"
 mkdir -p "$OUTPUT_DIR"
 
 # Generate the output filename based on the current Unix timestamp
-OUTPUT_FILE="$OUTPUT_DIR/ctx_autoupdate.log"
+if [[ "$1" == "--force" ]]; then
+    FORCE_START=True
+    OUTPUT_FILE="$OUTPUT_DIR/ctx_start.log"
+else
+    FORCE_START=False
+    OUTPUT_FILE="$OUTPUT_DIR/ctx_autoupdate.log"
+fi
 
 # Redirect all output to the file
 exec >>"$OUTPUT_FILE" 2>&1
@@ -67,7 +73,7 @@ store_running_container_image_id() {{
     running_container_image_id=$($DOCKER_PATH inspect -f '{{{{.Image}}}}' "$CONTAINER_NAME")
 }}
 
-should_update() {{
+should_start() {{
     node_status=0
     node_status=$(fetch_node_status)
 
@@ -92,8 +98,10 @@ should_update() {{
             return 1
         fi
     else
-        echo "Node is not active."
-        return 1
+        if [ $FORCE_START = "False" ]; then
+            echo "Node is not active."
+            return 1
+        fi
     fi
 }}
 
@@ -134,7 +142,7 @@ remove_image() {{
 }}
 
 # Define function to start the node with the latest image
-start_node() {{
+start_node_process() {{
     if $DOCKER_PATH network inspect $NETWORK_NAME; then
         echo "Removing the network: $NETWORK_NAME"
         $DOCKER_PATH network rm "$NETWORK_NAME"
@@ -172,18 +180,17 @@ start_node() {{
     eval "$start_command"
 }}
 
-# Define function to update node
-update_node() {{
+start_node() {{
     current_node_status=0
     current_node_status=$(fetch_node_status)
 
     if [ "$current_node_status" -eq 3 ]; then
-        echo "Node is busy, stopping node update."
+        echo "Node is busy."
         return 1
     fi
 
-    echo "Updating node"
-    if ! should_update; then
+    echo "Starting node..."
+    if ! should_start; then
         return 1
     fi
 
@@ -199,21 +206,21 @@ update_node() {{
         return 1
     fi
 
-    start_node
+    start_node_process
 }}
 
 # function to run node update
-run_node_update() {{
-    echo "Running command: update_node"
-    update_node
+run_node_start() {{
+    echo "Running command: \"coretex node start\"."
+    start_node
 
     exit_code=$?
     if [ "$exit_code" -eq 0 ]; then
-        echo "Node update finished successfully"
+        echo "Node started successfully."
     else
-        echo "Node failed to update with exit code $exit_code"
+        echo "\"coretex node start\" command failed with exit code $exit_code"
     fi
 }}
 
 # Main execution
-run_node_update
+run_node_start

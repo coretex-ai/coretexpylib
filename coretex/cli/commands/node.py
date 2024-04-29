@@ -21,9 +21,10 @@ import click
 
 from ..modules import node as node_module
 from ..modules.ui import clickPrompt, stdEcho, successEcho, errorEcho, previewConfig
-from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate, dumpScript, UPDATE_SCRIPT_NAME
+from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate, dumpScript
 from ..modules.utils import onBeforeCommandExecute
 from ..modules.user import initializeUserSession
+from ..resources import START_SCRIPT_NAME
 from ...configuration import loadConfig, saveConfig, CONFIG_DIR, isNodeConfigured
 from ...utils import docker
 
@@ -54,8 +55,7 @@ def start(image: Optional[str]) -> None:
 
     dockerImage = config["image"]
 
-    if node_module.shouldUpdate(dockerImage):
-        node_module.pull(dockerImage)
+    dumpScript(CONFIG_DIR / START_SCRIPT_NAME, config)
 
     node_module.start(dockerImage, config)
     docker.removeDanglingImages(node_module.getRepoFromImageUrl(dockerImage), node_module.getTagFromImageUrl(dockerImage))
@@ -152,7 +152,7 @@ def config(verbose: bool) -> None:
     previewConfig(config)
 
     # Updating auto-update script since node configuration is changed
-    dumpScript(CONFIG_DIR / UPDATE_SCRIPT_NAME, config)
+    dumpScript(CONFIG_DIR / START_SCRIPT_NAME, config)
 
     successEcho("Node successfully configured.")
 
