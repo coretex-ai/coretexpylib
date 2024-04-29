@@ -57,7 +57,7 @@ def start(image: Optional[str]) -> None:
 
     dumpScript(CONFIG_DIR / START_SCRIPT_NAME, config)
 
-    node_module.start(dockerImage, config)
+    node_module.start(dockerImage, config, force = True)
     docker.removeDanglingImages(node_module.getRepoFromImageUrl(dockerImage), node_module.getTagFromImageUrl(dockerImage))
 
     activateAutoUpdate(CONFIG_DIR, config)
