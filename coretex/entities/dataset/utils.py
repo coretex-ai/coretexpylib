@@ -19,6 +19,7 @@ from typing import Type, TypeVar, Optional, Iterator, Dict, Any
 from contextlib import contextmanager
 
 from .network_dataset import EntityNotCreated, NetworkDataset
+from ..utils import isEntityNameValid
 
 
 T = TypeVar("T", bound = NetworkDataset)
@@ -58,6 +59,9 @@ def createDataset(
         >>> with createDataset("dummyDataset", 123, pathToMetadata) as dataset:
         >>>     print(f"Dataset with id \"{dataset.id}\" and name \"{dataset.name}\" created")
     """
+
+    if not isEntityNameValid(name):
+        raise ValueError(">> [Coretex] Dataset name is invalid. Requirements: alphanumeric characters (\"A-Z\", \"a-z\", and \"0-9\") and dash (\"-\") with length between 3 to 50")
 
     dataset = type_.create(
         name = name,
