@@ -103,9 +103,6 @@ def update() -> None:
         successEcho("Node is already up to date.")
         return
 
-    stdEcho("Updating node...")
-    node_module.pull(dockerImage)
-
     if getNodeStatus() == NodeStatus.busy:
         if not clickPrompt(
             "Node is busy, do you wish to terminate the current execution to perform the update? (Y/n)",
@@ -117,6 +114,7 @@ def update() -> None:
 
     node_module.stop()
 
+    stdEcho("Updating node...")
     node_module.start(dockerImage, config)
     docker.removeDanglingImages(node_module.getRepoFromImageUrl(dockerImage), node_module.getTagFromImageUrl(dockerImage))
 
