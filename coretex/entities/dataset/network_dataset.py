@@ -137,7 +137,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
         obj = super().decode(encodedObject)
         page = 1
         hasMorePages = True
-        samples: list[obj._sampleType] = []
+        samples: List[SampleType] = []
 
         while hasMorePages:
             params = {"dataset_id": obj.id, "page": page}
@@ -146,7 +146,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
             if response.hasFailed():
                 raise NetworkRequestError(response, "Failed to fetch dataset samples")
 
-            data = response.getJson(dict).get("data")
+            data = response.getJson(dict)["data"]
             samples.extend([obj._sampleType.decode(sample) for sample in data])
 
             hasMorePages = "next" in response.getJson(dict).get("links", {})
