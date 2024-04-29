@@ -375,14 +375,14 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
             SampleType -> created Sample
         """
 
-        if not isEntityNameValid(sampleName):
-            raise ValueError(">> [Coretex] Sample name is invalid. Requirements: alphanumeric characters (\"A-Z\", \"a-z\", and \"0-9\") and dash (\"-\") with length between 3 to 50")
-
         if isinstance(samplePath, str):
             samplePath = Path(samplePath)
 
         if sampleName is None:
             sampleName = samplePath.stem
+
+        if not isEntityNameValid(sampleName):
+            raise ValueError(">> [Coretex] Sample name is invalid. Requirements: alphanumeric characters (\"A-Z\", \"a-z\", and \"0-9\") and dash (\"-\") with length between 3 to 50")
 
         if self.isEncrypted:
             sample = _encryptedSampleImport(self._sampleType, sampleName, samplePath, self.id, getProjectKey(self.projectId))
