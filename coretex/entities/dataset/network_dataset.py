@@ -132,49 +132,34 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
 
         return descriptors
 
+    @classmethod
+    def decode(cls, encodedObject: Dict[str, Any]) -> Self:
+        obj = super().decode(encodedObject)
+        page = 1
+        hasMorePages = True
+        samples: list[obj._sampleType] = []
+
+        while hasMorePages:
+            params = {"dataset_id": obj.id, "page": page}
+            response = networkManager.get(cls._endpoint() + "/sessions", params)
+
+            if response.hasFailed():
+                raise NetworkRequestError(response, "Failed to fetch dataset samples")
+
+            data = response.getJson(dict).get("data")
+            samples.extend([obj._sampleType.decode(sample) for sample in data])
+
+            hasMorePages = "next" in response.getJson(dict).get("links", {})
+            page += 1
+
+        obj.samples = samples
+        return obj
+
     # NetworkObject overrides
 
     @classmethod
     def _endpoint(cls) -> str:
         return "dataset"
-
-    @classmethod
-    def fetchById(cls, objectId: int, **kwargs: Any) -> Self:
-        if "include_sessions" not in kwargs:
-            kwargs["include_sessions"] = 1
-
-        return super().fetchById(objectId, **kwargs)
-
-    @classmethod
-    def fetchAll(cls, **kwargs: Any) -> List[Self]:
-        if "include_sessions" not in kwargs:
-            kwargs["include_sessions"] = 1
-
-        return super().fetchAll(**kwargs)
-
-    @classmethod
-    def fetchCachedDataset(cls, dependencies: List[str]) -> Self:
-        """
-            Fetches cached dataset if it exists
-
-            Parameters
-            ----------
-            dependencies : List[str]
-                Parameters on which the cached dataset depends
-
-            Returns
-            -------
-            Self -> Fetched dataset object
-
-            Raises
-            ------
-            ValueError -> If dataset doesn't exist
-        """
-
-        return super().fetchOne(
-            name = _hashDependencies(dependencies),
-            include_sessions = 1
-        )
 
     # Dataset methods
 
