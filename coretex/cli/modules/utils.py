@@ -22,6 +22,22 @@ from py3nvml import py3nvml
 
 import click
 
+from ...utils.process import command
+
+
+def getVersion() -> Optional[str]:
+    _, output, _ = command(["pip", "show", "coretex"], ignoreStdout = True, ignoreStderr = True)
+
+    for line in output.split("\n"):
+        if line.startswith("Version:"):
+            return line.split(":", 1)[1].strip()
+
+    return None
+
+
+def updateLib() -> None:
+    command(["pip", "install", "--no-cache-dir", "--upgrade", "coretex"], ignoreStdout = True, ignoreStderr = True)
+
 
 def isGPUAvailable() -> bool:
     try:

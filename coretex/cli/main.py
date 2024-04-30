@@ -23,7 +23,35 @@ from .commands.node import node
 from .commands.task import run
 from .commands.project import project
 
+from .modules import ui
 from .modules.intercept import ClickExceptionInterceptor
+from .modules.utils import getVersion, updateLib
+
+from ..utils.process import CommandException
+
+
+@click.command()
+def version() -> None:
+    try:
+        version = getVersion()
+        if version is not None:
+            ui.stdEcho(f"Current version of coretex is {version}")
+            return
+
+        ui.errorEcho("Failed to fetch coretex version.")
+    except CommandException:
+        ui.errorEcho("Failed to fetch coretex version.")
+
+
+@click.command()
+def update() -> None:
+    try:
+        ui.progressEcho("Updating coretex...")
+        updateLib()
+        ui.successEcho("Coretex successfully updated!")
+    except CommandException:
+        ui.errorEcho("Failed to update coretex.")
+
 
 
 @click.group(cls = ClickExceptionInterceptor)
@@ -35,3 +63,5 @@ cli.add_command(model)
 cli.add_command(project)
 cli.add_command(node)
 cli.add_command(run)
+cli.add_command(version)
+cli.add_command(update)
