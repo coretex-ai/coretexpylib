@@ -63,7 +63,7 @@ def edit(project: Optional[str], name: Optional[str], description: Optional[str]
     try:
         selectedProject.update(name = selectedProject.name, description = description)
         selectedProject.updateVisibility(ProjectVisibility.private)
-        ui.successEcho(f"Project id \"{config['projectId']}\" successfully edited.")
+        ui.successEcho(f"Project id \"{selectedProject.id}\" successfully edited.")
 
     except RequestFailedError:
         raise click.ClickException(f"Failed to edit project \"{selectedProject.name}\".")

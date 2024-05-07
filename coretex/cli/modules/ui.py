@@ -78,7 +78,7 @@ def previewConfig(config: Dict[str, Any]) -> None:
 
 
 def outputUrl(entityUrl: str) -> str:
-    return f"https://app.coretex.ai/{entityUrl}"
+    return ("\033[4m" + f"https://app.coretex.ai/{entityUrl}" + "\033[0m")
 
 
 def stdEcho(text: str) -> None:
