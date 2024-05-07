@@ -391,22 +391,32 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
 
     config["nodeAccessToken"] = registerNode(config["nodeName"], publicKey)
 
+
 def initializeNodeConfiguration() -> None:
     config = loadConfig()
 
     if not isNodeConfigured(config):
         errorEcho("Node configuration not found.")
 
-    if not isNodeConfigured(config) or not isConfigurationValid(config):
-        if not click.confirm("Would you like to update the configuration?", default = True):
-            raise RuntimeError("Invalid configuration. Please run \"coretex node config\" command to configure Node.")
+        if click.confirm("Would you like to create a new configuration?", default = True):
+            configureNode(config, verbose = False)
+            saveConfig(config)
+            return
+        else:
+            raise RuntimeError("Node configuration not found. Please use \"coretex node config\" to create a Node configuration.")
 
-        if isRunning():
-            if not click.confirm("Node is already running. Do you wish to stop the Node?", default = True):
-                errorEcho("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
-                return
+    if isConfigurationValid(config):
+        return
 
-            stop()
+    errorEcho("Invalid node configuration found.")
+    if not click.confirm("Would you like to update the configuration?", default = True):
+        raise RuntimeError("Invalid configuration. Please use \"coretex node config\" to update a Node configuration.")
 
-        configureNode(config, verbose = False)
-        saveConfig(config)
+    if isRunning():
+        if not click.confirm("Node is already running. Do you wish to stop the Node?", default = True):
+            errorEcho("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
+            return
+        stop()
+
+    configureNode(config, verbose = False)
+    saveConfig(config)
