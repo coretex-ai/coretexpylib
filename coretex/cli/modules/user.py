@@ -19,7 +19,7 @@ from typing import Dict, Any
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
-from .ui import clickPrompt, errorEcho, progressEcho
+from .ui import clickPrompt, errorEcho, progressEcho, stdEcho
 from ...utils import decodeDate
 from ...networking import networkManager, NetworkResponse, NetworkRequestError
 from ...configuration import loadConfig, saveConfig
@@ -44,7 +44,8 @@ def authenticateUser(username: str, password: str) -> NetworkResponse:
             raise NetworkRequestError(response, "Something went wrong, please try again later.")
 
         if response.statusCode >= 400:
-            raise NetworkRequestError(response, "User credentials invalid, please try configuring them again.")
+            stdEcho("Authentification failed with configured credentials. Please try entering your credentials again.")
+            authenticate()
 
     return response
 
