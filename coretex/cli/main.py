@@ -34,8 +34,8 @@ from ..utils.process import CommandException
 
 @click.command()
 def version() -> None:
-        version = getLibraryVersion("coretex")
-        ui.stdEcho(f"Current version of coretex is {version}")
+    version = getLibraryVersion("coretex")
+    ui.stdEcho(f"Current version of coretex is {version}")
 
 
 @click.command()
