@@ -398,10 +398,9 @@ def initializeNodeConfiguration() -> None:
     if not isNodeConfigured(config):
         errorEcho("Node configuration not found.")
 
-        if click.confirm("Would you like to create a new configuration?", default = True):
-            configureNode(config, verbose = False)
-            saveConfig(config)
-            return
+        configureNode(config, verbose = False)
+        saveConfig(config)
+
         else:
             raise RuntimeError("Node configuration not found. Please use \"coretex node config\" to create a Node configuration.")
 
