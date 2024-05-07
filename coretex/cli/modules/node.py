@@ -401,9 +401,6 @@ def initializeNodeConfiguration() -> None:
         configureNode(config, verbose = False)
         saveConfig(config)
 
-        else:
-            raise RuntimeError("Node configuration not found. Please use \"coretex node config\" to create a Node configuration.")
-
     if isConfigurationValid(config):
         return
 
