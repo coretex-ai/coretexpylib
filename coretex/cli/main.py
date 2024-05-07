@@ -15,6 +15,8 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from importlib.metadata import version as getLibraryVersion
+
 import click
 
 from .commands.login import login
@@ -25,22 +27,15 @@ from .commands.project import project
 
 from .modules import ui
 from .modules.intercept import ClickExceptionInterceptor
-from .modules.utils import getVersion, updateLib
+from .modules.utils import updateLib
 
 from ..utils.process import CommandException
 
 
 @click.command()
 def version() -> None:
-    try:
-        version = getVersion()
-        if version is not None:
-            ui.stdEcho(f"Current version of coretex is {version}")
-            return
-
-        ui.errorEcho("Failed to fetch coretex version.")
-    except CommandException:
-        ui.errorEcho("Failed to fetch coretex version.")
+        version = getLibraryVersion("coretex")
+        ui.stdEcho(f"Current version of coretex is {version}")
 
 
 @click.command()
@@ -51,7 +46,6 @@ def update() -> None:
         ui.successEcho("Coretex successfully updated!")
     except CommandException:
         ui.errorEcho("Failed to update coretex.")
-
 
 
 @click.group(cls = ClickExceptionInterceptor)
