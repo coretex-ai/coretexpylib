@@ -24,9 +24,11 @@ from .model_parameter import ModelParameter
 from .imu_vectors_parameter import IMUVectorsParameter
 from .enum_parameter import EnumParameter
 from .range_parameter import RangeParameter
+from .secret_parameter import SecretParameter
 from .list_int_parameter import ListIntParameter
 from .list_float_parameter import ListFloatParameter
 from .list_str_parameter import ListStrParameter
 from .list_dataset_parameter import ListDatasetParameter
 from .list_model_parameter import ListModelParameter
 from .list_enum_parameter import ListEnumParameter
+from .list_secret_parameter import ListSecretParameter

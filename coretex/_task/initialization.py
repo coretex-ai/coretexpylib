@@ -47,16 +47,13 @@ def _initializeLogger(taskRun: TaskRun) -> None:
     initializeLogger(severity, logPath, streamHandler)
 
 
-def _prepareForExecution(taskRunId: int) -> TaskRun:
-    taskRun: TaskRun = TaskRun.fetchById(taskRunId)
+def _prepareForExecution(taskRun: TaskRun) -> None:
     _initializeLogger(taskRun)
 
     taskRun.updateStatus(
         status = TaskRunStatus.inProgress,
         message = "Executing task."
     )
-
-    return taskRun
 
 
 def initializeRTask(mainFunction: Callable[[TaskRun], None], args: List[str]) -> None:
@@ -71,10 +68,10 @@ def initializeRTask(mainFunction: Callable[[TaskRun], None], args: List[str]) ->
             list of command line arguments
     """
 
-    taskRunId, callback = processRemote(args)
+    taskRun, callback = processRemote(args)
 
     try:
-        taskRun = _prepareForExecution(taskRunId)
+        _prepareForExecution(taskRun)
         setCurrentTaskRun(taskRun)
 
         callback.onStart()

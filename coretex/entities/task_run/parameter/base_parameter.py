@@ -21,33 +21,26 @@ from abc import ABC, abstractmethod
 import logging
 
 from .parameter_type import ParameterType
-from .utils import getValueParamType
 from ...project import ProjectType
-from ....codable import Codable, KeyDescriptor
 
 
 T = TypeVar("T")
 
 
-class BaseParameter(ABC, Codable, Generic[T]):
+class BaseParameter(ABC, Generic[T]):
 
-    name: str
-    description: str
-    value: Optional[T]
-    dataType: ParameterType
-    required: bool
+    def __init__(self, name: str, description: str, value: Optional[T], dataType: ParameterType, required: bool, type: int = 3) -> None:
+        self.name = name
+        self.description = description
+        self.value = value
+        self.dataType = dataType
+        self.required = required
+        self.type_ = type
 
     @property
     @abstractmethod
     def types(self) -> List[type]:
         pass
-
-    @classmethod
-    def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
-        descriptors = super()._keyDescriptors()
-        descriptors["dataType"] = KeyDescriptor("data_type", ParameterType)
-
-        return descriptors
 
     def makeExceptionMessage(self) -> str:
         expected = self.dataType.value
@@ -81,6 +74,15 @@ class BaseParameter(ABC, Codable, Generic[T]):
 
     def overrideValue(self, value: Optional[Any]) -> Optional[Any]:
         return value
+
+    def encode(self) -> Dict[str, Any]:
+        return {
+            "name": self.name,
+            "description": self.description,
+            "value": self.value,
+            "data_type": self.dataType,
+            "required": self.required
+        }
 
 
 def validateParameters(parameters: List[BaseParameter], verbose: bool = True) -> Dict[str, Any]:

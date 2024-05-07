@@ -9,10 +9,10 @@ from coretex.networking import RequestFailedError
 
 
 if __name__ == "__main__":
-    taskRunId, callback = _task.processRemote(sys.argv)
+    taskRun, callback = _task.processRemote(sys.argv)
 
     try:
-        taskRun = _task._prepareForExecution(taskRunId)
+        _task._prepareForExecution(taskRun)
         _task.current_task_run.setCurrentTaskRun(taskRun)
 
         callback.onStart()
