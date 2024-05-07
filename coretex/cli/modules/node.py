@@ -354,7 +354,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     config["nodeRam"] = int(min(ramLimit, config_defaults.DEFAULT_RAM_MEMORY))
     config["nodeSwap"] = config_defaults.DEFAULT_SWAP_MEMORY
     config["nodeSharedMemory"] = config_defaults.DEFAULT_SHARED_MEMORY
-    config["cpuCount"] = int(min(ramLimit, config_defaults.DEFAULT_CPU_COUNT))
+    config["cpuCount"] = int(min(cpuLimit, config_defaults.DEFAULT_CPU_COUNT))
     config["nodeMode"] = config_defaults.DEFAULT_NODE_MODE
     config["allowDocker"] = config_defaults.DEFAULT_ALLOW_DOCKER
     config["nodeSecret"] = config_defaults.DEFAULT_NODE_SECRET
@@ -398,13 +398,14 @@ def initializeNodeConfiguration() -> None:
         errorEcho("Node configuration not found.")
 
     if not isNodeConfigured(config) or not isConfigurationValid(config):
-        if not click.confirm("Would you like to update the configuration?", default=True):
+        if not click.confirm("Would you like to update the configuration?", default = True):
             raise RuntimeError("Invalid configuration. Please run \"coretex node config\" command to configure Node.")
 
         if isRunning():
-            if not click.confirm("Node is already running. Do you wish to stop the Node?", default=True):
+            if not click.confirm("Node is already running. Do you wish to stop the Node?", default = True):
                 errorEcho("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
                 return
+
             stop()
 
         configureNode(config, verbose = False)
