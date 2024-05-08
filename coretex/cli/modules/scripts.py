@@ -24,7 +24,7 @@ import requests
 from . import config_defaults
 from .cron import jobExists, scheduleJob
 from .node import getRepoFromImageUrl, getTagFromImageUrl
-from ..resources import RESOURCES_DIR, START_SCRIPT_NAME
+from ..resources import RESOURCES_DIR, START_SCRIPT_NAME, UPDATE_SCRIPT_NAME
 from ...utils import command
 from ...configuration import CONFIG_DIR, getInitScript
 
@@ -49,13 +49,29 @@ def generateUpdateScript(config: Dict[str, Any]) -> str:
         dockerPath = dockerPath.strip(),
         repository = getRepoFromImageUrl(config["image"]),
         tag = getTagFromImageUrl(config["image"]),
+        containerName = config_defaults.DOCKER_CONTAINER_NAME,
+        networkName = config_defaults.DOCKER_CONTAINER_NETWORK
+    )
+
+
+def generateStartScript(config: Dict[str, Any]) ->  str:
+    _, dockerPath, _ = command(["which", "docker"], ignoreStdout = True, ignoreStderr = True)
+    bashScriptTemplatePath = RESOURCES_DIR / "start_script_template.sh"
+
+    with bashScriptTemplatePath.open("r") as scriptFile:
+        bashScriptTemplate = scriptFile.read()
+
+    return bashScriptTemplate.format(
+        dockerPath = dockerPath.strip(),
         serverUrl = config["serverUrl"],
+        containerName = config_defaults.DOCKER_CONTAINER_NAME,
+        networkName = config_defaults.DOCKER_CONTAINER_NETWORK,
         storagePath = config["storagePath"],
+        repository = getRepoFromImageUrl(config["image"]),
+        tag = getTagFromImageUrl(config["image"]),
         nodeAccessToken = config["nodeAccessToken"],
         nodeMode = config["nodeMode"],
         modelId = config.get("modelId"),
-        containerName = config_defaults.DOCKER_CONTAINER_NAME,
-        networkName = config_defaults.DOCKER_CONTAINER_NETWORK,
         restartPolicy = "always",
         ports = "21000:21000",
         capAdd = "SYS_PTRACE",
@@ -70,7 +86,12 @@ def generateUpdateScript(config: Dict[str, Any]) -> str:
     )
 
 
-def dumpScript(updateScriptPath: Path, config: Dict[str, Any]) -> None:
+def dumpScripts(startScriptPath: Path, updateScriptPath: Path, config: Dict[str, Any]) -> None:
+    with startScriptPath.open("w") as scriptFile:
+        scriptFile.write(generateStartScript(config))
+
+    command(["chmod", "+x", str(startScriptPath)], ignoreStdout = True)
+
     with updateScriptPath.open("w") as scriptFile:
         scriptFile.write(generateUpdateScript(config))
 
@@ -78,11 +99,12 @@ def dumpScript(updateScriptPath: Path, config: Dict[str, Any]) -> None:
 
 
 def activateAutoUpdate(configDir: Path, config: Dict[str, Any]) -> None:
-    updateScriptPath = CONFIG_DIR / START_SCRIPT_NAME
-    dumpScript(updateScriptPath, config)
+    startScriptPath = CONFIG_DIR / START_SCRIPT_NAME
+    updateScriptPath = CONFIG_DIR / UPDATE_SCRIPT_NAME
+    dumpScripts(startScriptPath, updateScriptPath, config)
 
-    if not jobExists(START_SCRIPT_NAME):
-        scheduleJob(configDir, START_SCRIPT_NAME)
+    if not jobExists(UPDATE_SCRIPT_NAME):
+        scheduleJob(configDir, UPDATE_SCRIPT_NAME)
 
 
 def getNodeStatus() -> NodeStatus:

@@ -63,11 +63,11 @@ def exists() -> bool:
     return docker.containerExists(config_defaults.DOCKER_CONTAINER_NAME)
 
 
-def start(dockerImage: str, config: Dict[str, Any], force: bool = False) -> None:
+def start(force: bool = False) -> None:
     try:
         progressEcho("Starting Coretex Node...")
 
-        args = ["bash", str(CONFIG_DIR / START_SCRIPT_NAME)]
+        args = [str(CONFIG_DIR / START_SCRIPT_NAME)]
         if force:
             args.append("--force")
 

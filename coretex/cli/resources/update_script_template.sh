@@ -23,24 +23,8 @@ DOCKER_PATH={dockerPath}
 REPOSITORY={repository}
 TAG={tag}
 IMAGE={repository}:{tag}
-SERVER_URL={serverUrl}
-STORAGE_PATH={storagePath}
-NODE_ACCESS_TOKEN={nodeAccessToken}
-NODE_MODE={nodeMode}
-MODEL_ID={modelId}
 CONTAINER_NAME={containerName}
 NETWORK_NAME={networkName}
-RESTART_POLICY={restartPolicy}
-PORTS={ports}
-CAP_ADD={capAdd}
-RAM_MEMORY={ramMemory}G
-SWAP_MEMORY={swapMemory}G
-SHARED_MEMORY={sharedMemory}G
-CPU_COUNT={cpuCount}
-IMAGE_TYPE={imageType}
-ALLOW_DOCKER={allowDocker}
-INIT_SCRIPT={initScript}
-NODE_SECRET={nodeSecret}
 
 NODE_STATUS_ENDPOINT="http://localhost:21000/status"
 
@@ -141,46 +125,7 @@ remove_image() {{
     fi
 }}
 
-# Define function to start the node with the latest image
-start_node_process() {{
-    if $DOCKER_PATH network inspect $NETWORK_NAME; then
-        echo "Removing the network: $NETWORK_NAME"
-        $DOCKER_PATH network rm "$NETWORK_NAME"
-    fi
-
-    echo "Creating network"
-    $DOCKER_PATH network create --driver bridge $NETWORK_NAME
-
-    echo "Starting the node with the latest image"
-    start_command="$DOCKER_PATH run -d --env CTX_API_URL=$SERVER_URL --env CTX_STORAGE_PATH=/root/.coretex --env CTX_NODE_ACCESS_TOKEN=$NODE_ACCESS_TOKEN --env CTX_NODE_MODE=$NODE_MODE --restart $RESTART_POLICY -p $PORTS --cap-add $CAP_ADD --network $NETWORK_NAME --memory $RAM_MEMORY --memory-swap $SWAP_MEMORY --shm-size $SHARED_MEMORY --cpus $CPU_COUNT --name $CONTAINER_NAME -v $STORAGE_PATH:/root/.coretex"
-
-    if [ $IMAGE_TYPE = "gpu" ]; then
-        # Run Docker command with GPU support
-        start_command+=" --gpus all"
-    fi
-
-    if [ $MODEL_ID != "None" ]; then
-        start_command+=" --env CTX_MODEL_ID=$MODEL_ID"
-    fi
-
-    if [ $NODE_SECRET != "" ]; then
-        start_command+=" --env CTX_NODE_SECRET=$NODE_SECRET"
-    fi
-
-    if [ $ALLOW_DOCKER == "True" ]; then
-        start_command+=" -v /var/run/docker.sock:/var/run/docker.sock"
-    fi
-
-    if [ $INIT_SCRIPT != "None" ]; then
-        start_command+=" -v $INIT_SCRIPT:/script/init.sh"
-    fi
-
-    # Docker image must always be the last parameter of docker run command
-    start_command+=" $IMAGE"
-    eval "$start_command"
-}}
-
-start_node() {{
+update_node() {{
     current_node_status=0
     current_node_status=$(fetch_node_status)
 
@@ -205,22 +150,21 @@ start_node() {{
     if ! remove_image; then
         return 1
     fi
-
-    start_node_process
 }}
 
 # function to run node update
-run_node_start() {{
-    echo "Running command: \"coretex node start\"."
-    start_node
+run_node_update() {{
+    echo "Running command: \"coretex node update\"."
+    update_node
 
     exit_code=$?
     if [ "$exit_code" -eq 0 ]; then
-        echo "Node started successfully."
+        echo "Node updated successfully."
     else
-        echo "\"coretex node start\" command failed with exit code $exit_code"
+        echo "\"coretex node update\" command failed with exit code $exit_code"
     fi
 }}
 
 # Main execution
-run_node_start
+run_node_update
+./start_node.sh

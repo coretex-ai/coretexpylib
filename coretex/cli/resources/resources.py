@@ -19,4 +19,5 @@ from pathlib import Path
 
 
 RESOURCES_DIR = Path(__file__).resolve().parent
+UPDATE_SCRIPT_NAME = "update_node.sh"
 START_SCRIPT_NAME = "start_node.sh"

@@ -21,10 +21,10 @@ import click
 
 from ..modules import node as node_module
 from ..modules.ui import clickPrompt, stdEcho, successEcho, errorEcho, previewConfig
-from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate, dumpScript
+from ..modules.scripts import NodeStatus, getNodeStatus, activateAutoUpdate, dumpScripts
 from ..modules.utils import onBeforeCommandExecute
 from ..modules.user import initializeUserSession
-from ..resources import START_SCRIPT_NAME
+from ..resources import START_SCRIPT_NAME, UPDATE_SCRIPT_NAME
 from ...configuration import loadConfig, saveConfig, CONFIG_DIR, isNodeConfigured
 from ...utils import docker
 
@@ -53,13 +53,9 @@ def start(image: Optional[str]) -> None:
         config["image"] = image  # store forced image (flagged) so we can run autoupdate afterwards
         saveConfig(config)
 
-    dockerImage = config["image"]
+    dumpScripts(CONFIG_DIR / START_SCRIPT_NAME, CONFIG_DIR / UPDATE_SCRIPT_NAME, config)
 
-    dumpScript(CONFIG_DIR / START_SCRIPT_NAME, config)
-
-    node_module.start(dockerImage, config, force = True)
-    docker.removeDanglingImages(node_module.getRepoFromImageUrl(dockerImage), node_module.getTagFromImageUrl(dockerImage))
-
+    node_module.start(force = True)
     activateAutoUpdate(CONFIG_DIR, config)
 
 
@@ -115,8 +111,7 @@ def update() -> None:
     node_module.stop()
 
     stdEcho("Updating node...")
-    node_module.start(dockerImage, config)
-    docker.removeDanglingImages(node_module.getRepoFromImageUrl(dockerImage), node_module.getTagFromImageUrl(dockerImage))
+    node_module.start()
 
 
 @click.command()
@@ -149,8 +144,8 @@ def config(verbose: bool) -> None:
     saveConfig(config)
     previewConfig(config)
 
-    # Updating auto-update script since node configuration is changed
-    dumpScript(CONFIG_DIR / START_SCRIPT_NAME, config)
+    # Updating scripts since node configuration is changed
+    dumpScripts(CONFIG_DIR / START_SCRIPT_NAME, CONFIG_DIR / UPDATE_SCRIPT_NAME, config)
 
     successEcho("Node successfully configured.")
 
