@@ -33,13 +33,7 @@ OUTPUT_DIR="$HOME/.config/coretex"
 mkdir -p "$OUTPUT_DIR"
 
 # Generate the output filename based on the current Unix timestamp
-if [[ "$1" == "--force" ]]; then
-    FORCE_START=True
-    OUTPUT_FILE="$OUTPUT_DIR/ctx_start.log"
-else
-    FORCE_START=False
-    OUTPUT_FILE="$OUTPUT_DIR/ctx_autoupdate.log"
-fi
+OUTPUT_FILE="$OUTPUT_DIR/ctx_autoupdate.log"
 
 # Redirect all output to the file
 exec >>"$OUTPUT_FILE" 2>&1
@@ -57,7 +51,7 @@ store_running_container_image_id() {{
     running_container_image_id=$($DOCKER_PATH inspect -f '{{{{.Image}}}}' "$CONTAINER_NAME")
 }}
 
-should_start() {{
+should_update() {{
     node_status=0
     node_status=$(fetch_node_status)
 
@@ -82,10 +76,8 @@ should_start() {{
             return 1
         fi
     else
-        if [ $FORCE_START = "False" ]; then
-            echo "Node is not active."
-            return 1
-        fi
+        echo "Node is not active."
+        return 1
     fi
 }}
 
@@ -135,7 +127,7 @@ update_node() {{
     fi
 
     echo "Starting node..."
-    if ! should_start; then
+    if ! should_update; then
         return 1
     fi
 

@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Dict, Any
+from typing import Dict, Any, List, Tuple
 from enum import IntEnum
 from pathlib import Path
 
@@ -86,22 +86,19 @@ def generateStartScript(config: Dict[str, Any]) ->  str:
     )
 
 
-def dumpScripts(startScriptPath: Path, updateScriptPath: Path, config: Dict[str, Any]) -> None:
-    with startScriptPath.open("w") as scriptFile:
-        scriptFile.write(generateStartScript(config))
+def dumpScripts(scripts: List[Tuple[Path, str]]) -> None:
+    for script in scripts:
+        path, content = script
+        with path.open("w") as scriptFile:
+            scriptFile.write(content)
 
-    command(["chmod", "+x", str(startScriptPath)], ignoreStdout = True)
-
-    with updateScriptPath.open("w") as scriptFile:
-        scriptFile.write(generateUpdateScript(config))
-
-    command(["chmod", "+x", str(updateScriptPath)], ignoreStdout = True)
+        command(["chmod", "+x", str(path)], ignoreStdout = True)
 
 
 def activateAutoUpdate(configDir: Path, config: Dict[str, Any]) -> None:
-    startScriptPath = CONFIG_DIR / START_SCRIPT_NAME
-    updateScriptPath = CONFIG_DIR / UPDATE_SCRIPT_NAME
-    dumpScripts(startScriptPath, updateScriptPath, config)
+    startScript = (CONFIG_DIR / START_SCRIPT_NAME, generateStartScript(config))
+    updateScript = (CONFIG_DIR / UPDATE_SCRIPT_NAME, generateUpdateScript(config))
+    dumpScripts([startScript, updateScript])
 
     if not jobExists(UPDATE_SCRIPT_NAME):
         scheduleJob(configDir, UPDATE_SCRIPT_NAME)

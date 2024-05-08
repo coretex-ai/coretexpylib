@@ -21,7 +21,7 @@ import click
 
 from ..modules import node as node_module
 from ..modules.ui import clickPrompt, stdEcho, successEcho, errorEcho, previewConfig
-from ..modules.scripts import NodeStatus, getNodeStatus, activateAutoUpdate, dumpScripts
+from ..modules.scripts import NodeStatus, getNodeStatus, activateAutoUpdate, dumpScripts, generateStartScript, generateUpdateScript
 from ..modules.utils import onBeforeCommandExecute
 from ..modules.user import initializeUserSession
 from ..resources import START_SCRIPT_NAME, UPDATE_SCRIPT_NAME
@@ -53,7 +53,14 @@ def start(image: Optional[str]) -> None:
         config["image"] = image  # store forced image (flagged) so we can run autoupdate afterwards
         saveConfig(config)
 
-    dumpScripts(CONFIG_DIR / START_SCRIPT_NAME, CONFIG_DIR / UPDATE_SCRIPT_NAME, config)
+    dockerImage = config["image"]
+
+    if node_module.shouldUpdate(dockerImage):
+        node_module.pull(dockerImage)
+
+    startScript = (CONFIG_DIR / START_SCRIPT_NAME, generateStartScript(config))
+    updateScript = (CONFIG_DIR / UPDATE_SCRIPT_NAME, generateUpdateScript(config))
+    dumpScripts([startScript, updateScript])
 
     node_module.start(force = True)
     activateAutoUpdate(CONFIG_DIR, config)
@@ -145,7 +152,9 @@ def config(verbose: bool) -> None:
     previewConfig(config)
 
     # Updating scripts since node configuration is changed
-    dumpScripts(CONFIG_DIR / START_SCRIPT_NAME, CONFIG_DIR / UPDATE_SCRIPT_NAME, config)
+    startScript = (CONFIG_DIR / START_SCRIPT_NAME, generateStartScript(config))
+    updateScript = (CONFIG_DIR / UPDATE_SCRIPT_NAME, generateUpdateScript(config))
+    dumpScripts([startScript, updateScript])
 
     successEcho("Node successfully configured.")
 
