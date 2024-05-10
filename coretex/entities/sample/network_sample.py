@@ -162,6 +162,9 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
             if self.path.exists():
                 shutil.rmtree(self.path)
 
+            if self.zipPath.exists() and self.isEncrypted:
+                self.zipPath.unlink()
+
         if not ignoreCache and self.downloadPath.exists():
             return
 
