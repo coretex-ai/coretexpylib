@@ -44,7 +44,7 @@ def authenticateUser(username: str, password: str) -> NetworkResponse:
             raise NetworkRequestError(response, "Something went wrong, please try again later.")
 
         if response.statusCode >= 400:
-            stdEcho(f"Authentification failed with configured credentials. Please try entering your credentials again. Response: {response}")
+            errorEcho(f"Authentification failed with configured credentials. Please try entering your credentials again.")
             authenticate()
 
     return response
