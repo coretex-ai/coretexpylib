@@ -402,6 +402,7 @@ def initializeNodeConfiguration() -> None:
             if not click.confirm("Node is already running. Do you wish to stop the Node?", default = True):
                 errorEcho("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
                 return
+            
             stop()
 
         configureNode(config, verbose = False)
@@ -418,6 +419,7 @@ def initializeNodeConfiguration() -> None:
         if not click.confirm("Node is already running. Do you wish to stop the Node?", default = True):
             errorEcho("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
             return
+        
         stop()
 
     configureNode(config, verbose = False)
