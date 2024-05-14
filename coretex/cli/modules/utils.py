@@ -18,9 +18,17 @@
 from typing import List, Any, Optional, Callable
 from functools import wraps
 
+import sys
+
 from py3nvml import py3nvml
 
 import click
+
+from ...utils.process import command
+
+
+def updateLib() -> None:
+    command([sys.executable, "-m", "pip", "install", "--no-cache-dir", "--upgrade", "coretex"], ignoreStdout = True, ignoreStderr = True)
 
 
 def isGPUAvailable() -> bool:

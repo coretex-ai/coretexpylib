@@ -17,6 +17,7 @@
 
 from typing import Dict, Tuple
 
+from .type import SecretType
 from .secret import Secret
 from ...codable import KeyDescriptor
 
@@ -36,6 +37,9 @@ class AWSSecret(Secret):
 
     key: str
     value: str
+
+    def __init__(self) -> None:
+        super().__init__(SecretType.aws)
 
     @classmethod
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:

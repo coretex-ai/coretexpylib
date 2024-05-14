@@ -18,10 +18,15 @@
 from typing import Any, Dict, Optional, Tuple
 from typing_extensions import Self
 from abc import ABC, abstractmethod
+from base64 import b64decode
 
 import copy
 
-from ...networking import NetworkObject, networkManager, NetworkRequestError
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
+
+from .type import SecretType
+from ...networking import NetworkObject, networkManager, NetworkRequestError, RequestType
+from ...cryptography import rsa
 
 
 class Secret(NetworkObject, ABC):
@@ -29,6 +34,11 @@ class Secret(NetworkObject, ABC):
     """
         Represents base Secret entity from Coretex.ai
     """
+
+    def __init__(self, type_: SecretType) -> None:
+        super().__init__()
+
+        self.type_ = type_
 
     @abstractmethod
     def _encryptedFields(self) -> Tuple[str, ...]:
@@ -41,29 +51,29 @@ class Secret(NetworkObject, ABC):
 
         pass
 
-    def decrypted(self) -> Self:
+    def decrypted(self, key: Optional[RSAPrivateKey] = None) -> Self:
         """
             Returns
             -------
             Self -> Decrypted Coretex Secret
         """
 
-        return self
+        if key is None:
+            key = rsa.getPrivateKey()
 
-        # TODO: Enable this once the "secret" parameter type is implemented
-        # decrypted = copy.deepcopy(self)
+        decrypted = copy.deepcopy(self)
 
-        # for field in self._encryptedFields():
-        #     if not field in decrypted.__dict__:
-        #         raise AttributeError(f"\"{type(decrypted)}\".\"{field}\" not found")
+        for field in self._encryptedFields():
+            if not field in decrypted.__dict__:
+                raise AttributeError(f"\"{type(decrypted)}\".\"{field}\" not found")
 
-        #     value = decrypted.__dict__[field]
-        #     if not isinstance(value, str):
-        #         raise TypeError(f"Expected \"str\" received \"{type(value)}\"")
+            value = decrypted.__dict__[field]
+            if not isinstance(value, str):
+                raise TypeError(f"Expected \"str\" received \"{type(value)}\"")
 
-        #     decrypted.__dict__[field] = decryptSecretValue(value)
+            decrypted.__dict__[field] = rsa.decrypt(key, b64decode(value)).decode("utf-8")
 
-        # return decrypted
+        return decrypted
 
     @classmethod
     def _endpoint(cls) -> str:
@@ -115,6 +125,39 @@ class Secret(NetworkObject, ABC):
         })
 
         if response.hasFailed():
-            raise NetworkRequestError(response, "Failed to fetch secret")
+            raise NetworkRequestError(response, f"Failed to fetch Secret \"{name}\"")
+
+        return cls.decode(response.getJson(dict))
+
+    @classmethod
+    def fetchNodeSecret(cls, name: str, accessToken: str) -> Self:
+        """
+            Fetches a single Node Secret with the matching name
+
+            Parameters
+            ----------
+            name : str
+                name of the Node Secret which is fetched
+            accessToken : str
+                Node access token
+
+            Returns
+            -------
+            Self -> fetched Node Secret
+
+            Raises
+            ------
+            NetworkRequestError -> If the request for fetching failed
+        """
+
+        headers = networkManager._headers()
+        headers["node-access-token"] = accessToken
+
+        response = networkManager.request("secret/node", RequestType.get, headers, {
+            "name": name
+        })
+
+        if response.hasFailed():
+            raise NetworkRequestError(response, f"Failed to fetch Node Secret \"{name}\"")
 
         return cls.decode(response.getJson(dict))
