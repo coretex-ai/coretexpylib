@@ -75,7 +75,6 @@ class Task(BaseObject):
         if not isEntityNameValid(name):
             raise ValueError(">> [Coretex] Task name is invalid. Requirements: alphanumeric characters (\"A-Z\", \"a-z\", and \"0-9\") and dash (\"-\") with length between 3 to 50")
 
-
         return cls.create(
             name = name,
             parent_id = projectId,

@@ -19,5 +19,5 @@ import re
 
 
 def isEntityNameValid(name: str) -> bool:
-    pattern = r"^[A-Za-z0-9-]{3,50}$"
+    pattern = r"^[a-z0-9-]{3,50}$"
     return True if re.match(pattern, name) is not None else False

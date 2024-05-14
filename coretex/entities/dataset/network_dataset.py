@@ -40,6 +40,7 @@ from ...utils.file import isArchive, archive
 
 
 SampleType = TypeVar("SampleType", bound = "NetworkSample")
+NAME_VALIDATION_MESSAGE = ">> [Coretex] Sample name is invalid. Requirements: alphanumeric characters (\"A-Z\", \"a-z\", and \"0-9\") and dash (\"-\") with length between 3 to 50"
 MAX_DATASET_NAME_LENGTH = 50
 
 
@@ -52,7 +53,7 @@ def _hashDependencies(dependencies: List[str]) -> str:
 
 def _chunkSampleImport(sampleType: Type[SampleType], sampleName: str, samplePath: Path, datasetId: int) -> SampleType:
     if not isEntityNameValid(sampleName):
-        raise ValueError(">> [Coretex] Sample name is invalid. Requirements: alphanumeric characters (\"A-Z\", \"a-z\", and \"0-9\") and dash (\"-\") with length between 3 to 50")
+        raise ValueError(NAME_VALIDATION_MESSAGE)
 
     parameters = {
         "name": sampleName,
@@ -217,7 +218,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
         """
 
         if not isEntityNameValid(name):
-            raise ValueError(">> [Coretex] Dataset name is invalid. Requirements: alphanumeric characters (\"A-Z\", \"a-z\", and \"0-9\") and dash (\"-\") with length between 3 to 50")
+            raise ValueError(NAME_VALIDATION_MESSAGE)
 
         dataset = cls.create(
             name = name,
@@ -275,7 +276,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
         """
 
         if not isEntityNameValid(prefix):
-            raise ValueError(">> [Coretex] Cache dataset prefix is invalid. Requirements: alphanumeric characters (\"A-Z\", \"a-z\", and \"0-9\") and dash (\"-\") with length between 3 to 50")
+            raise ValueError(NAME_VALIDATION_MESSAGE)
 
         dataset = cls.createDataset(cls.generateCacheName(prefix, dependencies), projectId)
         if dataset is None:
@@ -345,7 +346,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
 
     def rename(self, name: str) -> bool:
         if not isEntityNameValid(name):
-            raise ValueError(">> [Coretex] Dataset name is invalid. Requirements: alphanumeric characters (\"A-Z\", \"a-z\", and \"0-9\") and dash (\"-\") with length between 3 to 50")
+            raise ValueError(NAME_VALIDATION_MESSAGE)
 
         success = self.update(name = name)
 
@@ -382,7 +383,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
             sampleName = samplePath.stem
 
         if not isEntityNameValid(sampleName):
-            raise ValueError(">> [Coretex] Sample name is invalid. Requirements: alphanumeric characters (\"A-Z\", \"a-z\", and \"0-9\") and dash (\"-\") with length between 3 to 50")
+            raise ValueError(NAME_VALIDATION_MESSAGE)
 
         if self.isEncrypted:
             sample = _encryptedSampleImport(self._sampleType, sampleName, samplePath, self.id, getProjectKey(self.projectId))
