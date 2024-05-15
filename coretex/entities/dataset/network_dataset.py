@@ -135,21 +135,25 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
     @classmethod
     def decode(cls, encodedObject: Dict[str, Any]) -> Self:
         obj = super().decode(encodedObject)
+
         page = 1
         hasMorePages = True
         samples: List[SampleType] = []
 
         while hasMorePages:
-            params = {"dataset_id": obj.id, "page": page}
-            response = networkManager.get(cls._endpoint() + "/sessions", params)
+            params = {
+                "dataset_id": obj.id,
+                "page": page
+            }
+            response = networkManager.get(f"{cls._endpoint()}/sessions", params)
 
             if response.hasFailed():
                 raise NetworkRequestError(response, "Failed to fetch dataset samples")
 
-            data = response.getJson(dict)["data"]
-            samples.extend([obj._sampleType.decode(sample) for sample in data])
+            responseJson = response.getJson(dict)
+            samples.extend([obj._sampleType.decode(sample) for sample in responseJson["data"]])
 
-            hasMorePages = "next" in response.getJson(dict).get("links", {})
+            hasMorePages = "next" in responseJson.get("links", {})
             page += 1
 
         obj.samples = samples
@@ -160,6 +164,29 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
     @classmethod
     def _endpoint(cls) -> str:
         return "dataset"
+
+    @classmethod
+    def fetchCachedDataset(cls, dependencies: List[str]) -> Self:
+        """
+            Fetches cached dataset if it exists
+
+            Parameters
+            ----------
+            dependencies : List[str]
+                Parameters on which the cached dataset depends
+
+            Returns
+            -------
+            Self -> Fetched dataset object
+            Raises
+            ------
+            ValueError -> If dataset doesn't exist
+        """
+
+        return super().fetchOne(
+            name = _hashDependencies(dependencies),
+            include_sessions = 1
+        )
 
     # Dataset methods
 
