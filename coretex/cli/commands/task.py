@@ -20,7 +20,7 @@ from typing import Optional
 import click
 
 from ... import folder_manager
-from modules import user, utils, project_utils
+from ..modules import user, utils, project_utils
 from ..._task import TaskRunWorker, LoggerUploadWorker, executeProcess, readTaskConfig
 from ...configuration import UserConfiguration
 from ...entities import TaskRun, TaskRunStatus
