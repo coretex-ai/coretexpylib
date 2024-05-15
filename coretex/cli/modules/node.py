@@ -394,8 +394,17 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
             publicKey = rsa.getPublicKeyBytes(rsaKey.public_key())
 
         if nodeMode != NodeMode.execution:
-            nearWalletId = clickPrompt("Enter a NEAR wallet id to which the funds will be transfered when executing endpoints")
-            config["nearWalletId"] = nearWalletId
+            nearWalletId = clickPrompt(
+                "Enter a NEAR wallet id to which the funds will be transfered when executing endpoints",
+                config_defaults.DEFAULT_NEAR_WALLET_ID,
+                type = str
+            )
+
+            if nearWalletId != config_defaults.DEFAULT_NEAR_WALLET_ID:
+                config["nearWalletId"] = nearWalletId
+            else:
+                config["nearWalletId"] = None
+                nearWalletId = None
     else:
         stdEcho("To configure node manually run coretex node config with --verbose flag.")
 
