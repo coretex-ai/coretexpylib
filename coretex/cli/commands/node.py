@@ -62,7 +62,7 @@ def start(image: Optional[str]) -> None:
     updateScript = (CONFIG_DIR / UPDATE_SCRIPT_NAME, generateUpdateScript(config))
     dumpScripts([startScript, updateScript])
 
-    node_module.start(force = True)
+    node_module.start()
     activateAutoUpdate(CONFIG_DIR, config)
 
 
@@ -105,6 +105,9 @@ def update() -> None:
     if not node_module.shouldUpdate(dockerImage):
         successEcho("Node is already up to date.")
         return
+
+    stdEcho("Updating node...")
+    node_module.pull(dockerImage)
 
     if getNodeStatus() == NodeStatus.busy:
         if not clickPrompt(

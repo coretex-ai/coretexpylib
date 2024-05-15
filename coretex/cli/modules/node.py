@@ -63,15 +63,11 @@ def exists() -> bool:
     return docker.containerExists(config_defaults.DOCKER_CONTAINER_NAME)
 
 
-def start(force: bool = False) -> None:
+def start() -> None:
     try:
         progressEcho("Starting Coretex Node...")
 
-        args = [str(CONFIG_DIR / START_SCRIPT_NAME)]
-        if force:
-            args.append("--force")
-
-        command(args, ignoreStdout = True, ignoreStderr = True)
+        command([str(CONFIG_DIR / START_SCRIPT_NAME)], ignoreStdout = True, ignoreStderr = True)
 
         successEcho("Successfully started Coretex Node.")
     except CommandException as ex:
