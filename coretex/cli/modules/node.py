@@ -394,32 +394,24 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
 
 def initializeNodeConfiguration() -> None:
     config = loadConfig()
+    isConfigured = isNodeConfigured(config)
 
-    if not isNodeConfigured(config):
+    if isConfigured:
+        if isConfigurationValid(config):
+            return
+
+        errorEcho("Invalid node configuration found.")
+        if not click.confirm("Would you like to update the configuration?", default = True):
+            raise RuntimeError("Invalid configuration. Please use \"coretex node config\" to update a Node configuration.")
+
+    if not isConfigured:
         errorEcho("Node configuration not found.")
-
-        if isRunning():
-            if not click.confirm("Node is already running. Do you wish to stop the Node?", default = True):
-                errorEcho("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
-                return
-            
-            stop()
-
-        configureNode(config, verbose = False)
-        saveConfig(config)
-
-    if isConfigurationValid(config):
-        return
-
-    errorEcho("Invalid node configuration found.")
-    if not click.confirm("Would you like to update the configuration?", default = True):
-        raise RuntimeError("Invalid configuration. Please use \"coretex node config\" to update a Node configuration.")
 
     if isRunning():
         if not click.confirm("Node is already running. Do you wish to stop the Node?", default = True):
             errorEcho("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
             return
-        
+
         stop()
 
     configureNode(config, verbose = False)
