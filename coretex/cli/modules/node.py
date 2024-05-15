@@ -175,13 +175,16 @@ def shouldUpdate(image: str) -> bool:
     return True
 
 
-def registerNode(name: str, publicKey: Optional[bytes] = None) -> str:
+def registerNode(name: str, publicKey: Optional[bytes] = None, nearWalletId: Optional[str] = None) -> str:
     params = {
         "machine_name": name,
     }
 
     if publicKey is not None:
         params["public_key"] = b64encode(publicKey).decode("utf-8")
+
+    if nearWalletId is not None:
+        params["near_wallet_id"] = nearWalletId
 
     response = networkManager.post("service", params)
 
@@ -363,6 +366,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     config["initScript"] = config_defaults.DEFAULT_INIT_SCRIPT
 
     publicKey: Optional[bytes] = None
+    nearWalletId: Optional[str] = None
 
     if verbose:
         config["storagePath"] = clickPrompt("Storage path (press enter to use default)", config_defaults.DEFAULT_STORAGE_PATH, type = str)
@@ -388,6 +392,10 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
             progressEcho("Generating RSA key-pair (2048 bits long) using provided node secret...")
             rsaKey = rsa.generateKey(2048, nodeSecret.encode("utf-8"))
             publicKey = rsa.getPublicKeyBytes(rsaKey.public_key())
+
+        if nodeMode != NodeMode.execution:
+            nearWalletId = clickPrompt("Enter a NEAR wallet id to which the funds will be transfered when executing endpoints")
+            config["nearWalletId"] = nearWalletId
     else:
         stdEcho("To configure node manually run coretex node config with --verbose flag.")
 
