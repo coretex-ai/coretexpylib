@@ -19,10 +19,13 @@ from typing import Optional
 
 import click
 
+from ..modules import user
+from ..modules import node as node_module
+from ..modules.ui import stdEcho
 from ...utils import docker
 from ..modules import node as node_module
 from ..modules import update as update_module
-from ..modules import ui, user, utils
+from ..modules import ui, utils
 from ...configuration import UserConfiguration, NodeConfiguration, CONFIG_DIR
 
 
@@ -57,6 +60,7 @@ def start(image: Optional[str]) -> None:
         node_module.pull(dockerImage)
 
     node_module.start(dockerImage, userConfig, nodeConfig)
+    docker.removeDanglingImages(node_module.getRepoFromImageUrl(dockerImage), node_module.getTagFromImageUrl(dockerImage))
 
     update_module.activateAutoUpdate(CONFIG_DIR, userConfig, nodeConfig)
 
@@ -101,6 +105,7 @@ def update() -> None:
         ui.successEcho("Node is already up to date.")
         return
 
+    stdEcho("Updating node...")
     node_module.pull(nodeConfig.image)
 
     if node_module.getNodeStatus() == node_module.NodeStatus.busy:
@@ -115,6 +120,7 @@ def update() -> None:
     node_module.stop()
 
     node_module.start(nodeConfig.image, userConfig, nodeConfig)
+    docker.removeDanglingImages(node_module.getRepoFromImageUrl(nodeConfig.image), node_module.getTagFromImageUrl(nodeConfig.image))
 
 
 @click.command()

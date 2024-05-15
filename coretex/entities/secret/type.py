@@ -15,11 +15,11 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .annotation import *
-from .dataset import *
-from .model import *
-from .project import *
-from .sample import *
-from .secret import *
-from .secret import secret_factory
-from .task_run import *
+from enum import IntEnum
+
+
+class SecretType(IntEnum):
+
+    aws         = 1
+    git         = 2
+    credentials = 3

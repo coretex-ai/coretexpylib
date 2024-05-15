@@ -17,10 +17,13 @@
 
 from typing import Dict, Any
 
+import inflection
+
 from .utils import getValueParamType
 from .base_parameter import BaseParameter
 from .parameter_type import ParameterType
 from .parameters import *
+from ...secret import AWSSecret, GitSecret, CredentialsSecret
 
 
 def cleanParamDict(value: Dict[str, Any]) -> Dict[str, Any]:
@@ -32,6 +35,9 @@ def cleanParamDict(value: Dict[str, Any]) -> Dict[str, Any]:
 
     if not "required" in value:
         value["required"] = False
+
+    if not "description" in value:
+        value["description"] = ""
 
     dataName: str = value["name"]
     dataType = value["data_type"]
@@ -52,51 +58,75 @@ def create(value: Dict[str, Any]) -> BaseParameter:
     if not isinstance(dataType, str):
         raise ValueError("\"data_type\" is not of type \"str\"")
 
+    # Convert snake_case keys into camelCase
+    value = {
+        inflection.camelize(key, uppercase_first_letter = False): value
+        for key, value in value.items()
+    }
+
     parameterType = ParameterType(dataType)
 
     if parameterType == ParameterType.integer:
-        return IntParameter.decode(value)
+        return IntParameter(**value)
 
     if parameterType == ParameterType.floatingPoint:
-        return FloatParameter.decode(value)
+        return FloatParameter(**value)
 
     if parameterType == ParameterType.string:
-        return StrParameter.decode(value)
+        return StrParameter(**value)
 
     if parameterType == ParameterType.boolean:
-        return BoolParameter.decode(value)
+        return BoolParameter(**value)
 
     if parameterType == ParameterType.dataset:
-        return DatasetParameter.decode(value)
+        return DatasetParameter(**value)
 
     if parameterType == ParameterType.model:
-        return ModelParameter.decode(value)
+        return ModelParameter(**value)
 
     if parameterType == ParameterType.imuVectors:
-        return IMUVectorsParameter.decode(value)
+        return IMUVectorsParameter(**value)
 
     if parameterType == ParameterType.enum:
-        return EnumParameter.decode(value)
+        return EnumParameter(**value)
 
     if parameterType == ParameterType.range:
-        return RangeParameter.decode(value)
+        return RangeParameter(**value)
+
+    if parameterType == ParameterType.awsSecret:
+        return SecretParameter(AWSSecret, **value)
+
+    if parameterType == ParameterType.gitSecret:
+        return SecretParameter(GitSecret, **value)
+
+    if parameterType == ParameterType.credentialsSecret:
+        return SecretParameter(CredentialsSecret, **value)
 
     if parameterType == ParameterType.intList:
-        return ListIntParameter.decode(value)
+        return ListIntParameter(**value)
 
     if parameterType == ParameterType.floatList:
-        return ListFloatParameter.decode(value)
+        return ListFloatParameter(**value)
 
     if parameterType == ParameterType.strList:
-        return ListStrParameter.decode(value)
+        return ListStrParameter(**value)
 
     if parameterType == ParameterType.datasetList:
-        return ListDatasetParameter.decode(value)
+        return ListDatasetParameter(**value)
 
     if parameterType == ParameterType.modelList:
-        return ListModelParameter.decode(value)
+        return ListModelParameter(**value)
 
     if parameterType == ParameterType.enumList:
-        return ListEnumParameter.decode(value)
+        return ListEnumParameter(**value)
+
+    if parameterType == ParameterType.awsSecretList:
+        return ListSecretParameter(AWSSecret, **value)
+
+    if parameterType == ParameterType.gitSecretList:
+        return ListSecretParameter(GitSecret, **value)
+
+    if parameterType == ParameterType.credentialsSecretList:
+        return ListSecretParameter(CredentialsSecret, **value)
 
     raise ValueError(f"Unknown parameter type \"{parameterType}\"")

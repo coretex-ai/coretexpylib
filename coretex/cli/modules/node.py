@@ -262,6 +262,10 @@ def selectNodeMode(storagePath: str) -> Tuple[int, Optional[int]]:
 def promptCpu(cpuLimit: int) -> int:
     cpuCount: int = ui.clickPrompt(f"Enter the number of CPUs the container will use (Maximum: {cpuLimit}) (press enter to use default)", cpuLimit, type = int)
 
+    if cpuCount == 0:
+        ui.errorEcho(f"ERROR: Number of CPU's the container will use must be higher than 0")
+        return promptCpu(cpuLimit)
+
     if cpuCount > cpuLimit:
         ui.errorEcho(f"ERROR: CPU limit in Docker Desktop ({cpuLimit}) is lower than the specified value ({cpuCount})")
         return promptCpu(cpuLimit)

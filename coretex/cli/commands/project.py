@@ -20,47 +20,73 @@ from typing import Optional
 import click
 
 from ..modules import ui, project_utils, utils, user
-from ...entities import Project
-from ...networking import NetworkRequestError
+from ...entities import Project, ProjectVisibility
+from ...networking import RequestFailedError
 from ...configuration import UserConfiguration
-
-
-def selectProject(projectId: int) -> None:
-    nodeConfig = UserConfiguration()
-    nodeConfig.projectId = projectId
-    nodeConfig.save()
 
 
 @click.command()
 @click.option("--name", "-n", type = str, help = "Project name")
-@click.option("--id", type = int, help = "Project ID")
-def select(name: Optional[str], id: Optional[int]) -> None:
-    if name is None and id is None:
-        raise click.UsageError("Please use either --name / -n (for project name) or --id (for project ID)")
+@click.option("--type", "-t", "projectType", type = int, help = "Project type")
+@click.option("--description", "-d", type = str, help = "Project description")
+def create(name: Optional[str], projectType: Optional[int], description: Optional[str]) -> None:
+    project = project_utils.createProject(name, projectType, description)
 
+    selectNewProject = ui.clickPrompt("Do you want to select the new project as default? (Y/n)", type = bool, default = True)
+    if selectNewProject:
+        project_utils.selectProject(project.id)
+        ui.successEcho(f"Project \"{project.name}\" successfully selected.")
+
+
+@click.command()
+@click.option("--project", "-p", type = str, help = "Project name")
+@click.option("--name", "-n", type = str, help = "New Project name")
+@click.option("--description", "-d", type = str, help = "New Project description")
+def edit(project: Optional[str], name: Optional[str], description: Optional[str]) -> None:
+    userConfiguration = UserConfiguration()
+    defaultProjectId = userConfiguration.projectId
+    if defaultProjectId is None and project is None:
+        ui.errorEcho(f"To use edit command you need to specifiy project name using \"--project\" or \"-p\" flag, or you can select default project using \"coretex project select\" command.")
+        return
+
+    if project is None and defaultProjectId is not None:
+        selectedProject = Project.fetchById(defaultProjectId)
+    else:
+        selectedProject = Project.fetchOne(name = project)
+
+    if name is None:
+        name = ui.clickPrompt("Please enter new name for your project", type = str, default = selectedProject.name)
+
+    if description is None:
+        description = ui.clickPrompt("Please enter new description for your project", type = str, default = selectedProject.description, show_default = False)
+
+    try:
+        selectedProject.update(name = selectedProject.name, description = description)
+        selectedProject.updateVisibility(ProjectVisibility.private)
+        ui.successEcho(f"Project id \"{selectedProject.id}\" successfully edited.")
+
+    except RequestFailedError:
+        raise click.ClickException(f"Failed to edit project \"{selectedProject.name}\".")
+
+
+@click.command()
+@click.argument("name", type = str)
+def select(name: str) -> None:
     project: Optional[Project] = None
 
-    if name is not None:
-        ui.progressEcho("Validating project...")
+    ui.progressEcho("Validating project...")
 
-        try:
-            project = Project.fetchOne(name = name)
-            ui.successEcho(f"Project \"{name}\" selected successfully!")
-            selectProject(project.id)
-        except ValueError:
-            ui.errorEcho(f"Project \"{name}\" not found.")
-            project = project_utils.promptProjectCreate("Do you want to create a project with that name?", name)
+    try:
+        project = Project.fetchOne(name = name)
+        ui.successEcho(f"Project \"{name}\" selected successfully!")
+        project_utils.selectProject(project.id)
+    except ValueError:
+        ui.errorEcho(f"Project \"{name}\" not found.")
+        project = project_utils.promptProjectCreate("Do you want to create a project with that name?", name)
+        if project is None:
+            return
 
-    if id is not None:
-        ui.progressEcho("Validating project...")
-        try:
-            project = Project.fetchById(id)
-            ui.successEcho(f"Project with id \"{id}\" fetched successfully. Project name \"{project.name}\"")
-        except NetworkRequestError:
-            ui.errorEcho(f"Failed to fetch project with provided id \"{id}\"")
-
-    if project is not None:
-        selectProject(project.id)
+        project_utils.selectProject(project.id)
 
 
 @click.group()
@@ -69,4 +95,6 @@ def project() -> None:
     pass
 
 
+project.add_command(create, "create")
+project.add_command(edit, "edit")
 project.add_command(select, "select")

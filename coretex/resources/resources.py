@@ -15,11 +15,6 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .annotation import *
-from .dataset import *
-from .model import *
-from .project import *
-from .sample import *
-from .secret import *
-from .secret import secret_factory
-from .task_run import *
+from pathlib import Path
+
+PYTHON_ENTRY_POINT_PATH = Path(__file__).resolve().parent.joinpath("_coretex.py")
