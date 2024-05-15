@@ -22,6 +22,8 @@ from base64 import b64encode
 
 import logging
 
+import click
+
 from . import config_defaults
 from .utils import isGPUAvailable
 from .ui import clickPrompt, arrowPrompt, highlightEcho, errorEcho, progressEcho, successEcho, stdEcho
@@ -356,7 +358,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     config["nodeRam"] = int(min(ramLimit, config_defaults.DEFAULT_RAM_MEMORY))
     config["nodeSwap"] = config_defaults.DEFAULT_SWAP_MEMORY
     config["nodeSharedMemory"] = config_defaults.DEFAULT_SHARED_MEMORY
-    config["cpuCount"] = config_defaults.DEFAULT_CPU_COUNT
+    config["cpuCount"] = int(min(cpuLimit, config_defaults.DEFAULT_CPU_COUNT))
     config["nodeMode"] = config_defaults.DEFAULT_NODE_MODE
     config["allowDocker"] = config_defaults.DEFAULT_ALLOW_DOCKER
     config["nodeSecret"] = config_defaults.DEFAULT_NODE_SECRET
@@ -396,25 +398,25 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
 
 def initializeNodeConfiguration() -> None:
     config = loadConfig()
+    isConfigured = isNodeConfigured(config)
 
-    if isNodeConfigured(config) and not isConfigurationValid(config):
-        raise RuntimeError(f"Invalid configuration. Please run \"coretex node config\" command to configure Node.")
+    if isConfigured:
+        if isConfigurationValid(config):
+            return
 
-    if not isNodeConfigured(config):
+        errorEcho("Invalid node configuration found.")
+        if not click.confirm("Would you like to update the configuration?", default = True):
+            raise RuntimeError("Invalid configuration. Please use \"coretex node config\" to update a Node configuration.")
+
+    if not isConfigured:
         errorEcho("Node configuration not found.")
-        if isRunning():
-            stopNode = clickPrompt(
-                "Node is already running. Do you wish to stop the Node? (Y/n)",
-                type = bool,
-                default = True,
-                show_default = False
-            )
 
-            if not stopNode:
-                errorEcho("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
-                return
+    if isRunning():
+        if not click.confirm("Node is already running. Do you wish to stop the Node?", default = True):
+            errorEcho("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
+            return
 
-            stop()
+        stop()
 
-        configureNode(config, verbose = False)
-        saveConfig(config)
+    configureNode(config, verbose = False)
+    saveConfig(config)
