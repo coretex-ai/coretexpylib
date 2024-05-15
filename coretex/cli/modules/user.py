@@ -19,6 +19,8 @@ from typing import Dict, Any
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
+import logging
+
 from .ui import clickPrompt, errorEcho, progressEcho
 from ...utils import decodeDate
 from ...networking import networkManager, NetworkResponse, NetworkRequestError
@@ -119,9 +121,12 @@ def initializeUserSession() -> None:
                     response = authenticateUser(config["username"], config["password"])
             else:
                 response = authenticateUser(config["username"], config["password"])
-        except:
-            errorEcho("Authentification failed with configured credentials. Please try entering your credentials again.")
-            authenticate()
+        except NetworkRequestError as ex:
+            logging.getLogger("cli").debug(ex, exc_info = ex)
+
+            if 400 <= ex.response.statusCode < 500 :
+                errorEcho("Authentification failed with configured credentials. Please try entering your credentials again.")
+                authenticate()
 
         jsonResponse = response.getJson(dict)
         config["token"] = jsonResponse["token"]
