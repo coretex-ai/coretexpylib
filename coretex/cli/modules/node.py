@@ -23,13 +23,16 @@ from base64 import b64encode
 import logging
 import requests
 
+import click
+
 from . import utils, ui
+from . import config_defaults
 from ...cryptography import rsa
 from ...networking import networkManager, NetworkRequestError
 from ...utils import CommandException, docker
 from ...entities import Model
 from ...node import NodeMode
-from ...configuration import config_defaults, UserConfiguration, NodeConfiguration
+from ...configuration import UserConfiguration, NodeConfiguration
 
 
 class NodeException(Exception):
@@ -396,36 +399,30 @@ def promptNodeConfiguration() -> bool:
 
 
 def initializeNodeConfiguration() -> None:
-    config = NodeConfiguration()
+    nodeConfig = NodeConfiguration()
+    isConfigured = nodeConfig.isNodeConfigured()
+    isConfigValid, errors = nodeConfig.isConfigurationValid()
 
-    if config.isNodeConfigured():
-        isConfigValid, errors = config.isConfigurationValid()
-
+    if isConfigured:
         if isConfigValid:
             return
 
+        ui.errorEcho("Invalid node configuration found.")
         for error in errors:
             ui.errorEcho(error)
 
-        if not ui.clickPrompt(
-            f"Existing node configuration is invalid. Would you like to update? (Y/n)",
-            type = bool,
-            default = True,
-            show_default = False
-        ):
-            return
+        if not click.confirm("Would you like to update the configuration?", default = True):
+            raise RuntimeError("Invalid configuration. Please use \"coretex node config\" to update a Node configuration.")
 
-        if not promptNodeConfiguration():
-            return
-
-        configureNode(config, verbose = False)
-        config.save()
-
-    if not config.isNodeConfigured():
+    if not isConfigured:
         ui.errorEcho("Node configuration not found.")
 
-        if not promptNodeConfiguration():
+    if isRunning():
+        if not click.confirm("Node is already running. Do you wish to stop the Node?", default = True):
+            ui.errorEcho("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
             return
 
-        configureNode(config, verbose = False)
-        config.save()
+        stop()
+
+    configureNode(nodeConfig, verbose = False)
+    nodeConfig.save()

@@ -22,8 +22,8 @@ import os
 
 from . import config_defaults
 from .base import BaseConfiguration, CONFIG_DIR
-from ..utils import docker
-from ..utils import isCliRuntime
+from ..utils import docker, isCliRuntime
+from ..node import NodeMode
 
 
 def getEnvVar(key: str, default: str) -> str:
@@ -114,7 +114,12 @@ class NodeConfiguration(BaseConfiguration):
 
     @property
     def nodeRam(self) -> int:
-        return self.getValue("nodeRam", int)
+        nodeRam = self.getOptValue("nodeRam", int)
+
+        if nodeRam is None:
+            nodeRam = config_defaults.DEFAULT_RAM_MEMORY
+
+        return nodeRam
 
     @nodeRam.setter
     def nodeRam(self, value: int) -> None:
@@ -122,7 +127,12 @@ class NodeConfiguration(BaseConfiguration):
 
     @property
     def nodeSwap(self) -> int:
-        return self.getValue("nodeSwap", int)
+        nodeSwap = self.getOptValue("nodeSwap", int)
+
+        if nodeSwap is None:
+            nodeSwap = config_defaults.DEFAULT_SWAP_MEMORY
+
+        return nodeSwap
 
     @nodeSwap.setter
     def nodeSwap(self, value: int) -> None:
@@ -130,7 +140,12 @@ class NodeConfiguration(BaseConfiguration):
 
     @property
     def nodeSharedMemory(self) -> int:
-        return self.getValue("nodeSharedMemory", int)
+        nodeSharedMemory = self.getOptValue("nodeSharedMemory", int)
+
+        if nodeSharedMemory is None:
+            nodeSharedMemory = config_defaults.DEFAULT_SHARED_MEMORY
+
+        return nodeSharedMemory
 
     @nodeSharedMemory.setter
     def nodeSharedMemory(self, value: int) -> None:
@@ -138,7 +153,12 @@ class NodeConfiguration(BaseConfiguration):
 
     @property
     def cpuCount(self) -> int:
-        return self.getValue("cpuCount", int)
+        cpuCount = self.getOptValue("cpuCount", int)
+
+        if cpuCount is None:
+            cpuCount = config_defaults.DEFAULT_CPU_COUNT
+
+        return cpuCount
 
     @cpuCount.setter
     def cpuCount(self, value: int) -> None:
@@ -146,7 +166,12 @@ class NodeConfiguration(BaseConfiguration):
 
     @property
     def nodeMode(self) -> int:
-        return self.getValue("nodeMode", int)
+        nodeMode = self.getOptValue("nodeMode", int)
+
+        if nodeMode is None:
+            nodeMode = NodeMode.execution
+
+        return nodeMode
 
     @nodeMode.setter
     def nodeMode(self, value: int) -> None:
