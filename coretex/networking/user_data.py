@@ -19,6 +19,7 @@ from typing import Any, Optional, Dict
 from pathlib import Path
 
 import json
+from ..configuration.user import USER_CONFIG_PATH
 
 
 CONFIG_PATH = Path("~/.config/coretex/config.json").expanduser()
@@ -28,7 +29,7 @@ CONFIG_PATH = Path("~/.config/coretex/config.json").expanduser()
 class UserData:
 
     def __init__(self) -> None:
-        with open(CONFIG_PATH, "r") as configFile:
+        with open(USER_CONFIG_PATH, "r") as configFile:
             self.__values: Dict[str, Any] = json.load(configFile)
 
     def __getOptionalStr(self, key: str) -> Optional[str]:

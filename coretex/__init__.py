@@ -22,7 +22,7 @@ _syncConfigWithEnv()
 
 # Internal - not for outside use
 from ._logger import _initializeDefaultLogger, _initializeCLILogger
-from .configuration import isCliRuntime
+from .utils import isCliRuntime
 
 
 if isCliRuntime():

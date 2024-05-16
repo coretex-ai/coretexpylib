@@ -20,11 +20,9 @@ from typing import Optional
 import click
 
 from ... import folder_manager
-from ..modules.user import initializeUserSession
-from ..modules.utils import onBeforeCommandExecute
-from ..modules.project_utils import getProject
+from ..modules import user, utils, project_utils
 from ..._task import TaskRunWorker, LoggerUploadWorker, executeProcess, readTaskConfig
-from ...configuration import loadConfig
+from ...configuration import UserConfiguration
 from ...entities import TaskRun, TaskRunStatus
 from ...resources import PYTHON_ENTRY_POINT_PATH
 
@@ -34,17 +32,21 @@ class RunException(Exception):
 
 
 @click.command()
-@onBeforeCommandExecute(initializeUserSession)
+@utils.onBeforeCommandExecute(user.initializeUserSession)
 @click.argument("path", type = click.Path(exists = True, dir_okay = False))
 @click.option("--name", type = str, default = None)
 @click.option("--description", type = str, default = None)
 @click.option("--snapshot", type = bool, default = False)
 @click.option("--project", "-p", type = str)
 def run(path: str, name: Optional[str], description: Optional[str], snapshot: bool, project: Optional[str]) -> None:
-    config = loadConfig()
+    userConfig = UserConfiguration()
+
+    if userConfig.refreshToken is None:
+        raise RunException(f"Failed to execute \"coretex run {path}\" command. Authenticate again using \"coretex login\" command and try again.")
+
     parameters = readTaskConfig()
 
-    selectedProject = getProject(project, config)
+    selectedProject = project_utils.getProject(project, userConfig)
     if selectedProject is None:
         return
 
@@ -59,14 +61,14 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
 
     taskRun.updateStatus(TaskRunStatus.preparingToStart)
 
-    with TaskRunWorker(config["refreshToken"], taskRun.id):
+    with TaskRunWorker(userConfig.refreshToken, taskRun.id):
         loggerUploadWorker = LoggerUploadWorker(taskRun.id)
         loggerUploadWorker.start()
 
         command = [
             "python", str(PYTHON_ENTRY_POINT_PATH),
             "--taskRunId", str(taskRun.id),
-            "--refreshToken", str(config["refreshToken"])
+            "--refreshToken", userConfig.refreshToken
         ]
 
         returnCode = executeProcess(

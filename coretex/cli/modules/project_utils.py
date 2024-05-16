@@ -1,18 +1,18 @@
 from typing import Optional, Dict, Any
-from enum import IntEnum
 
 import click
 
 from . import ui
+from ...networking import EntityNotCreated
+from ...configuration import UserConfiguration
 from ...entities import Project, ProjectType, ProjectVisibility
 from ...networking import EntityNotCreated, NetworkRequestError
-from ...configuration import loadConfig, saveConfig
 
 
 def selectProject(projectId: int) -> None:
-    config = loadConfig()
-    config["projectId"] = projectId
-    saveConfig(config)
+    userConfiguration = UserConfiguration()
+    userConfiguration.projectId = projectId
+    userConfiguration.save()
 
 
 def selectProjectType() -> ProjectType:
@@ -100,8 +100,8 @@ def createProject(name: Optional[str] = None, projectType: Optional[int] = None,
         raise click.ClickException(f"Failed to create project \"{name}\".")
 
 
-def getProject(name: Optional[str], config: Dict[str, Any]) -> Optional[Project]:
-    projectId = config.get("projectId")
+def getProject(name: Optional[str], userConfig: UserConfiguration) -> Optional[Project]:
+    projectId = userConfig.projectId
     if name is not None:
         try:
             return Project.fetchOne(name = name)
@@ -125,13 +125,13 @@ def getProject(name: Optional[str], config: Dict[str, Any]) -> Optional[Project]
 
 
 def isProjectSelected() -> bool:
-    config = loadConfig()
+    userConfig = UserConfiguration()
 
-    if config.get("projectId") is None:
+    if userConfig.projectId is None:
         return False
 
     try:
-        Project.fetchById(config["projectId"])
+        Project.fetchById(userConfig.projectId)
         return True
     except NetworkRequestError:
         return False

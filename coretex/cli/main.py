@@ -48,7 +48,7 @@ def update() -> None:
         ui.errorEcho("Failed to update coretex.")
 
 
-@click.group(cls = ClickExceptionInterceptor)
+@click.group()
 def cli() -> None:
     pass
 

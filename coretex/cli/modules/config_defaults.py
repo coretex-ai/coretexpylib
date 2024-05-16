@@ -2,7 +2,7 @@ from pathlib import Path
 
 import os
 
-from .node_mode import NodeMode
+from ...node import NodeMode
 from ...statistics import getAvailableRamMemory, getAvailableCpuCount
 
 

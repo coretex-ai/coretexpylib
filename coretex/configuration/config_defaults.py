@@ -15,27 +15,25 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Any
+from pathlib import Path
 
-import logging
+import os
 
-import click
+from ..node import NodeMode
+from ..statistics import getAvailableRamMemory
 
 
-class ClickExceptionInterceptor(click.Group):
+cpuCount = os.cpu_count()
 
-    def invoke(self, ctx: click.Context) -> Any:
-        try:
-            return super().invoke(ctx)
-        except BaseException as exc:
-            if isinstance(exc, KeyboardInterrupt):
-                raise
-
-            if isinstance(exc, click.exceptions.Exit) and exc.exit_code == 0:
-                raise
-
-            self.handleException(ctx, exc)
-
-    def handleException(self, ctx: click.Context, exc: BaseException) -> None:
-        click.echo(click.style(str(exc), fg = "red"))
-        logging.getLogger("cli").debug(exc, exc_info = exc)
+DOCKER_CONTAINER_NAME = "coretex_node"
+DOCKER_CONTAINER_NETWORK = "coretex_node"
+DEFAULT_STORAGE_PATH = str(Path.home() / ".coretex")
+DEFAULT_RAM_MEMORY = getAvailableRamMemory()
+MINIMUM_RAM_MEMORY = 6
+DEFAULT_SWAP_MEMORY = DEFAULT_RAM_MEMORY * 2
+DEFAULT_SHARED_MEMORY = 2
+DEFAULT_CPU_COUNT = cpuCount if cpuCount is not None else 0
+DEFAULT_NODE_MODE = NodeMode.execution
+DEFAULT_ALLOW_DOCKER = False
+DEFAULT_NODE_SECRET = ""
+DEFAULT_INIT_SCRIPT = ""
