@@ -124,7 +124,7 @@ def initializeUserSession() -> None:
         except NetworkRequestError as ex:
             logging.getLogger("cli").debug(ex, exc_info = ex)
 
-            if 400 <= ex.response.statusCode < 500 :
+            if 400 <= ex.response.statusCode < 500:
                 errorEcho("Authentification failed with configured credentials. Please try entering your credentials again.")
                 authenticate()
 
