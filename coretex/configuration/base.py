@@ -69,5 +69,7 @@ class BaseConfiguration:
         return value
 
     def save(self) -> None:
+        if not self._path.parent.exists():
+            self._path.parent.mkdir(parents = True, exist_ok = True)
         with self._path.open("w") as configFile:
             json.dump(self._raw, configFile, indent = 4)
