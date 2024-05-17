@@ -261,14 +261,14 @@ def promptCpu(config: Dict[str, Any], cpuLimit: int) -> int:
 
 
 def promptRam(config: Dict[str, Any], ramLimit: int) -> int:
-    nodeRam: int = clickPrompt(f"Node RAM memory limit in GB (Minimum: {config_defaults.MINIMUM_RAM_MEMORY}GB, Maximum: {ramLimit}GB) (press enter to use default)", ramLimit, type = int)
+    nodeRam: int = clickPrompt(f"Node RAM memory limit in GB (Minimum: {config_defaults.MINIMUM_RAM}GB, Maximum: {ramLimit}GB) (press enter to use default)", ramLimit, type = int)
 
     if nodeRam > ramLimit:
         errorEcho(f"ERROR: RAM limit in Docker Desktop ({ramLimit}GB) is lower than the configured value ({config['ramLimit']}GB). Please adjust resource limitations in Docker Desktop settings.")
         return promptRam(config, ramLimit)
 
-    if nodeRam < config_defaults.MINIMUM_RAM_MEMORY:
-        errorEcho(f"ERROR: Configured RAM ({nodeRam}GB) is lower than the minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB).")
+    if nodeRam < config_defaults.MINIMUM_RAM:
+        errorEcho(f"ERROR: Configured RAM ({nodeRam}GB) is lower than the minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB).")
         return promptRam(config, ramLimit)
 
     return nodeRam
@@ -296,8 +296,8 @@ def _configureInitScript() -> str:
 def checkResourceLimitations() -> None:
     _, ramLimit = docker.getResourceLimits()
 
-    if ramLimit < config_defaults.MINIMUM_RAM_MEMORY:
-        raise RuntimeError(f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) is higher than your current Docker desktop RAM limit ({ramLimit}GB). Please adjust resource limitations in Docker Desktop settings to match Node requirements.")
+    if ramLimit < config_defaults.MINIMUM_RAM:
+        raise RuntimeError(f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB) is higher than your current Docker desktop RAM limit ({ramLimit}GB). Please adjust resource limitations in Docker Desktop settings to match Node requirements.")
 
 
 def isConfigurationValid(config: Dict[str, Any]) -> bool:
@@ -316,8 +316,8 @@ def isConfigurationValid(config: Dict[str, Any]) -> bool:
         errorEcho(f"Configuration not valid. CPU limit in Docker Desktop ({cpuLimit}) is lower than the configured value ({config['cpuCount']})")
         isValid = False
 
-    if ramLimit < config_defaults.MINIMUM_RAM_MEMORY:
-        errorEcho(f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) is higher than your current Docker desktop RAM limit ({ramLimit}GB). Please adjust resource limitations in Docker Desktop settings to match Node requirements.")
+    if ramLimit < config_defaults.MINIMUM_RAM:
+        errorEcho(f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB) is higher than your current Docker desktop RAM limit ({ramLimit}GB). Please adjust resource limitations in Docker Desktop settings to match Node requirements.")
         isValid = False
 
     if config["nodeRam"] > ramLimit:
@@ -325,8 +325,8 @@ def isConfigurationValid(config: Dict[str, Any]) -> bool:
         isValid = False
 
 
-    if config["nodeRam"] < config_defaults.MINIMUM_RAM_MEMORY:
-        errorEcho(f"Configuration not valid. Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) is higher than the configured value ({config['nodeRam']}GB)")
+    if config["nodeRam"] < config_defaults.MINIMUM_RAM:
+        errorEcho(f"Configuration not valid. Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB) is higher than the configured value ({config['nodeRam']}GB)")
         isValid = False
 
     return isValid
@@ -355,7 +355,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
         config["image"] += f":latest-{tag}"
 
     config["storagePath"] = config_defaults.DEFAULT_STORAGE_PATH
-    config["nodeRam"] = int(min(ramLimit, config_defaults.DEFAULT_RAM_MEMORY))
+    config["nodeRam"] = int(min(max(config_defaults.MINIMUM_RAM, ramLimit), config_defaults.DEFAULT_RAM))
     config["nodeSwap"] = config_defaults.DEFAULT_SWAP_MEMORY
     config["nodeSharedMemory"] = config_defaults.DEFAULT_SHARED_MEMORY
     config["cpuCount"] = int(min(cpuLimit, config_defaults.DEFAULT_CPU_COUNT))
