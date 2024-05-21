@@ -75,7 +75,7 @@ def generateStartScript(config: Dict[str, Any]) ->  str:
         restartPolicy = "always",
         ports = "21000:21000",
         capAdd = "SYS_PTRACE",
-        ramMemory = config["nodeRam"],
+        ram = config["nodeRam"],
         swapMemory = config["nodeSwap"],
         sharedMemory = config["nodeSharedMemory"],
         cpuCount = config.get("cpuCount", config_defaults.DEFAULT_CPU_COUNT),
