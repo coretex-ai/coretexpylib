@@ -19,6 +19,8 @@ from typing import Dict, Any
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
+import logging
+
 from .ui import clickPrompt, errorEcho, progressEcho
 from ...utils import decodeDate
 from ...networking import networkManager, NetworkResponse, NetworkRequestError
@@ -44,7 +46,7 @@ def authenticateUser(username: str, password: str) -> NetworkResponse:
             raise NetworkRequestError(response, "Something went wrong, please try again later.")
 
         if response.statusCode >= 400:
-            raise NetworkRequestError(response, "User credentials invalid, please try configuring them again.")
+            raise NetworkRequestError(response, "User credentials invalid.")
 
     return response
 
@@ -97,27 +99,34 @@ def initializeUserSession() -> None:
         tokenExpirationDate = config.get("tokenExpirationDate")
         refreshTokenExpirationDate = config.get("refreshTokenExpirationDate")
 
-        if tokenExpirationDate is not None and refreshTokenExpirationDate is not None:
-            tokenExpirationDate = decodeDate(tokenExpirationDate)
-            refreshTokenExpirationDate = decodeDate(refreshTokenExpirationDate)
+        try:
+            if tokenExpirationDate is not None and refreshTokenExpirationDate is not None:
+                tokenExpirationDate = decodeDate(tokenExpirationDate)
+                refreshTokenExpirationDate = decodeDate(refreshTokenExpirationDate)
 
-            currentDate = datetime.utcnow().replace(tzinfo = timezone.utc)
-            if currentDate < tokenExpirationDate:
-                return
+                currentDate = datetime.utcnow().replace(tzinfo = timezone.utc)
+                if currentDate < tokenExpirationDate:
+                    return
 
-            if currentDate < refreshTokenExpirationDate:
-                refreshToken = config["refreshToken"]
-                response = networkManager.authenticateWithRefreshToken(refreshToken)
-                if response.hasFailed():
-                    if response.statusCode >= 500:
-                        raise NetworkRequestError(response, "Something went wrong, please try again later.")
+                if currentDate < refreshTokenExpirationDate:
+                    refreshToken = config["refreshToken"]
+                    response = networkManager.authenticateWithRefreshToken(refreshToken)
+                    if response.hasFailed():
+                        if response.statusCode >= 500:
+                            raise NetworkRequestError(response, "Something went wrong, please try again later.")
 
-                    if response.statusCode >= 400:
-                        response = authenticateUser(config["username"], config["password"])
+                        if response.statusCode >= 400:
+                            response = authenticateUser(config["username"], config["password"])
+                else:
+                    response = authenticateUser(config["username"], config["password"])
             else:
                 response = authenticateUser(config["username"], config["password"])
-        else:
-            response = authenticateUser(config["username"], config["password"])
+        except NetworkRequestError as ex:
+            logging.getLogger("cli").debug(ex, exc_info = ex)
+
+            if 400 <= ex.response.statusCode < 500:
+                errorEcho("Authentification failed with configured credentials. Please try entering your credentials again.")
+                authenticate()
 
         jsonResponse = response.getJson(dict)
         config["token"] = jsonResponse["token"]

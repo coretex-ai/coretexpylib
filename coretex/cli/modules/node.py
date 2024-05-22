@@ -22,6 +22,8 @@ from base64 import b64encode
 
 import logging
 
+import click
+
 from . import config_defaults
 from .utils import isGPUAvailable
 from .ui import clickPrompt, arrowPrompt, highlightEcho, errorEcho, progressEcho, successEcho, stdEcho
@@ -259,14 +261,14 @@ def promptCpu(config: Dict[str, Any], cpuLimit: int) -> int:
 
 
 def promptRam(config: Dict[str, Any], ramLimit: int) -> int:
-    nodeRam: int = clickPrompt(f"Node RAM memory limit in GB (Minimum: {config_defaults.MINIMUM_RAM_MEMORY}GB, Maximum: {ramLimit}GB) (press enter to use default)", ramLimit, type = int)
+    nodeRam: int = clickPrompt(f"Node RAM memory limit in GB (Minimum: {config_defaults.MINIMUM_RAM}GB, Maximum: {ramLimit}GB) (press enter to use default)", ramLimit, type = int)
 
     if nodeRam > ramLimit:
         errorEcho(f"ERROR: RAM limit in Docker Desktop ({ramLimit}GB) is lower than the configured value ({config['ramLimit']}GB). Please adjust resource limitations in Docker Desktop settings.")
         return promptRam(config, ramLimit)
 
-    if nodeRam < config_defaults.MINIMUM_RAM_MEMORY:
-        errorEcho(f"ERROR: Configured RAM ({nodeRam}GB) is lower than the minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB).")
+    if nodeRam < config_defaults.MINIMUM_RAM:
+        errorEcho(f"ERROR: Configured RAM ({nodeRam}GB) is lower than the minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB).")
         return promptRam(config, ramLimit)
 
     return nodeRam
@@ -294,8 +296,8 @@ def _configureInitScript() -> str:
 def checkResourceLimitations() -> None:
     _, ramLimit = docker.getResourceLimits()
 
-    if ramLimit < config_defaults.MINIMUM_RAM_MEMORY:
-        raise RuntimeError(f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) is higher than your current Docker desktop RAM limit ({ramLimit}GB). Please adjust resource limitations in Docker Desktop settings to match Node requirements.")
+    if ramLimit < config_defaults.MINIMUM_RAM:
+        raise RuntimeError(f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB) is higher than your current Docker desktop RAM limit ({ramLimit}GB). Please adjust resource limitations in Docker Desktop settings to match Node requirements.")
 
 
 def isConfigurationValid(config: Dict[str, Any]) -> bool:
@@ -314,8 +316,8 @@ def isConfigurationValid(config: Dict[str, Any]) -> bool:
         errorEcho(f"Configuration not valid. CPU limit in Docker Desktop ({cpuLimit}) is lower than the configured value ({config['cpuCount']})")
         isValid = False
 
-    if ramLimit < config_defaults.MINIMUM_RAM_MEMORY:
-        errorEcho(f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) is higher than your current Docker desktop RAM limit ({ramLimit}GB). Please adjust resource limitations in Docker Desktop settings to match Node requirements.")
+    if ramLimit < config_defaults.MINIMUM_RAM:
+        errorEcho(f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB) is higher than your current Docker desktop RAM limit ({ramLimit}GB). Please adjust resource limitations in Docker Desktop settings to match Node requirements.")
         isValid = False
 
     if config["nodeRam"] > ramLimit:
@@ -323,8 +325,8 @@ def isConfigurationValid(config: Dict[str, Any]) -> bool:
         isValid = False
 
 
-    if config["nodeRam"] < config_defaults.MINIMUM_RAM_MEMORY:
-        errorEcho(f"Configuration not valid. Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) is higher than the configured value ({config['nodeRam']}GB)")
+    if config["nodeRam"] < config_defaults.MINIMUM_RAM:
+        errorEcho(f"Configuration not valid. Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB) is higher than the configured value ({config['nodeRam']}GB)")
         isValid = False
 
     return isValid
@@ -353,10 +355,10 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
         config["image"] += f":latest-{tag}"
 
     config["storagePath"] = config_defaults.DEFAULT_STORAGE_PATH
-    config["nodeRam"] = int(min(ramLimit, config_defaults.DEFAULT_RAM_MEMORY))
+    config["nodeRam"] = int(min(max(config_defaults.MINIMUM_RAM, ramLimit), config_defaults.DEFAULT_RAM))
     config["nodeSwap"] = config_defaults.DEFAULT_SWAP_MEMORY
     config["nodeSharedMemory"] = config_defaults.DEFAULT_SHARED_MEMORY
-    config["cpuCount"] = config_defaults.DEFAULT_CPU_COUNT
+    config["cpuCount"] = int(min(cpuLimit, config_defaults.DEFAULT_CPU_COUNT))
     config["nodeMode"] = config_defaults.DEFAULT_NODE_MODE
     config["allowDocker"] = config_defaults.DEFAULT_ALLOW_DOCKER
     config["nodeSecret"] = config_defaults.DEFAULT_NODE_SECRET
@@ -396,25 +398,25 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
 
 def initializeNodeConfiguration() -> None:
     config = loadConfig()
+    isConfigured = isNodeConfigured(config)
 
-    if isNodeConfigured(config) and not isConfigurationValid(config):
-        raise RuntimeError(f"Invalid configuration. Please run \"coretex node config\" command to configure Node.")
+    if isConfigured:
+        if isConfigurationValid(config):
+            return
 
-    if not isNodeConfigured(config):
+        errorEcho("Invalid node configuration found.")
+        if not click.confirm("Would you like to update the configuration?", default = True):
+            raise RuntimeError("Invalid configuration. Please use \"coretex node config\" to update a Node configuration.")
+
+    if not isConfigured:
         errorEcho("Node configuration not found.")
-        if isRunning():
-            stopNode = clickPrompt(
-                "Node is already running. Do you wish to stop the Node? (Y/n)",
-                type = bool,
-                default = True,
-                show_default = False
-            )
 
-            if not stopNode:
-                errorEcho("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
-                return
+    if isRunning():
+        if not click.confirm("Node is already running. Do you wish to stop the Node?", default = True):
+            errorEcho("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
+            return
 
-            stop()
+        stop()
 
-        configureNode(config, verbose = False)
-        saveConfig(config)
+    configureNode(config, verbose = False)
+    saveConfig(config)
