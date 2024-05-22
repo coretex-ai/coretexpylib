@@ -19,11 +19,11 @@ from typing import Optional
 
 import click
 
-from ... import folder_manager
 from ..modules.user import initializeUserSession
 from ..modules.utils import onBeforeCommandExecute
 from ..modules.project_utils import getProject
-from ..._task import TaskRunWorker, LoggerUploadWorker, executeProcess, readTaskConfig
+from ... import folder_manager
+from ..._task import TaskRunWorker, executeRunLocally, readTaskConfig, runLogger
 from ...configuration import loadConfig
 from ...entities import TaskRun, TaskRunStatus
 from ...resources import PYTHON_ENTRY_POINT_PATH
@@ -60,8 +60,7 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
     taskRun.updateStatus(TaskRunStatus.preparingToStart)
 
     with TaskRunWorker(config["refreshToken"], taskRun.id):
-        loggerUploadWorker = LoggerUploadWorker(taskRun.id)
-        loggerUploadWorker.start()
+        runLogger.attach(taskRun.id)
 
         command = [
             "python", str(PYTHON_ENTRY_POINT_PATH),
@@ -69,13 +68,16 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
             "--refreshToken", str(config["refreshToken"])
         ]
 
-        returnCode = executeProcess(
+        returnCode = executeRunLocally(
             command,
-            loggerUploadWorker,
             captureErr = True
         )
 
-    loggerUploadWorker.uploadLogs()
+    # Flush logs before updating status to a final one
+    # as that invalidates the auth token
+    runLogger.flushLogs()
+    runLogger.reset()
+
     if returnCode != 0:
         taskRun.updateStatus(TaskRunStatus.completedWithError)
     else:

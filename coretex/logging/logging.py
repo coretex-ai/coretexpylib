@@ -22,14 +22,15 @@ import sys
 import logging
 
 from .formatter import CTXFormatter
-from ..entities import LogSeverity
+from .severity import LogSeverity
 from ..utils import createFileHandler
 
 
 def createFormatter(
     includeTime: bool = True,
     includeLevel: bool = True,
-    includeColor: bool = True
+    includeColor: bool = True,
+    jsonOutput: bool = True
 ) -> logging.Formatter:
 
     fmt: List[str] = []
@@ -49,14 +50,16 @@ def createFormatter(
         fmt = " ".join(fmt),
         datefmt= "%Y-%m-%d %H:%M:%S",
         style = "%",
-        color = includeColor
+        color = includeColor,
+        jsonOutput = jsonOutput
     )
 
 
 def initializeLogger(
     severity: LogSeverity,
     logPath: Path,
-    streamHandler: Optional[logging.StreamHandler] = None
+    streamHandler: Optional[logging.StreamHandler] = None,
+    jsonOutput: bool = False
 ) -> None:
 
     """
@@ -75,15 +78,16 @@ def initializeLogger(
 
     if streamHandler is None:
         streamHandler = logging.StreamHandler(sys.stdout)
-        streamHandler.setLevel(severity.stdSeverity)
+        streamHandler.setLevel(severity.getLevel())
 
         streamHandler.setFormatter(createFormatter(
-            includeTime = False
+            includeTime = False,
+            jsonOutput = jsonOutput
         ))
 
     fileHandler = createFileHandler(logPath)
     fileHandler.setLevel(logging.DEBUG)
-    fileHandler.setFormatter(createFormatter(includeColor = False))
+    fileHandler.setFormatter(createFormatter(includeColor = False, jsonOutput = False))
 
     logging.basicConfig(
         level = logging.NOTSET,

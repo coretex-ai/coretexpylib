@@ -18,7 +18,10 @@
 from typing import Optional, Literal
 from logging import Formatter, LogRecord
 
-from ..entities import Log, LogSeverity
+import json
+
+from .severity import LogSeverity
+from .utils import colorMessage
 
 
 FormatStyle = Literal["%", "{", "$"]
@@ -32,21 +35,29 @@ class CTXFormatter(Formatter):
         datefmt: Optional[str] = None,
         style: FormatStyle = "%",
         validate: bool = True,
-        color: bool = True
+        color: bool = True,
+        jsonOutput: bool = True
     ) -> None:
 
         super().__init__(fmt, datefmt, style, validate)
 
         self.color = color
+        self.jsonOutput = jsonOutput
 
     def format(self, record: LogRecord) -> str:
         # INFO -> Info, ERROR -> Error, etc...
         record.levelname = record.levelname.lower().capitalize()
 
+        severity = LogSeverity.fromLevel(record.levelno)
         formatted = super().format(record)
 
         if self.color:
-            severity = LogSeverity.fromStd(record.levelno)
-            formatted = Log.coloredMessage(formatted, severity)
+            formatted = colorMessage(severity, formatted)
+
+        if self.jsonOutput:
+            return json.dumps({
+                "severity": severity.value,
+                "message": formatted + "\n"
+            })
 
         return formatted
