@@ -408,7 +408,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     else:
         stdEcho("To configure node manually run coretex node config with --verbose flag.")
 
-    config["nodeAccessToken"] = registerNode(config["nodeName"], publicKey)
+    config["nodeAccessToken"] = registerNode(config["nodeName"], publicKey, nearWalletId)
 
 
 def initializeNodeConfiguration() -> None:
