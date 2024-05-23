@@ -21,11 +21,10 @@ import click
 
 from ..modules import node as node_module
 from ..modules.ui import clickPrompt, stdEcho, successEcho, errorEcho, previewConfig
-from ..modules.scripts import NodeStatus, getNodeStatus, activateAutoUpdate, dumpScripts, generateStartScript, generateUpdateScript
-from ..modules.utils import onBeforeCommandExecute
+from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate
+from ..modules.utils import onBeforeCommandExecute, checkEnvironment
 from ..modules.user import initializeUserSession
-from ..resources import START_SCRIPT_NAME, UPDATE_SCRIPT_NAME
-from ...configuration import loadConfig, saveConfig, CONFIG_DIR, isNodeConfigured
+from ...configuration import loadConfig, saveConfig, isNodeConfigured
 from ...utils import docker
 
 
@@ -55,15 +54,14 @@ def start(image: Optional[str]) -> None:
 
     dockerImage = config["image"]
 
-    if node_module.shouldUpdate(dockerImage):
-        node_module.pull(dockerImage)
+    # if node_module.shouldUpdate(dockerImage):
+    #     node_module.pull(dockerImage)
 
-    startScript = (CONFIG_DIR / START_SCRIPT_NAME, generateStartScript(config))
-    updateScript = (CONFIG_DIR / UPDATE_SCRIPT_NAME, generateUpdateScript(config))
-    dumpScripts([startScript, updateScript])
+    node_module.start(dockerImage, config)
 
-    node_module.start()
-    activateAutoUpdate(CONFIG_DIR, config)
+    docker.removeDanglingImages(node_module.getRepoFromImageUrl(dockerImage), node_module.getTagFromImageUrl(dockerImage))
+
+    activateAutoUpdate()
 
 
 @click.command()
@@ -121,7 +119,7 @@ def update() -> None:
     node_module.stop()
 
     stdEcho("Updating node...")
-    node_module.start()
+    node_module.start(dockerImage, config)
 
 
 @click.command()
@@ -154,11 +152,6 @@ def config(verbose: bool) -> None:
     saveConfig(config)
     previewConfig(config)
 
-    # Updating scripts since node configuration is changed
-    startScript = (CONFIG_DIR / START_SCRIPT_NAME, generateStartScript(config))
-    updateScript = (CONFIG_DIR / UPDATE_SCRIPT_NAME, generateUpdateScript(config))
-    dumpScripts([startScript, updateScript])
-
     successEcho("Node successfully configured.")
 
 
@@ -166,6 +159,7 @@ def config(verbose: bool) -> None:
 @onBeforeCommandExecute(docker.isDockerAvailable)
 @onBeforeCommandExecute(initializeUserSession)
 @onBeforeCommandExecute(node_module.checkResourceLimitations)
+@onBeforeCommandExecute(checkEnvironment)
 def node() -> None:
     pass
 

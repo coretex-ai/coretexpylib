@@ -19,12 +19,21 @@ from typing import List, Any, Optional, Callable
 from functools import wraps
 
 import sys
+import venv
 
 from py3nvml import py3nvml
 
 import click
 
 from ...utils.process import command
+from ...configuration import DEFAULT_VENV_PATH
+
+
+def checkEnvironment() -> None:
+    if not DEFAULT_VENV_PATH.exists():
+        venv.create(DEFAULT_VENV_PATH, with_pip = True)
+        venvPython = DEFAULT_VENV_PATH / "bin" / "python"
+        command([str(venvPython), "-m", "pip", "install", "/Users/bogdanbm/Documents/working/biomech/source/coretexpylib"])
 
 
 def updateLib() -> None:

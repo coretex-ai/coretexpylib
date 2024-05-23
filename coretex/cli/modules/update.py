@@ -15,4 +15,35 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .resources import RESOURCES_DIR, UPDATE_SCRIPT_NAME
+from typing import Dict, Any, List, Tuple
+from enum import IntEnum
+from pathlib import Path
+
+import requests
+
+from .cron import jobExists, scheduleJob
+from ..resources import UPDATE_SCRIPT_NAME
+from ...configuration import DEFAULT_VENV_PATH
+
+
+class NodeStatus(IntEnum):
+
+    inactive     = 1
+    active       = 2
+    busy         = 3
+    deleted      = 4
+    reconnecting = 5
+
+
+def activateAutoUpdate() -> None:
+    if not jobExists(UPDATE_SCRIPT_NAME):
+        scheduleJob(DEFAULT_VENV_PATH, UPDATE_SCRIPT_NAME)
+
+
+def getNodeStatus() -> NodeStatus:
+    try:
+        response = requests.get(f"http://localhost:21000/status", timeout = 1)
+        status = response.json()["status"]
+        return NodeStatus(status)
+    except:
+        return NodeStatus.inactive
