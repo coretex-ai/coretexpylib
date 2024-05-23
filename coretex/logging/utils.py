@@ -15,5 +15,10 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .output_interceptor import OutputInterceptor
-from .upload_worker import LoggerUploadWorker
+from .severity import LogSeverity
+
+
+def colorMessage(severity: LogSeverity, message: str) -> str:
+    fmt = "\033[%dm%s\033[0m"
+    return fmt % (severity.color, message)
+

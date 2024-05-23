@@ -15,18 +15,17 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import List
-from threading import Thread, Event
-from concurrent.futures import ThreadPoolExecutor
+from typing import List, Callable
+from threading import Thread, Event, RLock
 
 import time
 import logging
 
-from ...entities import Log
-from ...networking import networkManager
+from ...logging import Log
 
 
 MAX_WAIT_TIME_BEFORE_UPDATE = 5
+UploadFunction = Callable[[List[Log]], bool]
 
 
 class LoggerUploadWorker(Thread):
@@ -40,17 +39,15 @@ class LoggerUploadWorker(Thread):
         If the upload request fails the wait time is doubled
     """
 
-    def __init__(self, taskRunId: int) -> None:
+    def __init__(self, uploadFunction: UploadFunction) -> None:
         super().__init__()
 
         self.setDaemon(True)
         self.setName("LoggerUploadWorker")
 
-        # Task run for which the logs are uploaded
-        self.taskRunId = taskRunId
-
+        self.__uploadFunction = uploadFunction
         self.__stopped = Event()
-        self.__queue = ThreadPoolExecutor(max_workers = 1, thread_name_prefix = "LogQueue")
+        self.__lock = RLock()
         self.__waitTime = MAX_WAIT_TIME_BEFORE_UPDATE
         self.__pendingLogs: List[Log] = []
 
@@ -59,42 +56,32 @@ class LoggerUploadWorker(Thread):
         return self.__stopped.is_set()
 
     def stop(self) -> None:
-        self.__stopped.set()
-        self.__queue.shutdown(wait = True)
+        with self.__lock:
+            self.__stopped.set()
 
     def add(self, log: Log) -> None:
-        if self.isStopped:
-            return
+        with self.__lock:
+            if self.isStopped:
+                return
 
-        self.__queue.submit(self.__pendingLogs.append, log)
+            self.__pendingLogs.append(log)
 
     def uploadLogs(self) -> bool:
-        if self.isStopped:
-            return False
+        with self.__lock:
+            if self.isStopped:
+                return False
 
-        def worker() -> bool:
             if len(self.__pendingLogs) == 0:
                 return True
 
-            response = networkManager.post("model-queue/add-console-log", {
-                "model_queue_id": self.taskRunId,
-                "logs": [log.encode() for log in self.__pendingLogs]
-            })
+            # Uploads logs to Coretex using the provided function
+            result = self.__uploadFunction(self.__pendingLogs)
 
             # Only clear logs if they were successfully uploaded to coretex
-            if not response.hasFailed():
+            if result:
                 self.__pendingLogs.clear()
 
-            return not response.hasFailed()
-
-        future = self.__queue.submit(worker)
-
-        exception = future.exception()
-        if exception is not None:
-            logging.getLogger("coretexpylib").debug(">> [Coretex] Failed to upload logs", exc_info = exception)
-            return False
-
-        return future.result()
+            return result
 
     def run(self) -> None:
         while not self.isStopped:
@@ -102,7 +89,8 @@ class LoggerUploadWorker(Thread):
 
             try:
                 success = self.uploadLogs()
-            except:
+            except BaseException as exception:
+                logging.getLogger("coretexpylib").debug(">> [Coretex] Failed to upload logs", exc_info = exception)
                 success = False
 
             if success:
