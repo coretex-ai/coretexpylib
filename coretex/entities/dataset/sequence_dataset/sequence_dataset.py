@@ -137,7 +137,7 @@ class SequenceDataset(BaseSequenceDataset, NetworkDataset[SequenceSample]):
 
         raise ValueError(">> [Coretex] Dataset contains a mix of paired-end and single-end sequences. It should contain either one or the other")
 
-    def _uploadSample(self, samplePath: Path, sampleName: str) -> SequenceSample:
+    def _uploadSample(self, samplePath: Path, sampleName: str, **metadata: Any) -> SequenceSample:
         if not self._sampleType.isValidSequenceFile(samplePath):
             raise ValueError(f"\"{samplePath}\" is not a valid sequence")
 

@@ -341,12 +341,12 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
         return success
 
     @abstractmethod
-    def _uploadSample(self, samplePath: Path, sampleName: str) -> SampleType:
+    def _uploadSample(self, samplePath: Path, sampleName: str, **metadata: Any) -> SampleType:
         # Override in data specific classes (ImageDataset, SequenceDataset, etc...)
         # to implement a specific way of uploading samples
         pass
 
-    def add(self, samplePath: Union[Path, str], sampleName: Optional[str] = None) -> SampleType:
+    def add(self, samplePath: Union[Path, str], sampleName: Optional[str] = None, **metadata: Any) -> SampleType:
         """
             Uploads the provided archive (.zip, .tar.gz) as Sample to
             Coretex.ai as a part of this Dataset.
@@ -370,7 +370,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
         if self.isEncrypted:
             sample = _encryptedSampleImport(self._sampleType, sampleName, samplePath, self.id, getProjectKey(self.projectId))
         else:
-            sample = self._uploadSample(samplePath, sampleName)
+            sample = self._uploadSample(samplePath, sampleName, **metadata)
 
         # Append the newly created sample to the list of samples
         self.samples.append(sample)

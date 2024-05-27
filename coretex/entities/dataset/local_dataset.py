@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import TypeVar, Generic, Type, Generator, Optional, Union
+from typing import TypeVar, Generic, Type, Generator, Optional, Union, Any
 from pathlib import Path
 
 import logging
@@ -113,7 +113,7 @@ class LocalDataset(Generic[SampleType], Dataset[SampleType]):
     def download(self, decrypt: bool = True, ignoreCache: bool = False) -> None:
         logging.getLogger("coretexpylib").warning(">> [Coretex] Local dataset cannot be downloaded")
 
-    def add(self, samplePath: Union[Path, str], sampleName: Optional[str] = None) -> SampleType:
+    def add(self, samplePath: Union[Path, str], sampleName: Optional[str] = None, **metadata: Any) -> SampleType:
         if isinstance(samplePath, str):
             samplePath = Path(samplePath)
 
