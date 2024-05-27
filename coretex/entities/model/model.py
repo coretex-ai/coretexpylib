@@ -124,6 +124,10 @@ class Model(NetworkObject):
             -------
             Self -> Model object
 
+            Raises
+            -------
+            NetworkRequestError -> If model creation failed
+
             Example
             -------
             >>> from coretex import Model, currentTaskRun
@@ -133,17 +137,12 @@ class Model(NetworkObject):
         if meta is None:
             meta = {}
 
-        model = cls.create(
+        return cls.create(
             name = name,
             model_queue_id = taskRunId,
             accuracy = accuracy,
             meta = meta
         )
-
-        if model is None:
-            raise EntityNotCreated("Failed to create Model")
-
-        return model
 
     @classmethod
     def createProjectModel(
@@ -181,17 +180,12 @@ class Model(NetworkObject):
         if meta is None:
             meta = {}
 
-        model = cls.create(
+        return cls.create(
             name = name,
             project_id = projectId,
             accuracy = accuracy,
             meta = meta
         )
-
-        if model is None:
-            raise EntityNotCreated("Failed to create Model")
-
-        return model
 
     @classmethod
     def saveModelDescriptor(cls, path: Union[Path, str], contents: Dict[str, Any]) -> None:

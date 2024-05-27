@@ -51,6 +51,10 @@ def createDataset(
         -------
         The created sequence dataset object or None if creation failed
 
+        Raises
+        -------
+        NetworkRequestError -> If dataset creation failed
+
         Example
         -------
         >>> from coretex import createDataset
@@ -64,9 +68,6 @@ def createDataset(
         project_id = projectId,
         meta = meta
     )
-
-    if dataset is None:
-        raise EntityNotCreated(f">> [Coretex] Failed to create dataset with name \"{name}\" ")
 
     yield dataset
     if not dataset.finalize():

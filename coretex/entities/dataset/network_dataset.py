@@ -202,7 +202,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
 
             Raises
             ------
-            EntityNotCreated -> If dataset creation failed
+            NetworkRequestError -> If dataset creation failed
 
             Example
             -------
@@ -211,16 +211,11 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
             >>> dummyDataset = NetworkDataset.createDataset("dummyDataset", 123)
         """
 
-        dataset = cls.create(
+        return cls.create(
             name = name,
             project_id = projectId,
             meta = meta
         )
-
-        if dataset is None:
-            raise EntityNotCreated(f">> [Coretex] Failed to create dataset with name: {name}")
-
-        return dataset
 
     @classmethod
     def generateCacheName(cls, prefix: str, dependencies: List[str]) -> str:

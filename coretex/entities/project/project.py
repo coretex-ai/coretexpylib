@@ -66,7 +66,7 @@ class Project(BaseObject):
 
             Raises
             ------
-            EntityNotCreated -> If project creation failed
+            NetworkRequestError -> If project creation failed
 
             Example
             -------
@@ -82,17 +82,12 @@ class Project(BaseObject):
                     print("Failed to create project.")
         """
 
-        project = cls.create(
+        return cls.create(
             name = name,
             project_task = projectType,
             description = description,
             visiblity = visiblity
         )
-
-        if project is None:
-            raise EntityNotCreated(f"Failed to create project with name \"{name}\"")
-
-        return project
 
     @classmethod
     def decode(cls, encodedObject: Dict[str, Any]) -> Self:

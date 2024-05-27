@@ -182,7 +182,7 @@ class NetworkObject(Codable):
         return not networkManager.delete(endpoint).hasFailed()
 
     @classmethod
-    def create(cls, **kwargs: Any) -> Optional[Self]:
+    def create(cls, **kwargs: Any) -> Self:
         """
             Creates the entity linked to this class on Coretex backend
 
@@ -193,12 +193,16 @@ class NetworkObject(Codable):
 
             Returns
             -------
-            Optional[Self] -> created object if request was successful, None otherwise
+            Self -> created object if request was successful
+
+            Raises
+            ------
+            NetworkRequestError -> If the request for creating failed
         """
 
         response = networkManager.post(cls._endpoint(), kwargs)
         if response.hasFailed():
-            return None
+            raise NetworkRequestError(response, f">> [Coretex] Failed to create \"{cls.__name__}\" with parameters \"{kwargs}\"")
 
         return cls.decode(response.getJson(dict))
 
