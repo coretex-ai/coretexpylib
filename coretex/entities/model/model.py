@@ -24,7 +24,7 @@ from pathlib import Path
 import json
 
 from ... import folder_manager
-from ...networking import networkManager, NetworkObject, ChunkUploadSession, MAX_CHUNK_SIZE, NetworkRequestError, EntityNotCreated
+from ...networking import networkManager, NetworkObject, ChunkUploadSession, MAX_CHUNK_SIZE, NetworkRequestError
 from ...codable import KeyDescriptor
 
 

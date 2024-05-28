@@ -18,7 +18,7 @@
 from typing import Type, TypeVar, Optional, Iterator, Dict, Any
 from contextlib import contextmanager
 
-from .network_dataset import EntityNotCreated, NetworkDataset
+from .network_dataset import NetworkDataset
 
 
 T = TypeVar("T", bound = NetworkDataset)

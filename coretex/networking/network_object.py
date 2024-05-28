@@ -25,16 +25,6 @@ from .network_response import NetworkRequestError
 from ..codable import Codable
 
 
-class EntityNotCreated(Exception):
-
-    """
-        Exception which is raised due to failed creation of a Coretex Entity
-        Ex. Dataset, Model, Project, etc...
-    """
-
-    pass
-
-
 DEFAULT_PAGE_SIZE = 100
 
 

@@ -31,7 +31,7 @@ from .state import DatasetState
 from ..sample import NetworkSample
 from ... import folder_manager
 from ...codable import KeyDescriptor
-from ...networking import EntityNotCreated, NetworkObject, \
+from ...networking import NetworkObject, \
     fileChunkUpload, networkManager, NetworkRequestError
 from ...threading import MultithreadedDataProcessor
 from ...cryptography import aes, getProjectKey

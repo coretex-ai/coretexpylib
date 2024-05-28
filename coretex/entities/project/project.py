@@ -18,8 +18,6 @@
 from typing import Optional, Any, List, Dict
 from typing_extensions import Self
 
-from coretex.networking import EntityNotCreated
-
 from .base import BaseObject
 from .task import Task
 from .project_type import ProjectType
