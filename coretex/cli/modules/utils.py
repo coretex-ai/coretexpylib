@@ -17,19 +17,44 @@
 
 from typing import List, Any, Optional, Callable
 from functools import wraps
+from importlib.metadata import version as getLibraryVersion
 
 import sys
 
 from py3nvml import py3nvml
 
 import click
+import requests
 
+from . import ui
 from ...utils.process import command
 
 
 def updateLib() -> None:
     command([sys.executable, "-m", "pip", "install", "--no-cache-dir", "--upgrade", "coretex"], ignoreStdout = True, ignoreStderr = True)
 
+
+def fetchLatestVersion() -> Optional[str]:
+    url = f"https://pypi.org/pypi/coretex/json"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        return str(data['info']['version'])
+    else:
+        return None
+
+
+def checkLibVersion() -> None:
+    current = getLibraryVersion("coretex")
+    latest = fetchLatestVersion()
+
+    if latest is None:
+        return
+
+    if int(current[-3:]) < int(latest[-3:]):
+        ui.stdEcho(
+            f"Newer version of Coretex library is available. Current: {current}, Latest: {latest}. Use \"coretex update\" command to update library to latest version."
+        )
 
 def isGPUAvailable() -> bool:
     try:
