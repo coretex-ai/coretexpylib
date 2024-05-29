@@ -16,10 +16,9 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import List
-from pathlib import Path
 
-from ..resources import RESOURCES_DIR, UPDATE_SCRIPT_NAME
 from ...utils import command
+from ...configuration import DEFAULT_VENV_PATH
 
 
 def getExisting() -> List[str]:
@@ -37,10 +36,7 @@ def jobExists(script: str) -> bool:
     return any(line.endswith(script) for line in existingLines)
 
 
-def scheduleJob(configDir: Path, script: str) -> None:
-    if jobExists(script):
-        return
-
+def scheduleJob() -> None:
     _, dockerPath, _ = command(["which", "docker"], ignoreStdout = True, ignoreStderr = True)
     _, gitPath, _ = command(["which", "git"], ignoreStdout = True, ignoreStderr = True)
 
@@ -51,10 +47,10 @@ def scheduleJob(configDir: Path, script: str) -> None:
     gitExecPath = '/'.join(gitPathParts[:-1])
 
     existingLines = getExisting()
-    cronEntry = f"PATH={gitExecPath}:{dockerExecPath}\n*/5 * * * * {configDir}/bin/coretex node update --auto >> {configDir.parent}/out.txt  2>&1\n"
+    cronEntry = f"PATH={gitExecPath}:{dockerExecPath}\n*/5 * * * * {DEFAULT_VENV_PATH}/bin/coretex node update --auto >> {DEFAULT_VENV_PATH.parent}/out.txt  2>&1\n"
     existingLines.append(cronEntry)
 
-    tempCronFilePath = configDir.parent / "temp.cron"
+    tempCronFilePath = DEFAULT_VENV_PATH.parent / "temp.cron"
     with tempCronFilePath.open("w") as tempCronFile:
         tempCronFile.write("\n".join(existingLines))
 

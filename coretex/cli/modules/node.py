@@ -113,7 +113,6 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
         raise NodeException("Failed to start Coretex Node.")
 
 
-
 def clean() -> None:
     try:
         docker.removeContainer(config_defaults.DOCKER_CONTAINER_NAME)

@@ -15,15 +15,11 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Dict, Any, List, Tuple
 from enum import IntEnum
-from pathlib import Path
 
 import requests
 
 from .cron import jobExists, scheduleJob
-from ..resources import UPDATE_SCRIPT_NAME
-from ...configuration import DEFAULT_VENV_PATH
 
 
 class NodeStatus(IntEnum):
@@ -36,8 +32,8 @@ class NodeStatus(IntEnum):
 
 
 def activateAutoUpdate() -> None:
-    if not jobExists(UPDATE_SCRIPT_NAME):
-        scheduleJob(DEFAULT_VENV_PATH, UPDATE_SCRIPT_NAME)
+    if not jobExists('coretex node update --auto'):
+        scheduleJob()
 
 
 def getNodeStatus() -> NodeStatus:
