@@ -51,7 +51,7 @@ def scheduleJob(configDir: Path, script: str) -> None:
     gitExecPath = '/'.join(gitPathParts[:-1])
 
     existingLines = getExisting()
-    cronEntry = f"PATH={gitExecPath}:{dockerExecPath}\n*/5 * * * * {configDir}/bin/python {RESOURCES_DIR / UPDATE_SCRIPT_NAME} >> {configDir.parent}/out.txt  2>&1\n"
+    cronEntry = f"PATH={gitExecPath}:{dockerExecPath}\n*/5 * * * * {configDir}/bin/coretex node update --auto >> {configDir.parent}/out.txt  2>&1\n"
     existingLines.append(cronEntry)
 
     tempCronFilePath = configDir.parent / "temp.cron"
