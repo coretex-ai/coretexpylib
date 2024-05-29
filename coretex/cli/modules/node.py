@@ -141,13 +141,16 @@ def shouldUpdate(image: str) -> bool:
     return True
 
 
-def registerNode(name: str, publicKey: Optional[bytes] = None) -> str:
+def registerNode(name: str, publicKey: Optional[bytes] = None, nearWalletId: Optional[str] = None) -> str:
     params = {
         "machine_name": name,
     }
 
     if publicKey is not None:
         params["public_key"] = b64encode(publicKey).decode("utf-8")
+
+    if nearWalletId is not None:
+        params["near_wallet_id"] = nearWalletId
 
     response = networkManager.post("service", params)
 
@@ -228,7 +231,7 @@ def promptRam(config: Dict[str, Any], ramLimit: int) -> int:
     nodeRam: int = clickPrompt(f"Node RAM memory limit in GB (Minimum: {config_defaults.MINIMUM_RAM}GB, Maximum: {ramLimit}GB) (press enter to use default)", ramLimit, type = int)
 
     if nodeRam > ramLimit:
-        errorEcho(f"ERROR: RAM limit in Docker Desktop ({ramLimit}GB) is lower than the configured value ({config['ramLimit']}GB). Please adjust resource limitations in Docker Desktop settings.")
+        errorEcho(f"ERROR: RAM limit in Docker Desktop ({ramLimit}GB) is lower than the configured value ({config['nodeRam']}GB). Please adjust resource limitations in Docker Desktop settings.")
         return promptRam(config, ramLimit)
 
     if nodeRam < config_defaults.MINIMUM_RAM:
@@ -329,6 +332,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     config["initScript"] = config_defaults.DEFAULT_INIT_SCRIPT
 
     publicKey: Optional[bytes] = None
+    nearWalletId: Optional[str] = None
 
     if verbose:
         config["storagePath"] = clickPrompt("Storage path (press enter to use default)", config_defaults.DEFAULT_STORAGE_PATH, type = str)
@@ -354,10 +358,23 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
             progressEcho("Generating RSA key-pair (2048 bits long) using provided node secret...")
             rsaKey = rsa.generateKey(2048, nodeSecret.encode("utf-8"))
             publicKey = rsa.getPublicKeyBytes(rsaKey.public_key())
+
+        if nodeMode != NodeMode.execution:
+            nearWalletId = clickPrompt(
+                "Enter a NEAR wallet id to which the funds will be transfered when executing endpoints",
+                config_defaults.DEFAULT_NEAR_WALLET_ID,
+                type = str
+            )
+
+            if nearWalletId != config_defaults.DEFAULT_NEAR_WALLET_ID:
+                config["nearWalletId"] = nearWalletId
+            else:
+                config["nearWalletId"] = None
+                nearWalletId = None
     else:
         stdEcho("To configure node manually run coretex node config with --verbose flag.")
 
-    config["nodeAccessToken"] = registerNode(config["nodeName"], publicKey)
+    config["nodeAccessToken"] = registerNode(config["nodeName"], publicKey, nearWalletId)
 
 
 def initializeNodeConfiguration() -> None:

@@ -1,35 +1,25 @@
-from typing import List, Any
+from typing import List
 from pathlib import Path
 
-import os
-import logging
 import subprocess
 
 from threading import Thread
 
-from . import LoggerUploadWorker
-from ..entities import Log, LogSeverity
+from .run_logger import runLogger
+from ..logging import LogSeverity
 
 
-runLogger = logging.getLogger("coretex-run")
-
-
-def _handleOutput(process: subprocess.Popen, worker: LoggerUploadWorker) -> None:
+def captureRunStdout(process: subprocess.Popen) -> None:
     stdout = process.stdout
     if stdout is None:
         raise ValueError("stdout is None for subprocess")
 
     while process.poll() is None:
         line: str = stdout.readline().decode("UTF-8")
-        if line.strip() == "":
-            continue
-
-        line = line.rstrip()
-        worker.add(Log.create(line, LogSeverity.info))
-        runLogger.info(line)
+        runLogger.logProcessOutput(line)
 
 
-def _handleError(process: subprocess.Popen, worker: LoggerUploadWorker, isEnabled: bool) -> None:
+def captureRunStderr(process: subprocess.Popen, isEnabled: bool) -> None:
     stderr = process.stderr
     if stderr is None:
         raise ValueError("stderr is None for subprocess")
@@ -37,10 +27,7 @@ def _handleError(process: subprocess.Popen, worker: LoggerUploadWorker, isEnable
     lines: List[str] = []
     while process.poll() is None:
         line: str = stderr.readline().decode("UTF-8")
-        if line.strip() == "":
-            continue
-
-        lines.append(line.rstrip())
+        lines.append(line)
 
     # Dump stderr output at the end to perserve stdout order
     for line in lines:
@@ -52,13 +39,11 @@ def _handleError(process: subprocess.Popen, worker: LoggerUploadWorker, isEnable
             # We always want to know what gets logged to stderr
             severity = LogSeverity.debug
 
-        worker.add(Log.create(line, severity))
-        runLogger.log(severity.stdSeverity, line)
+        runLogger.logProcessOutput(line, severity)
 
 
-def executeProcess(
+def executeRunLocally(
     args: List[str],
-    worker: Any,
     captureErr: bool,
     cwd: Path = Path.cwd()
 ) -> int:
@@ -71,18 +56,18 @@ def executeProcess(
         stderr = subprocess.PIPE
     )
 
-     # Run a thread which captures process stdout and prints it out to Coretex.ai console
+    # Run a thread which captures process stdout and prints it out to Coretex.ai console
     Thread(
-        target = _handleOutput,
-        args = (process, worker),
+        target = captureRunStdout,
+        args = (process,),
         name = "Process stdout reader"
     ).start()
 
     if captureErr:
         # Run a thread which captures process stderr and dumps it out node log file
         Thread(
-            target = _handleError,
-            args = (process, worker, captureErr),
+            target = captureRunStderr,
+            args = (process, captureErr),
             name = "Process stderr reader"
         ).start()
 
