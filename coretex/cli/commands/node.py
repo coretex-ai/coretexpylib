@@ -74,7 +74,9 @@ def stop() -> None:
 
 
 @click.command()
-@click.option("--auto", is_flag = True, help = "Configure node settings manually.")
+@click.option("--auto", is_flag = True, help = "Start autoupdate.")
+# @click.option("--dockerExec", is_flag = True, help = "Path to docker executable.")
+# @click.option("--gitExec", is_flag = True, help = "Path to git executable.")
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def update(auto: bool) -> None:
     config = loadConfig()
@@ -127,6 +129,7 @@ def update(auto: bool) -> None:
 
     stdEcho("Updating node...")
     node_module.start(dockerImage, config)
+    docker.removeDanglingImages(node_module.getRepoFromImageUrl(dockerImage), node_module.getTagFromImageUrl(dockerImage))
 
 
 @click.command()

@@ -32,7 +32,7 @@ class NodeStatus(IntEnum):
 
 
 def activateAutoUpdate() -> None:
-    if not jobExists('coretex node update --auto'):
+    if not jobExists("coretex node update --auto"):
         scheduleJob()
 
 

@@ -37,15 +37,6 @@ def jobExists(script: str) -> bool:
 
 
 def scheduleJob() -> None:
-    _, dockerPath, _ = command(["which", "docker"], ignoreStdout = True, ignoreStderr = True)
-    _, gitPath, _ = command(["which", "git"], ignoreStdout = True, ignoreStderr = True)
-
-    dockerPathParts = dockerPath.strip().split('/')
-    dockerExecPath = '/'.join(dockerPathParts[:-1])
-
-    gitPathParts = gitPath.strip().split('/')
-    gitExecPath = '/'.join(gitPathParts[:-1])
-
     existingLines = getExisting()
     cronEntry = f"PATH={gitExecPath}:{dockerExecPath}\n*/5 * * * * {DEFAULT_VENV_PATH}/bin/coretex node update --auto >> {DEFAULT_VENV_PATH.parent}/out.txt  2>&1\n"
     existingLines.append(cronEntry)

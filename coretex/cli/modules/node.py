@@ -25,7 +25,7 @@ import logging
 import click
 
 from . import config_defaults
-from .utils import isGPUAvailable
+from .utils import isGPUAvailable, getExecPaths
 from .ui import clickPrompt, arrowPrompt, highlightEcho, errorEcho, progressEcho, successEcho, stdEcho
 from .node_mode import NodeMode
 from ...cryptography import rsa
@@ -339,6 +339,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     highlightEcho("[Node Configuration]")
 
     cpuLimit, ramLimit = docker.getResourceLimits()
+    dockerExecPath, gitExecPath = getExecPaths()
 
     config["nodeName"] = clickPrompt("Node name", type = str)
 
@@ -366,6 +367,8 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     config["allowDocker"] = config_defaults.DEFAULT_ALLOW_DOCKER
     config["nodeSecret"] = config_defaults.DEFAULT_NODE_SECRET
     config["initScript"] = config_defaults.DEFAULT_INIT_SCRIPT
+    config["dockerExecPath"] = dockerExecPath
+    config["gitExecPath"] = gitExecPath
 
     publicKey: Optional[bytes] = None
     nearWalletId: Optional[str] = None

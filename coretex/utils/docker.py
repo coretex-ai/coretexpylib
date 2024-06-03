@@ -6,9 +6,6 @@ from .process import command, CommandException
 from ..configuration import loadConfig
 
 
-config = loadConfig()
-
-
 def isDockerAvailable() -> None:
     try:
         # Run the command to check if Docker exists and is available
