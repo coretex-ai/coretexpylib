@@ -46,7 +46,7 @@ def getRamUsage() -> float:
     return psutil.virtual_memory().percent
 
 
-def getAvailableRamMemory() -> int:
+def getAvailableRam() -> int:
     """
         Returns
         -------

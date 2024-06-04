@@ -67,7 +67,11 @@ def track(taskRun: TaskRun) -> Iterator[FileEventHandler]:
 
         eventHandler = FileEventHandler()
         observer.schedule(eventHandler, root, recursive = True)  # type: ignore[no-untyped-call]
-        observer.start()  # type: ignore[no-untyped-call]
+        try:
+            observer.start()  # type: ignore[no-untyped-call]
+        except OSError as e:
+            logging.getLogger("coretexpylib").error(f"Failed to start watchdog observer with error: {e}")
+
         yield eventHandler
     finally:
         observer.stop()  # type: ignore[no-untyped-call]
