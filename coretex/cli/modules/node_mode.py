@@ -23,3 +23,4 @@ class NodeMode(IntEnum):
     execution         = 1
     functionExclusive = 2
     functionShared    = 3
+    automatic         = 4

@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Any, Dict, Tuple, Optional
+from typing import Any, Dict, Optional
 from enum import Enum
 from pathlib import Path
 from base64 import b64encode
@@ -32,7 +32,6 @@ from ...cryptography import rsa
 from ...networking import networkManager, NetworkRequestError
 from ...configuration import loadConfig, saveConfig, isNodeConfigured, getInitScript
 from ...utils import CommandException, docker
-from ...entities.model import Model
 
 
 class NodeException(Exception):
@@ -76,16 +75,12 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
             "CTX_NODE_MODE": config["nodeMode"]
         }
 
-        modelId = config.get("modelId")
-        if isinstance(modelId, int):
-            environ["CTX_MODEL_ID"] = modelId
-
         nodeSecret = config.get("nodeSecret", config_defaults.DEFAULT_NODE_SECRET)
         if isinstance(nodeSecret, str) and nodeSecret != config_defaults.DEFAULT_NODE_SECRET:
             environ["CTX_NODE_SECRET"] = nodeSecret
 
         volumes = [
-            (config["storagePath"], "/root/.coretex")
+            (config["storagePath"], "/root/.coretex:z")
         ]
 
         if config.get("allowDocker", False):
@@ -177,9 +172,10 @@ def shouldUpdate(image: str) -> bool:
     return True
 
 
-def registerNode(name: str, publicKey: Optional[bytes] = None, nearWalletId: Optional[str] = None) -> str:
+def registerNode(name: str, nodeMode: NodeMode, publicKey: Optional[bytes] = None, nearWalletId: Optional[str] = None) -> str:
     params = {
         "machine_name": name,
+        "node_mode": nodeMode.value
     }
 
     if publicKey is not None:
@@ -213,26 +209,7 @@ def selectImageType() -> ImageType:
     return availableImages[selectedImage]
 
 
-def selectModelId(storagePath: str, retryCount: int = 0) -> int:
-    if retryCount >= 3:
-        raise RuntimeError("Failed to fetch Coretex Model. Terminating...")
-
-    modelId: int = clickPrompt("Specify Coretex Model ID that you want to use:", type = int)
-
-    try:
-        model = Model.fetchById(modelId)
-    except:
-        errorEcho(f"Failed to fetch model with id {modelId}.")
-        return selectModelId(storagePath, retryCount + 1)
-
-    modelDir = Path(storagePath) / "models"
-    modelDir.mkdir(parents = True, exist_ok = True)
-    model.download(modelDir / str(model.id))
-
-    return modelId
-
-
-def selectNodeMode(storagePath: str) -> Tuple[int, Optional[int]]:
+def selectNodeMode() -> NodeMode:
     availableNodeModes = {
         "Run workflows (worker)": NodeMode.execution,
         "Serve a single endpoint (dedicated inference)": NodeMode.functionExclusive,
@@ -241,12 +218,7 @@ def selectNodeMode(storagePath: str) -> Tuple[int, Optional[int]]:
     choices = list(availableNodeModes.keys())
 
     selectedMode = arrowPrompt(choices, "Please select Coretex Node mode (use arrow keys to select an option):")
-
-    if availableNodeModes[selectedMode] == NodeMode.functionExclusive:
-        modelId = selectModelId(storagePath)
-        return availableNodeModes[selectedMode], modelId
-
-    return availableNodeModes[selectedMode], None
+    return availableNodeModes[selectedMode]
 
 
 def promptCpu(config: Dict[str, Any], cpuLimit: int) -> int:
@@ -369,23 +341,19 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
 
     publicKey: Optional[bytes] = None
     nearWalletId: Optional[str] = None
+    nodeMode = NodeMode.automatic
 
     if verbose:
+        nodeMode = selectNodeMode()
         config["storagePath"] = clickPrompt("Storage path (press enter to use default)", config_defaults.DEFAULT_STORAGE_PATH, type = str)
 
         config["cpuCount"] = promptCpu(config, cpuLimit)
-
         config["nodeRam"] = promptRam(config, ramLimit)
 
         config["nodeSwap"] = clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", config_defaults.DEFAULT_SWAP_MEMORY, type = int)
         config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", config_defaults.DEFAULT_SHARED_MEMORY, type = int)
         config["allowDocker"] = clickPrompt("Allow Node to access system docker? This is a security risk! (Y/n)", config_defaults.DEFAULT_ALLOW_DOCKER, type = bool)
         config["initScript"] = _configureInitScript()
-
-        nodeMode, modelId = selectNodeMode(config["storagePath"])
-        config["nodeMode"] = nodeMode
-        if modelId is not None:
-            config["modelId"] = modelId
 
         nodeSecret: str = clickPrompt("Enter a secret which will be used to generate RSA key-pair for Node", config_defaults.DEFAULT_NODE_SECRET, type = str, hide_input = True)
         config["nodeSecret"] = nodeSecret
@@ -395,7 +363,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
             rsaKey = rsa.generateKey(2048, nodeSecret.encode("utf-8"))
             publicKey = rsa.getPublicKeyBytes(rsaKey.public_key())
 
-        if nodeMode != NodeMode.execution:
+        if nodeMode in [NodeMode.functionExclusive, NodeMode.functionShared]:
             nearWalletId = clickPrompt(
                 "Enter a NEAR wallet id to which the funds will be transfered when executing endpoints",
                 config_defaults.DEFAULT_NEAR_WALLET_ID,
@@ -410,7 +378,8 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     else:
         stdEcho("To configure node manually run coretex node config with --verbose flag.")
 
-    config["nodeAccessToken"] = registerNode(config["nodeName"], publicKey, nearWalletId)
+    config["nodeAccessToken"] = registerNode(config["nodeName"], nodeMode, publicKey, nearWalletId)
+    config["nodeMode"] = nodeMode
 
 
 def initializeNodeConfiguration() -> None:

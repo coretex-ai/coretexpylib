@@ -72,9 +72,6 @@ def previewConfig(config: Dict[str, Any]) -> None:
         ["Coretex Node init script",    config.get("initScript", "")]
     ]
 
-    if config.get("modelId") is not None:
-        table.append(["Coretex Model ID", config["modelId"]])
-
     if config.get("nearWalletId") is not None:
         table.append(["NEAR wallet id", config["nearWalletId"]])
 
