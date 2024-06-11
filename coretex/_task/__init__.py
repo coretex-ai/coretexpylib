@@ -19,6 +19,6 @@ from .remote import processRemote
 from .current_task_run import currentTaskRun
 from .initialization import _prepareForExecution, initializeRTask
 from .worker import TaskRunWorker
-from .logging import LoggerUploadWorker
-from .process_utils import executeProcess
+from .run_logger import runLogger, LoggerUploadWorker
+from .process_utils import captureRunStdout, captureRunStderr, executeRunLocally
 from .local.task_config import readTaskConfig

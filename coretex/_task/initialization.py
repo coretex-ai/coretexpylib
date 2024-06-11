@@ -23,8 +23,9 @@ import sys
 from .remote import processRemote
 from .current_task_run import setCurrentTaskRun
 from .. import folder_manager
-from ..entities import TaskRun, TaskRunStatus, LogSeverity
+from ..entities import TaskRun, TaskRunStatus
 from ..logging import createFormatter, initializeLogger
+from ..logging.severity import LogSeverity
 from ..networking import RequestFailedError
 
 
@@ -37,26 +38,25 @@ def _initializeLogger(taskRun: TaskRun) -> None:
         severity = LogSeverity.debug
 
     streamHandler = logging.StreamHandler(sys.stdout)
-    streamHandler.setLevel(severity.stdSeverity)
+    streamHandler.setLevel(severity.getLevel())
     streamHandler.setFormatter(createFormatter(
         includeTime = False,
-        includeLevel = False
+        includeLevel = False,
+        includeColor = False,
+        jsonOutput = True
     ))
 
     logPath = folder_manager.getRunLogsDir(taskRun.id) / "run.log"
     initializeLogger(severity, logPath, streamHandler)
 
 
-def _prepareForExecution(taskRunId: int) -> TaskRun:
-    taskRun: TaskRun = TaskRun.fetchById(taskRunId)
+def _prepareForExecution(taskRun: TaskRun) -> None:
     _initializeLogger(taskRun)
 
     taskRun.updateStatus(
         status = TaskRunStatus.inProgress,
         message = "Executing task."
     )
-
-    return taskRun
 
 
 def initializeRTask(mainFunction: Callable[[TaskRun], None], args: List[str]) -> None:
@@ -71,10 +71,10 @@ def initializeRTask(mainFunction: Callable[[TaskRun], None], args: List[str]) ->
             list of command line arguments
     """
 
-    taskRunId, callback = processRemote(args)
+    taskRun, callback = processRemote(args)
 
     try:
-        taskRun = _prepareForExecution(taskRunId)
+        _prepareForExecution(taskRun)
         setCurrentTaskRun(taskRun)
 
         callback.onStart()

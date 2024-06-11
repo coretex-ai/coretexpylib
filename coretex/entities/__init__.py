@@ -21,4 +21,5 @@ from .model import *
 from .project import *
 from .sample import *
 from .secret import *
+from .secret import secret_factory
 from .task_run import *

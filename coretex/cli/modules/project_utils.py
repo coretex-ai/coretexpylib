@@ -1,11 +1,12 @@
 from typing import Optional, Dict, Any
-from enum import IntEnum
+
+import logging
 
 import click
 
 from . import ui
 from ...entities import Project, ProjectType, ProjectVisibility
-from ...networking import EntityNotCreated, NetworkRequestError
+from ...networking import NetworkRequestError
 from ...configuration import loadConfig, saveConfig
 
 
@@ -56,7 +57,8 @@ def promptProjectCreate(message: str, name: str) -> Optional[Project]:
         ui.successEcho(f"Project \"{name}\" created successfully.")
         ui.stdEcho(f"A new Project has been created. You can open it by clicking on this URL {ui.outputUrl(project.entityUrl())}.")
         return project
-    except EntityNotCreated:
+    except NetworkRequestError as ex:
+        logging.getLogger("cli").debug(ex, exc_info = ex)
         raise click.ClickException(f"Failed to create project \"{name}\".")
 
 
@@ -94,8 +96,10 @@ def createProject(name: Optional[str] = None, projectType: Optional[int] = None,
     try:
         project = Project.createProject(name, projectType, description = description)
         ui.successEcho(f"Project \"{name}\" created successfully.")
+        ui.stdEcho(f"A new Project has been created. You can open it by clicking on this URL {ui.outputUrl(project.entityUrl())}.")
         return project
-    except EntityNotCreated:
+    except NetworkRequestError as ex:
+        logging.getLogger("cli").debug(ex, exc_info = ex)
         raise click.ClickException(f"Failed to create project \"{name}\".")
 
 
@@ -112,6 +116,9 @@ def getProject(name: Optional[str], config: Dict[str, Any]) -> Optional[Project]
 
     if projectId is None:
         ui.stdEcho("To use this command you need to have a Project selected.")
+        if click.confirm("Would you like to select an existing Project?", default = True):
+            return promptProjectSelect()
+
         if not click.confirm("Would you like to create a new Project?", default = True):
             return None
 

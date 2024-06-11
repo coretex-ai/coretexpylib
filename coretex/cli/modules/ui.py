@@ -71,14 +71,18 @@ def previewConfig(config: Dict[str, Any]) -> None:
         ["Coretex Node secret",         nodeSecret],
         ["Coretex Node init script",    config.get("initScript", "")]
     ]
+
     if config.get("modelId") is not None:
         table.append(["Coretex Model ID", config["modelId"]])
+
+    if config.get("nearWalletId") is not None:
+        table.append(["NEAR wallet id", config["nearWalletId"]])
 
     stdEcho(tabulate(table))
 
 
 def outputUrl(entityUrl: str) -> str:
-    return f"https://app.coretex.ai/{entityUrl}"
+    return ("\033[4m" + f"https://app.coretex.ai/{entityUrl}" + "\033[0m")
 
 
 def stdEcho(text: str) -> None:

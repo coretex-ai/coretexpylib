@@ -70,7 +70,7 @@ class HumanSegmentationConverter(BaseConverter):
         if maskImage is None:
             return []
 
-        maskImage = maskImage.resize((imageWidth, imageHeight), Image.ANTIALIAS)
+        maskImage = maskImage.resize((imageWidth, imageHeight), Image.Resampling.LANCZOS)
         subMaskArray = np.asarray(maskImage, dtype = np.uint8)
 
         # prevent segmented objects from being equal to image width/height

@@ -16,10 +16,13 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import Tuple
+from base64 import b64decode
+
+import os
 
 from Crypto.PublicKey import RSA
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric import rsa, padding
 
 from .random_generator import Random
 
@@ -120,3 +123,63 @@ def getPublicKeyBytes(key: rsa.RSAPublicKey) -> bytes:
         encoding = serialization.Encoding.PEM,
         format = serialization.PublicFormat.PKCS1
     )
+
+
+def privateKeyFromBytes(keyBytes: bytes) -> rsa.RSAPrivateKey:
+    """
+        Creates private key object from provided private
+        key bytes.
+
+        Parameters
+        ----------
+        keyBytes : bytes
+            private key bytes
+
+        Returns
+        -------
+        rsa.RSAPrivateKey -> private key object
+    """
+
+    key = serialization.load_pem_private_key(keyBytes, password = None)
+
+    if not isinstance(key, rsa.RSAPrivateKey):
+        raise TypeError
+
+    return key
+
+
+def getPrivateKey() -> rsa.RSAPrivateKey:
+    """
+        Retrieves RSA private key stored in CTX_PRIVATE_KEY
+        environment variable in base64 format.
+
+        Returns
+        -------
+        rsa.RSAPrivateKey -> private key object
+    """
+
+    if "CTX_PRIVATE_KEY" not in os.environ:
+        raise RuntimeError(f"\"CTX_PRIVATE_KEY\" environment variable not set")
+
+    privateKey = b64decode(os.environ["CTX_PRIVATE_KEY"])
+    return privateKeyFromBytes(privateKey)
+
+
+def decrypt(key: rsa.RSAPrivateKey, value: bytes) -> bytes:
+    """
+        Decrypts ciphertext encrypted using provided key-pair.
+        It is assumed that PKCS#1 padding was used during encryption.
+
+        Parameters
+        ----------
+        key : rsa.RSAPrivateKey
+            private key object
+        value : bytes
+            ciphertext
+
+        Returns
+        -------
+        bytes -> decrypted ciphertext
+    """
+
+    return key.decrypt(value, padding.PKCS1v15())

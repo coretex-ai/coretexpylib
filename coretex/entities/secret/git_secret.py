@@ -15,5 +15,27 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .output_interceptor import OutputInterceptor
-from .upload_worker import LoggerUploadWorker
+from typing import Tuple
+
+from .type import SecretType
+from .secret import Secret
+
+
+class GitSecret(Secret):
+
+    """
+        Represents Git Secret entity from Coretex.ai
+
+        Properties
+        ----------
+        token : str
+            Git access token
+    """
+
+    token: str
+
+    def __init__(self) -> None:
+        super().__init__(SecretType.git)
+
+    def _encryptedFields(self) -> Tuple[str, ...]:
+        return ("token",)
