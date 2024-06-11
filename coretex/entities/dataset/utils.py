@@ -61,7 +61,7 @@ def createDataset(
     """
 
     if not isEntityNameValid(name):
-        raise ValueError(">> [Coretex] Dataset name is invalid. Requirements: alphanumeric characters (\"A-Z\", \"a-z\", and \"0-9\") and dash (\"-\") with length between 3 to 50")
+        raise ValueError(">> [Coretex] Dataset name is invalid. Requirements: alphanumeric characters (\"a-z\", and \"0-9\") and dash (\"-\") with length between 3 to 50")
 
     dataset = type_.create(
         name = name,
