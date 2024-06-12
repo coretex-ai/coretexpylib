@@ -35,11 +35,11 @@ def updateLib() -> None:
 
 
 def fetchLatestVersion() -> Optional[str]:
-    url = f"https://pypi.org/pypi/coretex/json"
+    url = "https://pypi.org/pypi/coretex/json"
     response = requests.get(url)
-    if response.status_code == 200:
+    if response.ok:
         data = response.json()
-        return str(data['info']['version'])
+        return str(data["info"]["version"])
     else:
         return None
 
