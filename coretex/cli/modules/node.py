@@ -210,7 +210,17 @@ def selectImageType() -> ImageType:
 
 
 def selectNodeMode() -> NodeMode:
-    availableNodeModes = { mode.toString(): mode for mode in NodeMode }
+    # Define modes which can be picked
+    # Order of the elements in list affects how choices will
+    # be displayed in the terminal
+    nodeModes = [
+        NodeMode.any,
+        NodeMode.execution,
+        NodeMode.endpointReserved,
+        NodeMode.endpointShared
+    ]
+
+    availableNodeModes = { mode.toString(): mode for mode in nodeModes }
     choices = list(availableNodeModes.keys())
 
     selectedMode = arrowPrompt(choices, "Please select Coretex Node mode (use arrow keys to select an option):")
@@ -337,7 +347,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
 
     publicKey: Optional[bytes] = None
     nearWalletId: Optional[str] = None
-    nodeMode = NodeMode.automatic
+    nodeMode = NodeMode.any
 
     if verbose:
         nodeMode = selectNodeMode()
@@ -359,7 +369,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
             rsaKey = rsa.generateKey(2048, nodeSecret.encode("utf-8"))
             publicKey = rsa.getPublicKeyBytes(rsaKey.public_key())
 
-        if nodeMode in [NodeMode.functionExclusive, NodeMode.functionShared]:
+        if nodeMode in [NodeMode.endpointReserved, NodeMode.endpointShared]:
             nearWalletId = clickPrompt(
                 "Enter a NEAR wallet id to which the funds will be transfered when executing endpoints",
                 config_defaults.DEFAULT_NEAR_WALLET_ID,

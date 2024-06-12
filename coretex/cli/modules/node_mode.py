@@ -21,19 +21,19 @@ from enum import IntEnum
 class NodeMode(IntEnum):
 
     execution         = 1
-    functionExclusive = 2
-    functionShared    = 3
-    automatic         = 4
+    endpointReserved  = 2
+    endpointShared    = 3
+    any               = 4
 
     def toString(self) -> str:
         if self == NodeMode.execution:
             return "Run workflows (worker)"
 
-        if self == NodeMode.functionExclusive:
+        if self == NodeMode.endpointReserved:
             return "Serve a single endpoint (dedicated inference)"
 
-        if self == NodeMode.functionShared:
+        if self == NodeMode.endpointShared:
             return "Serve multiple endpoints (shared inference)"
 
-        if self == NodeMode.automatic:
+        if self == NodeMode.any:
             return "Any"
