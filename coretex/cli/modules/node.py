@@ -80,7 +80,7 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
             environ["CTX_NODE_SECRET"] = nodeSecret
 
         volumes = [
-            (config["storagePath"], "/root/.coretex:z")
+            (config["storagePath"], "/root/.coretex")
         ]
 
         if config.get("allowDocker", False):
