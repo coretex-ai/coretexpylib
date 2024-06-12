@@ -175,7 +175,7 @@ def shouldUpdate(image: str) -> bool:
 def registerNode(name: str, nodeMode: NodeMode, publicKey: Optional[bytes] = None, nearWalletId: Optional[str] = None) -> str:
     params = {
         "machine_name": name,
-        "node_mode": nodeMode.value
+        "mode": nodeMode.value
     }
 
     if publicKey is not None:
@@ -210,11 +210,7 @@ def selectImageType() -> ImageType:
 
 
 def selectNodeMode() -> NodeMode:
-    availableNodeModes = {
-        "Run workflows (worker)": NodeMode.execution,
-        "Serve a single endpoint (dedicated inference)": NodeMode.functionExclusive,
-        "Serve multiple endpoints (shared inference)": NodeMode.functionShared
-    }
+    availableNodeModes = { mode.toString(): mode for mode in NodeMode }
     choices = list(availableNodeModes.keys())
 
     selectedMode = arrowPrompt(choices, "Please select Coretex Node mode (use arrow keys to select an option):")

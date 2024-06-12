@@ -24,3 +24,16 @@ class NodeMode(IntEnum):
     functionExclusive = 2
     functionShared    = 3
     automatic         = 4
+
+    def toString(self) -> str:
+        if self == NodeMode.execution:
+            return "Run workflows (worker)"
+
+        if self == NodeMode.functionExclusive:
+            return "Serve a single endpoint (dedicated inference)"
+
+        if self == NodeMode.functionShared:
+            return "Serve multiple endpoints (shared inference)"
+
+        if self == NodeMode.automatic:
+            return "Any"

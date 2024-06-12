@@ -66,7 +66,7 @@ def previewConfig(config: Dict[str, Any]) -> None:
         ["SWAP memory",                 f"{config['nodeSwap']}GB"],
         ["POSIX shared memory",         f"{config['nodeSharedMemory']}GB"],
         ["CPU cores allocated",         config.get("cpuCount", DEFAULT_CPU_COUNT)],
-        ["Coretex Node mode",           f"{NodeMode(config['nodeMode']).name}"],
+        ["Coretex Node mode",           f"{NodeMode(config['nodeMode']).toString()}"],
         ["Docker access",               allowDocker],
         ["Coretex Node secret",         nodeSecret],
         ["Coretex Node init script",    config.get("initScript", "")]
