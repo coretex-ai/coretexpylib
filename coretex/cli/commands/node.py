@@ -54,8 +54,8 @@ def start(image: Optional[str]) -> None:
 
     dockerImage = config["image"]
 
-    if node_module.shouldUpdate(dockerImage):
-        node_module.pull(dockerImage)
+    # if node_module.shouldUpdate(dockerImage):
+        # node_module.pull(dockerImage)
 
     node_module.start(dockerImage, config)
 
@@ -75,8 +75,6 @@ def stop() -> None:
 
 @click.command()
 @click.option("--auto", is_flag = True, help = "Start autoupdate.")
-# @click.option("--dockerExec", is_flag = True, help = "Path to docker executable.")
-# @click.option("--gitExec", is_flag = True, help = "Path to git executable.")
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def update(auto: bool) -> None:
     config = loadConfig()

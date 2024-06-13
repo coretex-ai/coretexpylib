@@ -17,6 +17,7 @@
 
 from typing import List
 
+from ..resources import RESOURCES_DIR
 from ...utils import command
 from ...configuration import DEFAULT_VENV_PATH
 
@@ -38,7 +39,7 @@ def jobExists(script: str) -> bool:
 
 def scheduleJob() -> None:
     existingLines = getExisting()
-    cronEntry = f"PATH={gitExecPath}:{dockerExecPath}\n*/5 * * * * {DEFAULT_VENV_PATH}/bin/coretex node update --auto >> {DEFAULT_VENV_PATH.parent}/out.txt  2>&1\n"
+    cronEntry = f"*/30 * * * * {DEFAULT_VENV_PATH}/bin/python {RESOURCES_DIR}/update_node.py >> {DEFAULT_VENV_PATH.parent}/out.txt  2>&1\n"
     existingLines.append(cronEntry)
 
     tempCronFilePath = DEFAULT_VENV_PATH.parent / "temp.cron"
