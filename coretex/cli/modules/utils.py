@@ -37,9 +37,10 @@ def updateLib() -> None:
 def fetchLatestVersion() -> Optional[str]:
     url = "https://pypi.org/pypi/coretex/json"
     response = requests.get(url)
+
     if response.ok:
         data = response.json()
-        return str(data["info"]["version"])
+        return str(data.get("info", None).get("version", None))
     else:
         return None
 
@@ -51,10 +52,14 @@ def checkLibVersion() -> None:
     if latest is None:
         return
 
-    if int(current[-3:]) < int(latest[-3:]):
+    majorCurrent, minorCurrent, patchCurrent = map(int, current.split('.'))
+    majorLatest, minorLatest, patchLatest = map(int, latest.split('.'))
+
+    if (majorLatest, minorLatest, patchLatest) > (majorCurrent, minorCurrent, patchCurrent):
         ui.stdEcho(
             f"Newer version of Coretex library is available. Current: {current}, Latest: {latest}. Use \"coretex update\" command to update library to latest version."
         )
+
 
 def isGPUAvailable() -> bool:
     try:
