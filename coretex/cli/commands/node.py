@@ -58,7 +58,6 @@ def start(image: Optional[str]) -> None:
         node_module.pull(dockerImage)
 
     node_module.start(dockerImage, config)
-
     docker.removeDanglingImages(node_module.getRepoFromImageUrl(dockerImage), node_module.getTagFromImageUrl(dockerImage))
 
     activateAutoUpdate()
@@ -90,7 +89,6 @@ def update() -> None:
         return
 
     if nodeStatus == NodeStatus.busy:
-
         if not clickPrompt(
             "Node is busy, do you wish to terminate the current execution to perform the update? (Y/n)",
             type = bool,
@@ -109,7 +107,6 @@ def update() -> None:
     node_module.pull(dockerImage)
 
     if getNodeStatus() == NodeStatus.busy:
-
         if not clickPrompt(
             "Node is busy, do you wish to terminate the current execution to perform the update? (Y/n)",
             type = bool,
