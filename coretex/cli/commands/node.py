@@ -54,8 +54,8 @@ def start(image: Optional[str]) -> None:
 
     dockerImage = config["image"]
 
-    # if node_module.shouldUpdate(dockerImage):
-        # node_module.pull(dockerImage)
+    if node_module.shouldUpdate(dockerImage):
+        node_module.pull(dockerImage)
 
     node_module.start(dockerImage, config)
 
@@ -74,9 +74,8 @@ def stop() -> None:
 
 
 @click.command()
-@click.option("--auto", is_flag = True, help = "Start autoupdate.")
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
-def update(auto: bool) -> None:
+def update() -> None:
     config = loadConfig()
     dockerImage = config["image"]
 
@@ -91,8 +90,6 @@ def update(auto: bool) -> None:
         return
 
     if nodeStatus == NodeStatus.busy:
-        if auto:
-            return
 
         if not clickPrompt(
             "Node is busy, do you wish to terminate the current execution to perform the update? (Y/n)",
@@ -112,8 +109,6 @@ def update(auto: bool) -> None:
     node_module.pull(dockerImage)
 
     if getNodeStatus() == NodeStatus.busy:
-        if auto:
-            return
 
         if not clickPrompt(
             "Node is busy, do you wish to terminate the current execution to perform the update? (Y/n)",

@@ -41,19 +41,6 @@ def updateLib() -> None:
     command([sys.executable, "-m", "pip", "install", "--no-cache-dir", "--upgrade", "coretex"], ignoreStdout = True, ignoreStderr = True)
 
 
-def getExecPaths() -> Tuple[str, str]:
-    _, dockerPath, _ = command(["which", "docker"], ignoreStdout = True, ignoreStderr = True)
-    _, gitPath, _ = command(["which", "git"], ignoreStdout = True, ignoreStderr = True)
-
-    dockerPathParts = dockerPath.strip().split('/')
-    dockerExecPath = '/'.join(dockerPathParts[:-1])
-
-    gitPathParts = gitPath.strip().split('/')
-    gitExecPath = '/'.join(gitPathParts[:-1])
-
-    return dockerExecPath, gitExecPath
-
-
 def isGPUAvailable() -> bool:
     try:
         py3nvml.nvmlInit()

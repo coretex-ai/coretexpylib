@@ -3,7 +3,6 @@ from typing import Dict, Any, List, Tuple
 import json
 
 from .process import command, CommandException
-from ..configuration import loadConfig
 
 
 def isDockerAvailable() -> None:

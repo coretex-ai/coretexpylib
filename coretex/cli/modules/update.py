@@ -22,6 +22,9 @@ import requests
 from .cron import jobExists, scheduleJob
 
 
+UPDATE_SCRIPT_NAME = "update_node.py"
+
+
 class NodeStatus(IntEnum):
 
     inactive     = 1
@@ -32,8 +35,8 @@ class NodeStatus(IntEnum):
 
 
 def activateAutoUpdate() -> None:
-    if not jobExists("coretex node update --auto"):
-        scheduleJob()
+    if not jobExists(UPDATE_SCRIPT_NAME):
+        scheduleJob(UPDATE_SCRIPT_NAME)
 
 
 def getNodeStatus() -> NodeStatus:
