@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Dict, Optional, Any, Tuple, List, TypeVar, Generic
+from typing import Dict, Optional, Any, Tuple, List, TypeVar, Generic, Union
 from abc import ABC, abstractmethod
 
 import logging
@@ -29,11 +29,23 @@ T = TypeVar("T")
 
 class BaseParameter(ABC, Generic[T]):
 
-    def __init__(self, name: str, description: str, value: Optional[T], dataType: str, required: bool, type: int = 3) -> None:
+    def __init__(
+        self,
+        name: str,
+        description: str,
+        value: Optional[T],
+        dataType: Union[str, ParameterType],
+        required: bool,
+        type: int = 3
+    ) -> None:
+
+        if isinstance(dataType, str):
+            dataType = ParameterType(dataType)
+
         self.name = name
         self.description = description
         self.value = value
-        self.dataType = ParameterType(dataType)
+        self.dataType = dataType
         self.required = required
         self.type_ = type
 
