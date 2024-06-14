@@ -29,11 +29,11 @@ T = TypeVar("T")
 
 class BaseParameter(ABC, Generic[T]):
 
-    def __init__(self, name: str, description: str, value: Optional[T], dataType: ParameterType, required: bool, type: int = 3) -> None:
+    def __init__(self, name: str, description: str, value: Optional[T], dataType: str, required: bool, type: int = 3) -> None:
         self.name = name
         self.description = description
         self.value = value
-        self.dataType = dataType
+        self.dataType = ParameterType(dataType)
         self.required = required
         self.type_ = type
 
@@ -80,7 +80,7 @@ class BaseParameter(ABC, Generic[T]):
             "name": self.name,
             "description": self.description,
             "value": self.value,
-            "data_type": self.dataType,
+            "data_type": self.dataType.value,
             "required": self.required
         }
 
