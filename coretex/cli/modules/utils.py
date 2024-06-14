@@ -24,16 +24,22 @@ import venv
 from py3nvml import py3nvml
 
 import click
+import platform
 
 from ...configuration import DEFAULT_VENV_PATH
 from ...utils.process import command
 
 
 def checkEnvironment() -> None:
+    venvPython = DEFAULT_VENV_PATH / "bin" / "python"
     if DEFAULT_VENV_PATH.exists():
         return
+
     venv.create(DEFAULT_VENV_PATH, with_pip = True)
-    venvPython = DEFAULT_VENV_PATH / "bin" / "python"
+
+    if platform.system() == "Windows":
+        venvPython = DEFAULT_VENV_PATH / "Scripts" / "python.exe"
+
     command([str(venvPython), "-m", "pip", "install", "coretex"])
 
 

@@ -5,8 +5,12 @@ from coretex.cli.modules import node as node_module
 from coretex.cli.modules.update import getNodeStatus, NodeStatus
 from coretex.configuration import loadConfig
 
+from ..._logger import _initializeCLILogger
 
+
+_initializeCLILogger()
 autoUpdateLogger = logging.getLogger("cli-autoupdate")
+
 
 def updateNode() -> None:
     config = loadConfig()
