@@ -24,7 +24,7 @@ def create(name: str, path: str, project: Optional[str], accuracy: float) -> Non
 
     ui.progressEcho("Creating the model...")
 
-    model = Model.createProjectModel(name, ctxProject.id, accuracy)
+    model = Model.createModel(name, ctxProject.id, accuracy)
     model.upload(path)
 
     ui.successEcho(f"Model \"{model.name}\" created successfully")
