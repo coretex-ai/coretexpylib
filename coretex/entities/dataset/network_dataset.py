@@ -153,7 +153,10 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
             responseJson = response.getJson(dict)
             samples.extend([obj._sampleType.decode(sample) for sample in responseJson["data"]])
 
-            hasMorePages = "next" in responseJson.get("links", {})
+            metadata = responseJson.get("metadata", {})
+            if page == metadata["total_pages"]:
+                hasMorePages = False
+
             page += 1
 
         obj.samples = samples
