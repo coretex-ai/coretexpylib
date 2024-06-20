@@ -101,53 +101,6 @@ class Model(NetworkObject):
     def createModel(
         cls,
         name: str,
-        taskRunId: int,
-        accuracy: float,
-        meta: Optional[Dict[str, Any]] = None
-    ) -> Self:
-
-        """
-            Creates Model as a result of TaskRun
-
-            Parameters
-            ----------
-            name : str
-                model name
-            taskRunId : int
-                TaskRun id of model
-            accuracy : float
-                model accuracy
-            meta : Optional[Dict[str, Any]]
-                model metadata
-
-            Returns
-            -------
-            Self -> Model object
-
-            Raises
-            -------
-            NetworkRequestError -> If model creation failed
-
-            Example
-            -------
-            >>> from coretex import Model, currentTaskRun
-            >>> model = Model.createModel("model-name", currentTaskRun().id, 0.87)
-        """
-
-        if meta is None:
-            meta = {}
-
-        return cls.create(
-            name = f"{taskRunId}-{name}",
-            model_queue_id = taskRunId,
-            accuracy = accuracy,
-            meta = meta
-        )
-
-    @classmethod
-    def createProjectModel(
-        cls,
-        name: str,
         projectId: int,
         accuracy: float,
         meta: Optional[Dict[str, Any]] = None
@@ -174,7 +127,7 @@ class Model(NetworkObject):
             Example
             -------
             >>> from coretex import Model
-            >>> model = Model.createProjectModel("model-name", 123, 0.87)
+            >>> model = Model.createModel("model-name", 123, 0.87)
         """
 
         if meta is None:
