@@ -148,7 +148,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
             response = networkManager.get(f"{cls._endpoint()}/sessions", params)
 
             if response.hasFailed():
-                raise NetworkRequestError(response, "Failed to fetch dataset samples")
+                raise NetworkRequestError(response, "Failed to fetch Dataset Samples")
 
             responseJson = response.getJson(dict)
             samples.extend([obj._sampleType.decode(sample) for sample in responseJson["data"]])
@@ -181,6 +181,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
             Returns
             -------
             Self -> Fetched dataset object
+
             Raises
             ------
             ValueError -> If dataset doesn't exist
