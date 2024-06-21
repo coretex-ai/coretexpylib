@@ -1,6 +1,6 @@
 [project]
 name = "coretex"
-version = "1.0.127"
+version = "1.0.135"
 authors = [
   { name="Duško Mirković", email="dmirkovic@coretex.ai" }
 ]
@@ -25,7 +25,7 @@ dependencies = [
   "requests",
   "inflection",
   "pillow",
-  "numpy",
+  "numpy<2",
   "scikit-image",
   "shapely",
   "protobuf~=3.19.0",
