@@ -23,6 +23,7 @@ from .task import Task
 from .project_type import ProjectType
 from .project_visibility import ProjectVisibility
 from ..entity_visibility_type import EntityVisibilityType
+from ..utils import isEntityNameValid
 from ...networking import networkManager, NetworkResponse, NetworkRequestError
 
 
@@ -79,6 +80,9 @@ class Project(BaseObject):
                 except:
                     print("Failed to create project.")
         """
+
+        if not isEntityNameValid(name):
+            raise ValueError(">> [Coretex] Project name is invalid. Requirements: alphanumeric characters (\"a-z\", and \"0-9\") and dash (\"-\") with length between 3 to 50")
 
         return cls.create(
             name = name,

@@ -15,19 +15,9 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import base64
-import hashlib
+import re
 
 
-MAX_NAME_LENGTH = 50
-
-
-def hashCacheName(name: str, suffix: str) -> str:
-    if MAX_NAME_LENGTH - len(name) < 8:
-        raise ValueError(">> [Coretex] Failed to cache dataset. Dataset name too long")
-
-    suffixByteHash = hashlib.md5(suffix.encode()).digest()
-    suffixHash = base64.b64encode(suffixByteHash)
-    cacheName = name + "-" + suffixHash.decode("ascii")
-
-    return cacheName[:MAX_NAME_LENGTH] if len(cacheName) > MAX_NAME_LENGTH else cacheName
+def isEntityNameValid(name: str) -> bool:
+    pattern = r"^[a-z0-9-]{3,50}$"
+    return True if re.match(pattern, name) is not None else False

@@ -19,6 +19,7 @@ from typing import Optional, Dict
 from datetime import datetime
 
 from .project_type import ProjectType
+from ..utils import isEntityNameValid
 from ...codable import KeyDescriptor
 from ...networking import NetworkObject
 
@@ -72,6 +73,9 @@ class BaseObject(NetworkObject):
             -------
             bool -> True if Project/Task was renamed, False if Project/Task was not renamed
         """
+
+        if not isEntityNameValid(name):
+            raise ValueError(">> [Coretex] Object name is invalid. Requirements: alphanumeric characters (\"a-z\", and \"0-9\") and dash (\"-\") with length between 3 to 50")
 
         if self.name == name:
             return False
