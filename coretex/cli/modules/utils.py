@@ -20,6 +20,7 @@ from functools import wraps
 from importlib.metadata import version as getLibraryVersion
 
 import sys
+import logging
 
 from py3nvml import py3nvml
 
@@ -40,8 +41,20 @@ def fetchLatestVersion() -> Optional[str]:
 
     if response.ok:
         data = response.json()
-        return str(data.get("info", None).get("version", None))
+        infoDict = data.get("info")
+
+        if isinstance(infoDict, dict):
+            version = infoDict.get("version")
+            if isinstance(version, str):
+                return version
+
+            logging.debug("Value of json field of key \"version\" in \"info\" dictionary is not of expected type (str).")
+            return None
+
+        logging.debug("Value of json field of key \"info\" in \"data\" dictionary is not of expected type (dict).")
+        return None
     else:
+        logging.debug(f"Failed to fetch version of coretex library. Response code: {response.status_code}")
         return None
 
 
@@ -49,7 +62,8 @@ def checkLibVersion() -> None:
     current = getLibraryVersion("coretex")
     latest = fetchLatestVersion()
 
-    if latest is None:
+    if not isinstance(latest, str):
+        logging.debug(f"Invalid type of \"latest\" var {type(current)}. Expected \"string\".")
         return
 
     majorCurrent, minorCurrent, patchCurrent = map(int, current.split('.'))
