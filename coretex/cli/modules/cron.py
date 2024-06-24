@@ -17,7 +17,6 @@
 
 from typing import List
 
-from ..resources import RESOURCES_DIR
 from ...utils import command
 from ...configuration import DEFAULT_VENV_PATH
 
@@ -39,7 +38,7 @@ def jobExists(script: str) -> bool:
 
 def scheduleJob(scriptName: str) -> None:
     existingLines = getExisting()
-    cronEntry = f"*/30 * * * * {DEFAULT_VENV_PATH}/bin/python {RESOURCES_DIR}/{scriptName} >> {DEFAULT_VENV_PATH.parent}/out.txt  2>&1\n"
+    cronEntry = f"*/30 * * * * {DEFAULT_VENV_PATH.parent / scriptName}\n"
     existingLines.append(cronEntry)
 
     tempCronFilePath = DEFAULT_VENV_PATH.parent / "temp.cron"

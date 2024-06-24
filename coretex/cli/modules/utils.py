@@ -17,6 +17,7 @@
 
 from typing import List, Any, Tuple, Optional, Callable
 from functools import wraps
+from importlib.metadata import version as getLibraryVersion
 
 import sys
 import venv
@@ -40,11 +41,25 @@ def checkEnvironment() -> None:
     if platform.system() == "Windows":
         venvPython = DEFAULT_VENV_PATH / "Scripts" / "python.exe"
 
-    command([str(venvPython), "-m", "pip", "install", "coretex"])
+    currentCtxVersion = getLibraryVersion("coretex")
+    command([str(venvPython), "-m", "pip", "install", f"coretex=={currentCtxVersion}"], ignoreStdout = True)
 
 
 def updateLib() -> None:
     command([sys.executable, "-m", "pip", "install", "--no-cache-dir", "--upgrade", "coretex"], ignoreStdout = True, ignoreStderr = True)
+
+
+def getExecPaths() -> Tuple[str, str]:
+    _, dockerPath, _ = command(["which", "docker"], ignoreStdout = True, ignoreStderr = True)
+    _, gitPath, _ = command(["which", "git"], ignoreStdout = True, ignoreStderr = True)
+
+    dockerPathParts = dockerPath.strip().split('/')
+    dockerExecPath = '/'.join(dockerPathParts[:-1])
+
+    gitPathParts = gitPath.strip().split('/')
+    gitExecPath = '/'.join(gitPathParts[:-1])
+
+    return dockerExecPath, gitExecPath
 
 
 def isGPUAvailable() -> bool:

@@ -73,8 +73,9 @@ def stop() -> None:
 
 
 @click.command()
+@click.option("--auto", is_flag = True, help = "Configure node settings manually.")
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
-def update() -> None:
+def update(auto: bool) -> None:
     config = loadConfig()
     dockerImage = config["image"]
 
@@ -89,6 +90,9 @@ def update() -> None:
         return
 
     if nodeStatus == NodeStatus.busy:
+        if auto:
+            return
+
         if not clickPrompt(
             "Node is busy, do you wish to terminate the current execution to perform the update? (Y/n)",
             type = bool,
@@ -107,6 +111,9 @@ def update() -> None:
     node_module.pull(dockerImage)
 
     if getNodeStatus() == NodeStatus.busy:
+        if auto:
+            return
+
         if not clickPrompt(
             "Node is busy, do you wish to terminate the current execution to perform the update? (Y/n)",
             type = bool,
