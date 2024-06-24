@@ -58,12 +58,28 @@ def fetchLatestVersion() -> Optional[str]:
         return None
 
 
+def isVersionStrValid(version: str) -> bool:
+    parts = version.split('.')
+
+    if len(parts) != 3:
+        return False
+
+    return all(part.isdigit() for part in parts)
+
 def checkLibVersion() -> None:
     current = getLibraryVersion("coretex")
     latest = fetchLatestVersion()
 
     if not isinstance(latest, str):
         logging.debug(f"Invalid type of \"latest\" var {type(current)}. Expected \"string\".")
+        return
+
+    if not isVersionStrValid(current):
+        logging.debug("Current version returned by importlib library is not valid.")
+        return
+
+    if not isVersionStrValid(latest):
+        logging.debug("Latest version extracted from pypi website is not valid.")
         return
 
     majorCurrent, minorCurrent, patchCurrent = map(int, current.split('.'))
