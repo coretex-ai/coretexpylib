@@ -4,6 +4,7 @@
 DOCKER_PATH={dockerPath}
 GIT_PATH={gitPath}
 VENV_PATH={venvPath}
+CONFIG_PATH={configPath}
 # Source the virtual environment
 source "$VENV_PATH/activate"
 
@@ -11,4 +12,4 @@ source "$VENV_PATH/activate"
 export PATH=$DOCKER_PATH:$GIT_PATH
 
 # Execute the coretex command
-$VENV_PATH/bin/coretex node update --auto >> /Users/bogdanbm/.config/coretex/logs/ctx_autoupdate.log 2>&1
+$VENV_PATH/bin/coretex node update -n >> $CONFIG_PATH/logs/ctx_autoupdate.log 2>&1

@@ -73,9 +73,14 @@ def stop() -> None:
 
 
 @click.command()
-@click.option("--auto", is_flag = True, help = "Configure node settings manually.")
+@click.option("-y", "autoAccept", is_flag = True, help = "Accepts all prompts.")
+@click.option("-n", "autoDecline", is_flag = True, help = "Declines all prompts.")
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
-def update(auto: bool) -> None:
+def update(autoAccept: bool, autoDecline: bool) -> None:
+    if autoAccept and autoDecline:
+        errorEcho("Only one of the flags (\"-y\" or \"-n\") can be used at the time.")
+        return
+
     config = loadConfig()
     dockerImage = config["image"]
 
@@ -89,8 +94,8 @@ def update(auto: bool) -> None:
         errorEcho("Node is reconnecting. Cannot update now.")
         return
 
-    if nodeStatus == NodeStatus.busy:
-        if auto:
+    if nodeStatus == NodeStatus.busy and not autoAccept:
+        if autoDecline:
             return
 
         if not clickPrompt(
@@ -110,8 +115,8 @@ def update(auto: bool) -> None:
     stdEcho("Updating node...")
     node_module.pull(dockerImage)
 
-    if getNodeStatus() == NodeStatus.busy:
-        if auto:
+    if getNodeStatus() == NodeStatus.busy and not autoAccept:
+        if autoDecline:
             return
 
         if not clickPrompt(
