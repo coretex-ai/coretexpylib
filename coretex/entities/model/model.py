@@ -22,6 +22,7 @@ from zipfile import ZipFile
 from pathlib import Path
 
 import json
+import logging
 
 from ..utils import isEntityNameValid
 from ... import folder_manager
@@ -137,6 +138,12 @@ class Model(NetworkObject):
 
         if not isEntityNameValid(name):
             raise ValueError(">> [Coretex] Model name is invalid. Requirements: alphanumeric characters (\"a-z\", and \"0-9\") and dash (\"-\") with length between 3 to 50")
+
+        if accuracy < 0:
+            logging.getLogger("coretexpylib").warning(f">> [Coretex] Invalid value for accuracy: ({accuracy} < 0), clipping to 0.")
+
+        if accuracy > 1:
+            logging.getLogger("coretexpylib").warning(f">> [Coretex] Invalid value for accuracy: {accuracy} > 1, clipping to 1.")
 
         accuracy = max(0, min(accuracy, 1))
 
