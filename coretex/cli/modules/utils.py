@@ -66,6 +66,7 @@ def isVersionStrValid(version: str) -> bool:
 
     return all(part.isdigit() for part in parts)
 
+
 def checkLibVersion() -> None:
     current = getLibraryVersion("coretex")
     latest = fetchLatestVersion()
