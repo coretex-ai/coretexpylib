@@ -102,8 +102,7 @@ def saveConfig(config: Dict[str, Any]) -> None:
 def isUserConfigured(config: Dict[str, Any]) -> bool:
     return (
         config.get("username") is not None and
-        config.get("password") is not None and
-        config.get("storagePath") is not None
+        config.get("password") is not None
     )
 
 
