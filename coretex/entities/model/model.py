@@ -143,7 +143,7 @@ class Model(NetworkObject):
             logging.getLogger("coretexpylib").warning(f">> [Coretex] Invalid value for accuracy: ({accuracy} < 0), clipping to 0.")
 
         if accuracy > 1:
-            logging.getLogger("coretexpylib").warning(f">> [Coretex] Invalid value for accuracy: {accuracy} > 1, clipping to 1.")
+            logging.getLogger("coretexpylib").warning(f">> [Coretex] Invalid value for accuracy: ({accuracy} > 1), clipping to 1.")
 
         accuracy = max(0, min(accuracy, 1))
 
