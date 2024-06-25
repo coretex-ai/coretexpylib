@@ -126,7 +126,10 @@ def initializeUserSession() -> None:
 
             if 400 <= ex.response.statusCode < 500:
                 errorEcho("Authentification failed with configured credentials. Please try entering your credentials again.")
-                authenticate()
+                loginInfo = authenticate()
+                config = saveLoginData(loginInfo, config)
+                saveConfig(config)
+                return
 
         jsonResponse = response.getJson(dict)
         config["token"] = jsonResponse["token"]
