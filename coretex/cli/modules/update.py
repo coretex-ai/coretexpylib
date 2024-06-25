@@ -56,7 +56,6 @@ def generateUpdateScript(config: Dict[str, Any]) -> str:
         storagePath = config["storagePath"],
         nodeAccessToken = config["nodeAccessToken"],
         nodeMode = config["nodeMode"],
-        modelId = config.get("modelId"),
         containerName = config_defaults.DOCKER_CONTAINER_NAME,
         networkName = config_defaults.DOCKER_CONTAINER_NETWORK,
         restartPolicy = "always",
