@@ -133,6 +133,8 @@ def update(autoAccept: bool, autoDecline: bool) -> None:
     node_module.start(dockerImage, config)
     docker.removeDanglingImages(node_module.getRepoFromImageUrl(dockerImage), node_module.getTagFromImageUrl(dockerImage))
 
+    activateAutoUpdate()
+
 
 @click.command()
 @click.option("--verbose", is_flag = True, help = "Configure node settings manually.")
@@ -165,6 +167,7 @@ def config(verbose: bool) -> None:
     previewConfig(config)
 
     successEcho("Node successfully configured.")
+    activateAutoUpdate()
 
 
 @click.group()
