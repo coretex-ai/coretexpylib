@@ -138,6 +138,8 @@ class Model(NetworkObject):
         if not isEntityNameValid(name):
             raise ValueError(">> [Coretex] Model name is invalid. Requirements: alphanumeric characters (\"a-z\", and \"0-9\") and dash (\"-\") with length between 3 to 50")
 
+        accuracy = max(0, min(accuracy, 1))
+
         if meta is None:
             meta = {}
 
