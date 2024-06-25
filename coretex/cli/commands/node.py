@@ -78,7 +78,7 @@ def stop() -> None:
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def update(autoAccept: bool, autoDecline: bool) -> None:
     if autoAccept and autoDecline:
-        errorEcho("Only one of the flags (\"-y\" or \"-n\") can be used at the time.")
+        errorEcho("Only one of the flags (\"-y\" or \"-n\") can be used at the same time.")
         return
 
     config = loadConfig()
