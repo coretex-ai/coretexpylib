@@ -1,6 +1,5 @@
 ![](./docs_images/logo-dark.png)
 
-<!-- <h1 style="text-align: center;">Coretex.ai Python library</h1> -->
 ---
 <div align="center">
 
@@ -11,9 +10,9 @@
 </div>
 
 
-## What is Coretex AI?
+## What is Coretex?
 
-Coretex.ai is a powerful MLOps platform designed to make AI experimentation fast and efficient. It contains multiple key features to help with that:
+Coretex is a powerful MLOps platform designed to make AI experimentation fast and efficient. It contains multiple key features to help with that:
 - [MLOps Workflow Management]() - Use powerful yet simple tools to optimize, build and run your ML Workflows
 - [Model Deployment](https://docs.coretex.ai/v1/getting-started/learn-basics/deployment) - Deploy your Model to production efforlessly with full tracking capabilities
 - [Task Library](https://github.com/coretex-ai/coretex-jobs) - Out-of-the-box support for common ML Tasks:
@@ -37,7 +36,7 @@ Coretex.ai is a powerful MLOps platform designed to make AI experimentation fast
 - [Real-time Experiment Tracking](#coretex-experiment-tracking) - Real-time tracking of Run metrics, Artifacts, stdout and stderr, etc...
 - [Infrastructure Setup](#infrastructure-setup) - Connect your own on-premise machines, or use dynamically scalable cloud machines
 
-Coretex.ai helps you iterate faster and with more confidence. You get reproducibility, scalability, transparency, and cost-effectiveness.
+Coretex helps you iterate faster and with more confidence. You get reproducibility, scalability, transparency, and cost-effectiveness.
 
 ## Get started
 
@@ -98,7 +97,7 @@ One of the key benefits of Coretex is its ability to guarantee reproducibility. 
 
 ## Supported Use Cases
 
-Coretex.ai is a versatile platform that can be used for a variety of use cases, including:
+Coretex is a versatile platform that can be used for a variety of use cases, including:
 
 - Training ML models
 - Large-scale statistical analysis
