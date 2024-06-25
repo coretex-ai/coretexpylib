@@ -89,6 +89,10 @@ def stdEcho(text: str) -> None:
     click.echo(click.style(f"\n{text}", fg = "cyan"))
 
 
+def warningEcho(text: str) -> None:
+    click.echo(click.style(f"\n WARNING: {text}", fg = "yellow"))
+
+
 def successEcho(text: str) -> None:
     click.echo(click.style(f"\n\U0001F680 {text} \U0001F680", fg = "green"))
 

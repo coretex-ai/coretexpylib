@@ -41,21 +41,21 @@ def fetchLatestVersion() -> Optional[str]:
 
     if response.ok:
         data = response.json()
+
         infoDict = data.get("info")
-
-        if isinstance(infoDict, dict):
-            version = infoDict.get("version")
-            if isinstance(version, str):
-                return version
-
-            logging.debug("Value of json field of key \"version\" in \"info\" dictionary is not of expected type (str).")
+        if not isinstance(infoDict, dict):
+            logging.getLogger("cli").debug("Value of json field of key \"info\" in \"data\" dictionary is not of expected type (dict).")
             return None
 
-        logging.debug("Value of json field of key \"info\" in \"data\" dictionary is not of expected type (dict).")
-        return None
-    else:
-        logging.debug(f"Failed to fetch version of coretex library. Response code: {response.status_code}")
-        return None
+        version = infoDict.get("version")
+        if not isinstance(version, str):
+            logging.getLogger("cli").debug("Value of json field of key \"version\" in \"info\" dictionary is not of expected type (str).")
+            return None
+
+        return version
+
+    logging.getLogger("cli").debug(f"Failed to fetch version of coretex library. Response code: {response.status_code}")
+    return None
 
 
 def isVersionStrValid(version: str) -> bool:
@@ -72,24 +72,23 @@ def checkLibVersion() -> None:
     latest = fetchLatestVersion()
 
     if not isinstance(latest, str):
-        logging.debug(f"Invalid type of \"latest\" var {type(current)}. Expected \"string\".")
+        logging.getLogger("cli").debug(f"Invalid type of \"latest\" var {type(current)}. Expected \"string\".")
         return
 
     if not isVersionStrValid(current):
-        logging.debug("Current version returned by importlib library is not valid.")
+        logging.getLogger("cli").debug("Current version returned by importlib library is not valid.")
         return
 
     if not isVersionStrValid(latest):
-        logging.debug("Latest version extracted from pypi website is not valid.")
+        logging.getLogger("cli").debug("Latest version extracted from pypi website is not valid.")
         return
 
     majorCurrent, minorCurrent, patchCurrent = map(int, current.split('.'))
     majorLatest, minorLatest, patchLatest = map(int, latest.split('.'))
 
     if (majorLatest, minorLatest, patchLatest) > (majorCurrent, minorCurrent, patchCurrent):
-        ui.stdEcho(
-            f"Newer version of Coretex library is available. Current: {current}, Latest: {latest}. Use \"coretex update\" command to update library to latest version."
-        )
+        ui.warningEcho(f"Newer version of Coretex library is available. Current: {current}, Latest: {latest}.")
+        ui.stdEcho("Use \"coretex update\" command to update library to latest version.")
 
 
 def isGPUAvailable() -> bool:
