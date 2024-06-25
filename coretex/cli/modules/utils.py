@@ -17,18 +17,78 @@
 
 from typing import List, Any, Optional, Callable
 from functools import wraps
+from importlib.metadata import version as getLibraryVersion
 
 import sys
+import logging
 
 from py3nvml import py3nvml
 
 import click
+import requests
 
 from ...utils.process import command
 
 
 def updateLib() -> None:
     command([sys.executable, "-m", "pip", "install", "--no-cache-dir", "--upgrade", "coretex"], ignoreStdout = True, ignoreStderr = True)
+
+
+def fetchLatestVersion() -> Optional[str]:
+    url = "https://pypi.org/pypi/coretex/json"
+    response = requests.get(url)
+
+    if response.ok:
+        data = response.json()
+        infoDict = data.get("info")
+
+        if isinstance(infoDict, dict):
+            version = infoDict.get("version")
+            if isinstance(version, str):
+                return version
+
+            logging.debug("Value of json field of key \"version\" in \"info\" dictionary is not of expected type (str).")
+            return None
+
+        logging.debug("Value of json field of key \"info\" in \"data\" dictionary is not of expected type (dict).")
+        return None
+    else:
+        logging.debug(f"Failed to fetch version of coretex library. Response code: {response.status_code}")
+        return None
+
+
+def isVersionStrValid(version: str) -> bool:
+    parts = version.split('.')
+
+    if len(parts) != 3:
+        return False
+
+    return all(part.isdigit() for part in parts)
+
+
+def isUpdateAvailable() -> bool:
+    current = getLibraryVersion("coretex")
+    latest = fetchLatestVersion()
+
+    if not isinstance(latest, str):
+        logging.debug(f"Invalid type of \"latest\" var {type(current)}. Expected \"string\".")
+        return True
+
+    if not isVersionStrValid(current):
+        logging.debug("Current version returned by importlib library is not valid.")
+        return False
+
+    if not isVersionStrValid(latest):
+        logging.debug("Latest version extracted from pypi website is not valid.")
+        return False
+
+    majorCurrent, minorCurrent, patchCurrent = map(int, current.split('.'))
+    majorLatest, minorLatest, patchLatest = map(int, latest.split('.'))
+
+    if (majorLatest, minorLatest, patchLatest) > (majorCurrent, minorCurrent, patchCurrent):
+        return True
+
+    return False
 
 
 def isGPUAvailable() -> bool:
