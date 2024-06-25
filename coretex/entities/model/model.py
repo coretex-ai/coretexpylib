@@ -23,6 +23,7 @@ from pathlib import Path
 
 import json
 
+from ..utils import isEntityNameValid
 from ... import folder_manager
 from ...networking import networkManager, NetworkObject, ChunkUploadSession, MAX_CHUNK_SIZE, NetworkRequestError
 from ...codable import KeyDescriptor
@@ -133,6 +134,9 @@ class Model(NetworkObject):
             >>> from coretex import Model, currentTaskRun
             >>> model = Model.createModel("model-name", currentTaskRun().id, 0.87)
         """
+
+        if not isEntityNameValid(name):
+            raise ValueError(">> [Coretex] Model name is invalid. Requirements: alphanumeric characters (\"a-z\", and \"0-9\") and dash (\"-\") with length between 3 to 50")
 
         if meta is None:
             meta = {}
