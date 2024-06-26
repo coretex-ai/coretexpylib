@@ -37,10 +37,10 @@ def jobExists(script: str) -> bool:
 
 
 def scheduleJob(scriptName: str) -> None:
-    existingLines = getExisting(CONFIG_DIR / scriptName} >> {CONFIG_DIR}/logs/ctx_autoupdate.log 2>&1\n"
-    existingLines.append(cronEntry)
+    existingLines = getExisting()
+    existingLines.append(f"*/30 * * * * {CONFIG_DIR / scriptName} >> {CONFIG_DIR}/logs/ctx_autoupdate.log 2>&1\n")
 
-    tempCronFilePath = DEFAULT_VENV_PATH.parent / "temp.cron"
+    tempCronFilePath = CONFIG_DIR / "temp.cron"
     with tempCronFilePath.open("w") as tempCronFile:
         tempCronFile.write("\n".join(existingLines))
 
