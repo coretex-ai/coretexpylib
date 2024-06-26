@@ -45,12 +45,16 @@ def parseLibraryVersion(version: str) -> Optional[Tuple[int, int, int]]:
         major, minor, patch = map(int, version.split('.'))
         return major, minor, patch
 
-    logging.getLogger("cli").debug(f"Couldn't parse version from string: {version}")
     return None
 
 
 def fetchCurrentVersion() -> Optional[Tuple[int, int, int]]:
-    return parseLibraryVersion(getLibraryVersion("coretex"))
+    version = parseLibraryVersion(getLibraryVersion("coretex"))
+    if version is None:
+        logging.getLogger("cli").debug(f"Couldn't parse current version from string: {version}")
+        return None
+
+    return version
 
 
 def fetchLatestVersion() -> Optional[Tuple[int, int, int]]:
@@ -72,7 +76,12 @@ def fetchLatestVersion() -> Optional[Tuple[int, int, int]]:
         logging.getLogger("cli").debug("Value of json field of key \"version\" in \"info\" dictionary is not of expected type (str).")
         return None
 
-    return parseLibraryVersion(version)
+    parsedVersion = parseLibraryVersion(version)
+    if parsedVersion is None:
+        logging.getLogger("cli").debug(f"Couldn't parse latest version from string: {version}")
+        return None
+
+    return parsedVersion
 
 
 def checkLibVersion() -> None:
@@ -80,13 +89,10 @@ def checkLibVersion() -> None:
     latestVersion = fetchLatestVersion()
 
     if currentVersion is None or latestVersion is None:
-        return None
+        return
 
-    majorCurrent, minorCurrent, patchCurrent = currentVersion
-    majorLatest, minorLatest, patchLatest = latestVersion
-
-    if (majorLatest, minorLatest, patchLatest) > (majorCurrent, minorCurrent, patchCurrent):
-        ui.warningEcho(f"Newer version of Coretex library is available. Current: {majorCurrent}.{minorCurrent}.{patchCurrent}, Latest: {majorLatest}.{minorLatest}.{patchLatest}.")
+    if latestVersion > currentVersion:
+        ui.warningEcho(f"Newer version of Coretex library is available. Current: {currentVersion}, Latest: {latestVersion}.")
         ui.stdEcho("Use \"coretex update\" command to update library to latest version.")
 
 
