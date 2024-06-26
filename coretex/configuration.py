@@ -40,6 +40,7 @@ def getEnvVar(key: str, default: str) -> str:
 
 CONFIG_DIR = Path.home().joinpath(".config", "coretex")
 DEFAULT_CONFIG_PATH = CONFIG_DIR / "config.json"
+DEFAULT_VENV_PATH = CONFIG_DIR / "venv"
 
 
 DEFAULT_CONFIG: Dict[str, Any] = {

@@ -66,14 +66,11 @@ def previewConfig(config: Dict[str, Any]) -> None:
         ["SWAP memory",                 f"{config['nodeSwap']}GB"],
         ["POSIX shared memory",         f"{config['nodeSharedMemory']}GB"],
         ["CPU cores allocated",         config.get("cpuCount", DEFAULT_CPU_COUNT)],
-        ["Coretex Node mode",           f"{NodeMode(config['nodeMode']).name}"],
+        ["Coretex Node mode",           f"{NodeMode(config['nodeMode']).toString()}"],
         ["Docker access",               allowDocker],
         ["Coretex Node secret",         nodeSecret],
         ["Coretex Node init script",    config.get("initScript", "")]
     ]
-
-    if config.get("modelId") is not None:
-        table.append(["Coretex Model ID", config["modelId"]])
 
     if config.get("nearWalletId") is not None:
         table.append(["NEAR wallet id", config["nearWalletId"]])
@@ -87,6 +84,10 @@ def outputUrl(entityUrl: str) -> str:
 
 def stdEcho(text: str) -> None:
     click.echo(click.style(f"\n{text}", fg = "cyan"))
+
+
+def warningEcho(text: str) -> None:
+    click.echo(click.style(f"\nWARNING: {text}", fg = "yellow"))
 
 
 def successEcho(text: str) -> None:

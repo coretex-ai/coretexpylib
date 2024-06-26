@@ -650,3 +650,17 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
 
         responseJson = response.getJson(dict)
         return cls.fetchById(responseJson["experiment_ids"][0])
+
+
+    def generateEntityName(self) -> str:
+        """
+            Combines the id and the name of the task run into a name for enitites like
+            datasets or models.
+
+            Returns
+            -------
+            str -> the generated name
+        """
+
+        name = f"{self.id}-{self.name}"
+        return name[:50]

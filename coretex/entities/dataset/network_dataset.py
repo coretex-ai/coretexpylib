@@ -48,7 +48,13 @@ def _hashDependencies(dependencies: List[str]) -> str:
     hash = hashlib.md5()
     hash.update("".join(sorted(dependencies)).encode())
 
-    return base64.b64encode(hash.digest()).decode("ascii").replace("+", "0")
+    hashString = base64.b64encode(hash.digest()).decode("ascii")
+    hashString = hashString.lower()
+    hashString = hashString.replace("+", "0")
+    hashString = hashString.replace("/", "0")
+    hashString = hashString.replace("=", "0")
+
+    return hashString
 
 
 def _chunkSampleImport(sampleType: Type[SampleType], sampleName: str, samplePath: Path, datasetId: int) -> SampleType:
@@ -247,7 +253,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
             raise ValueError(f"Dataset prefix \"{prefix}\" is too long. Max allowed size is \"{MAX_DATASET_NAME_LENGTH - 8}\".")
 
         suffix = _hashDependencies(dependencies)
-        name = f"{prefix} - {suffix}"
+        name = f"{prefix}-{suffix}"
 
         if len(name) > MAX_DATASET_NAME_LENGTH:
             name = name[:MAX_DATASET_NAME_LENGTH]
