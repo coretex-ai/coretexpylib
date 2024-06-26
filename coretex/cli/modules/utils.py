@@ -36,7 +36,7 @@ def updateLib() -> None:
 
 
 def parseLibraryVersion(version: str) -> Optional[Tuple[int, int, int]]:
-    parts = version.split('.')
+    parts = version.split(".")
 
     if len(parts) != 3:
         return None
@@ -86,7 +86,7 @@ def checkLibVersion() -> None:
     majorLatest, minorLatest, patchLatest = latestVersion
 
     if (majorLatest, minorLatest, patchLatest) > (majorCurrent, minorCurrent, patchCurrent):
-        ui.warningEcho(f"Newer version of Coretex library is available. Current: {majorCurrent}, {minorCurrent}, {patchCurrent}, Latest: {majorLatest}, {minorLatest}, {patchLatest}.")
+        ui.warningEcho(f"Newer version of Coretex library is available. Current: {majorCurrent}.{minorCurrent}.{patchCurrent}, Latest: {majorLatest}.{minorLatest}.{patchLatest}.")
         ui.stdEcho("Use \"coretex update\" command to update library to latest version.")
 
 
