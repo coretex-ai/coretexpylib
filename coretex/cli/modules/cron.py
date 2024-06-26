@@ -18,7 +18,7 @@
 from typing import List
 
 from ...utils import command
-from ...configuration import DEFAULT_VENV_PATH, CONFIG_DIR
+from ...configuration import CONFIG_DIR
 
 
 def getExisting() -> List[str]:
@@ -37,8 +37,7 @@ def jobExists(script: str) -> bool:
 
 
 def scheduleJob(scriptName: str) -> None:
-    existingLines = getExisting()
-    cronEntry = f"*/30 * * * * {DEFAULT_VENV_PATH.parent / scriptName} >> {CONFIG_DIR}/logs/ctx_autoupdate.log 2>&1\n"
+    existingLines = getExisting(CONFIG_DIR / scriptName} >> {CONFIG_DIR}/logs/ctx_autoupdate.log 2>&1\n"
     existingLines.append(cronEntry)
 
     tempCronFilePath = DEFAULT_VENV_PATH.parent / "temp.cron"
