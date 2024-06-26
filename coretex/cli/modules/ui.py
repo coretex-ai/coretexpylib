@@ -90,7 +90,7 @@ def stdEcho(text: str) -> None:
 
 
 def warningEcho(text: str) -> None:
-    click.echo(click.style(f"\n WARNING: {text}", fg = "yellow"))
+    click.echo(click.style(f"\nWARNING: {text}", fg = "yellow"))
 
 
 def successEcho(text: str) -> None:

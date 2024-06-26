@@ -39,23 +39,22 @@ def fetchLatestVersion() -> Optional[str]:
     url = "https://pypi.org/pypi/coretex/json"
     response = requests.get(url)
 
-    if response.ok:
-        data = response.json()
+    if not response.ok:
+        logging.getLogger("cli").debug(f"Failed to fetch version of coretex library. Response code: {response.status_code}")
+        return None
 
-        infoDict = data.get("info")
-        if not isinstance(infoDict, dict):
-            logging.getLogger("cli").debug("Value of json field of key \"info\" in \"data\" dictionary is not of expected type (dict).")
-            return None
+    data = response.json()
+    infoDict = data.get("info")
+    if not isinstance(infoDict, dict):
+        logging.getLogger("cli").debug("Value of json field of key \"info\" in \"data\" dictionary is not of expected type (dict).")
+        return None
 
-        version = infoDict.get("version")
-        if not isinstance(version, str):
-            logging.getLogger("cli").debug("Value of json field of key \"version\" in \"info\" dictionary is not of expected type (str).")
-            return None
+    version = infoDict.get("version")
+    if not isinstance(version, str):
+        logging.getLogger("cli").debug("Value of json field of key \"version\" in \"info\" dictionary is not of expected type (str).")
+        return None
 
-        return version
-
-    logging.getLogger("cli").debug(f"Failed to fetch version of coretex library. Response code: {response.status_code}")
-    return None
+    return version
 
 
 def isVersionStrValid(version: str) -> bool:
