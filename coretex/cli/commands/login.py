@@ -17,7 +17,7 @@
 
 import click
 
-from ..modules.user import authenticate, saveLoginData
+from ..modules.user import configUser
 from ..modules.ui import clickPrompt, stdEcho, successEcho
 from ...configuration import loadConfig, saveConfig, isUserConfigured
 
@@ -35,9 +35,7 @@ def login() -> None:
             return
 
     stdEcho("Please enter your credentials:")
-    loginInfo = authenticate()
-    config = saveLoginData(loginInfo, config)
-
+    configUser(config)
     saveConfig(config)
 
     successEcho(f"User {config['username']} successfully logged in.")
