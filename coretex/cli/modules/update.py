@@ -24,7 +24,7 @@ from .utils import getExecPath
 from .cron import jobExists, scheduleJob
 from ..resources import RESOURCES_DIR
 from ...utils import command
-from ...configuration import DEFAULT_VENV_PATH, CONFIG_DIR
+from ...configuration import DEFAULT_VENV_PATH
 
 
 UPDATE_SCRIPT_NAME = "update_node.sh"
@@ -50,8 +50,7 @@ def generateUpdateScript() -> str:
     return bashScriptTemplate.format(
         dockerPath = dockerExecPath,
         gitPath = gitExecPath,
-        venvPath = DEFAULT_VENV_PATH,
-        configPath = CONFIG_DIR
+        venvPath = DEFAULT_VENV_PATH
     )
 
 
