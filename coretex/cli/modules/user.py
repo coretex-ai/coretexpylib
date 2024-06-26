@@ -18,25 +18,10 @@
 from typing import Dict, Any
 from datetime import datetime, timezone
 
-import logging
-
 from .ui import clickPrompt, errorEcho, progressEcho
 from ...utils import decodeDate
-from ...networking import networkManager, NetworkResponse, NetworkRequestError
+from ...networking import networkManager, NetworkRequestError
 from ...configuration import loadConfig, saveConfig, isUserConfigured
-
-
-def authenticateUser(username: str, password: str) -> NetworkResponse:
-    response = networkManager.authenticate(username, password, False)
-
-    if response.hasFailed():
-        if response.statusCode >= 500:
-            raise NetworkRequestError(response, "Something went wrong, please try again later.")
-
-        if response.statusCode >= 400:
-            raise NetworkRequestError(response, "User credentials invalid.")
-
-    return response
 
 
 def configUser(config: Dict[str, Any], retryCount: int = 0) -> None:
@@ -62,6 +47,21 @@ def configUser(config: Dict[str, Any], retryCount: int = 0) -> None:
     config["refreshTokenExpirationDate"] = jsonResponse.get("refresh_expires_on")
 
 
+def authenticateUser(config: Dict[str, Any]) -> None:
+    response = networkManager.authenticate(config["username"], config["password"])
+
+    if response.statusCode >= 500:
+        raise NetworkRequestError(response, "Something went wrong, please try again later.")
+    elif response.statusCode >= 400:
+        configUser(config)
+    else:
+        jsonResponse = response.getJson(dict)
+        config["token"] = jsonResponse["token"]
+        config["tokenExpirationDate"] = jsonResponse["expires_on"]
+        config["refreshToken"] = jsonResponse.get("refresh_token")
+        config["refreshTokenExpirationDate"] = jsonResponse.get("refresh_expires_on")
+
+
 def getRefreshToken(config: Dict[str, Any]) -> str:
     refreshToken = config.get("refreshToken")
 
@@ -76,23 +76,12 @@ def authenticateWithRefreshToken(config: Dict[str, Any]) -> None:
 
     if response.statusCode >= 500:
         raise NetworkRequestError(response, "Something went wrong, please try again later.")
-
-    if response.statusCode >= 400:
-        response = authenticateUser(config["username"], config["password"])
-
-        if response.statusCode >= 500:
-            raise NetworkRequestError(response, "Something went wrong, please try again later.")
-
-        if response.statusCode >= 400:
-            errorEcho("User configuration invalid. Please authenticate with your credentials.")
-            configUser(config)
-            return
-
-    jsonResponse = response.getJson(dict)
-    config["token"] = jsonResponse["token"]
-    config["tokenExpirationDate"] = jsonResponse["expires_on"]
-    config["refreshToken"] = jsonResponse.get("refresh_token")
-    config["refreshTokenExpirationDate"] = jsonResponse.get("refresh_expires_on")
+    elif response.statusCode >= 400:
+        authenticateUser(config)
+    else:
+        jsonResponse = response.getJson(dict)
+        config["token"] = jsonResponse["token"]
+        config["tokenExpirationDate"] = jsonResponse["expires_on"]
 
 
 def isTokenValid(config: Dict[str, Any], tokenName: str) -> bool:
@@ -118,5 +107,7 @@ def initializeUserSession() -> None:
         configUser(config)
     elif not isTokenValid(config, "token") and isTokenValid(config, "refreshToken"):
         authenticateWithRefreshToken(config)
+    else:
+        authenticateUser(config)
 
     saveConfig(config)
