@@ -151,7 +151,7 @@ class Model(NetworkObject):
             meta = {}
 
         return cls.create(
-            name = f"{taskRunId}-{name}",
+            name = name,
             model_queue_id = taskRunId,
             accuracy = accuracy,
             meta = meta
