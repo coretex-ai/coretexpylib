@@ -177,7 +177,9 @@ def registerNode(
         nodeMode: NodeMode,
         publicKey: Optional[bytes] = None,
         nearWalletId: Optional[str] = None,
-        endpointInvocationPrice: Optional[float] = None) -> str:
+        endpointInvocationPrice: Optional[float] = None
+    ) -> str:
+
     params: Dict[str, Any] = {
         "machine_name": name,
         "mode": nodeMode.value
