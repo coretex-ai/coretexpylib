@@ -30,7 +30,7 @@ from ...configuration import DEFAULT_VENV_PATH
 from ...utils.process import command
 
 
-def fetchCoretexVersion() -> Optional[str]:
+def fetchCtxSource() -> Optional[str]:
     _, output, _ = command(["pip", "freeze"], ignoreStdout = True)
     packages = output.splitlines()
 
@@ -51,26 +51,21 @@ def checkEnvironment() -> None:
     if platform.system() == "Windows":
         venvPython = DEFAULT_VENV_PATH / "Scripts" / "python.exe"
 
-    currentCtxVersion = fetchCoretexVersion()
-    if currentCtxVersion is not None:
-        command([str(venvPython), "-m", "pip", "install", currentCtxVersion], ignoreStdout = True)
+    ctxSource = fetchCtxSource()
+    if ctxSource is not None:
+        command([str(venvPython), "-m", "pip", "install", ctxSource], ignoreStdout = True)
 
 
 def updateLib() -> None:
     command([sys.executable, "-m", "pip", "install", "--no-cache-dir", "--upgrade", "coretex"], ignoreStdout = True, ignoreStderr = True)
 
 
-def getExecPaths() -> Tuple[str, str]:
-    _, dockerPath, _ = command(["which", "docker"], ignoreStdout = True, ignoreStderr = True)
-    _, gitPath, _ = command(["which", "git"], ignoreStdout = True, ignoreStderr = True)
+def getExecPath(executable: str) -> str:
+    _, path, _ = command(["which", executable], ignoreStdout = True, ignoreStderr = True)
+    pathParts = path.strip().split('/')
+    execPath = '/'.join(pathParts[:-1])
 
-    dockerPathParts = dockerPath.strip().split('/')
-    dockerExecPath = '/'.join(dockerPathParts[:-1])
-
-    gitPathParts = gitPath.strip().split('/')
-    gitExecPath = '/'.join(gitPathParts[:-1])
-
-    return dockerExecPath, gitExecPath
+    return execPath
 
 
 def isGPUAvailable() -> bool:
