@@ -27,7 +27,7 @@ from .commands.project import project
 
 from .modules import ui
 from .modules.intercept import ClickExceptionInterceptor
-from .modules.utils import updateLib, isUpdateAvailable
+from .modules.utils import updateLib, onBeforeCommandExecute, checkLibVersion, isUpdateAvailable
 
 from ..utils.process import CommandException
 
@@ -54,6 +54,7 @@ def update() -> None:
 
 
 @click.group(cls = ClickExceptionInterceptor)
+@onBeforeCommandExecute(checkLibVersion)
 def cli() -> None:
     pass
 

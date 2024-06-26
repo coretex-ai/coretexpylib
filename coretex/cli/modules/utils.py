@@ -15,11 +15,12 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import List, Any, Optional, Callable
+from typing import List, Any, Tuple, Optional, Callable
 from functools import wraps
 from importlib.metadata import version as getLibraryVersion
 
 import sys
+import venv
 import logging
 
 from py3nvml import py3nvml
@@ -27,68 +28,120 @@ from py3nvml import py3nvml
 import click
 import requests
 
+from . import ui
+import platform
+
+from ...configuration import DEFAULT_VENV_PATH
 from ...utils.process import command
+
+
+def fetchCtxSource() -> Optional[str]:
+    _, output, _ = command(["pip", "freeze"], ignoreStdout = True)
+    packages = output.splitlines()
+
+    for package in packages:
+        if "coretex" in package:
+            return package.replace(" ", "")
+
+    return None
+
+
+def checkEnvironment() -> None:
+    venvPython = DEFAULT_VENV_PATH / "bin" / "python"
+    if DEFAULT_VENV_PATH.exists():
+        return
+
+    venv.create(DEFAULT_VENV_PATH, with_pip = True)
+
+    if platform.system() == "Windows":
+        venvPython = DEFAULT_VENV_PATH / "Scripts" / "python.exe"
+
+    ctxSource = fetchCtxSource()
+    if ctxSource is not None:
+        command([str(venvPython), "-m", "pip", "install", ctxSource], ignoreStdout = True)
 
 
 def updateLib() -> None:
     command([sys.executable, "-m", "pip", "install", "--no-cache-dir", "--upgrade", "coretex"], ignoreStdout = True, ignoreStderr = True)
 
 
-def fetchLatestVersion() -> Optional[str]:
+def parseLibraryVersion(version: str) -> Optional[Tuple[int, int, int]]:
+    parts = version.split(".")
+
+    if len(parts) != 3:
+        return None
+
+    if all(part.isdigit() for part in parts):
+        major, minor, patch = map(int, version.split('.'))
+        return major, minor, patch
+
+    return None
+
+
+def fetchCurrentVersion() -> Optional[Tuple[int, int, int]]:
+    version = parseLibraryVersion(getLibraryVersion("coretex"))
+    if version is None:
+        logging.getLogger("cli").debug(f"Couldn't parse current version from string: {version}")
+        return None
+
+    return version
+
+
+def fetchLatestVersion() -> Optional[Tuple[int, int, int]]:
     url = "https://pypi.org/pypi/coretex/json"
     response = requests.get(url)
 
-    if response.ok:
-        data = response.json()
-        infoDict = data.get("info")
-
-        if isinstance(infoDict, dict):
-            version = infoDict.get("version")
-            if isinstance(version, str):
-                return version
-
-            logging.debug("Value of json field of key \"version\" in \"info\" dictionary is not of expected type (str).")
-            return None
-
-        logging.debug("Value of json field of key \"info\" in \"data\" dictionary is not of expected type (dict).")
-        return None
-    else:
-        logging.debug(f"Failed to fetch version of coretex library. Response code: {response.status_code}")
+    if not response.ok:
+        logging.getLogger("cli").debug(f"Failed to fetch version of coretex library. Response code: {response.status_code}")
         return None
 
+    data = response.json()
+    infoDict = data.get("info")
+    if not isinstance(infoDict, dict):
+        logging.getLogger("cli").debug("Value of json field of key \"info\" in \"data\" dictionary is not of expected type (dict).")
+        return None
 
-def isVersionStrValid(version: str) -> bool:
-    parts = version.split('.')
+    version = infoDict.get("version")
+    if not isinstance(version, str):
+        logging.getLogger("cli").debug("Value of json field of key \"version\" in \"info\" dictionary is not of expected type (str).")
+        return None
 
-    if len(parts) != 3:
-        return False
+    parsedVersion = parseLibraryVersion(version)
+    if parsedVersion is None:
+        logging.getLogger("cli").debug(f"Couldn't parse latest version from string: {version}")
+        return None
 
-    return all(part.isdigit() for part in parts)
+    return parsedVersion
+
+
+def checkLibVersion() -> None:
+    currentVersion = fetchCurrentVersion()
+    latestVersion = fetchLatestVersion()
+
+    if currentVersion is None or latestVersion is None:
+        return
+
+    if latestVersion > currentVersion:
+        ui.warningEcho(f"Newer version of Coretex library is available. Current: {currentVersion}, Latest: {latestVersion}.")
+        ui.stdEcho("Use \"coretex update\" command to update library to latest version.")
 
 
 def isUpdateAvailable() -> bool:
-    current = getLibraryVersion("coretex")
-    latest = fetchLatestVersion()
+    currentVersion = fetchCurrentVersion()
+    latestVersion = fetchLatestVersion()
 
-    if not isinstance(latest, str):
-        logging.debug(f"Invalid type of \"latest\" var {type(current)}. Expected \"string\".")
-        return True
-
-    if not isVersionStrValid(current):
-        logging.debug("Current version returned by importlib library is not valid.")
+    if currentVersion is None or latestVersion is None:
         return False
 
-    if not isVersionStrValid(latest):
-        logging.debug("Latest version extracted from pypi website is not valid.")
-        return False
+    return latestVersion > currentVersion
 
-    majorCurrent, minorCurrent, patchCurrent = map(int, current.split('.'))
-    majorLatest, minorLatest, patchLatest = map(int, latest.split('.'))
 
-    if (majorLatest, minorLatest, patchLatest) > (majorCurrent, minorCurrent, patchCurrent):
-        return True
+def getExecPath(executable: str) -> str:
+    _, path, _ = command(["which", executable], ignoreStdout = True, ignoreStderr = True)
+    pathParts = path.strip().split('/')
+    execPath = '/'.join(pathParts[:-1])
 
-    return False
+    return execPath
 
 
 def isGPUAvailable() -> bool:
