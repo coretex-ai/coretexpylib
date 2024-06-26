@@ -21,6 +21,7 @@ from importlib.metadata import version as getLibraryVersion
 
 import sys
 import logging
+import venv
 
 from py3nvml import py3nvml
 
@@ -28,7 +29,36 @@ import click
 import requests
 
 from . import ui
+import platform
+
+from ...configuration import DEFAULT_VENV_PATH
 from ...utils.process import command
+
+
+def fetchCtxSource() -> Optional[str]:
+    _, output, _ = command(["pip", "freeze"], ignoreStdout = True)
+    packages = output.splitlines()
+
+    for package in packages:
+        if "coretex" in package:
+            return package.replace(" ", "")
+
+    return None
+
+
+def checkEnvironment() -> None:
+    venvPython = DEFAULT_VENV_PATH / "bin" / "python"
+    if DEFAULT_VENV_PATH.exists():
+        return
+
+    venv.create(DEFAULT_VENV_PATH, with_pip = True)
+
+    if platform.system() == "Windows":
+        venvPython = DEFAULT_VENV_PATH / "Scripts" / "python.exe"
+
+    ctxSource = fetchCtxSource()
+    if ctxSource is not None:
+        command([str(venvPython), "-m", "pip", "install", ctxSource], ignoreStdout = True)
 
 
 def updateLib() -> None:
@@ -94,6 +124,14 @@ def checkLibVersion() -> None:
     if latestVersion > currentVersion:
         ui.warningEcho(f"Newer version of Coretex library is available. Current: {currentVersion}, Latest: {latestVersion}.")
         ui.stdEcho("Use \"coretex update\" command to update library to latest version.")
+
+
+def getExecPath(executable: str) -> str:
+    _, path, _ = command(["which", executable], ignoreStdout = True, ignoreStderr = True)
+    pathParts = path.strip().split('/')
+    execPath = '/'.join(pathParts[:-1])
+
+    return execPath
 
 
 def isGPUAvailable() -> bool:

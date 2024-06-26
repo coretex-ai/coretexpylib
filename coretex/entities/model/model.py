@@ -22,9 +22,11 @@ from zipfile import ZipFile
 from pathlib import Path
 
 import json
+import logging
 
+from ..utils import isEntityNameValid
 from ... import folder_manager
-from ...networking import networkManager, NetworkObject, ChunkUploadSession, MAX_CHUNK_SIZE, NetworkRequestError, EntityNotCreated
+from ...networking import networkManager, NetworkObject, ChunkUploadSession, MAX_CHUNK_SIZE, NetworkRequestError
 from ...codable import KeyDescriptor
 
 
@@ -124,26 +126,36 @@ class Model(NetworkObject):
             -------
             Self -> Model object
 
+            Raises
+            -------
+            NetworkRequestError -> If model creation failed
+
             Example
             -------
             >>> from coretex import Model, currentTaskRun
             >>> model = Model.createModel("model-name", currentTaskRun().id, 0.87)
         """
 
+        if not isEntityNameValid(name):
+            raise ValueError(">> [Coretex] Model name is invalid. Requirements: alphanumeric characters (\"a-z\", and \"0-9\") and dash (\"-\") with length between 3 to 50")
+
+        if accuracy < 0:
+            logging.getLogger("coretexpylib").warning(f">> [Coretex] Invalid value for accuracy: ({accuracy} < 0), clipping to 0.")
+
+        if accuracy > 1:
+            logging.getLogger("coretexpylib").warning(f">> [Coretex] Invalid value for accuracy: ({accuracy} > 1), clipping to 1.")
+
+        accuracy = max(0, min(accuracy, 1))
+
         if meta is None:
             meta = {}
 
-        model = cls.create(
+        return cls.create(
             name = name,
             model_queue_id = taskRunId,
             accuracy = accuracy,
             meta = meta
         )
-
-        if model is None:
-            raise EntityNotCreated("Failed to create Model")
-
-        return model
 
     @classmethod
     def createProjectModel(
@@ -181,17 +193,12 @@ class Model(NetworkObject):
         if meta is None:
             meta = {}
 
-        model = cls.create(
+        return cls.create(
             name = name,
             project_id = projectId,
             accuracy = accuracy,
             meta = meta
         )
-
-        if model is None:
-            raise EntityNotCreated("Failed to create Model")
-
-        return model
 
     @classmethod
     def saveModelDescriptor(cls, path: Union[Path, str], contents: Dict[str, Any]) -> None:

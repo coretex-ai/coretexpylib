@@ -79,6 +79,7 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
     runLogger.reset()
 
     if returnCode != 0:
+        runLogger.fatal(f">> [Coretex] Failed to execute Task. Exit code: {returnCode}")
         taskRun.updateStatus(TaskRunStatus.completedWithError)
     else:
         taskRun.updateStatus(TaskRunStatus.completedWithSuccess)

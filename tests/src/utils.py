@@ -16,7 +16,7 @@ LocalDatasetType = TypeVar("LocalDatasetType", bound = LocalDataset)
 
 
 def generateUniqueName() -> str:
-    return f"PythonUnitTests - {time.time()}"
+    return f"python-unit-test-{int(time.time())}"
 
 
 def getDatasetPathForType(type_: ProjectType) -> Path:

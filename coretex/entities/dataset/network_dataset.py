@@ -29,9 +29,10 @@ import logging
 from .dataset import Dataset
 from .state import DatasetState
 from ..sample import NetworkSample
+from ..utils import isEntityNameValid
 from ... import folder_manager
 from ...codable import KeyDescriptor
-from ...networking import EntityNotCreated, NetworkObject, \
+from ...networking import NetworkObject, \
     fileChunkUpload, networkManager, NetworkRequestError
 from ...threading import MultithreadedDataProcessor
 from ...cryptography import aes, getProjectKey
@@ -39,6 +40,7 @@ from ...utils.file import isArchive, archive
 
 
 SampleType = TypeVar("SampleType", bound = "NetworkSample")
+NAME_VALIDATION_MESSAGE = ">> [Coretex] Entity name is invalid. Requirements: alphanumeric characters (\"a-z\", and \"0-9\") and dash (\"-\") with length between 3 to 50"
 MAX_DATASET_NAME_LENGTH = 50
 
 
@@ -50,6 +52,9 @@ def _hashDependencies(dependencies: List[str]) -> str:
 
 
 def _chunkSampleImport(sampleType: Type[SampleType], sampleName: str, samplePath: Path, datasetId: int) -> SampleType:
+    if not isEntityNameValid(sampleName):
+        raise ValueError(NAME_VALIDATION_MESSAGE)
+
     parameters = {
         "name": sampleName,
         "dataset_id": datasetId,
@@ -202,7 +207,8 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
 
             Raises
             ------
-            EntityNotCreated -> If dataset creation failed
+            ValueError -> If name is invalid
+            NetworkRequestError -> If dataset creation failed
 
             Example
             -------
@@ -211,16 +217,14 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
             >>> dummyDataset = NetworkDataset.createDataset("dummyDataset", 123)
         """
 
-        dataset = cls.create(
+        if not isEntityNameValid(name):
+            raise ValueError(NAME_VALIDATION_MESSAGE)
+
+        return cls.create(
             name = name,
             project_id = projectId,
             meta = meta
         )
-
-        if dataset is None:
-            raise EntityNotCreated(f">> [Coretex] Failed to create dataset with name: {name}")
-
-        return dataset
 
     @classmethod
     def generateCacheName(cls, prefix: str, dependencies: List[str]) -> str:
@@ -265,6 +269,9 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
             projectId : int
                 project for which the dataset will be created
         """
+
+        if not isEntityNameValid(prefix):
+            raise ValueError(NAME_VALIDATION_MESSAGE)
 
         dataset = cls.createDataset(cls.generateCacheName(prefix, dependencies), projectId)
         if dataset is None:
@@ -333,6 +340,9 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
         processor.process()
 
     def rename(self, name: str) -> bool:
+        if not isEntityNameValid(name):
+            raise ValueError(NAME_VALIDATION_MESSAGE)
+
         success = self.update(name = name)
 
         if success:
@@ -366,6 +376,9 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
 
         if sampleName is None:
             sampleName = samplePath.stem
+
+        if not isEntityNameValid(sampleName):
+            raise ValueError(NAME_VALIDATION_MESSAGE)
 
         if self.isEncrypted:
             sample = _encryptedSampleImport(self._sampleType, sampleName, samplePath, self.id, getProjectKey(self.projectId))

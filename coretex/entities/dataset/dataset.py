@@ -20,6 +20,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 from ..sample import Sample
+from ..utils import isEntityNameValid
 
 
 SampleType = TypeVar("SampleType", bound = "Sample")
@@ -76,6 +77,9 @@ class Dataset(ABC, Generic[SampleType]):
             -------
             bool -> True if dataset was renamed, False if dataset was not renamed
         """
+
+        if not isEntityNameValid(name):
+            raise ValueError(">> [Coretex] Dataset name is invalid. Requirements: alphanumeric characters (\"a-z\", and \"0-9\") and dash (\"-\") with length between 3 to 50")
 
         if self.name == name:
             return False

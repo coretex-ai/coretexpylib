@@ -19,6 +19,7 @@ from typing import Optional, Dict
 from typing_extensions import Self
 
 from .base import BaseObject
+from ..utils import isEntityNameValid
 from ...codable import KeyDescriptor
 
 
@@ -70,6 +71,9 @@ class Task(BaseObject):
             >>> if dummyTask is None:
                     print("Failed to create task")
         """
+
+        if not isEntityNameValid(name):
+            raise ValueError(">> [Coretex] Task name is invalid. Requirements: alphanumeric characters (\"a-z\", and \"0-9\") and dash (\"-\") with length between 3 to 50")
 
         return cls.create(
             name = name,

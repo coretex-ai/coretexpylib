@@ -15,25 +15,9 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from enum import IntEnum
+import re
 
 
-class NodeMode(IntEnum):
-
-    execution         = 1
-    endpointReserved  = 2
-    endpointShared    = 3
-    any               = 4
-
-    def toString(self) -> str:
-        if self == NodeMode.execution:
-            return "Run workflows (worker)"
-
-        if self == NodeMode.endpointReserved:
-            return "Serve a single endpoint (dedicated inference)"
-
-        if self == NodeMode.endpointShared:
-            return "Serve multiple endpoints (shared inference)"
-
-        if self == NodeMode.any:
-            return "Any"
+def isEntityNameValid(name: str) -> bool:
+    pattern = r"^[a-z0-9-]{3,50}$"
+    return True if re.match(pattern, name) is not None else False

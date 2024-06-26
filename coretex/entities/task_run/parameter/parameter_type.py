@@ -30,9 +30,9 @@ class ParameterType(Enum):
     imuVectors        = "IMUVectors"
     enum              = "enum"
     range             = "range"
-    awsSecret         = "aws-secret"
-    gitSecret         = "git-secret"
-    credentialsSecret = "credentials-secret"
+    awsSecret         = "aws_secret"
+    gitSecret         = "git_secret"
+    credentialsSecret = "credentials_secret"
 
     # List parameters
     intList               = "list[int]"
@@ -41,6 +41,6 @@ class ParameterType(Enum):
     datasetList           = "list[dataset]"
     modelList             = "list[model]"
     enumList              = "list[enum]"
-    awsSecretList         = "list[aws-secret]"
-    gitSecretList         = "list[git-secret]"
-    credentialsSecretList = "list[credentials-secret]"
+    awsSecretList         = "list[aws_secret]"
+    gitSecretList         = "list[git_secret]"
+    credentialsSecretList = "list[credentials_secret]"
