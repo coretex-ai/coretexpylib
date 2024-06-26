@@ -17,7 +17,6 @@
 
 from typing import List, Any, Tuple, Optional, Callable
 from functools import wraps
-from importlib.metadata import version as getLibraryVersion
 
 import sys
 import venv
@@ -31,6 +30,17 @@ from ...configuration import DEFAULT_VENV_PATH
 from ...utils.process import command
 
 
+def fetchCoretexVersion() -> Optional[str]:
+    _, output, _ = command(["pip", "freeze"], ignoreStdout = True)
+    packages = output.splitlines()
+
+    for package in packages:
+        if "coretex" in package:
+            return package.replace(" ", "")
+
+    return None
+
+
 def checkEnvironment() -> None:
     venvPython = DEFAULT_VENV_PATH / "bin" / "python"
     if DEFAULT_VENV_PATH.exists():
@@ -41,8 +51,9 @@ def checkEnvironment() -> None:
     if platform.system() == "Windows":
         venvPython = DEFAULT_VENV_PATH / "Scripts" / "python.exe"
 
-    currentCtxVersion = getLibraryVersion("coretex")
-    command([str(venvPython), "-m", "pip", "install", f"coretex=={currentCtxVersion}"], ignoreStdout = True)
+    currentCtxVersion = fetchCoretexVersion()
+    if currentCtxVersion is not None:
+        command([str(venvPython), "-m", "pip", "install", currentCtxVersion], ignoreStdout = True)
 
 
 def updateLib() -> None:
