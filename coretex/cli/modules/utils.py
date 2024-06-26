@@ -15,20 +15,57 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import List, Any, Optional, Callable
+from typing import List, Any, Tuple, Optional, Callable
 from functools import wraps
 
 import sys
+import venv
 
 from py3nvml import py3nvml
 
 import click
+import platform
 
+from ...configuration import DEFAULT_VENV_PATH
 from ...utils.process import command
+
+
+def fetchCtxSource() -> Optional[str]:
+    _, output, _ = command(["pip", "freeze"], ignoreStdout = True)
+    packages = output.splitlines()
+
+    for package in packages:
+        if "coretex" in package:
+            return package.replace(" ", "")
+
+    return None
+
+
+def checkEnvironment() -> None:
+    venvPython = DEFAULT_VENV_PATH / "bin" / "python"
+    if DEFAULT_VENV_PATH.exists():
+        return
+
+    venv.create(DEFAULT_VENV_PATH, with_pip = True)
+
+    if platform.system() == "Windows":
+        venvPython = DEFAULT_VENV_PATH / "Scripts" / "python.exe"
+
+    ctxSource = fetchCtxSource()
+    if ctxSource is not None:
+        command([str(venvPython), "-m", "pip", "install", ctxSource], ignoreStdout = True)
 
 
 def updateLib() -> None:
     command([sys.executable, "-m", "pip", "install", "--no-cache-dir", "--upgrade", "coretex"], ignoreStdout = True, ignoreStderr = True)
+
+
+def getExecPath(executable: str) -> str:
+    _, path, _ = command(["which", executable], ignoreStdout = True, ignoreStderr = True)
+    pathParts = path.strip().split('/')
+    execPath = '/'.join(pathParts[:-1])
+
+    return execPath
 
 
 def isGPUAvailable() -> bool:

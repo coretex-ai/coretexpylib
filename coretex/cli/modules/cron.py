@@ -16,9 +16,9 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import List
-from pathlib import Path
 
 from ...utils import command
+from ...configuration import DEFAULT_VENV_PATH
 
 
 def getExisting() -> List[str]:
@@ -36,15 +36,12 @@ def jobExists(script: str) -> bool:
     return any(line.endswith(script) for line in existingLines)
 
 
-def scheduleJob(configDir: Path, script: str) -> None:
-    if jobExists(script):
-        return
-
+def scheduleJob(scriptName: str) -> None:
     existingLines = getExisting()
-    cronEntry = f"*/30 * * * * {configDir / script}\n"
+    cronEntry = f"*/30 * * * * {DEFAULT_VENV_PATH.parent / scriptName}\n"
     existingLines.append(cronEntry)
 
-    tempCronFilePath = configDir / "temp.cron"
+    tempCronFilePath = DEFAULT_VENV_PATH.parent / "temp.cron"
     with tempCronFilePath.open("w") as tempCronFile:
         tempCronFile.write("\n".join(existingLines))
 
