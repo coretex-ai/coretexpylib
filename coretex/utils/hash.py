@@ -29,5 +29,9 @@ def hashCacheName(name: str, suffix: str) -> str:
     suffixByteHash = hashlib.md5(suffix.encode()).digest()
     suffixHash = base64.b64encode(suffixByteHash)
     cacheName = name + "-" + suffixHash.decode("ascii")
+    cacheName = cacheName.lower()
+    cacheName = cacheName.replace("+", "0")
+    cacheName = cacheName.replace("/", "0")
+    cacheName = cacheName.replace("=", "0")
 
     return cacheName[:MAX_NAME_LENGTH] if len(cacheName) > MAX_NAME_LENGTH else cacheName
