@@ -133,16 +133,6 @@ def checkLibVersion() -> None:
         ui.stdEcho("Use \"coretex update\" command to update library to latest version.")
 
 
-def isUpdateAvailable() -> bool:
-    currentVersion = fetchCurrentVersion()
-    latestVersion = fetchLatestVersion()
-
-    if currentVersion is None or latestVersion is None:
-        return False
-
-    return latestVersion > currentVersion
-
-
 def getExecPath(executable: str) -> str:
     _, path, _ = command(["which", executable], ignoreStdout = True, ignoreStderr = True)
     pathParts = path.strip().split('/')
