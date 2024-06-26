@@ -35,6 +35,10 @@ from ...configuration import DEFAULT_VENV_PATH
 from ...utils.process import command
 
 
+def formatCliVersion(version: Tuple[int, int, int]) -> str:
+    return ".".join(map(str, version))
+
+
 def fetchCtxSource() -> Optional[str]:
     _, output, _ = command(["pip", "freeze"], ignoreStdout = True)
     packages = output.splitlines()
@@ -122,7 +126,10 @@ def checkLibVersion() -> None:
         return
 
     if latestVersion > currentVersion:
-        ui.warningEcho(f"Newer version of Coretex library is available. Current: {currentVersion}, Latest: {latestVersion}.")
+        ui.warningEcho(
+            f"Newer version of Coretex library is available. "
+            f"Current: {formatCliVersion(currentVersion)}, Latest: {formatCliVersion(latestVersion)}."
+        )
         ui.stdEcho("Use \"coretex update\" command to update library to latest version.")
 
 
