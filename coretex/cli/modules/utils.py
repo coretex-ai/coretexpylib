@@ -40,7 +40,7 @@ def formatCliVersion(version: Tuple[int, int, int]) -> str:
 
 
 def fetchCtxSource() -> Optional[str]:
-    _, output, _ = command(["pip", "freeze"], ignoreStdout = True)
+    _, output, _ = command([sys.executable, "-m", "pip", "freeze"], ignoreStdout = True, ignoreStderr = True)
     packages = output.splitlines()
 
     for package in packages:
