@@ -394,6 +394,10 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
                     config_defaults.DEFAULT_ENDPOINT_INVOCATION_PRICE,
                     type = float
                 )
+
+                if isinstance(endpointInvocationPrice, float):
+                    if endpointInvocationPrice < 0.0:
+                        endpointInvocationPrice = 0
             else:
                 config["nearWalletId"] = None
                 config["endpointInvocationPrice"] = None
