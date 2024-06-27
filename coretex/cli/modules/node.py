@@ -173,12 +173,12 @@ def shouldUpdate(image: str) -> bool:
 
 
 def registerNode(
-        name: str,
-        nodeMode: NodeMode,
-        publicKey: Optional[bytes] = None,
-        nearWalletId: Optional[str] = None,
-        endpointInvocationPrice: Optional[float] = None
-    ) -> str:
+    name: str,
+    nodeMode: NodeMode,
+    publicKey: Optional[bytes] = None,
+    nearWalletId: Optional[str] = None,
+    endpointInvocationPrice: Optional[float] = None
+) -> str:
 
     params: Dict[str, Any] = {
         "machine_name": name,
@@ -394,7 +394,6 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
                     config_defaults.DEFAULT_ENDPOINT_INVOCATION_PRICE,
                     type = float
                 )
-
             else:
                 config["nearWalletId"] = None
                 config["endpointInvocationPrice"] = None
