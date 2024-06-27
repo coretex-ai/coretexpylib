@@ -92,14 +92,14 @@ def getGpuMemoryUsage() -> float:
         float -> GPU memory usage as percentage
     """
 
-    h = py3nvml.nvmlDeviceGetHandleByIndex(0)
-    info = py3nvml.nvmlDeviceGetMemoryInfo(h)
+    handle = py3nvml.nvmlDeviceGetHandleByIndex(0)
+    memory = py3nvml.nvmlDeviceGetMemoryInfo(handle)
 
-    if isinstance(info, py3nvml.c_nvmlMemory_t):
-        return float(info.used / info.total)
+    if not isinstance(memory, py3nvml.c_nvmlMemory_t):
+        logging.getLogger("coretexpylib").debug(">> [Coretex] Failed to extract gpu memory usage metric")
+        return 0
 
-    logging.getLogger("coretexpylib").debug(">> [Coretex] Failed to extract gpu memory usage metric")
-    return 0
+    return float(memory.used / memory.total)
 
 
 def getGpuTemperature() -> float:
