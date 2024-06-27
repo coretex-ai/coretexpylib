@@ -82,6 +82,26 @@ def getGpuUsage() -> float:
     return 0
 
 
+def getGpuMemoryUsage() -> float:
+    """
+        py3nvml init must be called before calling this function
+        otherwise it will raise an exception
+
+        Returns
+        -------
+        float -> GPU memory usage as percentage
+    """
+
+    h = py3nvml.nvmlDeviceGetHandleByIndex(0)
+    info = py3nvml.nvmlDeviceGetMemoryInfo(h)
+
+    if isinstance(info, py3nvml.c_nvmlMemory_t):
+        return float(info.used / info.total)
+
+    logging.getLogger("coretexpylib").debug(">> [Coretex] Failed to extract gpu memory usage metric")
+    return 0
+
+
 def getGpuTemperature() -> float:
     """
         py3nvml init must be called before calling this function
