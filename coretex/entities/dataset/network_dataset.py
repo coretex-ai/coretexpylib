@@ -58,9 +58,6 @@ def _hashDependencies(dependencies: List[str]) -> str:
 
 
 def _chunkSampleImport(sampleType: Type[SampleType], sampleName: str, samplePath: Path, datasetId: int) -> SampleType:
-    if not isEntityNameValid(sampleName):
-        raise ValueError(NAME_VALIDATION_MESSAGE)
-
     parameters = {
         "name": sampleName,
         "dataset_id": datasetId,
@@ -382,9 +379,6 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
 
         if sampleName is None:
             sampleName = samplePath.stem
-
-        if not isEntityNameValid(sampleName):
-            raise ValueError(NAME_VALIDATION_MESSAGE)
 
         if self.isEncrypted:
             sample = _encryptedSampleImport(self._sampleType, sampleName, samplePath, self.id, getProjectKey(self.projectId))
