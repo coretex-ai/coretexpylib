@@ -265,6 +265,20 @@ def promptRam(config: Dict[str, Any], ramLimit: int) -> int:
     return nodeRam
 
 
+def promptInvocationPrice(config: Dict[str, Any], retryCount: int = 0) -> float:
+    invocationPrice: float = clickPrompt(
+        "Enter the price of a single endpoint invocation",
+        config_defaults.DEFAULT_ENDPOINT_INVOCATION_PRICE,
+        type = float
+    )
+
+    if invocationPrice < 0:
+        errorEcho("Endpoint invocation price cannot be less than 0!")
+        return promptInvocationPrice(config, retryCount + 1)
+
+    return invocationPrice
+
+
 def _configureInitScript() -> str:
     initScript = clickPrompt("Enter a path to sh script which will be executed before Node starts", config_defaults.DEFAULT_INIT_SCRIPT, type = str)
 
@@ -389,15 +403,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
 
             if nearWalletId != config_defaults.DEFAULT_NEAR_WALLET_ID:
                 config["nearWalletId"] = nearWalletId
-                endpointInvocationPrice = clickPrompt(
-                    "Enter the price of a single endpoint invocation",
-                    config_defaults.DEFAULT_ENDPOINT_INVOCATION_PRICE,
-                    type = float
-                )
-
-                if isinstance(endpointInvocationPrice, float):
-                    if endpointInvocationPrice < 0.0:
-                        endpointInvocationPrice = 0
+                endpointInvocationPrice = promptInvocationPrice(config)
             else:
                 config["nearWalletId"] = None
                 config["endpointInvocationPrice"] = None
