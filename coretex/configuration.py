@@ -21,6 +21,7 @@ from pathlib import Path
 import os
 import json
 import sys
+import logging
 
 
 def isCliRuntime() -> bool:
@@ -59,9 +60,13 @@ DEFAULT_CONFIG: Dict[str, Any] = {
 
 def loadConfig() -> Dict[str, Any]:
     with DEFAULT_CONFIG_PATH.open("r") as configFile:
+        content = configFile.read()
         try:
-            config: Dict[str, Any] = json.load(configFile)
-        except json.JSONDecodeError:
+            config: Dict[str, Any] = json.loads(content)
+        except json.JSONDecodeError as exc:
+            logging.getLogger("cli").debug(
+                f"Failed to load corrupted config file. Content: {content}. Exception: {exc}", exc_info = exc
+            )
             config = {}
 
     for key, value in DEFAULT_CONFIG.items():
