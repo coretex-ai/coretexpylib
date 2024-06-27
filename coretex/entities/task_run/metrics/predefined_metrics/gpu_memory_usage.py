@@ -15,13 +15,11 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .cpu_usage import MetricCPUUsage
-from .disk_read import MetricDiskRead
-from .disk_write import MetricDiskWrite
-from .download_speed import MetricDownloadSpeed
-from .gpu_temperature import MetricGPUTemperature
-from .gpu_usage import MetricGPUUsage
-from .gpu_memory_usage import MetricGPUMemoryUsage
-from .ram_usage import MetricRAMUsage
-from .upload_speed import MetricUploadSpeed
-from .swap_usage import MetricSwapUsage
+from ..metric import Metric
+from .....statistics import getGpuMemoryUsage
+
+
+class MetricGPUMemoryUsage(Metric):
+
+    def extract(self) -> float:
+        return getGpuMemoryUsage()
