@@ -12,6 +12,11 @@ on:
         description: Environment
         required: false
         default: ${{ github.ref_name }}
+      AWS_REGION:
+        type: string
+        description: AWS Region
+        required: true
+        default: '{{ vars.AWS_REGION }}'
     secrets:
       AWS_CLOUDFRONT_DISTRIBUTION_ID:
         description: CF distribution ID
@@ -49,7 +54,7 @@ jobs:
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        aws-region: '${{ vars.AWS_REGION }}'
+        aws-region: '${{ inputs.AWS_REGION }}'
         audience: sts.amazonaws.com
         role-to-assume: '${{ secrets.AWS_ROLE_TO_ASSUME }}'
     - name: Sync S3 bucket
