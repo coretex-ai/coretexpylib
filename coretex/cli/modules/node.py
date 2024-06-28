@@ -255,6 +255,23 @@ def promptRam(config: Dict[str, Any], ramLimit: int) -> int:
     return nodeRam
 
 
+def promptSwap(config: Dict[str, Any], swapLimit: int) -> int:
+    nodeSwap: int = clickPrompt(
+        f"Node SWAP memory limit in GB (Maximum: {swapLimit}GB) (press enter to use default)",
+        swapLimit,
+        type = int
+    )
+
+    if nodeSwap > swapLimit:
+        errorEcho(
+            f"ERROR: SWAP memory limit in Docker Desktop ({swapLimit}GB) is lower than the configured value ({nodeSwap}GB). "
+            "Please adjust resource limitations in Docker Desktop settings."
+        )
+        return promptRam(config, swapLimit)
+
+    return nodeSwap
+
+
 def _configureInitScript() -> str:
     initScript = clickPrompt("Enter a path to sh script which will be executed before Node starts", config_defaults.DEFAULT_INIT_SCRIPT, type = str)
 
@@ -284,6 +301,7 @@ def checkResourceLimitations() -> None:
 def isConfigurationValid(config: Dict[str, Any]) -> bool:
     isValid = True
     cpuLimit, ramLimit = docker.getResourceLimits()
+    swapLimit = docker.getDockerSwapLimit()
 
     if not isinstance(config["nodeRam"], int):
         errorEcho(f"Invalid config \"nodeRam\" field type \"{type(config['nodeRam'])}\". Expected: \"int\"")
@@ -305,6 +323,9 @@ def isConfigurationValid(config: Dict[str, Any]) -> bool:
         errorEcho(f"Configuration not valid. RAM limit in Docker Desktop ({ramLimit}GB) is lower than the configured value ({config['nodeRam']}GB)")
         isValid = False
 
+    if config["nodeSwap"] > swapLimit:
+        errorEcho(f"Configuration not valid. RAM limit in Docker Desktop ({swapLimit}GB) is lower than the configured value ({config['nodeSwap']}GB)")
+        isValid = False
 
     if config["nodeRam"] < config_defaults.MINIMUM_RAM:
         errorEcho(f"Configuration not valid. Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB) is higher than the configured value ({config['nodeRam']}GB)")
@@ -317,6 +338,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     highlightEcho("[Node Configuration]")
 
     cpuLimit, ramLimit = docker.getResourceLimits()
+    swapLimit = docker.getDockerSwapLimit()
 
     config["nodeName"] = clickPrompt("Node name", type = str)
 
@@ -355,8 +377,8 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
 
         config["cpuCount"] = promptCpu(config, cpuLimit)
         config["nodeRam"] = promptRam(config, ramLimit)
+        config["nodeRam"] = promptSwap(config, swapLimit)
 
-        config["nodeSwap"] = clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", config_defaults.DEFAULT_SWAP_MEMORY, type = int)
         config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", config_defaults.DEFAULT_SHARED_MEMORY, type = int)
         config["allowDocker"] = clickPrompt("Allow Node to access system docker? This is a security risk! (Y/n)", config_defaults.DEFAULT_ALLOW_DOCKER, type = bool)
         config["initScript"] = _configureInitScript()

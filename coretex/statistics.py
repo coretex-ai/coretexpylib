@@ -128,6 +128,16 @@ def getSwapUsage() -> float:
     return psutil.swap_memory().percent
 
 
+def getTotalSwapMemory() -> int:
+    """
+        Returns
+        -------
+        int -> total swap memory in GB
+    """
+
+    return int(psutil.swap_memory().total / (1024 ** 3))
+
+
 def getDiskRead() -> float:
     """
         Returns
