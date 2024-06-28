@@ -84,6 +84,8 @@ jobs:
     needs: deploy-pypi
     if: ${{ (github.event.inputs.destination_branch == 'main') && success() }}
     uses: ./.github/workflows/deploy_docs_to_s3.yml
+    with:
+      ENVIRONMENT: ${{ github.event.inputs.destination_branch }}
     secrets:
       AWS_CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.AWS_CLOUDFRONT_DISTRIBUTION_ID }}
       AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
