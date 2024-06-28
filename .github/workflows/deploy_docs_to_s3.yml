@@ -36,7 +36,7 @@ jobs:
   generate-and-deploy:
     runs-on: ubuntu-latest
     environment:
-      name: ${{ inputs.ENVIRONMENT != '' && inputs.ENVIRONMENT || github.ref_name }} # Using branch as environment name
+      name: ${{ inputs.ENVIRONMENT != null && inputs.ENVIRONMENT || github.ref_name }} # Using branch as environment name
 
     permissions:
       id-token: write # This is required for requesting the JWT
