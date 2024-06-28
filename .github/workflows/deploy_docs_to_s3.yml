@@ -13,11 +13,6 @@ on:
         description: Environment
         required: false
         default: ${{ github.ref_name }}
-      AWS_REGION:
-        type: string
-        description: AWS Region
-        required: true
-        default: ${{ vars.AWS_REGION }}
     secrets:
       AWS_CLOUDFRONT_DISTRIBUTION_ID:
         description: CF distribution ID
