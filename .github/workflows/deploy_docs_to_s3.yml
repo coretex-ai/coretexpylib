@@ -6,6 +6,16 @@ on:
       - develop
       - main
   workflow_call:
+    secrets:
+      AWS_CLOUDFRONT_DISTRIBUTION_ID:
+        description: CF distribution ID
+        required: true
+      AWS_ROLE_TO_ASSUME:
+        description: AWS Role
+        required: true
+      AWS_S3_BUCKET_NAME:
+        description: S3 bucket
+        required: true
 
 jobs:
   generate-and-deploy:
