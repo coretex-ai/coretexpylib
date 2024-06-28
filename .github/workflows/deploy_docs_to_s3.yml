@@ -16,6 +16,10 @@ on:
       AWS_S3_BUCKET_NAME:
         description: S3 bucket
         required: true
+      TEAMS_WEBHOOK_URL:
+        description: Team Webhook
+        required: true
+        
 
 jobs:
   generate-and-deploy:
