@@ -73,7 +73,6 @@ Coretex will automatically track:
 - Resouce usage (CPU, GPU, RAM, Swap, IO, network, etc...)
 
 <table>
-<tbody>
   <tr>
     <td>Metrics</td>
     <td>Artifacts</td>
@@ -90,7 +89,6 @@ Coretex will automatically track:
     <td><img src="console_preview.png" width="100%" /></td>
     <td><img src="snapshot_preview.png" width="100%" /></td>
   </tr>
-</tbody>
 </table>
 
 One of the key benefits of Coretex is its ability to guarantee reproducibility. Since the platform keeps track of code, all configurations and parameters between runs, this ensures that you can run the same identical Workflow over and over again.
