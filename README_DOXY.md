@@ -51,7 +51,7 @@ $ pip3 install coretex
 $ pip install coretex
 ```
 
-**Step 3:** Run your project on Coretex with <b><u>zero changes</b></u>:
+**Step 3:** Run your project on Coretex with <b><u>zero changes</u></b>:
 
 ```bash
 $ coretex run main.py
@@ -79,16 +79,16 @@ Coretex will automatically track:
     <td>Artifacts</td>
   </tr>
   <tr>
-    <td><img src="./docs_images/metrics_preview.png" width="100%"></td>
-    <td><img src="./docs_images/artifacts_preview.png" width="100%"></td>
+    <td><img src="./docs_images/metrics_preview.png" width="100%" /></td>
+    <td><img src="./docs_images/artifacts_preview.png" width="100%" /></td>
   </tr>
   <tr>
     <td>Console</td>
     <td>Source code</td>
   </tr>
   <tr>
-    <td><img src="./docs_images/console_preview.png" width="100%"></td>
-    <td><img src="./docs_images/snapshot_preview.png" width="100%"></td>
+    <td><img src="./docs_images/console_preview.png" width="100%" /></td>
+    <td><img src="./docs_images/snapshot_preview.png" width="100%" /></td>
   </tr>
 </tbody>
 </table>
