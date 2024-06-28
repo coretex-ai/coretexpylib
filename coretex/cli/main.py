@@ -61,7 +61,7 @@ def update() -> None:
 
 
 @click.group(cls = ClickExceptionInterceptor)
-@utils.onBeforeCommandExecute(utils.checkLibVersion, excludeOptions = ["update"])
+@utils.onBeforeCommandExecute(utils.checkLibVersion)
 def cli() -> None:
     pass
 

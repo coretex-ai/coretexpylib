@@ -157,9 +157,6 @@ def onBeforeCommandExecute(fun: Callable[..., Any], excludeOptions: Optional[Lis
     def decorator(f: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(f)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            if click.get_current_context().invoked_subcommand in excludeOptions:
-                return f(*args, **kwargs)
-
             for key, value in click.get_current_context().params.items():
                 if key in excludeOptions and value:
                     return f(*args, **kwargs)
