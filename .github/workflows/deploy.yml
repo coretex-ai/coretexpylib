@@ -79,3 +79,8 @@ jobs:
     uses: ./.github/workflows/python-publish.yml
     secrets:
       PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+      
+  deploy-docs:
+    needs: deploy-pypi
+    if: ${{ (github.event.inputs.destination_branch == 'main') && success() }}
+    uses: ./.github/workflows/deploy_docs_to_s3.yml
