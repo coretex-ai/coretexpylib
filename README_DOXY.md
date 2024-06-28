@@ -79,16 +79,16 @@ Coretex will automatically track:
     <td>Artifacts</td>
   </tr>
   <tr>
-    <td><img src="metrics_preview.png" width="100%"></td>
-    <td><img src="artifacts_preview.png" width="100%"></td>
+    <td><img src="metrics_preview.png" width="100%" /></td>
+    <td><img src="artifacts_preview.png" width="100%" /></td>
   </tr>
   <tr>
     <td>Console</td>
     <td>Source code</td>
   </tr>
   <tr>
-    <td><img src="console_preview.png" width="100%"></td>
-    <td><img src="snapshot_preview.png" width="100%"></td>
+    <td><img src="console_preview.png" width="100%" /></td>
+    <td><img src="snapshot_preview.png" width="100%" /></td>
   </tr>
 </tbody>
 </table>
