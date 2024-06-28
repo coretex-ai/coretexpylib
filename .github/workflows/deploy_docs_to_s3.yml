@@ -16,7 +16,7 @@ on:
         type: string
         description: AWS Region
         required: true
-        default: '{{ vars.AWS_REGION }}'
+        default: ${{ vars.AWS_REGION }}
     secrets:
       AWS_CLOUDFRONT_DISTRIBUTION_ID:
         description: CF distribution ID
