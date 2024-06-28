@@ -6,6 +6,12 @@ on:
       - develop
       - main
   workflow_call:
+    inputs:
+      ENVIRONMENT:
+        type: string 
+        description: Environment
+        required: false
+        default: ${{ github.ref_name }}
     secrets:
       AWS_CLOUDFRONT_DISTRIBUTION_ID:
         description: CF distribution ID
@@ -17,15 +23,14 @@ on:
         description: S3 bucket
         required: true
       TEAMS_WEBHOOK_URL:
-        description: Team Webhook
+        description: Teams Webhook
         required: true
-        
 
 jobs:
   generate-and-deploy:
     runs-on: ubuntu-latest
     environment:
-      name: ${{ github.ref_name }} # Using branch as environment name
+      name: ${{ inputs.ENVIRONMENT }} # Using branch as environment name
 
     permissions:
       id-token: write # This is required for requesting the JWT
@@ -34,9 +39,9 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
-    - name: Print branch name deploy running on
+    - name: Print environment
       run: |
-          echo ${{ github.ref_name }}
+          echo ${{ inputs.ENVIRONMENT }}
     - name: Install Doxygen
       run: sudo apt-get install -y --no-install-recommends doxygen jq
     - name: Generate Doxygen documentation
