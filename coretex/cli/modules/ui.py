@@ -75,6 +75,9 @@ def previewConfig(config: Dict[str, Any]) -> None:
     if config.get("nearWalletId") is not None:
         table.append(["NEAR wallet id", config["nearWalletId"]])
 
+    if config.get("endpointInvocationPrice") is not None:
+        table.append(["Endpoint invocation price", config["endpointInvocationPrice"]])
+
     stdEcho(tabulate(table))
 
 
