@@ -255,10 +255,10 @@ def promptRam(config: Dict[str, Any], ramLimit: int) -> int:
     return nodeRam
 
 
-def promptSwap(config: Dict[str, Any], swapLimit: int) -> int:
+def promptSwap(nodeRam: int, swapLimit: int) -> int:
     nodeSwap: int = clickPrompt(
         f"Node SWAP memory limit in GB (Maximum: {swapLimit}GB) (press enter to use default)",
-        min(swapLimit, config.get("nodeRam", 0) * 2),
+        min(swapLimit, nodeRam * 2),
         type = int
     )
 
@@ -267,7 +267,7 @@ def promptSwap(config: Dict[str, Any], swapLimit: int) -> int:
             f"ERROR: SWAP memory limit in Docker Desktop ({swapLimit}GB) is lower than the configured value ({nodeSwap}GB). "
             f"If you want to use higher value than {swapLimit}GB, you have to change docker limits."
         )
-        return promptSwap(config, swapLimit)
+        return promptSwap(nodeRam, swapLimit)
 
     return nodeSwap
 
@@ -377,7 +377,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
 
         config["cpuCount"] = promptCpu(config, cpuLimit)
         config["nodeRam"] = promptRam(config, ramLimit)
-        config["nodeSwap"] = promptSwap(config, swapLimit)
+        config["nodeSwap"] = promptSwap(config.get("nodeRam", 0), swapLimit)
 
         config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", config_defaults.DEFAULT_SHARED_MEMORY, type = int)
         config["allowDocker"] = clickPrompt("Allow Node to access system docker? This is a security risk! (Y/n)", config_defaults.DEFAULT_ALLOW_DOCKER, type = bool)
