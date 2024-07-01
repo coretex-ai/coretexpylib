@@ -377,7 +377,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
 
         config["cpuCount"] = promptCpu(config, cpuLimit)
         config["nodeRam"] = promptRam(config, ramLimit)
-        config["nodeSwap"] = promptSwap(config.get("nodeRam", 0), swapLimit)
+        config["nodeSwap"] = promptSwap(config["nodeRam"], swapLimit)
 
         config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", config_defaults.DEFAULT_SHARED_MEMORY, type = int)
         config["allowDocker"] = clickPrompt("Allow Node to access system docker? This is a security risk! (Y/n)", config_defaults.DEFAULT_ALLOW_DOCKER, type = bool)
