@@ -403,7 +403,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
 
             if nearWalletId != config_defaults.DEFAULT_NEAR_WALLET_ID:
                 config["nearWalletId"] = nearWalletId
-                endpointInvocationPrice = promptInvocationPrice(config)
+                endpointInvocationPrice = promptInvocationPrice()
             else:
                 config["nearWalletId"] = None
                 config["endpointInvocationPrice"] = None
