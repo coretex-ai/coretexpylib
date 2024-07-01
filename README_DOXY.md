@@ -1,4 +1,4 @@
-![](./docs_images/logo-dark.png)
+![](logo-dark.png)
 
 ---
 <div align="center">
@@ -51,7 +51,7 @@ $ pip3 install coretex
 $ pip install coretex
 ```
 
-**Step 3:** Run your project on Coretex with <b><u>zero changes</u></b>:
+**Step 3:** Run your project on Coretex with <b>zero changes</b>:
 
 ```bash
 $ coretex run main.py
@@ -73,24 +73,22 @@ Coretex will automatically track:
 - Resouce usage (CPU, GPU, RAM, Swap, IO, network, etc...)
 
 <table>
-<tbody>
   <tr>
     <td>Metrics</td>
     <td>Artifacts</td>
   </tr>
   <tr>
-    <td><img src="./docs_images/metrics_preview.png" width="100%" /></td>
-    <td><img src="./docs_images/artifacts_preview.png" width="100%" /></td>
+    <td><img src="metrics_preview.png" width="100%" /></td>
+    <td><img src="artifacts_preview.png" width="100%" /></td>
   </tr>
   <tr>
     <td>Console</td>
     <td>Source code</td>
   </tr>
   <tr>
-    <td><img src="./docs_images/console_preview.png" width="100%" /></td>
-    <td><img src="./docs_images/snapshot_preview.png" width="100%" /></td>
+    <td><img src="console_preview.png" width="100%" /></td>
+    <td><img src="snapshot_preview.png" width="100%" /></td>
   </tr>
-</tbody>
 </table>
 
 One of the key benefits of Coretex is its ability to guarantee reproducibility. Since the platform keeps track of code, all configurations and parameters between runs, this ensures that you can run the same identical Workflow over and over again.

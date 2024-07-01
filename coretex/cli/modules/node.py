@@ -172,8 +172,15 @@ def shouldUpdate(image: str) -> bool:
     return True
 
 
-def registerNode(name: str, nodeMode: NodeMode, publicKey: Optional[bytes] = None, nearWalletId: Optional[str] = None) -> str:
-    params = {
+def registerNode(
+    name: str,
+    nodeMode: NodeMode,
+    publicKey: Optional[bytes] = None,
+    nearWalletId: Optional[str] = None,
+    endpointInvocationPrice: Optional[float] = None
+) -> str:
+
+    params: Dict[str, Any] = {
         "machine_name": name,
         "mode": nodeMode.value
     }
@@ -183,6 +190,9 @@ def registerNode(name: str, nodeMode: NodeMode, publicKey: Optional[bytes] = Non
 
     if nearWalletId is not None:
         params["near_wallet_id"] = nearWalletId
+
+    if endpointInvocationPrice is not None:
+        params["endpoint_invocation_price"] = endpointInvocationPrice
 
     response = networkManager.post("service", params)
 
@@ -270,6 +280,20 @@ def promptSwap(nodeRam: int, swapLimit: int) -> int:
         return promptSwap(nodeRam, swapLimit)
 
     return nodeSwap
+
+
+def promptInvocationPrice() -> float:
+    invocationPrice: float = clickPrompt(
+        "Enter the price of a single endpoint invocation",
+        config_defaults.DEFAULT_ENDPOINT_INVOCATION_PRICE,
+        type = float
+    )
+
+    if invocationPrice < 0:
+        errorEcho("Endpoint invocation price cannot be less than 0!")
+        return promptInvocationPrice()
+
+    return invocationPrice
 
 
 def _configureInitScript() -> str:
@@ -369,6 +393,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
 
     publicKey: Optional[bytes] = None
     nearWalletId: Optional[str] = None
+    endpointInvocationPrice: Optional[float] = None
     nodeMode = NodeMode.any
 
     if verbose:
@@ -400,13 +425,16 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
 
             if nearWalletId != config_defaults.DEFAULT_NEAR_WALLET_ID:
                 config["nearWalletId"] = nearWalletId
+                endpointInvocationPrice = promptInvocationPrice()
             else:
                 config["nearWalletId"] = None
+                config["endpointInvocationPrice"] = None
                 nearWalletId = None
+                endpointInvocationPrice = None
     else:
         stdEcho("To configure node manually run coretex node config with --verbose flag.")
 
-    config["nodeAccessToken"] = registerNode(config["nodeName"], nodeMode, publicKey, nearWalletId)
+    config["nodeAccessToken"] = registerNode(config["nodeName"], nodeMode, publicKey, nearWalletId, endpointInvocationPrice)
     config["nodeMode"] = nodeMode
 
 
