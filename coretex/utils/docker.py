@@ -166,7 +166,7 @@ def getDockerConfigPath() -> Optional[Path]:
 def getDockerSwapLimit() -> int:
     configPath = getDockerConfigPath()
 
-    if configPath is None:
+    if configPath is None or not configPath.exists():
         return getTotalSwapMemory()
 
     with configPath.open("r") as configFile:
@@ -174,6 +174,6 @@ def getDockerSwapLimit() -> int:
 
     swapLimit = configJson.get("swapMiB")
     if not isinstance(swapLimit, int):
-        raise TypeError(f"Expected \"int\" received \"{type(swapLimit)}\"")
+        return getTotalSwapMemory()
 
     return int(swapLimit / 1024)
