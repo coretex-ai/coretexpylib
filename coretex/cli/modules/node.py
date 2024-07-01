@@ -265,7 +265,7 @@ def promptRam(config: Dict[str, Any], ramLimit: int) -> int:
     return nodeRam
 
 
-def promptInvocationPrice(config: Dict[str, Any], retryCount: int = 0) -> float:
+def promptInvocationPrice(config: Dict[str, Any]) -> float:
     invocationPrice: float = clickPrompt(
         "Enter the price of a single endpoint invocation",
         config_defaults.DEFAULT_ENDPOINT_INVOCATION_PRICE,
@@ -274,7 +274,7 @@ def promptInvocationPrice(config: Dict[str, Any], retryCount: int = 0) -> float:
 
     if invocationPrice < 0:
         errorEcho("Endpoint invocation price cannot be less than 0!")
-        return promptInvocationPrice(config, retryCount + 1)
+        return promptInvocationPrice(config)
 
     return invocationPrice
 
