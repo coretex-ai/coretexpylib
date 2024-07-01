@@ -150,14 +150,22 @@ def isGPUAvailable() -> bool:
         return False
 
 
-def onBeforeCommandExecute(fun: Callable[..., Any], excludeOptions: Optional[List[str]] = None) -> Any:
+def onBeforeCommandExecute(
+    fun: Callable[..., Any],
+    excludeOptions: Optional[List[str]] = None,
+    excludeSubcommands: Optional[List[str]] = None
+) -> Any:
+
     if excludeOptions is None:
         excludeOptions = []
+
+    if excludeSubcommands is None:
+        excludeSubcommands = []
 
     def decorator(f: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(f)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            if click.get_current_context().invoked_subcommand in excludeOptions:
+            if click.get_current_context().invoked_subcommand in excludeSubcommands:
                 return f(*args, **kwargs)
 
             for key, value in click.get_current_context().params.items():
