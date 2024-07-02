@@ -1,8 +1,11 @@
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Optional
+from pathlib import Path
 
 import json
+import platform
 
 from .process import command, CommandException
+from ..statistics import getTotalSwapMemory
 
 
 def isDockerAvailable() -> None:
@@ -147,3 +150,30 @@ def getResourceLimits() -> Tuple[int, int]:
     jsonOutput = json.loads(output)
 
     return jsonOutput["NCPU"], round(jsonOutput["MemTotal"] / (1024 ** 3))
+
+
+def getDockerConfigPath() -> Optional[Path]:
+    if platform.system() == "Darwin":
+        return Path.home().joinpath("Library", "Group Containers", "group.com.docker", "settings.json")
+    elif platform.system() == "Windows":
+        return Path.home().joinpath("AppData", "Roaming", "Docker", "settings.json")
+    elif platform.system() == "Linux":
+        return Path.home().joinpath(".docker", "desktop", "settings.json")
+    else:
+        return None
+
+
+def getDockerSwapLimit() -> int:
+    configPath = getDockerConfigPath()
+
+    if configPath is None or not configPath.exists():
+        return getTotalSwapMemory()
+
+    with configPath.open("r") as configFile:
+        configJson = json.load(configFile)
+
+    swapLimit = configJson.get("swapMiB")
+    if not isinstance(swapLimit, int):
+        return getTotalSwapMemory()
+
+    return int(swapLimit / 1024)
