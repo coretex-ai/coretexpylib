@@ -19,6 +19,7 @@ from typing import Any, Optional, Dict
 from pathlib import Path
 
 import json
+import logging
 
 
 CONFIG_PATH = Path("~/.config/coretex/config.json").expanduser()
@@ -29,7 +30,14 @@ class UserData:
 
     def __init__(self) -> None:
         with open(CONFIG_PATH, "r") as configFile:
-            self.__values: Dict[str, Any] = json.load(configFile)
+            content = configFile.read()
+            try:
+                self.__values: Dict[str, Any] = json.loads(content)
+            except json.JSONDecodeError as exc:
+                logging.getLogger("cli").debug(
+                    f"Failed to load corrupted config file. Content: {content}. Exception: {exc}", exc_info = exc
+                )
+
 
     def __getOptionalStr(self, key: str) -> Optional[str]:
         value = self.__values[key]
