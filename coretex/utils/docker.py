@@ -89,6 +89,9 @@ def start(
     volumes: List[Tuple[str, str]]
 ) -> None:
 
+    # https://github.com/moby/moby/issues/14215#issuecomment-115959661
+    # --memory-swap = total memory limit -> memory + swap
+
     runCommand = [
         "docker", "run", "-d",
         "--restart", 'always',
@@ -96,7 +99,7 @@ def start(
         "--cap-add", "SYS_PTRACE",
         "--network", name,
         "--memory", f"{ram}G",
-        "--memory-swap", f"{swap}G",
+        "--memory-swap", f"{ram + swap}G",
         "--shm-size", f"{shm}G",
         "--cpus", f"{cpuCount}",
         "--name", name,
