@@ -1,6 +1,6 @@
 [project]
 name = "coretex"
-version = "1.0.150"
+version = "1.0.151"
 authors = [
   { name="Duško Mirković", email="dmirkovic@coretex.ai" }
 ]
