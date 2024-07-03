@@ -31,14 +31,14 @@ def getExisting() -> List[str]:
     raise ValueError("\"crontab\" is not installed. To enable automatic updates please install \"crontab\"")
 
 
-def jobExists(script: str) -> bool:
-    existingLines = getExisting()
-    return any(line.endswith(script) for line in existingLines)
-
-
 def scheduleJob(scriptName: str) -> None:
     existingLines = getExisting()
-    existingLines.append(f"*/30 * * * * {CONFIG_DIR / scriptName} >> {CONFIG_DIR}/logs/ctx_autoupdate.log 2>&1\n")
+    cronJob = f"*/30 * * * * {CONFIG_DIR / scriptName} >> {CONFIG_DIR}/logs/ctx_autoupdate.log 2>&1\n"
+
+    if any(str(CONFIG_DIR / scriptName) in line for line in existingLines):
+        return
+
+    existingLines.append(cronJob)
 
     tempCronFilePath = CONFIG_DIR / "temp.cron"
     with tempCronFilePath.open("w") as tempCronFile:
