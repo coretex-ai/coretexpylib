@@ -90,7 +90,7 @@ def start(
 ) -> None:
 
     # https://github.com/moby/moby/issues/14215#issuecomment-115959661
-    # --memeory-swap = total memory limit -> memory + swap
+    # --memory-swap = total memory limit -> memory + swap
 
     runCommand = [
         "docker", "run", "-d",
