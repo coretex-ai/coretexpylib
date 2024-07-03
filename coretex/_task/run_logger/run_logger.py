@@ -33,10 +33,16 @@ def exceptionToString(exception: BaseException) -> str:
 
 
 def uploadTaskRunLogs(taskRunId: int, logs: List[Log]) -> bool:
-    response = networkManager.post("model-queue/add-console-log", {
+    params = {
         "model_queue_id": taskRunId,
         "logs": [log.encode() for log in logs]
-    })
+    }
+
+    response = networkManager.post(
+        "model-queue/add-console-log",
+        params,
+        timeout = (5, 60)  # connection timeout 5 seconds, log upload timeout 60 seconds
+    )
 
     return not response.hasFailed()
 
