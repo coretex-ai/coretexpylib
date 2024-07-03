@@ -42,7 +42,7 @@ def uploadTaskRunLogs(taskRunId: int, logs: List[Log]) -> bool:
         response = networkManager.post(
             "model-queue/add-console-log",
             params,
-            timeout = (5, 60)  # connection timeout 5 seconds, log upload timeout 60 seconds
+            timeout = (5, 600)  # connection timeout 5 seconds, log upload timeout 600 seconds
         )
 
         return not response.hasFailed()
