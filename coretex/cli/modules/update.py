@@ -65,7 +65,7 @@ def activateAutoUpdate() -> None:
     updateScriptPath = DEFAULT_VENV_PATH.parent / UPDATE_SCRIPT_NAME
     dumpScript(updateScriptPath)
 
-    if not jobExists(UPDATE_SCRIPT_NAME):
+    if not jobExists(str(updateScriptPath)):
         scheduleJob(UPDATE_SCRIPT_NAME)
 
 
