@@ -23,7 +23,7 @@ import functools
 
 from .upload_worker import LoggerUploadWorker
 from ...logging import Log, LogSeverity
-from ...networking import networkManager
+from ...networking import networkManager, RequestFailedError
 
 
 def exceptionToString(exception: BaseException) -> str:
@@ -33,18 +33,24 @@ def exceptionToString(exception: BaseException) -> str:
 
 
 def uploadTaskRunLogs(taskRunId: int, logs: List[Log]) -> bool:
-    params = {
-        "model_queue_id": taskRunId,
-        "logs": [log.encode() for log in logs]
-    }
+    try:
+        params = {
+            "model_queue_id": taskRunId,
+            "logs": [log.encode() for log in logs]
+        }
 
-    response = networkManager.post(
-        "model-queue/add-console-log",
-        params,
-        timeout = (5, 60)  # connection timeout 5 seconds, log upload timeout 60 seconds
-    )
+        response = networkManager.post(
+            "model-queue/add-console-log",
+            params,
+            timeout = (5, 60)  # connection timeout 5 seconds, log upload timeout 60 seconds
+        )
 
-    return not response.hasFailed()
+        return not response.hasFailed()
+    except RequestFailedError as ex:
+        logging.getLogger("coretexpylib").error(f">> Failed to upload console logs to Coretex. Reason: {ex}")
+        logging.getLogger("coretexpylib").debug(f">> Failed to upload console logs to Coretex. Reason: {ex}", exc_info = ex)
+
+        return False
 
 
 class RunLogger:
