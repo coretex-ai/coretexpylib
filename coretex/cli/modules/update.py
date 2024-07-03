@@ -21,7 +21,7 @@ from pathlib import Path
 import requests
 
 from .utils import getExecPath
-from .cron import scheduleJob
+from .cron import jobExists, scheduleJob
 from ..resources import RESOURCES_DIR
 from ...utils import command
 from ...configuration import DEFAULT_VENV_PATH
@@ -65,7 +65,8 @@ def activateAutoUpdate() -> None:
     updateScriptPath = DEFAULT_VENV_PATH.parent / UPDATE_SCRIPT_NAME
     dumpScript(updateScriptPath)
 
-    scheduleJob(UPDATE_SCRIPT_NAME)
+    if not jobExists(str(updateScriptPath)):
+        scheduleJob(UPDATE_SCRIPT_NAME)
 
 
 def getNodeStatus() -> NodeStatus:
