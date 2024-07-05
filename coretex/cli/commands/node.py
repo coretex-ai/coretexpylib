@@ -21,10 +21,10 @@ import click
 
 from ..modules import node as node_module
 from ..modules.ui import clickPrompt, stdEcho, successEcho, errorEcho, previewConfig
-from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate, dumpScript, UPDATE_SCRIPT_NAME
-from ..modules.utils import onBeforeCommandExecute
+from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate
+from ..modules.utils import onBeforeCommandExecute, checkEnvironment
 from ..modules.user import initializeUserSession
-from ...configuration import loadConfig, saveConfig, CONFIG_DIR, isNodeConfigured
+from ...configuration import loadConfig, saveConfig, isNodeConfigured
 from ...utils import docker
 
 
@@ -60,7 +60,7 @@ def start(image: Optional[str]) -> None:
     node_module.start(dockerImage, config)
     docker.removeDanglingImages(node_module.getRepoFromImageUrl(dockerImage), node_module.getTagFromImageUrl(dockerImage))
 
-    activateAutoUpdate(CONFIG_DIR, config)
+    activateAutoUpdate()
 
 
 @click.command()
@@ -73,8 +73,14 @@ def stop() -> None:
 
 
 @click.command()
+@click.option("-y", "autoAccept", is_flag = True, help = "Accepts all prompts.")
+@click.option("-n", "autoDecline", is_flag = True, help = "Declines all prompts.")
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
-def update() -> None:
+def update(autoAccept: bool, autoDecline: bool) -> None:
+    if autoAccept and autoDecline:
+        errorEcho("Only one of the flags (\"-y\" or \"-n\") can be used at the same time.")
+        return
+
     config = loadConfig()
     dockerImage = config["image"]
 
@@ -88,7 +94,10 @@ def update() -> None:
         errorEcho("Node is reconnecting. Cannot update now.")
         return
 
-    if nodeStatus == NodeStatus.busy:
+    if nodeStatus == NodeStatus.busy and not autoAccept:
+        if autoDecline:
+            return
+
         if not clickPrompt(
             "Node is busy, do you wish to terminate the current execution to perform the update? (Y/n)",
             type = bool,
@@ -106,7 +115,10 @@ def update() -> None:
     stdEcho("Updating node...")
     node_module.pull(dockerImage)
 
-    if getNodeStatus() == NodeStatus.busy:
+    if getNodeStatus() == NodeStatus.busy and not autoAccept:
+        if autoDecline:
+            return
+
         if not clickPrompt(
             "Node is busy, do you wish to terminate the current execution to perform the update? (Y/n)",
             type = bool,
@@ -117,8 +129,11 @@ def update() -> None:
 
     node_module.stop()
 
+    stdEcho("Updating node...")
     node_module.start(dockerImage, config)
     docker.removeDanglingImages(node_module.getRepoFromImageUrl(dockerImage), node_module.getTagFromImageUrl(dockerImage))
+
+    activateAutoUpdate()
 
 
 @click.command()
@@ -151,16 +166,15 @@ def config(verbose: bool) -> None:
     saveConfig(config)
     previewConfig(config)
 
-    # Updating auto-update script since node configuration is changed
-    dumpScript(CONFIG_DIR / UPDATE_SCRIPT_NAME, config)
-
     successEcho("Node successfully configured.")
+    activateAutoUpdate()
 
 
 @click.group()
 @onBeforeCommandExecute(docker.isDockerAvailable)
 @onBeforeCommandExecute(initializeUserSession)
 @onBeforeCommandExecute(node_module.checkResourceLimitations)
+@onBeforeCommandExecute(checkEnvironment)
 def node() -> None:
     pass
 

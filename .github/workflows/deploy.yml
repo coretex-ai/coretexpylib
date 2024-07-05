@@ -79,3 +79,15 @@ jobs:
     uses: ./.github/workflows/python-publish.yml
     secrets:
       PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+      
+  deploy-docs:
+    needs: deploy-pypi
+    if: ${{ (github.event.inputs.destination_branch == 'main') && success() }}
+    uses: ./.github/workflows/deploy_docs_to_s3.yml
+    with:
+      ENVIRONMENT: ${{ github.event.inputs.destination_branch }}
+    secrets:
+      AWS_CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.AWS_CLOUDFRONT_DISTRIBUTION_ID }}
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      AWS_S3_BUCKET_NAME: ${{ secrets.AWS_S3_BUCKET_NAME }}
+      TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}

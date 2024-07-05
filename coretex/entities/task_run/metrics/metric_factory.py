@@ -40,6 +40,9 @@ def getClassForMetric(name: str) -> Optional[Type[Metric]]:
     if name == "gpu_usage":
         return MetricGPUUsage
 
+    if name == "gpu_memory_usage":
+        return MetricGPUMemoryUsage
+
     if name == "gpu_temperature":
         return MetricGPUTemperature
 

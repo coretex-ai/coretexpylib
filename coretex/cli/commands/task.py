@@ -44,6 +44,9 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
     config = loadConfig()
     parameters = readTaskConfig()
 
+    # clearing temporary files in case that node was manually killed before
+    folder_manager.clearTempFiles()
+
     selectedProject = getProject(project, config)
     if selectedProject is None:
         return

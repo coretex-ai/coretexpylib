@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Any, Dict, Tuple, Optional
+from typing import Any, Dict, Optional
 from enum import Enum
 from pathlib import Path
 from base64 import b64encode
@@ -32,7 +32,6 @@ from ...cryptography import rsa
 from ...networking import networkManager, NetworkRequestError
 from ...configuration import loadConfig, saveConfig, isNodeConfigured, getInitScript
 from ...utils import CommandException, docker
-from ...entities.model import Model
 
 
 class NodeException(Exception):
@@ -75,10 +74,6 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
             "CTX_NODE_ACCESS_TOKEN": config["nodeAccessToken"],
             "CTX_NODE_MODE": config["nodeMode"]
         }
-
-        modelId = config.get("modelId")
-        if isinstance(modelId, int):
-            environ["CTX_MODEL_ID"] = modelId
 
         nodeSecret = config.get("nodeSecret", config_defaults.DEFAULT_NODE_SECRET)
         if isinstance(nodeSecret, str) and nodeSecret != config_defaults.DEFAULT_NODE_SECRET:
@@ -177,9 +172,17 @@ def shouldUpdate(image: str) -> bool:
     return True
 
 
-def registerNode(name: str, publicKey: Optional[bytes] = None, nearWalletId: Optional[str] = None) -> str:
-    params = {
+def registerNode(
+    name: str,
+    nodeMode: NodeMode,
+    publicKey: Optional[bytes] = None,
+    nearWalletId: Optional[str] = None,
+    endpointInvocationPrice: Optional[float] = None
+) -> str:
+
+    params: Dict[str, Any] = {
         "machine_name": name,
+        "mode": nodeMode.value
     }
 
     if publicKey is not None:
@@ -187,6 +190,9 @@ def registerNode(name: str, publicKey: Optional[bytes] = None, nearWalletId: Opt
 
     if nearWalletId is not None:
         params["near_wallet_id"] = nearWalletId
+
+    if endpointInvocationPrice is not None:
+        params["endpoint_invocation_price"] = endpointInvocationPrice
 
     response = networkManager.post("service", params)
 
@@ -213,40 +219,22 @@ def selectImageType() -> ImageType:
     return availableImages[selectedImage]
 
 
-def selectModelId(storagePath: str, retryCount: int = 0) -> int:
-    if retryCount >= 3:
-        raise RuntimeError("Failed to fetch Coretex Model. Terminating...")
+def selectNodeMode() -> NodeMode:
+    # Define modes which can be picked
+    # Order of the elements in list affects how choices will
+    # be displayed in the terminal
+    nodeModes = [
+        NodeMode.any,
+        NodeMode.execution,
+        NodeMode.endpointReserved,
+        NodeMode.endpointShared
+    ]
 
-    modelId: int = clickPrompt("Specify Coretex Model ID that you want to use:", type = int)
-
-    try:
-        model = Model.fetchById(modelId)
-    except:
-        errorEcho(f"Failed to fetch model with id {modelId}.")
-        return selectModelId(storagePath, retryCount + 1)
-
-    modelDir = Path(storagePath) / "models"
-    modelDir.mkdir(parents = True, exist_ok = True)
-    model.download(modelDir / str(model.id))
-
-    return modelId
-
-
-def selectNodeMode(storagePath: str) -> Tuple[int, Optional[int]]:
-    availableNodeModes = {
-        "Run workflows (worker)": NodeMode.execution,
-        "Serve a single endpoint (dedicated inference)": NodeMode.functionExclusive,
-        "Serve multiple endpoints (shared inference)": NodeMode.functionShared
-    }
+    availableNodeModes = { mode.toString(): mode for mode in nodeModes }
     choices = list(availableNodeModes.keys())
 
     selectedMode = arrowPrompt(choices, "Please select Coretex Node mode (use arrow keys to select an option):")
-
-    if availableNodeModes[selectedMode] == NodeMode.functionExclusive:
-        modelId = selectModelId(storagePath)
-        return availableNodeModes[selectedMode], modelId
-
-    return availableNodeModes[selectedMode], None
+    return availableNodeModes[selectedMode]
 
 
 def promptCpu(config: Dict[str, Any], cpuLimit: int) -> int:
@@ -275,6 +263,37 @@ def promptRam(config: Dict[str, Any], ramLimit: int) -> int:
         return promptRam(config, ramLimit)
 
     return nodeRam
+
+
+def promptSwap(nodeRam: int, swapLimit: int) -> int:
+    nodeSwap: int = clickPrompt(
+        f"Node SWAP memory limit in GB (Maximum: {swapLimit}GB) (press enter to use default)",
+        min(swapLimit, nodeRam * 2),
+        type = int
+    )
+
+    if nodeSwap > swapLimit:
+        errorEcho(
+            f"ERROR: SWAP memory limit in Docker Desktop ({swapLimit}GB) is lower than the configured value ({nodeSwap}GB). "
+            f"If you want to use higher value than {swapLimit}GB, you have to change docker limits."
+        )
+        return promptSwap(nodeRam, swapLimit)
+
+    return nodeSwap
+
+
+def promptInvocationPrice() -> float:
+    invocationPrice: float = clickPrompt(
+        "Enter the price of a single endpoint invocation",
+        config_defaults.DEFAULT_ENDPOINT_INVOCATION_PRICE,
+        type = float
+    )
+
+    if invocationPrice < 0:
+        errorEcho("Endpoint invocation price cannot be less than 0!")
+        return promptInvocationPrice()
+
+    return invocationPrice
 
 
 def _configureInitScript() -> str:
@@ -306,6 +325,7 @@ def checkResourceLimitations() -> None:
 def isConfigurationValid(config: Dict[str, Any]) -> bool:
     isValid = True
     cpuLimit, ramLimit = docker.getResourceLimits()
+    swapLimit = docker.getDockerSwapLimit()
 
     if not isinstance(config["nodeRam"], int):
         errorEcho(f"Invalid config \"nodeRam\" field type \"{type(config['nodeRam'])}\". Expected: \"int\"")
@@ -327,6 +347,9 @@ def isConfigurationValid(config: Dict[str, Any]) -> bool:
         errorEcho(f"Configuration not valid. RAM limit in Docker Desktop ({ramLimit}GB) is lower than the configured value ({config['nodeRam']}GB)")
         isValid = False
 
+    if config["nodeSwap"] > swapLimit:
+        errorEcho(f"Configuration not valid. RAM limit in Docker Desktop ({swapLimit}GB) is lower than the configured value ({config['nodeSwap']}GB)")
+        isValid = False
 
     if config["nodeRam"] < config_defaults.MINIMUM_RAM:
         errorEcho(f"Configuration not valid. Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB) is higher than the configured value ({config['nodeRam']}GB)")
@@ -339,6 +362,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     highlightEcho("[Node Configuration]")
 
     cpuLimit, ramLimit = docker.getResourceLimits()
+    swapLimit = docker.getDockerSwapLimit()
 
     config["nodeName"] = clickPrompt("Node name", type = str)
 
@@ -369,23 +393,20 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
 
     publicKey: Optional[bytes] = None
     nearWalletId: Optional[str] = None
+    endpointInvocationPrice: Optional[float] = None
+    nodeMode = NodeMode.any
 
     if verbose:
+        nodeMode = selectNodeMode()
         config["storagePath"] = clickPrompt("Storage path (press enter to use default)", config_defaults.DEFAULT_STORAGE_PATH, type = str)
 
         config["cpuCount"] = promptCpu(config, cpuLimit)
-
         config["nodeRam"] = promptRam(config, ramLimit)
+        config["nodeSwap"] = promptSwap(config["nodeRam"], swapLimit)
 
-        config["nodeSwap"] = clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", config_defaults.DEFAULT_SWAP_MEMORY, type = int)
         config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", config_defaults.DEFAULT_SHARED_MEMORY, type = int)
         config["allowDocker"] = clickPrompt("Allow Node to access system docker? This is a security risk! (Y/n)", config_defaults.DEFAULT_ALLOW_DOCKER, type = bool)
         config["initScript"] = _configureInitScript()
-
-        nodeMode, modelId = selectNodeMode(config["storagePath"])
-        config["nodeMode"] = nodeMode
-        if modelId is not None:
-            config["modelId"] = modelId
 
         nodeSecret: str = clickPrompt("Enter a secret which will be used to generate RSA key-pair for Node", config_defaults.DEFAULT_NODE_SECRET, type = str, hide_input = True)
         config["nodeSecret"] = nodeSecret
@@ -395,7 +416,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
             rsaKey = rsa.generateKey(2048, nodeSecret.encode("utf-8"))
             publicKey = rsa.getPublicKeyBytes(rsaKey.public_key())
 
-        if nodeMode != NodeMode.execution:
+        if nodeMode in [NodeMode.endpointReserved, NodeMode.endpointShared]:
             nearWalletId = clickPrompt(
                 "Enter a NEAR wallet id to which the funds will be transfered when executing endpoints",
                 config_defaults.DEFAULT_NEAR_WALLET_ID,
@@ -404,13 +425,17 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
 
             if nearWalletId != config_defaults.DEFAULT_NEAR_WALLET_ID:
                 config["nearWalletId"] = nearWalletId
+                endpointInvocationPrice = promptInvocationPrice()
             else:
                 config["nearWalletId"] = None
+                config["endpointInvocationPrice"] = None
                 nearWalletId = None
+                endpointInvocationPrice = None
     else:
         stdEcho("To configure node manually run coretex node config with --verbose flag.")
 
-    config["nodeAccessToken"] = registerNode(config["nodeName"], publicKey, nearWalletId)
+    config["nodeAccessToken"] = registerNode(config["nodeName"], nodeMode, publicKey, nearWalletId, endpointInvocationPrice)
+    config["nodeMode"] = nodeMode
 
 
 def initializeNodeConfiguration() -> None:

@@ -44,7 +44,8 @@ def _getMetrics() -> List[Metric]:
 
         metrics.extend([
             metric_factory.createMetric("gpu_usage", "time (s)", MetricType.interval, "usage (%)", MetricType.percent, None, [0, 100]),
-            metric_factory.createMetric("gpu_temperature", "time (s)", MetricType.interval, "usage (%)", MetricType.percent)
+            metric_factory.createMetric("gpu_temperature", "time (s)", MetricType.interval, "usage (%)", MetricType.percent),
+            metric_factory.createMetric("gpu_memory_usage", "time (s)", MetricType.interval, "usage (%)", MetricType.percent, None, [0, 100])
         ])
 
         logging.getLogger("coretexpylib").debug(">> [Coretex] Initialized GPU metrics")

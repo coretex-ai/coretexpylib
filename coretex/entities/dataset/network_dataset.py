@@ -29,6 +29,7 @@ import logging
 from .dataset import Dataset
 from .state import DatasetState
 from ..sample import NetworkSample
+from ..utils import isEntityNameValid
 from ... import folder_manager
 from ...codable import KeyDescriptor
 from ...networking import NetworkObject, \
@@ -39,6 +40,7 @@ from ...utils.file import isArchive, archive
 
 
 SampleType = TypeVar("SampleType", bound = "NetworkSample")
+NAME_VALIDATION_MESSAGE = ">> [Coretex] Entity name is invalid. Requirements: alphanumeric characters (\"a-z\", and \"0-9\") and dash (\"-\") with length between 3 to 50"
 MAX_DATASET_NAME_LENGTH = 50
 
 
@@ -46,7 +48,13 @@ def _hashDependencies(dependencies: List[str]) -> str:
     hash = hashlib.md5()
     hash.update("".join(sorted(dependencies)).encode())
 
-    return base64.b64encode(hash.digest()).decode("ascii").replace("+", "0")
+    hashString = base64.b64encode(hash.digest()).decode("ascii")
+    hashString = hashString.lower()
+    hashString = hashString.replace("+", "0")
+    hashString = hashString.replace("/", "0")
+    hashString = hashString.replace("=", "0")
+
+    return hashString
 
 
 def _chunkSampleImport(sampleType: Type[SampleType], sampleName: str, samplePath: Path, datasetId: int) -> SampleType:
@@ -202,6 +210,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
 
             Raises
             ------
+            ValueError -> If name is invalid
             NetworkRequestError -> If dataset creation failed
 
             Example
@@ -210,6 +219,9 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
             \b
             >>> dummyDataset = NetworkDataset.createDataset("dummyDataset", 123)
         """
+
+        if not isEntityNameValid(name):
+            raise ValueError(NAME_VALIDATION_MESSAGE)
 
         return cls.create(
             name = name,
@@ -238,7 +250,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
             raise ValueError(f"Dataset prefix \"{prefix}\" is too long. Max allowed size is \"{MAX_DATASET_NAME_LENGTH - 8}\".")
 
         suffix = _hashDependencies(dependencies)
-        name = f"{prefix} - {suffix}"
+        name = f"{prefix}-{suffix}"
 
         if len(name) > MAX_DATASET_NAME_LENGTH:
             name = name[:MAX_DATASET_NAME_LENGTH]
@@ -260,6 +272,9 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
             projectId : int
                 project for which the dataset will be created
         """
+
+        if not isEntityNameValid(prefix):
+            raise ValueError(NAME_VALIDATION_MESSAGE)
 
         dataset = cls.createDataset(cls.generateCacheName(prefix, dependencies), projectId)
         if dataset is None:
@@ -328,6 +343,9 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
         processor.process()
 
     def rename(self, name: str) -> bool:
+        if not isEntityNameValid(name):
+            raise ValueError(NAME_VALIDATION_MESSAGE)
+
         success = self.update(name = name)
 
         if success:

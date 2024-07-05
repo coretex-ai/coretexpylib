@@ -15,25 +15,11 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from enum import IntEnum
+from ..metric import Metric
+from .....statistics import getGpuMemoryUsage
 
 
-class NodeMode(IntEnum):
+class MetricGPUMemoryUsage(Metric):
 
-    execution         = 1
-    endpointReserved  = 2
-    endpointShared    = 3
-    any               = 4
-
-    def toString(self) -> str:
-        if self == NodeMode.execution:
-            return "Run workflows (worker)"
-
-        if self == NodeMode.endpointReserved:
-            return "Serve a single endpoint (dedicated inference)"
-
-        if self == NodeMode.endpointShared:
-            return "Serve multiple endpoints (shared inference)"
-
-        if self == NodeMode.any:
-            return "Any"
+    def extract(self) -> float:
+        return getGpuMemoryUsage()

@@ -280,7 +280,13 @@ class NetworkManagerBase(ABC):
 
             raise RequestFailedError(endpoint, requestType)
 
-    def post(self, endpoint: str, params: Optional[RequestBodyType] = None) -> NetworkResponse:
+    def post(
+        self,
+        endpoint: str,
+        params: Optional[RequestBodyType] = None,
+        timeout: TimeoutType = REQUEST_TIMEOUT
+    ) -> NetworkResponse:
+
         """
             Sends post HTTP request
 
@@ -290,6 +296,8 @@ class NetworkManagerBase(ABC):
                 endpoint to which the request is sent
             params : Optional[RequestBodyType]
                 body of the request
+            timeout : TimeoutType
+                timeout for the request
 
             Returns
             -------
@@ -300,7 +308,7 @@ class NetworkManagerBase(ABC):
             RequestFailedError -> if request failed due to connection issues
         """
 
-        return self.request(endpoint, RequestType.post, body = params)
+        return self.request(endpoint, RequestType.post, body = params, timeout = timeout)
 
     def get(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> NetworkResponse:
         """

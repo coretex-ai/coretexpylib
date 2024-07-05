@@ -1,8 +1,11 @@
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Optional
+from pathlib import Path
 
 import json
+import platform
 
 from .process import command, CommandException
+from ..statistics import getTotalSwapMemory
 
 
 def isDockerAvailable() -> None:
@@ -86,6 +89,9 @@ def start(
     volumes: List[Tuple[str, str]]
 ) -> None:
 
+    # https://github.com/moby/moby/issues/14215#issuecomment-115959661
+    # --memory-swap = total memory limit -> memory + swap
+
     runCommand = [
         "docker", "run", "-d",
         "--restart", 'always',
@@ -93,7 +99,7 @@ def start(
         "--cap-add", "SYS_PTRACE",
         "--network", name,
         "--memory", f"{ram}G",
-        "--memory-swap", f"{swap}G",
+        "--memory-swap", f"{ram + swap}G",
         "--shm-size", f"{shm}G",
         "--cpus", f"{cpuCount}",
         "--name", name,
@@ -147,3 +153,30 @@ def getResourceLimits() -> Tuple[int, int]:
     jsonOutput = json.loads(output)
 
     return jsonOutput["NCPU"], round(jsonOutput["MemTotal"] / (1024 ** 3))
+
+
+def getDockerConfigPath() -> Optional[Path]:
+    if platform.system() == "Darwin":
+        return Path.home().joinpath("Library", "Group Containers", "group.com.docker", "settings.json")
+    elif platform.system() == "Windows":
+        return Path.home().joinpath("AppData", "Roaming", "Docker", "settings.json")
+    elif platform.system() == "Linux":
+        return Path.home().joinpath(".docker", "desktop", "settings.json")
+    else:
+        return None
+
+
+def getDockerSwapLimit() -> int:
+    configPath = getDockerConfigPath()
+
+    if configPath is None or not configPath.exists():
+        return getTotalSwapMemory()
+
+    with configPath.open("r") as configFile:
+        configJson = json.load(configFile)
+
+    swapLimit = configJson.get("swapMiB")
+    if not isinstance(swapLimit, int):
+        return getTotalSwapMemory()
+
+    return int(swapLimit / 1024)

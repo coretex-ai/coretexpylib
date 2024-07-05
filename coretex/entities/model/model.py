@@ -22,7 +22,9 @@ from zipfile import ZipFile
 from pathlib import Path
 
 import json
+import logging
 
+from ..utils import isEntityNameValid
 from ... import folder_manager
 from ...networking import networkManager, NetworkObject, ChunkUploadSession, MAX_CHUNK_SIZE, NetworkRequestError
 from ...codable import KeyDescriptor
@@ -107,28 +109,43 @@ class Model(NetworkObject):
     ) -> Self:
 
         """
-            Creates Model object inside of the provided Project with specified properties
+            Creates Model as a result of TaskRun
 
             Parameters
             ----------
             name : str
-                Model name
+                model name
             projectId : int
                 Project to which the Model will be added
             accuracy : float
-                Model accuracy
-            meta : Dict[str, Any]
-                Model metadata
+                model accuracy
+            meta : Optional[Dict[str, Any]]
+                model metadata
 
             Returns
             -------
             Self -> Model object
 
+            Raises
+            -------
+            NetworkRequestError -> If model creation failed
+
             Example
             -------
-            >>> from coretex import Model
-            >>> model = Model.createModel("model-name", 123, 0.87)
+            >>> from coretex import Model, currentTaskRun
+            >>> model = Model.createModel("model-name", currentTaskRun().id, 0.87)
         """
+
+        if not isEntityNameValid(name):
+            raise ValueError(">> [Coretex] Model name is invalid. Requirements: alphanumeric characters (\"a-z\", and \"0-9\") and dash (\"-\") with length between 3 to 50")
+
+        if accuracy < 0:
+            logging.getLogger("coretexpylib").warning(f">> [Coretex] Invalid value for accuracy: ({accuracy} < 0), clipping to 0.")
+
+        if accuracy > 1:
+            logging.getLogger("coretexpylib").warning(f">> [Coretex] Invalid value for accuracy: ({accuracy} > 1), clipping to 1.")
+
+        accuracy = max(0, min(accuracy, 1))
 
         if meta is None:
             meta = {}

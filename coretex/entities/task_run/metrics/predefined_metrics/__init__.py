@@ -21,6 +21,7 @@ from .disk_write import MetricDiskWrite
 from .download_speed import MetricDownloadSpeed
 from .gpu_temperature import MetricGPUTemperature
 from .gpu_usage import MetricGPUUsage
+from .gpu_memory_usage import MetricGPUMemoryUsage
 from .ram_usage import MetricRAMUsage
 from .upload_speed import MetricUploadSpeed
 from .swap_usage import MetricSwapUsage
