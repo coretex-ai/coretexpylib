@@ -6,7 +6,7 @@ name = "pypi"
 [packages]
 requests = "*"
 inflection = "*"
-pillow = "*"
+pillow = "10.2.0"
 numpy = "<2"
 scikit-image = "*"
 shapely = "*"
