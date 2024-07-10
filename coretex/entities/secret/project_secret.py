@@ -15,8 +15,22 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .aws_secret import AWSSecret
-from .credentials import CredentialsSecret
-from .git_secret import GitSecret
-from .project_secret import ProjectSecret
+from typing import Tuple
+
+from .type import SecretType
 from .secret import Secret
+
+
+class ProjectSecret(Secret):
+
+    """
+        Represents Project Secret entity from Coretex.ai
+    """
+
+    encryptionKey: str
+
+    def __init__(self) -> None:
+        super().__init__(SecretType.project)
+
+    def _encryptedFields(self) -> Tuple[str]:
+        return ("encryptionKey",)
