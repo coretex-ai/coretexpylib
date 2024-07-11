@@ -1,4 +1,4 @@
-from typing import Tuple, Optional, Union
+from typing import Tuple, Optional, Union, Any
 from pathlib import Path
 
 import json
@@ -13,7 +13,7 @@ import numpy as np
 from .. import folder_manager
 
 
-async def gen_witness(inputPath: Path, circuit: Path, witnessPath: Path) -> None:
+async def genWitness(inputPath: Path, circuit: Path, witnessPath: Path) -> None:
     await ezkl.gen_witness(inputPath, circuit, witnessPath)
 
 
@@ -51,7 +51,7 @@ def runOnnxInference(
 
     session = InferenceSession(onnxPath)
     inputName = session.get_inputs()[0].name
-    result: np.ndarray = session.run(None, {inputName: data})
+    result = np.array(session.run(None, {inputName: data}))
 
     if compiledModelPath is None and proveKey is None:
         return result
@@ -69,7 +69,7 @@ def runOnnxInference(
     with inputPath.open("w") as file:
         json.dump(inputData, file)
 
-    asyncio.run(gen_witness(inputPath, compiledModelPath, witnessPath))
+    asyncio.run(genWitness(inputPath, compiledModelPath, witnessPath))
     ezkl.prove(
         witnessPath,
         compiledModelPath,
