@@ -51,7 +51,7 @@ def runOnnxInference(
 
     session = InferenceSession(onnxPath)
     inputName = session.get_inputs()[0].name
-    result = session.run(None, {inputName: data})
+    result: np.ndarray = session.run(None, {inputName: data})
 
     if compiledModelPath is None and proveKey is None:
         return result
