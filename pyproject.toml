@@ -41,7 +41,7 @@ dependencies = [
   "docker",
   "cryptography",
   "pycryptodome",
-  "onnx",
+  "onnxruntime",
   "ezkl"
 ]
 
