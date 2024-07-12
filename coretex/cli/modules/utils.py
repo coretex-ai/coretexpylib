@@ -24,7 +24,6 @@ import sys
 import venv
 import shutil
 import logging
-import subprocess
 
 from py3nvml import py3nvml
 
@@ -77,8 +76,8 @@ def checkEnvironment() -> None:
         return
 
     try:
-        result = subprocess.run([venvCoretex, "version"], capture_output = True, text = True)
-        if result.returncode != 0:
+        returncode, _, _ = command([venvCoretex, "version"])
+        if returncode != 0:
             raise Exception()
     except Exception:
         createEnvironment(venvPython)
