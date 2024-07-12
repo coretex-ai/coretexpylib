@@ -23,6 +23,8 @@ inquirer = "*"
 docker = "*"
 cryptography = "*"
 pycryptodome = "*"
+onnxruntime = "*"
+ezkl = "*"
 
 [dev-packages]
 mypy = "*"

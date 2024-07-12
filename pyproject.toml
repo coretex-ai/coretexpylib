@@ -40,7 +40,9 @@ dependencies = [
   "inquirer",
   "docker",
   "cryptography",
-  "pycryptodome"
+  "pycryptodome",
+  "onnxruntime",
+  "ezkl"
 ]
 
 [project.urls]
