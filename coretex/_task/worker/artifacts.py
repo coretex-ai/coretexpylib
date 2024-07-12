@@ -70,7 +70,13 @@ def track(taskRun: TaskRun) -> Iterator[FileEventHandler]:
         try:
             observer.start()  # type: ignore[no-untyped-call]
         except OSError as e:
-            logging.getLogger("coretexpylib").error(f"Failed to start watchdog observer with error: {e}")
+            if "inotify watch limit reached" in str(e):
+                logging.getLogger("coretexpylib").error(
+                    f"{e}. Consider increasing the inotify limit by putting \"fs.inotify.max_user_watches=524288\" \
+                    (or any other value you prefer) into your sysctl settings"
+                )
+            else:
+                logging.getLogger("coretexpylib").error(f"Failed to start watchdog observer with error: {e}")
 
         yield eventHandler
     finally:
