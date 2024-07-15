@@ -28,6 +28,7 @@ import logging
 
 from .dataset import Dataset
 from .state import DatasetState
+from ..tag import EntityTagType, Taggable
 from ..sample import NetworkSample
 from ..utils import isEntityNameValid
 from ... import folder_manager
@@ -91,7 +92,7 @@ def _encryptedSampleImport(sampleType: Type[SampleType], sampleName: str, sample
     raise RuntimeError("Unreachable statement was reached.")
 
 
-class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, ABC):
+class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, ABC, Taggable):
 
     """
         Represents the base class for all Dataset classes which are
@@ -389,3 +390,44 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
         self.samples.append(sample)
 
         return sample
+
+    def addTag(self, tag: str, color: Optional[str] = None) -> None:
+        """
+            Add a tag to this dataset
+
+            Parameters
+            ----------
+            tag : str
+                name of the tag
+            color : Optional[str]
+                a hexadecimal color code for the new tag\n
+                if tag already exists in project, this will be ignored\n
+                if left empty and tag does not already exist, a random color will be picked
+
+            Raises
+            ------
+            ValueError
+                if tag name or color are invalid
+            NetworkRequestError
+                if request to add tag failed
+        """
+
+        self.addTagToEntity(tag, self.id, self.projectId, EntityTagType.dataset, color)
+
+
+    def removeTag(self, tag: str) -> None:
+        """
+            Remove tag with provided name from the dataset
+
+            Parameters
+            ----------
+            tag : str
+                name of the tag
+
+            Raises
+            ------
+            NetworkRequestError
+                if tag removal request failed
+        """
+
+        self.removeTagFromEntity(tag, self.id, self.projectId, EntityTagType.dataset)

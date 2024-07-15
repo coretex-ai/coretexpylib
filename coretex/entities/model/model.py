@@ -24,13 +24,14 @@ from pathlib import Path
 import json
 import logging
 
+from ..tag import Taggable, EntityTagType
 from ..utils import isEntityNameValid
 from ... import folder_manager
 from ...networking import networkManager, NetworkObject, ChunkUploadSession, MAX_CHUNK_SIZE, NetworkRequestError
 from ...codable import KeyDescriptor
 
 
-class Model(NetworkObject):
+class Model(NetworkObject, Taggable):
 
     """
         Represents a machine learning model object on Coretex.ai
@@ -282,3 +283,44 @@ class Model(NetworkObject):
         response = networkManager.formData("model/upload", parameters)
         if response.hasFailed():
             raise NetworkRequestError(response, "Failed to upload model")
+
+    def addTag(self, tag: str, color: Optional[str] = None) -> None:
+        """
+            Add a tag to this model
+
+            Parameters
+            ----------
+            tag : str
+                name of the tag
+            color : Optional[str]
+                a hexadecimal color code for the new tag\n
+                if tag already exists in project, this will be ignored\n
+                if left empty and tag does not already exist, a random color will be picked
+
+            Raises
+            ------
+            ValueError
+                if tag name or color are invalid
+            NetworkRequestError
+                if request to add tag failed
+        """
+
+        self.addTagToEntity(tag, self.id, self.projectId, EntityTagType.model, color)
+
+
+    def removeTag(self, tag: str) -> None:
+        """
+            Remove tag with provided name from the model
+
+            Parameters
+            ----------
+            tag : str
+                name of the tag
+
+            Raises
+            ------
+            NetworkRequestError
+                if tag removal request failed
+        """
+
+        self.removeTagFromEntity(tag, self.id, self.projectId, EntityTagType.model)
