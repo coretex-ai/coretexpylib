@@ -24,7 +24,7 @@ from .project_type import ProjectType
 from .project_visibility import ProjectVisibility
 from ..entity_visibility_type import EntityVisibilityType
 from ..utils import isEntityNameValid
-from ...networking import networkManager, NetworkResponse, NetworkRequestError
+from ...networking import networkManager, NetworkRequestError
 
 
 class Project(BaseObject):
@@ -36,6 +36,8 @@ class Project(BaseObject):
 
     tasks: List[Task]
     visibility: ProjectVisibility
+    isEncrypted: bool
+    secretName: Optional[str]
 
     @classmethod
     def createProject(

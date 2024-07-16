@@ -23,3 +23,4 @@ class SecretType(IntEnum):
     aws         = 1
     git         = 2
     credentials = 3
+    project     = 4

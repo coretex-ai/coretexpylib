@@ -15,32 +15,22 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Dict, Any
+from typing import Tuple
 
 from .type import SecretType
 from .secret import Secret
-from .aws_secret import AWSSecret
-from .git_secret import GitSecret
-from .credentials import CredentialsSecret
-from .project_secret import ProjectSecret
 
 
-def create(value: Dict[str, Any]) -> Secret:
-    rawType = value.get("type_")
-    if rawType is None:
-        raise ValueError("Invalid Secret json received. \"type_\" field missing")
+class ProjectSecret(Secret):
 
-    del value["type_"]
-    type_ = SecretType(rawType)
+    """
+        Represents Project Secret entity from Coretex.ai
+    """
 
-    if type_ == SecretType.aws:
-        return AWSSecret.decode(value)
+    encryptionKey: str
 
-    if type_ == SecretType.git:
-        return GitSecret.decode(value)
+    def __init__(self) -> None:
+        super().__init__(SecretType.project)
 
-    if type_ == SecretType.credentials:
-        return CredentialsSecret.decode(value)
-
-    if type_ == SecretType.project:
-        return ProjectSecret.decode(value)
+    def _encryptedFields(self) -> Tuple[str]:
+        return ("encryptionKey",)

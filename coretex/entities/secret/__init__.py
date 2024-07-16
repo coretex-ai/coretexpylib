@@ -18,4 +18,5 @@
 from .aws_secret import AWSSecret
 from .credentials import CredentialsSecret
 from .git_secret import GitSecret
+from .project_secret import ProjectSecret
 from .secret import Secret
