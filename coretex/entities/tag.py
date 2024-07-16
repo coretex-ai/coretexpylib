@@ -16,13 +16,14 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from enum import IntEnum
-from typing import Optional
+from typing import Optional, Dict, Any
+from abc import abstractmethod
 
 import re
 import random
 import logging
 
-from ..networking import networkManager, NetworkRequestError
+from ..networking import networkManager, NetworkRequestError, NetworkObject
 
 
 class EntityTagType(IntEnum):
@@ -31,13 +32,23 @@ class EntityTagType(IntEnum):
     dataset = 2
 
 
-class Taggable:
+class Taggable(NetworkObject):
 
-    def _getTagId(self, tagName: str, projectId: int, entityTypeEnum: int) -> Optional[int]:
+    @property
+    @abstractmethod
+    def projectId(self) -> int:
+        pass
+
+    @property
+    @abstractmethod
+    def entityTagType(self) -> int:
+        pass
+
+    def _getTagId(self, tagName: str) -> Optional[int]:
         parameters = {
             "name": tagName,
-            "type": int(entityTypeEnum),
-            "project_id": projectId,
+            "type": int(self.entityTagType),
+            "project_id": self.projectId,
         }
 
         response = networkManager.get("tag", parameters)
@@ -53,8 +64,28 @@ class Taggable:
         return tagId
 
 
-    def addTagToEntity(self, tag: str, entityId: int, projectId: int, entityTypeEnum: int, color: Optional[str] = None) -> None:
-        if re.match(r"^[a-z0-9-]{1,10}$", tag) is None:
+    def addTag(self, tag: str, color: Optional[str] = None) -> None:
+        """
+            Add a tag to this entity
+
+            Parameters
+            ----------
+            tag : str
+                name of the tag
+            color : Optional[str]
+                a hexadecimal color code for the new tag\n
+                if tag already exists in project, this will be ignored\n
+                if left empty and tag does not already exist, a random color will be picked
+
+            Raises
+            ------
+            ValueError
+                if tag name or color are invalid
+            NetworkRequestError
+                if request to add tag failed
+        """
+
+        if re.match(r"^[a-z0-9-]{1,30}$", tag) is None:
             raise ValueError(">> [Coretex] Tag has to be alphanumeric")
 
         if color is None:
@@ -63,35 +94,51 @@ class Taggable:
             if re.match(r'^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$', color) is None:
                 raise ValueError(">> [Coretex] Tag color has to follow hexadecimal color code")
 
-        parameters = {
-            "entity_id": entityId,
-            "type": entityTypeEnum,
-            "tags": {}
-        }
+        tags: Dict[str, Any] = {}
 
-        tagId = self._getTagId(tag, projectId, entityTypeEnum)
+        tagId = self._getTagId(tag)
         if tagId is not None:
-            parameters["tags"]["existing"] = [tagId]  # type: ignore[index]
+            tags["existing"] = [tagId]
         else:
-            parameters["tags"]["new"] = [{  # type: ignore[index]
+            tags["new"] = [{
                 "name": tag,
                 "color": color
             }]
+
+        parameters = {
+            "entity_id": self.id,
+            "type": self.entityTagType,
+            "tags": tags
+        }
 
         response = networkManager.post("tag/entity", parameters)
         if response.hasFailed():
             raise NetworkRequestError(response, "Failed to create tag")
 
-    def removeTagFromEntity(self, tag: str, entityId: int, projectId: int, entityTypeEnum: int) -> None:
-        tagId = self._getTagId(tag, projectId, entityTypeEnum)
+    def removeTag(self, tag: str) -> None:
+        """
+            Remove tag with provided name from the model
+
+            Parameters
+            ----------
+            tag : str
+                name of the tag
+
+            Raises
+            ------
+            NetworkRequestError
+                if tag removal request failed
+        """
+
+        tagId = self._getTagId(tag)
         if tagId is None:
-            logging.error(f">> [Coretex] Tag \"{tag}\" not found on entity id {entityId}")
+            logging.error(f">> [Coretex] Tag \"{tag}\" not found on entity id {self.id}")
             return
 
         parameters = {
-            "entity_id": entityId,
+            "entity_id": self.id,
             "tag_id": tagId,
-            "type": entityTypeEnum
+            "type": self.entityTagType
         }
 
         response = networkManager.post("tag/remove", parameters)
