@@ -22,6 +22,7 @@ from .secret import Secret
 from .aws_secret import AWSSecret
 from .git_secret import GitSecret
 from .credentials import CredentialsSecret
+from .project_secret import ProjectSecret
 
 
 def create(value: Dict[str, Any]) -> Secret:
@@ -40,3 +41,6 @@ def create(value: Dict[str, Any]) -> Secret:
 
     if type_ == SecretType.credentials:
         return CredentialsSecret.decode(value)
+
+    if type_ == SecretType.project:
+        return ProjectSecret.decode(value)
