@@ -16,11 +16,13 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import List, Any, Tuple, Optional, Callable
+from pathlib import Path
 from functools import wraps
 from importlib.metadata import version as getLibraryVersion
 
 import sys
 import venv
+import shutil
 import logging
 
 from py3nvml import py3nvml
@@ -50,10 +52,9 @@ def fetchCtxSource() -> Optional[str]:
     return None
 
 
-def checkEnvironment() -> None:
-    venvPython = DEFAULT_VENV_PATH / "bin" / "python"
+def createEnvironment(venvPython: Path) -> None:
     if DEFAULT_VENV_PATH.exists():
-        return
+        shutil.rmtree(DEFAULT_VENV_PATH)
 
     venv.create(DEFAULT_VENV_PATH, with_pip = True)
 
@@ -63,6 +64,22 @@ def checkEnvironment() -> None:
     ctxSource = fetchCtxSource()
     if ctxSource is not None:
         command([str(venvPython), "-m", "pip", "install", ctxSource], ignoreStdout = True)
+
+
+def checkEnvironment() -> None:
+    venvPython = DEFAULT_VENV_PATH / "bin" / "python"
+    venvActivate = DEFAULT_VENV_PATH / "bin" / "activate"
+    venvCoretex =  DEFAULT_VENV_PATH / "bin" / "coretex"
+
+    if not venvActivate.exists() or not venvPython.exists():
+        createEnvironment(venvPython)
+        return
+
+    try:
+        command([str(venvCoretex), "version"], check = True)
+    except Exception:
+        createEnvironment(venvPython)
+        return
 
 
 def updateLib() -> None:
