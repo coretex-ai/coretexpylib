@@ -271,6 +271,20 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
                 parameters which affect the contents of the cache
             projectId : int
                 project for which the dataset will be created
+
+            Returns
+            -------
+            The created dataset object
+
+            Raises
+            ------
+            ValueError -> If prefix of the name is invalid or if failed to create cache dataset
+
+            Example
+            -------
+            >>> from coretex import NetworkDataset
+            \b
+            >>> dummyDataset = NetworkDataset.createDataset("dummyDataset", dependencies, 123)
         """
 
         if not isEntityNameValid(prefix):
