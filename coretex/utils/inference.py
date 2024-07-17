@@ -16,7 +16,7 @@ from .. import folder_manager
 async def genWitness(inputPath: Path, circuit: Path, witnessPath: Path) -> None:
     await ezkl.gen_witness(inputPath, circuit, witnessPath)
 
-async def getSrs(settings: Path):
+async def getSrs(settings: Path) -> None:
     await ezkl.get_srs(settings)
 
 
