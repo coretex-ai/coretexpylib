@@ -27,11 +27,11 @@ import logging
 from ..tag import Taggable, EntityTagType
 from ..utils import isEntityNameValid
 from ... import folder_manager
-from ...networking import networkManager, ChunkUploadSession, MAX_CHUNK_SIZE, NetworkRequestError
+from ...networking import networkManager, NetworkObject, ChunkUploadSession, MAX_CHUNK_SIZE, NetworkRequestError
 from ...codable import KeyDescriptor
 
 
-class Model(Taggable):
+class Model(NetworkObject, Taggable):
 
     """
         Represents a machine learning model object on Coretex.ai
@@ -82,6 +82,10 @@ class Model(Taggable):
     @property
     def zipPath(self) -> Path:
         return self.path.with_suffix(".zip")
+
+    @property
+    def entityTagType(self) -> int:
+        return EntityTagType.model
 
     @classmethod
     def modelDescriptorFileName(cls) -> str:
@@ -283,7 +287,3 @@ class Model(Taggable):
         response = networkManager.formData("model/upload", parameters)
         if response.hasFailed():
             raise NetworkRequestError(response, "Failed to upload model")
-
-    @property
-    def entityTagType(self) -> int:
-        return EntityTagType.model

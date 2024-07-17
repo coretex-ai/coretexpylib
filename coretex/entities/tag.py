@@ -17,13 +17,13 @@
 
 from enum import IntEnum
 from typing import Optional, Dict, Any
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 
 import re
 import random
 import logging
 
-from ..networking import networkManager, NetworkRequestError, NetworkObject
+from ..networking import networkManager, NetworkRequestError
 
 
 class EntityTagType(IntEnum):
@@ -32,12 +32,10 @@ class EntityTagType(IntEnum):
     dataset = 2
 
 
-class Taggable(NetworkObject):
+class Taggable(ABC):
 
-    @property
-    @abstractmethod
-    def projectId(self) -> int:
-        pass
+    id: int
+    projectId: int
 
     @property
     @abstractmethod

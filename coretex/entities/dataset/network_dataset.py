@@ -92,7 +92,7 @@ def _encryptedSampleImport(sampleType: Type[SampleType], sampleName: str, sample
     raise RuntimeError("Unreachable statement was reached.")
 
 
-class NetworkDataset(Generic[SampleType], Dataset[SampleType], Taggable, ABC):
+class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, Taggable, ABC):
 
     """
         Represents the base class for all Dataset classes which are
@@ -129,6 +129,10 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], Taggable, ABC):
         """
 
         return folder_manager.datasetsFolder / str(self.id)
+
+    @property
+    def entityTagType(self) -> int:
+        return EntityTagType.dataset
 
     # Codable overrides
 
@@ -390,7 +394,3 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], Taggable, ABC):
         self.samples.append(sample)
 
         return sample
-
-    @property
-    def entityTagType(self) -> int:
-        return EntityTagType.dataset
