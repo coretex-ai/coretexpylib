@@ -46,18 +46,26 @@ class Taggable(ABC):
         parameters = {
             "name": tagName,
             "type": int(self.entityTagType),
-            "project_id": self.projectId,
+            "project_id": self.projectId
         }
 
         response = networkManager.get("tag", parameters)
         if response.hasFailed():
             raise NetworkRequestError(response, "Failed to check existing tags")
 
-        tags = response.getJson(dict)["data"]
+        tags = response.getJson(dict).get("data")
+        if not isinstance(tags, dict):
+            raise NetworkRequestError(response, f"Field \"data\" from tag response must be dict, but got {type(tags)} instead")
+
         if len(tags) == 0:
             return None
 
-        tagId: int = tags[0]["id"]
+        if not isinstance(tags[0], dict):
+            raise NetworkRequestError(response, f"Tag object from response must be dict, but got {type(tags[0])} instead")
+
+        tagId = tags[0].get("id")
+        if not isinstance(tagId, int):
+            raise NetworkRequestError(response, f"Tag object from response must have field id of type int, but got {type(tagId)} instead")
 
         return tagId
 
