@@ -63,7 +63,7 @@ def createEnvironment(venvPython: Path) -> None:
 
     ctxSource = fetchCtxSource()
     if ctxSource is not None:
-        command([str(venvPython), "-m", "pip", "install", ctxSource], ignoreStdout = True)
+        command([str(venvPython), "-m", "pip", "install", ctxSource], ignoreStdout = True, ignoreStderr = True)
 
 
 def checkEnvironment() -> None:

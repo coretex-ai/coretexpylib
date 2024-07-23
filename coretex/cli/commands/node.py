@@ -23,7 +23,8 @@ from ...utils import docker
 from ..modules import user, ui, utils
 from ..modules import node as node_module
 from ..modules import update as update_module
-from ...configuration import UserConfiguration, NodeConfiguration, CONFIG_DIR
+from ..modules.node import NodeStatus
+from ...configuration import UserConfiguration, NodeConfiguration
 
 
 @click.command()
@@ -84,15 +85,15 @@ def update(autoAccept: bool, autoDecline: bool) -> None:
 
     nodeStatus = node_module.getNodeStatus()
 
-    if nodeStatus == node_module.NodeStatus.inactive:
+    if nodeStatus == NodeStatus.inactive:
         ui.errorEcho("Node is not running. To update Node you need to start it first.")
         return
 
-    if nodeStatus == node_module.NodeStatus.reconnecting:
+    if nodeStatus == NodeStatus.reconnecting:
         ui.errorEcho("Node is reconnecting. Cannot update now.")
         return
 
-    if nodeStatus == update_module.NodeStatus.busy and not autoAccept:
+    if nodeStatus == NodeStatus.busy and not autoAccept:
         if autoDecline:
             return
 
@@ -128,7 +129,7 @@ def update(autoAccept: bool, autoDecline: bool) -> None:
     node_module.stop()
 
     ui.stdEcho("Updating node...")
-    node_module.start(nodeConfig.image, config)
+    node_module.start(nodeConfig.image, userConfig, nodeConfig)
 
     docker.removeDanglingImages(
         node_module.getRepoFromImageUrl(nodeConfig.image),

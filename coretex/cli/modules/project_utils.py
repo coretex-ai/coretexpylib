@@ -68,7 +68,7 @@ def promptProjectSelect() -> Optional[Project]:
     ui.progressEcho("Validating project...")
     try:
         project = Project.fetchOne(name = name)
-        ui.successEcho(f"Project \"{project}\" selected successfully!")
+        ui.successEcho(f"Project \"{name}\" selected successfully!")
         selectProject(project.id)
     except ValueError:
         ui.errorEcho(f"Project \"{name}\" not found.")

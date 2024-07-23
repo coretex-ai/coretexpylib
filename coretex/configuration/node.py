@@ -227,15 +227,14 @@ class NodeConfiguration(BaseConfiguration):
 
     def isNodeConfigured(self) -> bool:
         return (
-            not isinstance(self._raw.get("nodeName"), str) or
-            not isinstance(self._raw.get("password"), str) or
-            not isinstance(self._raw.get("image"), str) or
-            not isinstance(self._raw.get("nodeAccessToken"), str) or
-            not isinstance(self._raw.get("cpuCount"), int) or
-            not isinstance(self._raw.get("nodeRam"), int) or
-            not isinstance(self._raw.get("nodeSwap"), int) or
-            not isinstance(self._raw.get("nodeSharedMemory"), int) or
-            not isinstance(self._raw.get("nodeMode"), int)
+            isinstance(self._raw.get("nodeName"), str) and
+            isinstance(self._raw.get("image"), str) and
+            isinstance(self._raw.get("nodeAccessToken"), str) and
+            isinstance(self._raw.get("cpuCount"), int) and
+            isinstance(self._raw.get("nodeRam"), int) and
+            isinstance(self._raw.get("nodeSwap"), int) and
+            isinstance(self._raw.get("nodeSharedMemory"), int) and
+            isinstance(self._raw.get("nodeMode"), int)
         )
 
     def isConfigurationValid(self) -> Tuple[bool, List[str]]:

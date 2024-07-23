@@ -23,10 +23,10 @@ from ...configuration import UserConfiguration
 
 @click.command()
 def login() -> None:
-    config = UserConfiguration()
-    if config.isUserConfigured():
+    userConfig = UserConfiguration()
+    if userConfig.isUserConfigured():
         if not ui.clickPrompt(
-            f"User already logged in with username {config.username}.\nWould you like to log in with a different user (Y/n)?",
+            f"User already logged in with username {userConfig.username}.\nWould you like to log in with a different user (Y/n)?",
             type = bool,
             default = True,
             show_default = False
@@ -34,6 +34,6 @@ def login() -> None:
             return
 
     ui.stdEcho("Please enter your credentials:")
-    user.configUser()
-    config.save()
-    ui.successEcho(f"User {config.username} successfully logged in.")
+    user.configUser(userConfig)
+    userConfig.save()
+    ui.successEcho(f"User {userConfig.username} successfully logged in.")

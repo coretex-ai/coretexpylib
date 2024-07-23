@@ -416,7 +416,7 @@ def configureNode(nodeConfig: NodeConfiguration, verbose: bool) -> None:
 
     nodeConfig.storagePath = config_defaults.DEFAULT_STORAGE_PATH
     nodeConfig.nodeRam = int(min(max(config_defaults.MINIMUM_RAM, ramLimit), config_defaults.DEFAULT_RAM))
-    nodeConfig.nodeSwap = config_defaults.DEFAULT_SWAP_MEMORY
+    nodeConfig.nodeSwap = min(swapLimit, int(max(config_defaults.DEFAULT_SWAP_MEMORY, swapLimit)))
     nodeConfig.nodeSharedMemory = config_defaults.DEFAULT_SHARED_MEMORY
     nodeConfig.cpuCount = int(min(cpuLimit, config_defaults.DEFAULT_CPU_COUNT))
     nodeConfig.nodeMode = config_defaults.DEFAULT_NODE_MODE
