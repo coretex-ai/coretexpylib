@@ -19,12 +19,11 @@ from typing import Iterator, Optional
 from pathlib import Path
 from contextlib import contextmanager
 
-import os
 import shutil
 import uuid
 
 from .utils import file as file_utils
-
+from .configuration import loadConfig
 
 """
     Used for handling everything related to local storage
@@ -59,8 +58,9 @@ def _createFolder(name: str) -> Path:
 
     return path
 
-
-_root = Path(os.environ["CTX_STORAGE_PATH"]).expanduser()
+config = loadConfig()
+storagePath = config["storagePath"]  # this will never be None since _syncConfigWithEnv() will happen before folder_manager initialization
+_root = Path(storagePath).expanduser()
 
 samplesFolder    = _createFolder("samples")
 modelsFolder     = _createFolder("models")
