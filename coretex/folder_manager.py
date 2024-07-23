@@ -59,7 +59,7 @@ def _createFolder(name: str) -> Path:
     return path
 
 config = loadConfig()
-storagePath = config["storagePath"]  # this will never be None since _syncConfigWithEnv() will happen before folder_manager initialization
+storagePath = config["storagePath"]  # value of key storagePath in config dictionary is guaranteed to never be None
 _root = Path(storagePath).expanduser()
 
 samplesFolder    = _createFolder("samples")
