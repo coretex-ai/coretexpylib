@@ -123,7 +123,7 @@ class Taggable(ABC):
 
     def removeTag(self, tag: str) -> None:
         """
-            Remove tag with provided name from the model
+            Remove tag with provided name from the entity
 
             Parameters
             ----------
