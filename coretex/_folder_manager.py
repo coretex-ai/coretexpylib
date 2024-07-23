@@ -127,6 +127,7 @@ class FolderManager:
 
 folder_manager = FolderManager(os.environ["CTX_STORAGE_PATH"])
 
+
 @contextmanager
 def currentFolderManager(storagePath: Path) -> Iterator[None]:
     global folder_manager
