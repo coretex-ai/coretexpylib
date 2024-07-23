@@ -22,7 +22,7 @@ import logging
 import subprocess
 
 
-def logProcessOutput(output: bytes, severity: int) -> None:
+def logProcessOutput(output: bytes, level: int) -> None:
     decoded = output.decode("UTF-8")
 
     for line in decoded.split("\n"):
@@ -31,7 +31,7 @@ def logProcessOutput(output: bytes, severity: int) -> None:
             continue
 
         # ignoring type for now, has to be fixed in coretexpylib
-        logging.getLogger("coretexpylib").log(severity, line)
+        logging.getLogger("coretexpylib").log(level, line)
 
 
 class CommandException(Exception):

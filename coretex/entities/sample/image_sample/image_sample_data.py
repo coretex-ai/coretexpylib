@@ -1,13 +1,3 @@
-from typing import Final, Any, Optional
-from pathlib import Path
-
-import json
-
-from PIL import Image, ImageOps
-
-import numpy as np
-
-from .image_format import ImageFormat
 #     Copyright (C) 2023  Coretex LLC
 
 #     This file is part of Coretex.ai
@@ -25,6 +15,16 @@ from .image_format import ImageFormat
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from typing import Final, Optional
+from pathlib import Path
+
+import json
+
+from PIL import Image, ImageOps
+
+import numpy as np
+
+from .image_format import ImageFormat
 from ...annotation import CoretexImageAnnotation, ImageDatasetClasses
 
 

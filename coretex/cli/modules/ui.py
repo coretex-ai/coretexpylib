@@ -58,21 +58,27 @@ def previewConfig(userConfig: UserConfiguration, nodeConfig: NodeConfiguration) 
         nodeSecret = "********"
 
     table = [
-        ["Node name",           nodeConfig.nodeName],
-        ["Server URL",          userConfig.serverUrl],
-        ["Coretex Node type",   nodeConfig.image],
-        ["Storage path",        nodeConfig.storagePath],
-        ["RAM",                 f"{nodeConfig.nodeRam}GB"],
-        ["SWAP memory",         f"{nodeConfig.nodeSwap}GB"],
-        ["POSIX shared memory", f"{nodeConfig.nodeSharedMemory}GB"],
-        ["CPU cores allocated", f"{nodeConfig.cpuCount}"],
-        ["Coretex Node mode",   f"{NodeMode(nodeConfig.nodeMode).name}"],
-        ["Docker access",       allowDocker],
+        ["Node name",                   nodeConfig.nodeName],
+        ["Server URL",                  userConfig.serverUrl],
+        ["Coretex Node type",           nodeConfig.image],
+        ["Storage path",                nodeConfig.storagePath],
+        ["RAM",                         f"{nodeConfig.nodeRam}GB"],
+        ["SWAP memory",                 f"{nodeConfig.nodeSwap}GB"],
+        ["POSIX shared memory",         f"{nodeConfig.nodeSharedMemory}GB"],
+        ["CPU cores allocated",         f"{nodeConfig.cpuCount}"],
+        ["Coretex Node mode",           f"{NodeMode(nodeConfig.nodeMode).name}"],
+        ["Docker access",               allowDocker],
         ["Coretex Node secret",         nodeSecret],
         ["Coretex Node init script",    nodeConfig.initScript if nodeConfig.initScript is not None else ""]
     ]
     if nodeConfig.modelId is not None:
         table.append(["Coretex Model ID", f"{nodeConfig.modelId}"])
+
+    if nodeConfig.nearWalletId is not None:
+        table.append(["NEAR wallet id", nodeConfig.nearWalletId])
+
+    if nodeConfig.endpointInvocationPrice is not None:
+        table.append(["Endpoint invocation price", f"{nodeConfig.endpointInvocationPrice}"])
 
     stdEcho(tabulate(table))
 
@@ -83,6 +89,10 @@ def outputUrl(entityUrl: str) -> str:
 
 def stdEcho(text: str) -> None:
     click.echo(click.style(f"\n{text}", fg = "cyan"))
+
+
+def warningEcho(text: str) -> None:
+    click.echo(click.style(f"\nWARNING: {text}", fg = "yellow"))
 
 
 def successEcho(text: str) -> None:

@@ -21,10 +21,11 @@ import click
 
 from ... import folder_manager
 from ..modules import user, utils, project_utils
-from ..._task import TaskRunWorker, LoggerUploadWorker, executeProcess, readTaskConfig
+from ... import folder_manager
 from ...configuration import UserConfiguration
 from ...entities import TaskRun, TaskRunStatus
 from ...resources import PYTHON_ENTRY_POINT_PATH
+from ..._task import TaskRunWorker, executeRunLocally, readTaskConfig, runLogger
 
 
 class RunException(Exception):
@@ -46,7 +47,11 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
 
     parameters = readTaskConfig()
 
+    folder_manager.clearTempFiles()
+
     selectedProject = project_utils.getProject(project, userConfig)
+    # clearing temporary files in case that node was manually killed before
+
     if selectedProject is None:
         return
 
@@ -62,8 +67,7 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
     taskRun.updateStatus(TaskRunStatus.preparingToStart)
 
     with TaskRunWorker(userConfig.refreshToken, taskRun.id):
-        loggerUploadWorker = LoggerUploadWorker(taskRun.id)
-        loggerUploadWorker.start()
+        runLogger.attach(taskRun.id)
 
         command = [
             "python", str(PYTHON_ENTRY_POINT_PATH),
@@ -71,14 +75,18 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
             "--refreshToken", userConfig.refreshToken
         ]
 
-        returnCode = executeProcess(
+        returnCode = executeRunLocally(
             command,
-            loggerUploadWorker,
             captureErr = True
         )
 
-    loggerUploadWorker.uploadLogs()
+    # Flush logs before updating status to a final one
+    # as that invalidates the auth token
+    runLogger.flushLogs()
+    runLogger.reset()
+
     if returnCode != 0:
+        runLogger.fatal(f">> [Coretex] Failed to execute Task. Exit code: {returnCode}")
         taskRun.updateStatus(TaskRunStatus.completedWithError)
     else:
         taskRun.updateStatus(TaskRunStatus.completedWithSuccess)

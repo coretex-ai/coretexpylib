@@ -15,28 +15,12 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from datetime import datetime, timezone
-
 from . import ui
-from ...utils import decodeDate
-from ...networking import networkManager, NetworkResponse, NetworkRequestError
-from ...configuration import UserConfiguration, LoginInfo
+from ...networking import networkManager, NetworkRequestError
+from ...configuration import UserConfiguration
 
 
-def authenticateUser(username: str, password: str) -> NetworkResponse:
-    response = networkManager.authenticate(username, password, False)
-
-    if response.hasFailed():
-        if response.statusCode >= 500:
-            raise NetworkRequestError(response, "Something went wrong, please try again later.")
-
-        if response.statusCode >= 400:
-            raise NetworkRequestError(response, "User credentials invalid, please try configuring them again.")
-
-    return response
-
-
-def authenticate(retryCount: int = 0) -> LoginInfo:
+def configUser(userConfig: UserConfiguration, retryCount: int = 0) -> None:
     if retryCount >= 3:
         raise RuntimeError("Failed to authenticate. Terminating...")
 
@@ -48,53 +32,57 @@ def authenticate(retryCount: int = 0) -> LoginInfo:
 
     if response.hasFailed():
         ui.errorEcho("Failed to authenticate. Please try again...")
-        return authenticate(retryCount + 1)
+        return configUser(userConfig, retryCount + 1)
 
     jsonResponse = response.getJson(dict)
+    userConfig.username = username
+    userConfig.password = password
+    userConfig.token = jsonResponse["token"]
+    userConfig.tokenExpirationDate = jsonResponse["expires_on"]
+    userConfig.refreshToken = jsonResponse.get("refresh_token")
+    userConfig.refreshTokenExpirationDate = jsonResponse.get("refresh_expires_on")
 
-    return LoginInfo(
-        username,
-        password,
-        jsonResponse["token"],
-        jsonResponse["expires_on"],
-        jsonResponse["refresh_token"],
-        jsonResponse["refresh_expires_on"]
-    )
+
+def authenticateUser(userConfig: UserConfiguration) -> None:
+    response = networkManager.authenticate(userConfig.username, userConfig.password)
+
+    if response.statusCode >= 500:
+        raise NetworkRequestError(response, "Something went wrong, please try again later.")
+    elif response.statusCode >= 400:
+        configUser(userConfig)
+    else:
+        jsonResponse = response.getJson(dict)
+        userConfig.token = jsonResponse["token"]
+        userConfig.tokenExpirationDate = jsonResponse["expires_on"]
+        userConfig.refreshToken = jsonResponse.get("refresh_token")
+        userConfig.refreshTokenExpirationDate = jsonResponse.get("refresh_expires_on")
+
+
+def authenticateWithRefreshToken(userConfig: UserConfiguration) -> None:
+    if not isinstance(userConfig.refreshToken, str):
+        raise TypeError(f"Expected \"str\" received \"{type(userConfig.refreshToken)}\"")
+
+    response = networkManager.authenticateWithRefreshToken(userConfig.refreshToken)
+
+    if response.statusCode >= 500:
+        raise NetworkRequestError(response, "Something went wrong, please try again later.")
+    elif response.statusCode >= 400:
+        authenticateUser(userConfig)
+    else:
+        jsonResponse = response.getJson(dict)
+        userConfig.token = jsonResponse["token"]
+        userConfig.token = jsonResponse["expires_on"]
 
 
 def initializeUserSession() -> None:
-    config = UserConfiguration()
+    userConfig = UserConfiguration()
 
-    if not config.isUserConfigured():
+    if not userConfig.isUserConfigured():
         ui.errorEcho("User configuration not found. Please authenticate with your credentials.")
-        loginInfo = authenticate()
-        config.saveLoginData(loginInfo)
+        configUser(userConfig)
+    elif not userConfig.isTokenValid("token") and userConfig.isTokenValid("refreshToken"):
+        authenticateWithRefreshToken(userConfig)
     else:
-        if config.tokenExpirationDate is not None and config.refreshTokenExpirationDate is not None:
-            tokenExpirationDate = decodeDate(config.tokenExpirationDate)
-            refreshTokenExpirationDate = decodeDate(config.refreshTokenExpirationDate)
+        authenticateUser(userConfig)
 
-            currentDate = datetime.utcnow().replace(tzinfo = timezone.utc)
-            if currentDate < tokenExpirationDate:
-                return
-
-            if currentDate < refreshTokenExpirationDate and config.refreshToken is not None:
-                response = networkManager.authenticateWithRefreshToken(config.refreshToken)
-                if response.hasFailed():
-                    if response.statusCode >= 500:
-                        raise NetworkRequestError(response, "Something went wrong, please try again later.")
-
-                    if response.statusCode >= 400:
-                        response = authenticateUser(config.username, config.password)
-            else:
-                response = authenticateUser(config.username, config.password)
-        else:
-            response = authenticateUser(config.username, config.password)
-
-        jsonResponse = response.getJson(dict)
-        config.token = jsonResponse["token"]
-        config.tokenExpirationDate = jsonResponse["expires_on"]
-        config.refreshToken = jsonResponse.get("refresh_token")
-        config.refreshTokenExpirationDate = jsonResponse.get("refresh_expires_on")
-
-    config.save()
+    userConfig.save()

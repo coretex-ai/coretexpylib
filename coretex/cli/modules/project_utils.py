@@ -1,12 +1,13 @@
-from typing import Optional, Dict, Any
+from typing import Optional
+
+import logging
 
 import click
 
 from . import ui
-from ...networking import EntityNotCreated
 from ...configuration import UserConfiguration
 from ...entities import Project, ProjectType, ProjectVisibility
-from ...networking import EntityNotCreated, NetworkRequestError
+from ...networking import NetworkRequestError
 
 
 def selectProject(projectId: int) -> None:
@@ -56,7 +57,8 @@ def promptProjectCreate(message: str, name: str) -> Optional[Project]:
         ui.successEcho(f"Project \"{name}\" created successfully.")
         ui.stdEcho(f"A new Project has been created. You can open it by clicking on this URL {ui.outputUrl(project.entityUrl())}.")
         return project
-    except EntityNotCreated:
+    except NetworkRequestError as ex:
+        logging.getLogger("cli").debug(ex, exc_info = ex)
         raise click.ClickException(f"Failed to create project \"{name}\".")
 
 
@@ -96,7 +98,8 @@ def createProject(name: Optional[str] = None, projectType: Optional[int] = None,
         ui.successEcho(f"Project \"{name}\" created successfully.")
         ui.stdEcho(f"A new Project has been created. You can open it by clicking on this URL {ui.outputUrl(project.entityUrl())}.")
         return project
-    except EntityNotCreated:
+    except NetworkRequestError as ex:
+        logging.getLogger("cli").debug(ex, exc_info = ex)
         raise click.ClickException(f"Failed to create project \"{name}\".")
 
 

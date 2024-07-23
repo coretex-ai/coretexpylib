@@ -1,0 +1,162 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: coretex
+  labels:
+    app: coretex-node-service
+
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: basic-auth-secret-node-service
+  namespace: coretex
+  labels:
+    app: coretex-node-service
+type: Opaque
+immutable: true
+data:
+  username: ${INSERT_USERNAME_HERE}
+  password: ${INSERT_PASSWORD_HERE}
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authenticate-script-configmap-with-secret
+  namespace: coretex
+data:
+  authenticate.sh: |
+    #!/bin/bash
+    set -e pipefail
+
+    # Function to send API request and extract token
+    login() {
+      local username="$1"
+      local password="$2"
+
+      local decoded_user=$(echo -n "$username" | base64 --decode)
+      local decoded_pass=$(echo -n "$password" | base64 --decode)
+      local authString="${decoded_user}:${decoded_pass}"
+
+      local encodedAuthString=$(echo -n "$authString" | base64)
+
+      apt-get update > /dev/null 2>&1 && apt install -y curl > /dev/null 2>&1
+      
+      local response=$(curl -s -X POST -H "Content-Type: application/json" -H "X-User-Agent: cli" -H "X-Timezone-Offset:" -H "Accept-Language: en-gb, en-us;q=0.8" -H "Authorization: Basic ${encodedAuthString}" "https://api.coretex.ai/api/v1/user/login")
+      
+      local token=$(echo "$response" | grep -o '"token":"[^"]*' | cut -d'"' -f4)
+      
+      echo "${token}"
+    }
+
+    # Function to perform second POST request
+    perform_second_post() {
+      local machine_name="$1-$(cat /proc/sys/kernel/random/uuid)"
+      local token="$2"
+      
+      echo "${machine_name}" >> /script/machine_name.txt
+      local response=$(curl -s -X POST -H "Content-Type: application/json" -H "X-User-Agent: cli" -H "X-Timezone-Offset:" -H "Accept-Language: en-gb, en-us;q=0.8" -H "api-token: ${token}" -d "{\"machine_name\":\"${machine_name}\"}" "https://api.coretex.ai/api/v1/service")
+
+      local access_token=$(echo "$response" | grep -o '"access_token":"[^"]*' | cut -d'"' -f4)
+      
+      echo "${access_token}"
+    }
+
+    # Get values of env vars CTX_USER and CTX_PASSWORD from Secrets
+    username="${CTX_USER}"
+    password="${CTX_PASSWORD}"
+
+    # Invoke the login function with env var values
+    token=$(login "${username}" "${password}")
+
+    if [[ -n "${token}" ]]; then
+      access_token=$(perform_second_post "${CTX_NODE_NAME}" "${token}")
+      
+      if [[ -n "${access_token}" ]]; then
+        echo -n "export CTX_NODE_ACCESS_TOKEN=" >> /script/init.sh
+        echo "${access_token}" >> /script/init.sh
+        echo -n "export CTX_NODE_NAME=" >> /script/init.sh
+        echo -n "$(cat /script/machine_name.txt)" >> /script/init.sh
+      else
+        echo "Second POST request failed or access token not found."
+      fi
+    else
+      echo "Login failed or token not found."
+    fi
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coretex-node-deployment
+  namespace: coretex
+  labels:
+    app: coretex-node
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coretex-node
+  template:
+    metadata:
+      labels:
+        app: coretex-node
+    spec:
+      initContainers:
+      - name: authenticate-init-container
+        image: ubuntu:22.04
+        command: ["/bin/bash", "-c"]
+        args:
+          - configMapContent=$(cat /configmap/authenticate.sh) && echo "$configMapContent" > /script/authenticate.sh && chmod +x /script/authenticate.sh && ./script/authenticate.sh
+        volumeMounts:
+        - name: scripts-volume
+          mountPath: /script/
+        - name: config-volume
+          mountPath: /configmap
+        env:
+        - name: CTX_NODE_NAME
+          value: "${INSERT_QUEUE_NAME_HERE}"
+        - name: CTX_USER
+          valueFrom:
+            secretKeyRef:
+              name: basic-auth-secret-node-service
+              key: username
+        - name: CTX_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: basic-auth-secret-node-service
+              key: password
+      volumes:
+      - name: config-volume
+        configMap:
+          name: authenticate-script-configmap-with-secret
+      - name: scripts-volume
+        emptyDir: {}
+      containers:
+      - name: coretex-node
+        image: coretexai/coretex-node:latest-cpu
+        ports:
+        - containerPort: 21000
+        env:
+        - name: CTX_NODE_NAME
+          value: "${INSERT_QUEUE_NAME_HERE}"
+        - name: CTX_API_URL
+          value: "https://api.coretex.ai/"
+        - name: CTX_NODE_ACCESS_TOKEN
+          value: $CTX_NODE_ACCESS_TOKEN
+        resources:
+          requests:
+            cpu: "200m" # Increase the CPU request - necessary if doing horizontal pod autoscaling with cpu metric
+            memory: "1Gi" # "900Mi"
+          limits:
+            cpu: "500m" # Increase the CPU limit - necessary if doing horizontal pod autoscaling with cpu metric
+            memory: "1Gi" # "900Mi"
+        volumeMounts:
+        - name: scripts-volume
+          mountPath: /script/
+
+---

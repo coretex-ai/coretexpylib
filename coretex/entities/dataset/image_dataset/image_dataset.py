@@ -82,7 +82,7 @@ class ImageDataset(BaseImageDataset[ImageSample], NetworkDataset[ImageSample]): 
         return not response.hasFailed()
 
     @override
-    def _uploadSample(self, samplePath: Path, sampleName: str) -> ImageSample:
+    def _uploadSample(self, samplePath: Path, sampleName: str, **metadata: Any) -> ImageSample:
         params = {
             "dataset_id": self.id
         }

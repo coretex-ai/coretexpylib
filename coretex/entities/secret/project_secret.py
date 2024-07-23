@@ -15,33 +15,22 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import TextIO
-from io import StringIO
+from typing import Tuple
 
-from .upload_worker import LoggerUploadWorker
-from ...entities import Log, LogSeverity
+from .type import SecretType
+from .secret import Secret
 
 
-class OutputInterceptor(StringIO):
+class ProjectSecret(Secret):
 
-    def __init__(self, stream: TextIO, taskRunId: int) -> None:
-        super().__init__()
+    """
+        Represents Project Secret entity from Coretex.ai
+    """
 
-        self.stream = stream
-        self.worker = LoggerUploadWorker(taskRunId)
+    encryptionKey: str
 
-        self.worker.start()
+    def __init__(self) -> None:
+        super().__init__(SecretType.project)
 
-    def write(self, value: str) -> int:
-        self.worker.add(Log.create(value.rstrip(), LogSeverity.info))
-
-        self.stream.write(value)
-        self.stream.flush()
-
-        return super().write(value)
-
-    def flushLogs(self) -> bool:
-        return self.worker.uploadLogs()
-
-    def stop(self) -> None:
-        self.worker.stop()
+    def _encryptedFields(self) -> Tuple[str]:
+        return ("encryptionKey",)

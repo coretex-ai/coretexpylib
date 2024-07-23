@@ -178,3 +178,17 @@ class UserConfiguration(BaseConfiguration):
         self.refreshTokenExpirationDate = loginInfo.refreshTokenExpirationDate
 
         self.save()
+
+    def isTokenValid(self, tokenName: str) -> bool:
+        tokenValue = self._raw.get(tokenName)
+        if not isinstance(tokenValue, str) or len(tokenValue) == 0:
+            return False
+
+        tokenExpirationDate = self._raw.get(f"{tokenName}ExpirationDate")
+        if not isinstance(tokenExpirationDate, str) or len(tokenExpirationDate) == 0:
+            return False
+
+        try:
+            return datetime.now(timezone.utc) > decodeDate(tokenExpirationDate)
+        except ValueError:
+            return False

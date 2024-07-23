@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Dict
+from typing import Dict, Any
 from typing_extensions import override
 from pathlib import Path
 
@@ -45,5 +45,5 @@ class CustomDataset(BaseCustomDataset, NetworkDataset[CustomSample]):
         return descriptors
 
     @override
-    def _uploadSample(self, samplePath: Path, sampleName: str) -> CustomSample:
+    def _uploadSample(self, samplePath: Path, sampleName: str, **metadata: Any) -> CustomSample:
         return _chunkSampleImport(self._sampleType, sampleName, samplePath, self.id)

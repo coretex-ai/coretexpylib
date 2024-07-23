@@ -209,6 +209,22 @@ class NodeConfiguration(BaseConfiguration):
     def modelId(self, value: Optional[int]) -> None:
         self._raw["modelId"] = value
 
+    @property
+    def nearWalletId(self) -> Optional[str]:
+        return self.getOptValue("nearWalletId", str)
+
+    @modelId.setter
+    def nearWalletId(self, value: Optional[str]) -> None:
+        self._raw["nearWalletId"] = value
+
+    @property
+    def endpointInvocationPrice(self) -> Optional[float]:
+        return self.getOptValue("endpointInvocationPrice", float)
+
+    @modelId.setter
+    def endpointInvocationPrice(self, value: Optional[float]) -> None:
+        self._raw["endpointInvocationPrice"] = value
+
     def isNodeConfigured(self) -> bool:
         return (
             not isinstance(self._raw.get("nodeName"), str) or
@@ -226,6 +242,7 @@ class NodeConfiguration(BaseConfiguration):
         isValid = True
         errorMessages = []
         cpuLimit, ramLimit = docker.getResourceLimits()
+        swapLimit = docker.getDockerSwapLimit()
 
         if not isinstance(self._raw.get("nodeRam"), int):
             errorMessages.append(f"Invalid config \"nodeRam\" field type \"{type(self._raw.get('nodeRam'))}\". Expected: \"int\"")
@@ -233,6 +250,10 @@ class NodeConfiguration(BaseConfiguration):
 
         if not isinstance(self._raw.get("cpuCount"), int):
             errorMessages.append(f"Invalid config \"cpuCount\" field type \"{type(self._raw.get('cpuCount'))}\". Expected: \"int\"")
+            isValid = False
+
+        if not isinstance(self._raw.get("nodeSwap"), int):
+            errorMessages.append(f"Invalid config \"nodeSwap\" field type \"{type(self._raw.get('nodeSwap'))}\". Expected: \"int\"")
             isValid = False
 
         if self.cpuCount > cpuLimit:
@@ -249,6 +270,10 @@ class NodeConfiguration(BaseConfiguration):
 
         if self.nodeRam < config_defaults.MINIMUM_RAM_MEMORY:
             errorMessages.append(f"Configuration not valid. Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) is higher than the configured value ({self._raw.get('nodeRam')}GB)")
+            isValid = False
+
+        if self.nodeSwap > swapLimit:
+            errorMessages.append(f"Configuration not valid. SWAP limit in Docker Desktop ({swapLimit}GB) is lower than the configured value ({self.nodeSwap}GB)")
             isValid = False
 
         return isValid, errorMessages

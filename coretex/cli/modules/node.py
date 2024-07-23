@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Tuple, Optional
+from typing import Any, Dict, Optional
 from enum import Enum, IntEnum
 from pathlib import Path
 from base64 import b64encode
@@ -87,7 +87,7 @@ def start(dockerImage: str, userConfig: UserConfiguration, nodeConfig: NodeConfi
         if isinstance(nodeConfig.modelId, int):
             environ["CTX_MODEL_ID"] = str(nodeConfig.modelId)
 
-        nodeSecret = nodeConfig.nodeSecret # ("nodeSecret", config_defaults.DEFAULT_NODE_SECRET)
+        nodeSecret = nodeConfig.nodeSecret if nodeConfig.nodeSecret is not None else config_defaults.DEFAULT_NODE_SECRET  # change in configuration
         if isinstance(nodeSecret, str) and nodeSecret != config_defaults.DEFAULT_NODE_SECRET:
             environ["CTX_NODE_SECRET"] = nodeSecret
 
@@ -193,13 +193,27 @@ def shouldUpdate(image: str) -> bool:
     return True
 
 
-def registerNode(name: str, publicKey: Optional[bytes] = None) -> str:
-    params = {
+def registerNode(
+    name: str,
+    nodeMode: NodeMode,
+    publicKey: Optional[bytes] = None,
+    nearWalletId: Optional[str] = None,
+    endpointInvocationPrice: Optional[float] = None
+) -> str:
+
+    params: Dict[str, Any] = {
         "machine_name": name,
+        "mode": nodeMode.value
     }
 
     if publicKey is not None:
         params["public_key"] = b64encode(publicKey).decode("utf-8")
+
+    if nearWalletId is not None:
+        params["near_wallet_id"] = nearWalletId
+
+    if endpointInvocationPrice is not None:
+        params["endpoint_invocation_price"] = endpointInvocationPrice
 
     response = networkManager.post("service", params)
 
@@ -226,40 +240,22 @@ def selectImageType() -> ImageType:
     return availableImages[selectedImage]
 
 
-def selectModelId(storagePath: str, retryCount: int = 0) -> int:
-    if retryCount >= 3:
-        raise RuntimeError("Failed to fetch Coretex Model. Terminating...")
+def selectNodeMode() -> NodeMode:
+    # Define modes which can be picked
+    # Order of the elements in list affects how choices will
+    # be displayed in the terminal
+    nodeModes = [
+        NodeMode.any,
+        NodeMode.execution,
+        NodeMode.endpointReserved,
+        NodeMode.endpointShared
+    ]
 
-    modelId: int = ui.clickPrompt("Specify Coretex Model ID that you want to use:", type = int)
-
-    try:
-        model = Model.fetchById(modelId)
-    except:
-        ui.errorEcho(f"Failed to fetch model with id {modelId}.")
-        return selectModelId(storagePath, retryCount + 1)
-
-    modelDir = Path(storagePath) / "models"
-    modelDir.mkdir(parents = True, exist_ok = True)
-    model.download(modelDir / str(model.id))
-
-    return modelId
-
-
-def selectNodeMode(storagePath: str) -> Tuple[int, Optional[int]]:
-    availableNodeModes = {
-        "Run workflows (worker)": NodeMode.execution,
-        "Serve a single endpoint (dedicated inference)": NodeMode.functionExclusive,
-        "Serve multiple endpoints (shared inference)": NodeMode.functionShared
-    }
+    availableNodeModes = { mode.toString(): mode for mode in nodeModes }
     choices = list(availableNodeModes.keys())
 
     selectedMode = ui.arrowPrompt(choices, "Please select Coretex Node mode (use arrow keys to select an option):")
-
-    if availableNodeModes[selectedMode] == NodeMode.functionExclusive:
-        modelId = selectModelId(storagePath)
-        return availableNodeModes[selectedMode], modelId
-
-    return availableNodeModes[selectedMode], None
+    return availableNodeModes[selectedMode]
 
 
 def promptCpu(cpuLimit: int) -> int:
@@ -277,21 +273,64 @@ def promptCpu(cpuLimit: int) -> int:
 
 
 def promptRam(ramLimit: int) -> int:
-    nodeRam: int = ui.clickPrompt(f"Node RAM memory limit in GB (Minimum: {config_defaults.MINIMUM_RAM_MEMORY}GB, Maximum: {ramLimit}GB) (press enter to use default)", ramLimit, type = int)
+    nodeRam: int = ui.clickPrompt(
+        f"Node RAM memory limit in GB (Minimum: {config_defaults.MINIMUM_RAM}GB, "
+        f"Maximum: {ramLimit}GB) (press enter to use default)",
+        ramLimit,
+        type = int
+    )
 
     if nodeRam > ramLimit:
-        ui.errorEcho(f"ERROR: RAM limit in Docker Desktop ({ramLimit}GB) is lower than the configured value ({nodeRam}GB). Please adjust resource limitations in Docker Desktop settings.")
+        ui.errorEcho(
+            f"ERROR: RAM limit in Docker Desktop ({ramLimit}GB) is lower than the configured value ({nodeRam}GB). "
+            "Please adjust resource limitations in Docker Desktop settings."
+        )
         return promptRam(ramLimit)
 
-    if nodeRam < config_defaults.MINIMUM_RAM_MEMORY:
-        ui.errorEcho(f"ERROR: Configured RAM ({nodeRam}GB) is lower than the minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB).")
+    if nodeRam < config_defaults.MINIMUM_RAM:
+        ui.errorEcho(f"ERROR: Configured RAM ({nodeRam}GB) is lower than the minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB).")
         return promptRam(ramLimit)
 
     return nodeRam
 
 
+def promptSwap(nodeRam: int, swapLimit: int) -> int:
+    nodeSwap: int = ui.clickPrompt(
+        f"Node SWAP memory limit in GB (Maximum: {swapLimit}GB) (press enter to use default)",
+        min(swapLimit, nodeRam * 2),
+        type = int
+    )
+
+    if nodeSwap > swapLimit:
+        ui.errorEcho(
+            f"ERROR: SWAP memory limit in Docker Desktop ({swapLimit}GB) is lower than the configured value ({nodeSwap}GB). "
+            f"If you want to use higher value than {swapLimit}GB, you have to change docker limits."
+        )
+        return promptSwap(nodeRam, swapLimit)
+
+    return nodeSwap
+
+
+def promptInvocationPrice() -> float:
+    invocationPrice: float = ui.clickPrompt(
+        "Enter the price of a single endpoint invocation",
+        config_defaults.DEFAULT_ENDPOINT_INVOCATION_PRICE,
+        type = float
+    )
+
+    if invocationPrice < 0:
+        ui.errorEcho("Endpoint invocation price cannot be less than 0!")
+        return promptInvocationPrice()
+
+    return invocationPrice
+
+
 def _configureInitScript() -> str:
-    initScript = ui.clickPrompt("Enter a path to sh script which will be executed before Node starts", config_defaults.DEFAULT_INIT_SCRIPT, type = str)
+    initScript = ui.clickPrompt(
+        "Enter a path to sh script which will be executed before Node starts",
+        config_defaults.DEFAULT_INIT_SCRIPT,
+        type = str
+    )
 
     if initScript == config_defaults.DEFAULT_INIT_SCRIPT:
         return config_defaults.DEFAULT_INIT_SCRIPT
@@ -312,90 +351,139 @@ def _configureInitScript() -> str:
 def checkResourceLimitations() -> None:
     _, ramLimit = docker.getResourceLimits()
 
-    if ramLimit < config_defaults.MINIMUM_RAM_MEMORY:
-        raise RuntimeError(f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) is higher than your current Docker desktop RAM limit ({ramLimit}GB). Please adjust resource limitations in Docker Desktop settings to match Node requirements.")
+    if ramLimit < config_defaults.MINIMUM_RAM:
+        raise RuntimeError(f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB) is higher than your current Docker desktop RAM limit ({ramLimit}GB). Please adjust resource limitations in Docker Desktop settings to match Node requirements.")
 
 
-def configureNode(config: NodeConfiguration, verbose: bool) -> None:
+# def isConfigurationValid(config: Dict[str, Any]) -> bool:
+#     isValid = True
+#     cpuLimit, ramLimit = docker.getResourceLimits()
+#     swapLimit = docker.getDockerSwapLimit()
+
+#     if not isinstance(config["nodeRam"], int):
+#         errorEcho(f"Invalid config \"nodeRam\" field type \"{type(config['nodeRam'])}\". Expected: \"int\"")
+#         isValid = False
+
+#     if not isinstance(config["cpuCount"], int):
+#         errorEcho(f"Invalid config \"cpuCount\" field type \"{type(config['cpuCount'])}\". Expected: \"int\"")
+#         isValid = False
+
+#     if config["cpuCount"] > cpuLimit:
+#         errorEcho(f"Configuration not valid. CPU limit in Docker Desktop ({cpuLimit}) is lower than the configured value ({config['cpuCount']})")
+#         isValid = False
+
+#     if ramLimit < config_defaults.MINIMUM_RAM:
+#         errorEcho(f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB) is higher than your current Docker desktop RAM limit ({ramLimit}GB). Please adjust resource limitations in Docker Desktop settings to match Node requirements.")
+#         isValid = False
+
+#     if config["nodeRam"] > ramLimit:
+#         errorEcho(f"Configuration not valid. RAM limit in Docker Desktop ({ramLimit}GB) is lower than the configured value ({config['nodeRam']}GB)")
+#         isValid = False
+
+#     if config["nodeSwap"] > swapLimit:
+#         errorEcho(f"Configuration not valid. RAM limit in Docker Desktop ({swapLimit}GB) is lower than the configured value ({config['nodeSwap']}GB)")
+#         isValid = False
+
+#     if config["nodeRam"] < config_defaults.MINIMUM_RAM:
+#         errorEcho(f"Configuration not valid. Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB) is higher than the configured value ({config['nodeRam']}GB)")
+#         isValid = False
+
+#     return isValid
+
+
+def configureNode(nodeConfig: NodeConfiguration, verbose: bool) -> None:
     ui.highlightEcho("[Node Configuration]")
 
     cpuLimit, ramLimit = docker.getResourceLimits()
+    swapLimit = docker.getDockerSwapLimit()
 
-    config.nodeName = ui.clickPrompt("Node name", type = str)
+    nodeConfig.nodeName = ui.clickPrompt("Node name", type = str)
 
     imageType = selectImageType()
     if imageType == ImageType.custom:
-        config.image = ui.clickPrompt("Specify URL of docker image that you want to use:", type = str)
+        nodeConfig.image = ui.clickPrompt("Specify URL of docker image that you want to use:", type = str)
     else:
-        config.image = "coretexai/coretex-node"
+        nodeConfig.image = "coretexai/coretex-node"
 
     if utils.isGPUAvailable():
-        config.allowGpu = ui.clickPrompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
+        nodeConfig.allowGpu = ui.clickPrompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
     else:
-        config.allowGpu = False
+        nodeConfig.allowGpu = False
 
     if imageType == ImageType.official:
-        tag = "gpu" if config.allowGpu else "cpu"
-        config.image += f":latest-{tag}"
+        tag = "gpu" if nodeConfig.allowGpu else "cpu"
+        nodeConfig.image += f":latest-{tag}"
 
-    config.storagePath = config_defaults.DEFAULT_STORAGE_PATH
-    config.nodeRam = int(min(ramLimit, config_defaults.DEFAULT_RAM_MEMORY))
-    config.nodeSwap = config_defaults.DEFAULT_SWAP_MEMORY
-    config.nodeSharedMemory = config_defaults.DEFAULT_SHARED_MEMORY
-    config.cpuCount = int(min(cpuLimit, config_defaults.DEFAULT_CPU_COUNT))
-    config.nodeMode = config_defaults.DEFAULT_NODE_MODE
-    config.allowDocker = config_defaults.DEFAULT_ALLOW_DOCKER
-    config.nodeSecret = config_defaults.DEFAULT_NODE_SECRET
-    config.initScript = config_defaults.DEFAULT_INIT_SCRIPT
+    nodeConfig.storagePath = config_defaults.DEFAULT_STORAGE_PATH
+    nodeConfig.nodeRam = int(min(max(config_defaults.MINIMUM_RAM, ramLimit), config_defaults.DEFAULT_RAM))
+    nodeConfig.nodeSwap = config_defaults.DEFAULT_SWAP_MEMORY
+    nodeConfig.nodeSharedMemory = config_defaults.DEFAULT_SHARED_MEMORY
+    nodeConfig.cpuCount = int(min(cpuLimit, config_defaults.DEFAULT_CPU_COUNT))
+    nodeConfig.nodeMode = config_defaults.DEFAULT_NODE_MODE
+    nodeConfig.allowDocker = config_defaults.DEFAULT_ALLOW_DOCKER
+    nodeConfig.nodeSecret = config_defaults.DEFAULT_NODE_SECRET
+    nodeConfig.initScript = config_defaults.DEFAULT_INIT_SCRIPT
 
     publicKey: Optional[bytes] = None
+    nearWalletId: Optional[str] = None
+    endpointInvocationPrice: Optional[float] = None
+    nodeMode = NodeMode.any
 
     if verbose:
-        config.storagePath = ui.clickPrompt("Storage path (press enter to use default)", config_defaults.DEFAULT_STORAGE_PATH, type = str)
+        nodeMode = selectNodeMode()
+        nodeConfig.storagePath = ui.clickPrompt("Storage path (press enter to use default)", config_defaults.DEFAULT_STORAGE_PATH, type = str)
 
-        config.cpuCount = promptCpu(cpuLimit)
+        nodeConfig.cpuCount = promptCpu(cpuLimit)
+        nodeConfig.nodeRam = promptRam(ramLimit)
+        nodeConfig.nodeSwap = promptSwap(nodeConfig.nodeRam, swapLimit)
 
-        config.nodeRam = promptRam(ramLimit)
+        nodeConfig.nodeSharedMemory = ui.clickPrompt(
+            "Node POSIX shared memory limit in GB (press enter to use default)",
+            config_defaults.DEFAULT_SHARED_MEMORY,
+            type = int
+        )
 
-        config.nodeSwap = ui.clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", config_defaults.DEFAULT_SWAP_MEMORY, type = int)
-        config.nodeSharedMemory = ui.clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", config_defaults.DEFAULT_SHARED_MEMORY, type = int)
-        config.allowDocker = ui.clickPrompt("Allow Node to access system docker? This is a security risk! (Y/n)", config_defaults.DEFAULT_ALLOW_DOCKER, type = bool)
-        config.initScript = _configureInitScript()
+        nodeConfig.allowDocker = ui.clickPrompt(
+            "Allow Node to access system docker? This is a security risk! (Y/n)",
+            config_defaults.DEFAULT_ALLOW_DOCKER,
+            type = bool
+        )
 
-        nodeMode, modelId = selectNodeMode(config.storagePath)
-        config.nodeMode = nodeMode
-        if modelId is not None:
-            config.modelId = modelId
+        nodeConfig.initScript = _configureInitScript()
 
-        nodeSecret: str = ui.clickPrompt("Enter a secret which will be used to generate RSA key-pair for Node", config_defaults.DEFAULT_NODE_SECRET, type = str, hide_input = True)
-        config.nodeSecret = nodeSecret
+        nodeSecret: str = ui.clickPrompt(
+            "Enter a secret which will be used to generate RSA key-pair for Node",
+            config_defaults.DEFAULT_NODE_SECRET,
+            type = str,
+            hide_input = True
+        )
+        nodeConfig.nodeSecret = nodeSecret
 
         if nodeSecret != config_defaults.DEFAULT_NODE_SECRET:
             ui.progressEcho("Generating RSA key-pair (2048 bits long) using provided node secret...")
             rsaKey = rsa.generateKey(2048, nodeSecret.encode("utf-8"))
             publicKey = rsa.getPublicKeyBytes(rsaKey.public_key())
+
+        if nodeMode in [NodeMode.endpointReserved, NodeMode.endpointShared]:
+            nearWalletId = ui.clickPrompt(
+                "Enter a NEAR wallet id to which the funds will be transfered when executing endpoints",
+                config_defaults.DEFAULT_NEAR_WALLET_ID,
+                type = str
+            )
+
+            if nearWalletId != config_defaults.DEFAULT_NEAR_WALLET_ID:
+                nodeConfig.nearWalletId = nearWalletId
+                endpointInvocationPrice = promptInvocationPrice()
+            else:
+                nodeConfig.nearWalletId = None
+                nodeConfig.endpointInvocationPrice = None
+                nearWalletId = None
+                endpointInvocationPrice = None
     else:
         ui.stdEcho("To configure node manually run coretex node config with --verbose flag.")
 
-    config.nodeAccessToken = registerNode(config.nodeName, publicKey)
-
-
-def promptNodeConfiguration() -> bool:
-    if isRunning():
-        stopNode = ui.clickPrompt(
-            "Node is already running. Do you wish to stop the Node? (Y/n)",
-            type = bool,
-            default = True,
-            show_default = False
-        )
-
-        if not stopNode:
-            ui.errorEcho("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
-            return False
-
-        stop()
-
-    return True
+    nodeConfig.nodeAccessToken = registerNode(nodeConfig.nodeName, nodeMode, publicKey, nearWalletId, endpointInvocationPrice)
+    nodeConfig.nodeMode = nodeMode
 
 
 def initializeNodeConfiguration() -> None:

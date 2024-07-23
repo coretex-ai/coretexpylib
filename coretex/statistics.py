@@ -46,7 +46,7 @@ def getRamUsage() -> float:
     return psutil.virtual_memory().percent
 
 
-def getAvailableRamMemory() -> int:
+def getAvailableRam() -> int:
     """
         Returns
         -------
@@ -82,6 +82,26 @@ def getGpuUsage() -> float:
     return 0
 
 
+def getGpuMemoryUsage() -> float:
+    """
+        py3nvml init must be called before calling this function
+        otherwise it will raise an exception
+
+        Returns
+        -------
+        float -> GPU memory usage as percentage
+    """
+
+    handle = py3nvml.nvmlDeviceGetHandleByIndex(0)
+    memory = py3nvml.nvmlDeviceGetMemoryInfo(handle)
+
+    if not isinstance(memory, py3nvml.c_nvmlMemory_t):
+        logging.getLogger("coretexpylib").debug(">> [Coretex] Failed to extract gpu memory usage metric")
+        return 0
+
+    return float(memory.used / memory.total)
+
+
 def getGpuTemperature() -> float:
     """
         py3nvml init must be called before calling this function
@@ -106,6 +126,16 @@ def getSwapUsage() -> float:
     """
 
     return psutil.swap_memory().percent
+
+
+def getTotalSwapMemory() -> int:
+    """
+        Returns
+        -------
+        int -> total swap memory in GB
+    """
+
+    return int(psutil.swap_memory().total / (1024 ** 3))
 
 
 def getDiskRead() -> float:

@@ -18,14 +18,13 @@
 from typing import Optional, Any, List, Dict
 from typing_extensions import Self
 
-from coretex.networking import EntityNotCreated
-
 from .base import BaseObject
 from .task import Task
 from .project_type import ProjectType
 from .project_visibility import ProjectVisibility
 from ..entity_visibility_type import EntityVisibilityType
-from ...networking import networkManager, NetworkResponse, NetworkRequestError
+from ..utils import isEntityNameValid
+from ...networking import networkManager, NetworkRequestError
 
 
 class Project(BaseObject):
@@ -37,6 +36,8 @@ class Project(BaseObject):
 
     tasks: List[Task]
     visibility: ProjectVisibility
+    isEncrypted: bool
+    secretName: Optional[str]
 
     @classmethod
     def createProject(
@@ -66,7 +67,7 @@ class Project(BaseObject):
 
             Raises
             ------
-            EntityNotCreated -> If project creation failed
+            NetworkRequestError -> If project creation failed
 
             Example
             -------
@@ -82,17 +83,15 @@ class Project(BaseObject):
                     print("Failed to create project.")
         """
 
-        project = cls.create(
+        if not isEntityNameValid(name):
+            raise ValueError(">> [Coretex] Project name is invalid. Requirements: alphanumeric characters (\"a-z\", and \"0-9\") and dash (\"-\") with length between 3 to 50")
+
+        return cls.create(
             name = name,
             project_task = projectType,
             description = description,
             visiblity = visiblity
         )
-
-        if project is None:
-            raise EntityNotCreated(f"Failed to create project with name \"{name}\"")
-
-        return project
 
     @classmethod
     def decode(cls, encodedObject: Dict[str, Any]) -> Self:

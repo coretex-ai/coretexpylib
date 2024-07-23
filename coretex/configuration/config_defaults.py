@@ -20,7 +20,7 @@ from pathlib import Path
 import os
 
 from ..node import NodeMode
-from ..statistics import getAvailableRamMemory
+from ..statistics import getAvailableRam
 
 
 cpuCount = os.cpu_count()
@@ -28,7 +28,7 @@ cpuCount = os.cpu_count()
 DOCKER_CONTAINER_NAME = "coretex_node"
 DOCKER_CONTAINER_NETWORK = "coretex_node"
 DEFAULT_STORAGE_PATH = str(Path.home() / ".coretex")
-DEFAULT_RAM_MEMORY = getAvailableRamMemory()
+DEFAULT_RAM_MEMORY = getAvailableRam()
 MINIMUM_RAM_MEMORY = 6
 DEFAULT_SWAP_MEMORY = DEFAULT_RAM_MEMORY * 2
 DEFAULT_SHARED_MEMORY = 2

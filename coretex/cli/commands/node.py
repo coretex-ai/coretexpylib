@@ -19,13 +19,10 @@ from typing import Optional
 
 import click
 
-from ..modules import user
-from ..modules import node as node_module
-from ..modules.ui import stdEcho
 from ...utils import docker
+from ..modules import user, ui, utils
 from ..modules import node as node_module
 from ..modules import update as update_module
-from ..modules import ui, utils
 from ...configuration import UserConfiguration, NodeConfiguration, CONFIG_DIR
 
 
@@ -61,8 +58,7 @@ def start(image: Optional[str]) -> None:
 
     node_module.start(dockerImage, userConfig, nodeConfig)
     docker.removeDanglingImages(node_module.getRepoFromImageUrl(dockerImage), node_module.getTagFromImageUrl(dockerImage))
-
-    update_module.activateAutoUpdate(CONFIG_DIR, userConfig, nodeConfig)
+    update_module.activateAutoUpdate()
 
 
 @click.command()
@@ -75,8 +71,14 @@ def stop() -> None:
 
 
 @click.command()
+@click.option("-y", "autoAccept", is_flag = True, help = "Accepts all prompts.")
+@click.option("-n", "autoDecline", is_flag = True, help = "Declines all prompts.")
 @utils.onBeforeCommandExecute(node_module.initializeNodeConfiguration)
-def update() -> None:
+def update(autoAccept: bool, autoDecline: bool) -> None:
+    if autoAccept and autoDecline:
+        ui.errorEcho("Only one of the flags (\"-y\" or \"-n\") can be used at the same time.")
+        return
+
     userConfig = UserConfiguration()
     nodeConfig = NodeConfiguration()
 
@@ -90,7 +92,10 @@ def update() -> None:
         ui.errorEcho("Node is reconnecting. Cannot update now.")
         return
 
-    if nodeStatus == node_module.NodeStatus.busy:
+    if nodeStatus == update_module.NodeStatus.busy and not autoAccept:
+        if autoDecline:
+            return
+
         if not ui.clickPrompt(
             "Node is busy, do you wish to terminate the current execution to perform the update? (Y/n)",
             type = bool,
@@ -105,10 +110,13 @@ def update() -> None:
         ui.successEcho("Node is already up to date.")
         return
 
-    stdEcho("Updating node...")
+    ui.stdEcho("Updating node...")
     node_module.pull(nodeConfig.image)
 
-    if node_module.getNodeStatus() == node_module.NodeStatus.busy:
+    if update_module.getNodeStatus() == update_module.NodeStatus.busy and not autoAccept:
+        if autoDecline:
+            return
+
         if not ui.clickPrompt(
             "Node is busy, do you wish to terminate the current execution to perform the update? (Y/n)",
             type = bool,
@@ -119,8 +127,15 @@ def update() -> None:
 
     node_module.stop()
 
-    node_module.start(nodeConfig.image, userConfig, nodeConfig)
-    docker.removeDanglingImages(node_module.getRepoFromImageUrl(nodeConfig.image), node_module.getTagFromImageUrl(nodeConfig.image))
+    ui.stdEcho("Updating node...")
+    node_module.start(nodeConfig.image, config)
+
+    docker.removeDanglingImages(
+        node_module.getRepoFromImageUrl(nodeConfig.image),
+        node_module.getTagFromImageUrl(nodeConfig.image)
+    )
+
+    update_module.activateAutoUpdate()
 
 
 @click.command()
@@ -154,16 +169,15 @@ def config(verbose: bool) -> None:
     nodeConfig.save()
     ui.previewConfig(userConfig, nodeConfig)
 
-    # Updating auto-update script since node configuration is changed
-    update_module.dumpScript(CONFIG_DIR / update_module.UPDATE_SCRIPT_NAME, userConfig, nodeConfig)
-
     ui.successEcho("Node successfully configured.")
+    update_module.activateAutoUpdate()
 
 
 @click.group()
 @utils.onBeforeCommandExecute(docker.isDockerAvailable)
 @utils.onBeforeCommandExecute(user.initializeUserSession)
 @utils.onBeforeCommandExecute(node_module.checkResourceLimitations)
+@utils.onBeforeCommandExecute(utils.checkEnvironment)
 def node() -> None:
     pass
 

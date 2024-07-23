@@ -27,7 +27,7 @@ from .commands.project import project
 
 from .modules import ui
 from .modules.intercept import ClickExceptionInterceptor
-from .modules.utils import updateLib
+from .modules import utils
 
 from ..utils.process import CommandException
 
@@ -40,15 +40,28 @@ def version() -> None:
 
 @click.command()
 def update() -> None:
-    try:
-        ui.progressEcho("Updating coretex...")
-        updateLib()
-        ui.successEcho("Coretex successfully updated!")
-    except CommandException:
-        ui.errorEcho("Failed to update coretex.")
+    currentVersion = utils.fetchCurrentVersion()
+    latestVersion = utils.fetchLatestVersion()
+
+    if currentVersion is None or latestVersion is None:
+        return
+
+    if latestVersion > currentVersion:
+        try:
+            ui.progressEcho("Updating coretex...")
+            utils.updateLib()
+            ui.successEcho(
+                f"Coretex successfully updated from {utils.formatCliVersion(currentVersion)} "
+                f"to {utils.formatCliVersion(latestVersion)}!"
+            )
+        except CommandException:
+            ui.errorEcho("Failed to update coretex.")
+    else:
+        ui.stdEcho("Coretex version is up to date.")
 
 
-@click.group()
+@click.group(cls = ClickExceptionInterceptor)
+@utils.onBeforeCommandExecute(utils.checkLibVersion, excludeSubcommands = ["update"])
 def cli() -> None:
     pass
 

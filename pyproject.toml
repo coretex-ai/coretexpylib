@@ -1,6 +1,6 @@
 [project]
 name = "coretex"
-version = "1.0.120"
+version = "1.0.162"
 authors = [
   { name="Duško Mirković", email="dmirkovic@coretex.ai" }
 ]
@@ -24,11 +24,10 @@ classifiers = [
 dependencies = [
   "requests",
   "inflection",
-  "pillow",
-  "numpy",
+  "pillow==10.2.0",
+  "numpy<2",
   "scikit-image",
   "shapely",
-  "protobuf~=3.19.0",
   "typed-argument-parser",
   "typing-extensions",
   "psutil",
@@ -41,7 +40,9 @@ dependencies = [
   "inquirer",
   "docker",
   "cryptography",
-  "pycryptodome"
+  "pycryptodome",
+  "onnxruntime",
+  "ezkl"
 ]
 
 [project.urls]

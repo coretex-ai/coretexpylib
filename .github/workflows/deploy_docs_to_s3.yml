@@ -1,0 +1,87 @@
+name: Deploy docs to AWS S3
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+      
+  workflow_call:
+    inputs:
+      ENVIRONMENT:
+        type: string 
+        description: Environment
+        required: false
+        default: ${{ github.ref_name }}
+    secrets:
+      AWS_CLOUDFRONT_DISTRIBUTION_ID:
+        description: CF distribution ID
+        required: true
+      AWS_ROLE_TO_ASSUME:
+        description: AWS Role
+        required: true
+      AWS_S3_BUCKET_NAME:
+        description: S3 bucket
+        required: true
+      TEAMS_WEBHOOK_URL:
+        description: Teams Webhook
+        required: true
+
+jobs:
+  generate-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.ENVIRONMENT != null && inputs.ENVIRONMENT || github.ref_name }} # Using branch as environment name
+
+    permissions:
+      id-token: write # This is required for requesting the JWT
+      contents: read  # This is required for actions/checkout
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - name: Print environment
+      run: |
+          echo ${{ inputs.ENVIRONMENT != null && inputs.ENVIRONMENT || github.ref_name }}
+    - name: Install Doxygen
+      run: sudo apt-get install -y --no-install-recommends doxygen jq
+    - name: Generate Doxygen documentation
+      run: doxygen Doxyfile
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: ${{ vars.AWS_REGION }}
+        audience: sts.amazonaws.com
+        role-to-assume: '${{ secrets.AWS_ROLE_TO_ASSUME }}'
+    - name: Sync S3 bucket
+      run: |
+        aws s3 sync ./documentation/html s3://${{ secrets.AWS_S3_BUCKET_NAME }} --delete
+    - name: Invalidate CloudFront cache and wait for completion
+      env:
+        DISTRIBUTION_ID: ${{ secrets.AWS_CLOUDFRONT_DISTRIBUTION_ID }}
+      run: |
+        INVALIDATION_ID=$(aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*" --query 'Invalidation.Id' --output text)
+        echo "Created invalidation with ID: $INVALIDATION_ID"
+        STATUS="InProgress"
+        TIMEOUT=180  # 3 minutes timeout
+        START_TIME=$(date +%s)
+
+        while [ "$STATUS" == "InProgress" ]; do
+          CURRENT_TIME=$(date +%s)
+          ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
+
+          if [ $ELAPSED_TIME -ge $TIMEOUT ]; then
+            echo "Invalidation timeout after $ELAPSED_TIME seconds"
+            exit 1
+          fi
+
+          STATUS=$(aws cloudfront get-invalidation --distribution-id $DISTRIBUTION_ID --id $INVALIDATION_ID --query 'Invalidation.Status' --output text)
+          echo "Invalidation status: $STATUS"
+          [ "$STATUS" == "InProgress" ] && sleep 20
+        done
+        echo "Invalidation completed with status: $STATUS"
+    - name: Notify MS Teams channel on Failure
+      if: failure()
+      run: |
+        PAYLOAD=$(echo '{}' | jq --arg title "GitHub Actions Failure: ${{ github.workflow }} " --arg msg "Workflow failed for repository: ${{ github.repository }} on branch: ${{ github.ref }}. Job: ${{ github.job }}." '{ title: $title, text: $msg }')
+        curl -H 'Content-Type: application/json' -d "$PAYLOAD" ${{ secrets.TEAMS_WEBHOOK_URL }}

@@ -113,11 +113,18 @@ class CoretexSegmentationInstance(Codable):
             Returns
             -------
             np.ndarray -> segmentation mask represented as np.ndarray
+
+            Raises
+            ------
+            ValueError -> if segmentation has less then 4 values
         """
 
         image = Image.new("L", (width, height))
 
         for segmentation in self.segmentations:
+            if len(segmentation) < 4:
+                raise ValueError(f">> [Coretex] Segmentation has too few values ({len(segmentation)}. Minimum: 4)")
+
             draw = ImageDraw.Draw(image)
             draw.polygon(toPoly(segmentation), fill = 1)
 
@@ -324,8 +331,8 @@ class CoretexImageAnnotation(Codable):
                 continue
 
             for segmentation in instance.segmentations:
-                if len(segmentation) == 0:
-                    raise ValueError(f">> [Coretex] Empty segmentation")
+                if len(segmentation) < 4:
+                    raise ValueError(f">> [Coretex] Segmentation has too few values ({len(segmentation)}. Minimum: 4)")
 
                 draw = ImageDraw.Draw(image)
                 draw.polygon(toPoly(segmentation), fill = labelId + 1)

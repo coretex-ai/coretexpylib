@@ -22,9 +22,11 @@ from zipfile import ZipFile
 from pathlib import Path
 
 import json
+import logging
 
+from ..utils import isEntityNameValid
 from ... import folder_manager
-from ...networking import networkManager, NetworkObject, ChunkUploadSession, MAX_CHUNK_SIZE, NetworkRequestError, EntityNotCreated
+from ...networking import networkManager, NetworkObject, ChunkUploadSession, MAX_CHUNK_SIZE, NetworkRequestError
 from ...codable import KeyDescriptor
 
 
@@ -101,7 +103,7 @@ class Model(NetworkObject):
     def createModel(
         cls,
         name: str,
-        taskRunId: int,
+        projectId: int,
         accuracy: float,
         meta: Optional[Dict[str, Any]] = None
     ) -> Self:
@@ -113,8 +115,8 @@ class Model(NetworkObject):
             ----------
             name : str
                 model name
-            taskRunId : int
-                TaskRun id of model
+            projectId : int
+                Project to which the Model will be added
             accuracy : float
                 model accuracy
             meta : Optional[Dict[str, Any]]
@@ -124,74 +126,36 @@ class Model(NetworkObject):
             -------
             Self -> Model object
 
+            Raises
+            -------
+            NetworkRequestError -> If model creation failed
+
             Example
             -------
             >>> from coretex import Model, currentTaskRun
             >>> model = Model.createModel("model-name", currentTaskRun().id, 0.87)
         """
 
-        if meta is None:
-            meta = {}
+        if not isEntityNameValid(name):
+            raise ValueError(">> [Coretex] Model name is invalid. Requirements: alphanumeric characters (\"a-z\", and \"0-9\") and dash (\"-\") with length between 3 to 50")
 
-        model = cls.create(
-            name = name,
-            model_queue_id = taskRunId,
-            accuracy = accuracy,
-            meta = meta
-        )
+        if accuracy < 0:
+            logging.getLogger("coretexpylib").warning(f">> [Coretex] Invalid value for accuracy: ({accuracy} < 0), clipping to 0.")
 
-        if model is None:
-            raise EntityNotCreated("Failed to create Model")
+        if accuracy > 1:
+            logging.getLogger("coretexpylib").warning(f">> [Coretex] Invalid value for accuracy: ({accuracy} > 1), clipping to 1.")
 
-        return model
-
-    @classmethod
-    def createProjectModel(
-        cls,
-        name: str,
-        projectId: int,
-        accuracy: float,
-        meta: Optional[Dict[str, Any]] = None
-    ) -> Self:
-
-        """
-            Creates Model object inside of the provided Project with specified properties
-
-            Parameters
-            ----------
-            name : str
-                Model name
-            projectId : int
-                Project to which the Model will be added
-            accuracy : float
-                Model accuracy
-            meta : Dict[str, Any]
-                Model metadata
-
-            Returns
-            -------
-            Self -> Model object
-
-            Example
-            -------
-            >>> from coretex import Model
-            >>> model = Model.createProjectModel("model-name", 123, 0.87)
-        """
+        accuracy = max(0, min(accuracy, 1))
 
         if meta is None:
             meta = {}
 
-        model = cls.create(
+        return cls.create(
             name = name,
             project_id = projectId,
             accuracy = accuracy,
             meta = meta
         )
-
-        if model is None:
-            raise EntityNotCreated("Failed to create Model")
-
-        return model
 
     @classmethod
     def saveModelDescriptor(cls, path: Union[Path, str], contents: Dict[str, Any]) -> None:

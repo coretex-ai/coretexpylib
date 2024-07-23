@@ -15,5 +15,11 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .output_interceptor import OutputInterceptor
-from .upload_worker import LoggerUploadWorker
+from ..metric import Metric
+from .....statistics import getGpuMemoryUsage
+
+
+class MetricGPUMemoryUsage(Metric):
+
+    def extract(self) -> float:
+        return getGpuMemoryUsage()

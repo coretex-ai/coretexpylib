@@ -17,7 +17,7 @@
 
 from .user import UserConfiguration, LoginInfo
 from .node import NodeConfiguration
-from .base import CONFIG_DIR
+from .base import CONFIG_DIR, DEFAULT_VENV_PATH
 
 def _syncConfigWithEnv() -> None:
     # If configuration doesn't exist default one will be created

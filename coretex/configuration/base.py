@@ -22,9 +22,10 @@ from pathlib import Path
 import os
 import json
 
-T = TypeVar("T", int, str, bool)
+T = TypeVar("T", int, float, str, bool)
 
 CONFIG_DIR = Path.home().joinpath(".config", "coretex")
+DEFAULT_VENV_PATH = CONFIG_DIR / "venv"
 
 
 class InvalidConfiguration(Exception):

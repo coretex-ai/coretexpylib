@@ -23,8 +23,9 @@ import sys
 from .remote import processRemote
 from .current_task_run import setCurrentTaskRun
 from .. import folder_manager
-from ..entities import TaskRun, TaskRunStatus, LogSeverity
+from ..entities import TaskRun, TaskRunStatus
 from ..logging import createFormatter, initializeLogger
+from ..logging.severity import LogSeverity
 from ..networking import RequestFailedError
 
 
@@ -37,10 +38,12 @@ def _initializeLogger(taskRun: TaskRun) -> None:
         severity = LogSeverity.debug
 
     streamHandler = logging.StreamHandler(sys.stdout)
-    streamHandler.setLevel(severity.stdSeverity)
+    streamHandler.setLevel(severity.getLevel())
     streamHandler.setFormatter(createFormatter(
         includeTime = False,
-        includeLevel = False
+        includeLevel = False,
+        includeColor = False,
+        jsonOutput = True
     ))
 
     logPath = folder_manager.getRunLogsDir(taskRun.id) / "run.log"

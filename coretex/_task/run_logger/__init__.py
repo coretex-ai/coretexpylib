@@ -15,23 +15,5 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from datetime import datetime
-
-from . import folder_manager
-from .logging import initializeLogger, LogSeverity
-from .configuration import CONFIG_DIR
-
-
-def _initializeDefaultLogger() -> None:
-    logName = datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f%z")
-    logPath = folder_manager.coretexpylibLogs.joinpath(logName).with_suffix(".log")
-
-    initializeLogger(LogSeverity.info, logPath, jsonOutput = False)
-
-
-def _initializeCLILogger() -> None:
-    logName = datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f%z")
-    logPath = CONFIG_DIR / "logs"
-    logPath.mkdir(exist_ok = True)
-
-    initializeLogger(LogSeverity.info, logPath.joinpath(logName).with_suffix(".log"), jsonOutput = False)
+from .run_logger import runLogger
+from .upload_worker import LoggerUploadWorker

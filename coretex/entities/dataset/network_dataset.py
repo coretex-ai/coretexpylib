@@ -29,9 +29,10 @@ import logging
 from .dataset import Dataset
 from .state import DatasetState
 from ..sample import NetworkSample
+from ..utils import isEntityNameValid
 from ... import folder_manager
 from ...codable import KeyDescriptor
-from ...networking import EntityNotCreated, NetworkObject, \
+from ...networking import NetworkObject, \
     fileChunkUpload, networkManager, NetworkRequestError
 from ...threading import MultithreadedDataProcessor
 from ...cryptography import aes, getProjectKey
@@ -39,6 +40,7 @@ from ...utils.file import isArchive, archive
 
 
 SampleType = TypeVar("SampleType", bound = "NetworkSample")
+NAME_VALIDATION_MESSAGE = ">> [Coretex] Entity name is invalid. Requirements: alphanumeric characters (\"a-z\", and \"0-9\") and dash (\"-\") with length between 3 to 50"
 MAX_DATASET_NAME_LENGTH = 50
 
 
@@ -46,7 +48,13 @@ def _hashDependencies(dependencies: List[str]) -> str:
     hash = hashlib.md5()
     hash.update("".join(sorted(dependencies)).encode())
 
-    return base64.b64encode(hash.digest()).decode("ascii").replace("+", "0")
+    hashString = base64.b64encode(hash.digest()).decode("ascii")
+    hashString = hashString.lower()
+    hashString = hashString.replace("+", "0")
+    hashString = hashString.replace("/", "0")
+    hashString = hashString.replace("=", "0")
+
+    return hashString
 
 
 def _chunkSampleImport(sampleType: Type[SampleType], sampleName: str, samplePath: Path, datasetId: int) -> SampleType:
@@ -202,7 +210,8 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
 
             Raises
             ------
-            EntityNotCreated -> If dataset creation failed
+            ValueError -> If name is invalid
+            NetworkRequestError -> If dataset creation failed
 
             Example
             -------
@@ -211,16 +220,14 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
             >>> dummyDataset = NetworkDataset.createDataset("dummyDataset", 123)
         """
 
-        dataset = cls.create(
+        if not isEntityNameValid(name):
+            raise ValueError(NAME_VALIDATION_MESSAGE)
+
+        return cls.create(
             name = name,
             project_id = projectId,
             meta = meta
         )
-
-        if dataset is None:
-            raise EntityNotCreated(f">> [Coretex] Failed to create dataset with name: {name}")
-
-        return dataset
 
     @classmethod
     def generateCacheName(cls, prefix: str, dependencies: List[str]) -> str:
@@ -243,7 +250,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
             raise ValueError(f"Dataset prefix \"{prefix}\" is too long. Max allowed size is \"{MAX_DATASET_NAME_LENGTH - 8}\".")
 
         suffix = _hashDependencies(dependencies)
-        name = f"{prefix} - {suffix}"
+        name = f"{prefix}-{suffix}"
 
         if len(name) > MAX_DATASET_NAME_LENGTH:
             name = name[:MAX_DATASET_NAME_LENGTH]
@@ -265,6 +272,9 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
             projectId : int
                 project for which the dataset will be created
         """
+
+        if not isEntityNameValid(prefix):
+            raise ValueError(NAME_VALIDATION_MESSAGE)
 
         dataset = cls.createDataset(cls.generateCacheName(prefix, dependencies), projectId)
         if dataset is None:
@@ -333,6 +343,9 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
         processor.process()
 
     def rename(self, name: str) -> bool:
+        if not isEntityNameValid(name):
+            raise ValueError(NAME_VALIDATION_MESSAGE)
+
         success = self.update(name = name)
 
         if success:
@@ -341,12 +354,12 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
         return success
 
     @abstractmethod
-    def _uploadSample(self, samplePath: Path, sampleName: str) -> SampleType:
+    def _uploadSample(self, samplePath: Path, sampleName: str, **metadata: Any) -> SampleType:
         # Override in data specific classes (ImageDataset, SequenceDataset, etc...)
         # to implement a specific way of uploading samples
         pass
 
-    def add(self, samplePath: Union[Path, str], sampleName: Optional[str] = None) -> SampleType:
+    def add(self, samplePath: Union[Path, str], sampleName: Optional[str] = None, **metadata: Any) -> SampleType:
         """
             Uploads the provided archive (.zip, .tar.gz) as Sample to
             Coretex.ai as a part of this Dataset.
@@ -370,7 +383,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
         if self.isEncrypted:
             sample = _encryptedSampleImport(self._sampleType, sampleName, samplePath, self.id, getProjectKey(self.projectId))
         else:
-            sample = self._uploadSample(samplePath, sampleName)
+            sample = self._uploadSample(samplePath, sampleName, **metadata)
 
         # Append the newly created sample to the list of samples
         self.samples.append(sample)

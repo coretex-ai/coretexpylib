@@ -18,7 +18,8 @@
 from typing import Type, TypeVar, Optional, Iterator, Dict, Any
 from contextlib import contextmanager
 
-from .network_dataset import EntityNotCreated, NetworkDataset
+from .network_dataset import NetworkDataset
+from ..utils import isEntityNameValid
 
 
 T = TypeVar("T", bound = NetworkDataset)
@@ -51,6 +52,10 @@ def createDataset(
         -------
         The created sequence dataset object or None if creation failed
 
+        Raises
+        -------
+        NetworkRequestError -> If dataset creation failed
+
         Example
         -------
         >>> from coretex import createDataset
@@ -59,14 +64,14 @@ def createDataset(
         >>>     print(f"Dataset with id \"{dataset.id}\" and name \"{dataset.name}\" created")
     """
 
+    if not isEntityNameValid(name):
+        raise ValueError(">> [Coretex] Dataset name is invalid. Requirements: alphanumeric characters (\"a-z\", and \"0-9\") and dash (\"-\") with length between 3 to 50")
+
     dataset = type_.create(
         name = name,
         project_id = projectId,
         meta = meta
     )
-
-    if dataset is None:
-        raise EntityNotCreated(f">> [Coretex] Failed to create dataset with name \"{name}\" ")
 
     yield dataset
     if not dataset.finalize():

@@ -15,60 +15,64 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from enum import IntEnum
 from pathlib import Path
 
+import requests
+
+from .utils import getExecPath
 from .cron import jobExists, scheduleJob
-from .node import getRepoFromImageUrl, getTagFromImageUrl
 from ..resources import RESOURCES_DIR
 from ...utils import command
-from ...configuration import config_defaults, CONFIG_DIR, UserConfiguration, NodeConfiguration
+from ...configuration import DEFAULT_VENV_PATH
 
 
-UPDATE_SCRIPT_NAME = "ctx_node_update.sh"
+UPDATE_SCRIPT_NAME = "update_node.sh"
 
 
-def generateUpdateScript(userConfig: UserConfiguration, nodeConfig: NodeConfiguration) -> str:
-    _, dockerPath, _ = command(["which", "docker"], ignoreStdout = True, ignoreStderr = True)
+class NodeStatus(IntEnum):
+
+    inactive     = 1
+    active       = 2
+    busy         = 3
+    deleted      = 4
+    reconnecting = 5
+
+
+def generateUpdateScript() -> str:
+    dockerExecPath = getExecPath("docker")
+    gitExecPath = getExecPath("git")
     bashScriptTemplatePath = RESOURCES_DIR / "update_script_template.sh"
 
     with bashScriptTemplatePath.open("r") as scriptFile:
         bashScriptTemplate = scriptFile.read()
 
     return bashScriptTemplate.format(
-        dockerPath = dockerPath.strip(),
-        repository = getRepoFromImageUrl(nodeConfig.image),
-        tag = getTagFromImageUrl(nodeConfig.image),
-        serverUrl = userConfig.serverUrl,
-        storagePath = nodeConfig.storagePath,
-        nodeAccessToken = nodeConfig.nodeAccessToken,
-        nodeMode = nodeConfig.nodeMode,
-        modelId = nodeConfig.modelId,
-        containerName = config_defaults.DOCKER_CONTAINER_NAME,
-        networkName = config_defaults.DOCKER_CONTAINER_NETWORK,
-        restartPolicy = "always",
-        ports = "21000:21000",
-        capAdd = "SYS_PTRACE",
-        ramMemory = nodeConfig.nodeRam,
-        swapMemory = nodeConfig.nodeSwap,
-        sharedMemory = nodeConfig.nodeSharedMemory,
-        cpuCount = nodeConfig.cpuCount,
-        imageType = "cpu" if nodeConfig.allowGpu is False else "gpu",
-        allowDocker = nodeConfig.allowDocker,
-        initScript = nodeConfig.getInitScriptPath(),
-        nodeSecret = nodeConfig.nodeSecret
+        dockerPath = dockerExecPath,
+        gitPath = gitExecPath,
+        venvPath = DEFAULT_VENV_PATH
     )
 
 
-def dumpScript(updateScriptPath: Path, userConfig: UserConfiguration, nodeConfig: NodeConfiguration) -> None:
+def dumpScript(updateScriptPath: Path) -> None:
     with updateScriptPath.open("w") as scriptFile:
-        scriptFile.write(generateUpdateScript(userConfig, nodeConfig))
+        scriptFile.write(generateUpdateScript())
 
     command(["chmod", "+x", str(updateScriptPath)], ignoreStdout = True)
 
 
-def activateAutoUpdate(configDir: Path, userConfig: UserConfiguration, nodeConfig: NodeConfiguration) -> None:
-    updateScriptPath = CONFIG_DIR / UPDATE_SCRIPT_NAME
-    dumpScript(updateScriptPath, userConfig, nodeConfig)
+def activateAutoUpdate() -> None:
+    updateScriptPath = DEFAULT_VENV_PATH.parent / UPDATE_SCRIPT_NAME
+    dumpScript(updateScriptPath)
 
-    if not jobExists(UPDATE_SCRIPT_NAME):
-        scheduleJob(configDir, UPDATE_SCRIPT_NAME)
+    if not jobExists(str(updateScriptPath)):
+        scheduleJob(UPDATE_SCRIPT_NAME)
+
+
+def getNodeStatus() -> NodeStatus:
+    try:
+        response = requests.get(f"http://localhost:21000/status", timeout = 1)
+        status = response.json()["status"]
+        return NodeStatus(status)
+    except:
+        return NodeStatus.inactive

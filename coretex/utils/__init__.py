@@ -23,3 +23,4 @@ from .image import resizeWithPadding, cropToWidth
 from .process import logProcessOutput, command, CommandException
 from .logs import createFileHandler
 from .misc import isCliRuntime
+from .inference import runOnnxInference

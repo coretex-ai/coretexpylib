@@ -34,7 +34,6 @@ def login() -> None:
             return
 
     ui.stdEcho("Please enter your credentials:")
-    loginInfo = user.authenticate()
-    config.saveLoginData(loginInfo)
-
+    user.configUser()
+    config.save()
     ui.successEcho(f"User {config.username} successfully logged in.")
