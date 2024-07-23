@@ -30,7 +30,7 @@ from .dataset import Dataset
 from .state import DatasetState
 from ..sample import NetworkSample
 from ..utils import isEntityNameValid
-from ... import folder_manager
+from ..._folder_manager import folder_manager
 from ...codable import KeyDescriptor
 from ...networking import NetworkObject, \
     fileChunkUpload, networkManager, NetworkRequestError

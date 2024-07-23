@@ -24,7 +24,6 @@ _syncConfigWithEnv()
 from ._logger import _initializeDefaultLogger, _initializeCLILogger
 from .configuration import isCliRuntime
 
-
 if isCliRuntime():
     _initializeCLILogger()
 else:
@@ -34,3 +33,4 @@ else:
 # Use this only
 from .entities import *
 from ._task import currentTaskRun, initializeRTask, TaskRunWorker
+from ._folder_manager import folder_manager

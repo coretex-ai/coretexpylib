@@ -32,7 +32,7 @@ import numpy as np
 from .base import BaseImageDataset
 from ...sample import ImageSample, AnnotatedImageSampleData
 from ...annotation import CoretexSegmentationInstance, CoretexImageAnnotation, BBox
-from .... import folder_manager
+from ...._folder_manager import folder_manager
 
 
 ANNOTATION_NAME = "annotations.json"

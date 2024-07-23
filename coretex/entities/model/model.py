@@ -25,7 +25,7 @@ import json
 import logging
 
 from ..utils import isEntityNameValid
-from ... import folder_manager
+from ..._folder_manager import folder_manager
 from ...networking import networkManager, NetworkObject, ChunkUploadSession, MAX_CHUNK_SIZE, NetworkRequestError
 from ...codable import KeyDescriptor
 

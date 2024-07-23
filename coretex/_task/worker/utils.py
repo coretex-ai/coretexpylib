@@ -19,7 +19,7 @@ from multiprocessing.connection import Connection
 
 import logging
 
-from ... import folder_manager
+from ..._folder_manager import folder_manager
 from ...utils import createFileHandler
 
 
