@@ -284,7 +284,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
             -------
             >>> from coretex import NetworkDataset
             \b
-            >>> dummyDataset = NetworkDataset.createDataset("dummyDataset", dependencies, 123)
+            >>> dummyDataset = NetworkDataset.createCacheDataset("dummyDataset", dependencies, 123)
         """
 
         if not isEntityNameValid(prefix):
