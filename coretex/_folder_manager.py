@@ -83,16 +83,20 @@ class FolderManager:
         """
             Creates temp folder which is deleted once
             the run has finished executing
+
             Parameters
             ----------
             name : str
                 name of the folder
+
             Returns
             -------
             Path -> path to the created folder
+
             Raises
             ------
             FileExistsError -> if the temp folder already exists
+
             Example
             -------
             >>> from coretex import folder_manager
@@ -114,13 +118,16 @@ class FolderManager:
         """
             Retrieves the path to where the artifacts are stored
             for the specified TaskRuns
+
             Parameters
             ----------
             taskRunId : int
                 id of the TaskRun
+
             Returns
             -------
             Path -> path to the TaskRun artifacts local storage
+
             Example
             -------
             >>> from coretex.folder_management import FolderManager
@@ -155,11 +162,13 @@ class FolderManager:
         """
             Returns a path to temporary file and deletes
             it if it exists once the context is exited.
+
             Parameters
             ----------
             name : Optional[str]
                 Name of the file. If not specified a random uuid4
                 will be generated and used as the name
+
             Returns
             -------
             Iterator[Path] -> path to the file
