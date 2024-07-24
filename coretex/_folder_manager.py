@@ -23,8 +23,6 @@ import os
 import shutil
 import uuid
 
-from .utils import file as file_utils
-
 
 class FolderManager:
 
@@ -94,12 +92,8 @@ class FolderManager:
         return self._artifactsFolder / str(taskRunId)
 
     def clearDirectory(self, path: Path) -> None:
-        for element in file_utils.walk(path):
-            if element.is_file():
-                element.unlink()
-
-            if element.is_dir():
-                shutil.rmtree(element)
+        shutil.rmtree(path)
+        path.mkdir()
 
     def clearTempFiles(self) -> None:
         self.clearDirectory(self.temp)
