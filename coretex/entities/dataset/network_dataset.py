@@ -284,6 +284,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
             -------
             >>> from coretex import NetworkDataset
             \b
+            >>> dependencies = [str(projectId), str(index), str(parameter)]
             >>> dummyDataset = NetworkDataset.createCacheDataset("dummyDataset", dependencies, 123)
         """
 
