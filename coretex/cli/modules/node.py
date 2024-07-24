@@ -278,7 +278,10 @@ def promptRam(ramLimit: int) -> int:
         return promptRam(ramLimit)
 
     if nodeRam < config_defaults.MINIMUM_RAM:
-        ui.errorEcho(f"ERROR: Configured RAM ({nodeRam}GB) is lower than the minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB).")
+        ui.errorEcho(
+            f"ERROR: Configured RAM ({nodeRam}GB) is lower than "
+            "the minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB)."
+        )
         return promptRam(ramLimit)
 
     return nodeRam
@@ -342,7 +345,11 @@ def checkResourceLimitations() -> None:
     _, ramLimit = docker.getResourceLimits()
 
     if ramLimit < config_defaults.MINIMUM_RAM:
-        raise RuntimeError(f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB) is higher than your current Docker desktop RAM limit ({ramLimit}GB). Please adjust resource limitations in Docker Desktop settings to match Node requirements.")
+        raise RuntimeError(
+            f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB) "
+            "is higher than your current Docker desktop RAM limit ({ramLimit}GB). "
+            "Please adjust resource limitations in Docker Desktop settings to match Node requirements."
+        )
 
 
 def configureNode(nodeConfig: NodeConfiguration, verbose: bool) -> None:

@@ -244,35 +244,57 @@ class NodeConfiguration(BaseConfiguration):
         swapLimit = docker.getDockerSwapLimit()
 
         if not isinstance(self._raw.get("nodeRam"), int):
-            errorMessages.append(f"Invalid config \"nodeRam\" field type \"{type(self._raw.get('nodeRam'))}\". Expected: \"int\"")
+            errorMessages.append(
+                f"Invalid config \"nodeRam\" field type \"{type(self._raw.get('nodeRam'))}\". Expected: \"int\""
+            )
             isValid = False
 
         if not isinstance(self._raw.get("cpuCount"), int):
-            errorMessages.append(f"Invalid config \"cpuCount\" field type \"{type(self._raw.get('cpuCount'))}\". Expected: \"int\"")
+            errorMessages.append(
+                f"Invalid config \"cpuCount\" field type \"{type(self._raw.get('cpuCount'))}\". Expected: \"int\""
+            )
             isValid = False
 
         if not isinstance(self._raw.get("nodeSwap"), int):
-            errorMessages.append(f"Invalid config \"nodeSwap\" field type \"{type(self._raw.get('nodeSwap'))}\". Expected: \"int\"")
+            errorMessages.append(
+                f"Invalid config \"nodeSwap\" field type \"{type(self._raw.get('nodeSwap'))}\". Expected: \"int\""
+            )
             isValid = False
 
         if self.cpuCount > cpuLimit:
-            errorMessages.append(f"Configuration not valid. CPU limit in Docker Desktop ({cpuLimit}) is lower than the configured value ({self._raw.get('cpuCount')})")
+            errorMessages.append(
+                f"Configuration not valid. CPU limit in Docker Desktop ({cpuLimit}) "
+                "is lower than the configured value ({self._raw.get('cpuCount')})"
+            )
             isValid = False
 
         if ramLimit < config_defaults.MINIMUM_RAM_MEMORY:
-            errorMessages.append(f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) is higher than your current Docker desktop RAM limit ({ramLimit}GB). Please adjust resource limitations in Docker Desktop settings to match Node requirements.")
+            errorMessages.append(
+                f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) "
+                "is higher than your current Docker desktop RAM limit ({ramLimit}GB). "
+                "Please adjust resource limitations in Docker Desktop settings to match Node requirements."
+            )
             isValid = False
 
         if self.nodeRam > ramLimit:
-            errorMessages.append(f"Configuration not valid. RAM limit in Docker Desktop ({ramLimit}GB) is lower than the configured value ({self._raw.get('nodeRam')}GB)")
+            errorMessages.append(
+                f"Configuration not valid. RAM limit in Docker Desktop ({ramLimit}GB) "
+                "is lower than the configured value ({self._raw.get('nodeRam')}GB)"
+            )
             isValid = False
 
         if self.nodeRam < config_defaults.MINIMUM_RAM_MEMORY:
-            errorMessages.append(f"Configuration not valid. Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) is higher than the configured value ({self._raw.get('nodeRam')}GB)")
+            errorMessages.append(
+                f"Configuration not valid. Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) "
+                "is higher than the configured value ({self._raw.get('nodeRam')}GB)"
+            )
             isValid = False
 
         if self.nodeSwap > swapLimit:
-            errorMessages.append(f"Configuration not valid. SWAP limit in Docker Desktop ({swapLimit}GB) is lower than the configured value ({self.nodeSwap}GB)")
+            errorMessages.append(
+                f"Configuration not valid. SWAP limit in Docker Desktop ({swapLimit}GB) "
+                "is lower than the configured value ({self.nodeSwap}GB)"
+            )
             isValid = False
 
         return isValid, errorMessages
