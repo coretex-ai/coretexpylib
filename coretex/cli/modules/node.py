@@ -16,7 +16,7 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import Any, Dict, Optional
-from enum import Enum, IntEnum
+from enum import Enum
 from pathlib import Path
 from base64 import b64encode
 
@@ -25,27 +25,16 @@ import requests
 
 import click
 
-from . import utils, ui
-from . import config_defaults
+from . import utils, ui, config_defaults
 from ...cryptography import rsa
 from ...networking import networkManager, NetworkRequestError
 from ...utils import CommandException, docker
-from ...entities import Model
-from ...node import NodeMode
+from ...node import NodeMode, NodeStatus
 from ...configuration import UserConfiguration, NodeConfiguration
 
 
 class NodeException(Exception):
     pass
-
-
-class NodeStatus(IntEnum):
-
-    inactive     = 1
-    active       = 2
-    busy         = 3
-    deleted      = 4
-    reconnecting = 5
 
 
 class ImageType(Enum):
@@ -353,42 +342,6 @@ def checkResourceLimitations() -> None:
 
     if ramLimit < config_defaults.MINIMUM_RAM:
         raise RuntimeError(f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB) is higher than your current Docker desktop RAM limit ({ramLimit}GB). Please adjust resource limitations in Docker Desktop settings to match Node requirements.")
-
-
-# def isConfigurationValid(config: Dict[str, Any]) -> bool:
-#     isValid = True
-#     cpuLimit, ramLimit = docker.getResourceLimits()
-#     swapLimit = docker.getDockerSwapLimit()
-
-#     if not isinstance(config["nodeRam"], int):
-#         errorEcho(f"Invalid config \"nodeRam\" field type \"{type(config['nodeRam'])}\". Expected: \"int\"")
-#         isValid = False
-
-#     if not isinstance(config["cpuCount"], int):
-#         errorEcho(f"Invalid config \"cpuCount\" field type \"{type(config['cpuCount'])}\". Expected: \"int\"")
-#         isValid = False
-
-#     if config["cpuCount"] > cpuLimit:
-#         errorEcho(f"Configuration not valid. CPU limit in Docker Desktop ({cpuLimit}) is lower than the configured value ({config['cpuCount']})")
-#         isValid = False
-
-#     if ramLimit < config_defaults.MINIMUM_RAM:
-#         errorEcho(f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB) is higher than your current Docker desktop RAM limit ({ramLimit}GB). Please adjust resource limitations in Docker Desktop settings to match Node requirements.")
-#         isValid = False
-
-#     if config["nodeRam"] > ramLimit:
-#         errorEcho(f"Configuration not valid. RAM limit in Docker Desktop ({ramLimit}GB) is lower than the configured value ({config['nodeRam']}GB)")
-#         isValid = False
-
-#     if config["nodeSwap"] > swapLimit:
-#         errorEcho(f"Configuration not valid. RAM limit in Docker Desktop ({swapLimit}GB) is lower than the configured value ({config['nodeSwap']}GB)")
-#         isValid = False
-
-#     if config["nodeRam"] < config_defaults.MINIMUM_RAM:
-#         errorEcho(f"Configuration not valid. Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB) is higher than the configured value ({config['nodeRam']}GB)")
-#         isValid = False
-
-#     return isValid
 
 
 def configureNode(nodeConfig: NodeConfiguration, verbose: bool) -> None:

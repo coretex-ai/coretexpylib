@@ -60,7 +60,7 @@ def _createFolder(name: str) -> Path:
     return path
 
 
-_root = Path(os.environ["CTX_STORAGE_PATH"]).expanduser()
+_root = Path(os.environ.get("CTX_STORAGE_PATH", "~/.coretex")).expanduser()
 
 samplesFolder    = _createFolder("samples")
 modelsFolder     = _createFolder("models")
