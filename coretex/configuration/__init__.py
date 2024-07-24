@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .user import UserConfiguration, LoginInfo
+from .user import UserConfiguration
 from .node import NodeConfiguration
 from .base import CONFIG_DIR, DEFAULT_VENV_PATH
 

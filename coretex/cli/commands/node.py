@@ -56,8 +56,8 @@ def start(image: Optional[str]) -> None:
 
     dockerImage = nodeConfig.image
 
-    # if node_module.shouldUpdate(dockerImage):
-    #     node_module.pull(dockerImage)
+    if node_module.shouldUpdate(dockerImage):
+        node_module.pull(dockerImage)
 
     node_module.start(dockerImage, userConfig, nodeConfig)
     docker.removeDanglingImages(node_module.getRepoFromImageUrl(dockerImage), node_module.getTagFromImageUrl(dockerImage))

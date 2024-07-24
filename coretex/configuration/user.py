@@ -17,7 +17,6 @@
 
 from typing import Dict, Any, Optional
 from datetime import datetime, timezone
-from dataclasses import dataclass
 
 import os
 
@@ -36,29 +35,6 @@ USER_DEFAULT_CONFIG = {
     "serverUrl": os.environ.get("CTX_API_URL", "https://api.coretex.ai/"),
     "projectId": os.environ.get("CTX_PROJECT_ID")
 }
-
-
-class InvalidUserConfiguration(Exception):
-    pass
-
-
-@dataclass
-class LoginInfo:
-
-    username: str
-    password: str
-    token: str
-    tokenExpirationDate: str
-    refreshToken: str
-    refreshTokenExpirationDate: str
-
-
-def hasExpired(tokenExpirationDate: Optional[str]) -> bool:
-    if tokenExpirationDate is None:
-        return False
-
-    currentDate = datetime.utcnow().replace(tzinfo = timezone.utc)
-    return currentDate >= decodeDate(tokenExpirationDate)
 
 
 class UserConfiguration(BaseConfiguration):
@@ -140,26 +116,6 @@ class UserConfiguration(BaseConfiguration):
     def isValid(self) -> bool:
         return self._raw.get("username") is not None and self._raw.get("password") is not None
 
-    @property
-    def hasTokenExpired(self) -> bool:
-        if self.token is None:
-            return True
-
-        if self.tokenExpirationDate is None:
-            return True
-
-        return hasExpired(self.tokenExpirationDate)
-
-    @property
-    def hasRefreshTokenExpired(self) -> bool:
-        if self.refreshToken is None:
-            return True
-
-        if self.refreshTokenExpirationDate is None:
-            return True
-
-        return hasExpired(self.refreshTokenExpirationDate)
-
     def isUserConfigured(self) -> bool:
         if self._raw.get("username") is None or not isinstance(self._raw.get("username"), str):
             return False
@@ -168,16 +124,6 @@ class UserConfiguration(BaseConfiguration):
             return False
 
         return True
-
-    def saveLoginData(self, loginInfo: LoginInfo) -> None:
-        self.username = loginInfo.username
-        self.password = loginInfo.password
-        self.token = loginInfo.token
-        self.tokenExpirationDate = loginInfo.tokenExpirationDate
-        self.refreshToken = loginInfo.refreshToken
-        self.refreshTokenExpirationDate = loginInfo.refreshTokenExpirationDate
-
-        self.save()
 
     def isTokenValid(self, tokenName: str) -> bool:
         tokenValue = self._raw.get(tokenName)
