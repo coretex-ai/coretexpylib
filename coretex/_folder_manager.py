@@ -80,6 +80,28 @@ class FolderManager:
         return path
 
     def createTempFolder(self, name: str) -> Path:
+        """
+            Creates temp folder which is deleted once
+            the run has finished executing
+            Parameters
+            ----------
+            name : str
+                name of the folder
+            Returns
+            -------
+            Path -> path to the created folder
+            Raises
+            ------
+            FileExistsError -> if the temp folder already exists
+            Example
+            -------
+            >>> from coretex import folder_manager
+            \b
+            >>> dummyFolderPath = folder_manager.createTempFolder("dummyTempFolder")
+            >>> print(dummyFolderPath)
+            "/Users/X/.coretex/temp/dummyTempFolder"
+        """
+
         tempFolderPath = self.temp / name
 
         if tempFolderPath.exists():
@@ -89,6 +111,25 @@ class FolderManager:
         return tempFolderPath
 
     def getArtifactsFolder(self, taskRunId: int) -> Path:
+        """
+            Retrieves the path to where the artifacts are stored
+            for the specified TaskRuns
+            Parameters
+            ----------
+            taskRunId : int
+                id of the TaskRun
+            Returns
+            -------
+            Path -> path to the TaskRun artifacts local storage
+            Example
+            -------
+            >>> from coretex.folder_management import FolderManager
+            \b
+            >>> artifactsFolderPath = FolderManager.instance().getArtifactsFolder(1023)
+            >>> print(artifactsFolderPath)
+            Path("/Users/bogdanbm/.coretex/artifacts/1023")
+        """
+
         return self._artifactsFolder / str(taskRunId)
 
     def clearDirectory(self, path: Path) -> None:
@@ -96,6 +137,10 @@ class FolderManager:
         path.mkdir()
 
     def clearTempFiles(self) -> None:
+        """
+            Deletes all temp files and folders (including artifacts)
+        """
+
         self.clearDirectory(self.temp)
         self.clearDirectory(self._artifactsFolder)
 
@@ -107,6 +152,19 @@ class FolderManager:
 
     @contextmanager
     def tempFile(self, name: Optional[str] = None) -> Iterator[Path]:
+        """
+            Returns a path to temporary file and deletes
+            it if it exists once the context is exited.
+            Parameters
+            ----------
+            name : Optional[str]
+                Name of the file. If not specified a random uuid4
+                will be generated and used as the name
+            Returns
+            -------
+            Iterator[Path] -> path to the file
+        """
+
         if name is None:
             name = str(uuid.uuid4())
 
