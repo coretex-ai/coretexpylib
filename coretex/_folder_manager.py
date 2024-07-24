@@ -187,14 +187,3 @@ class FolderManager:
 
 
 folder_manager = FolderManager(os.environ["CTX_STORAGE_PATH"])
-
-
-@contextmanager
-def currentFolderManager(storagePath: Path) -> Iterator[None]:
-    global folder_manager
-    originalManager = folder_manager
-    folder_manager = FolderManager(storagePath)
-    try:
-        yield None
-    finally:
-        folder_manager = originalManager

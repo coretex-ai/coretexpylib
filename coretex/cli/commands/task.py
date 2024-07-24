@@ -22,7 +22,7 @@ import click
 from ..modules.user import initializeUserSession
 from ..modules.utils import onBeforeCommandExecute
 from ..modules.project_utils import getProject
-from ..._folder_manager import folder_manager, currentFolderManager
+from ..._folder_manager import FolderManager
 from ..._task import TaskRunWorker, executeRunLocally, readTaskConfig, runLogger
 from ...configuration import loadConfig
 from ...entities import TaskRun, TaskRunStatus
@@ -45,8 +45,8 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
     parameters = readTaskConfig()
 
     # clearing temporary files in case that node was manually killed before
-    with currentFolderManager(config["storagePath"]):
-        folder_manager.clearTempFiles()
+    folderManager = FolderManager(config["storagePath"])
+    folderManager.clearTempFiles()
 
     selectedProject = getProject(project, config)
     if selectedProject is None:
@@ -88,5 +88,4 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
     else:
         taskRun.updateStatus(TaskRunStatus.completedWithSuccess)
 
-    with currentFolderManager(config["storagePath"]):
-        folder_manager.clearTempFiles()
+    folderManager.clearTempFiles()
