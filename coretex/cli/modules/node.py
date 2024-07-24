@@ -25,7 +25,8 @@ import requests
 
 import click
 
-from . import utils, ui, config_defaults
+from . import ui, config_defaults
+from .utils import isGPUAvailable
 from ...cryptography import rsa
 from ...networking import networkManager, NetworkRequestError
 from ...utils import CommandException, docker
@@ -358,7 +359,7 @@ def configureNode(nodeConfig: NodeConfiguration, verbose: bool) -> None:
     else:
         nodeConfig.image = "coretexai/coretex-node"
 
-    if utils.isGPUAvailable():
+    if isGPUAvailable():
         nodeConfig.allowGpu = ui.clickPrompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
     else:
         nodeConfig.allowGpu = False

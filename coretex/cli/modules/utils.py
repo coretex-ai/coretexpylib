@@ -24,6 +24,7 @@ import sys
 import venv
 import shutil
 import logging
+import platform
 
 from py3nvml import py3nvml
 
@@ -31,8 +32,6 @@ import click
 import requests
 
 from . import ui
-import platform
-
 from ...configuration import DEFAULT_VENV_PATH
 from ...utils.process import command
 

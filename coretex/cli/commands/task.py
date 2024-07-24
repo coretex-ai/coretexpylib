@@ -19,8 +19,9 @@ from typing import Optional
 
 import click
 
-from ... import folder_manager
-from ..modules import user, utils, project_utils
+from ..modules.project_utils import getProject
+from ..modules.user import initializeUserSession
+from ..modules.utils import onBeforeCommandExecute
 from ... import folder_manager
 from ...configuration import UserConfiguration
 from ...entities import TaskRun, TaskRunStatus
@@ -33,7 +34,7 @@ class RunException(Exception):
 
 
 @click.command()
-@utils.onBeforeCommandExecute(user.initializeUserSession)
+@onBeforeCommandExecute(initializeUserSession)
 @click.argument("path", type = click.Path(exists = True, dir_okay = False))
 @click.option("--name", type = str, default = None)
 @click.option("--description", type = str, default = None)
@@ -49,7 +50,7 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
 
     folder_manager.clearTempFiles()
 
-    selectedProject = project_utils.getProject(project, userConfig)
+    selectedProject = getProject(project, userConfig)
     # clearing temporary files in case that node was manually killed before
 
     if selectedProject is None:

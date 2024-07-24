@@ -20,16 +20,18 @@ from typing import Optional
 import click
 
 from ...utils import docker
-from ..modules import user, ui, utils
+from ..modules import ui
 from ..modules import node as node_module
-from ..modules import update as update_module
 from ..modules.node import NodeStatus
+from ..modules.user import initializeUserSession
+from ..modules.utils import onBeforeCommandExecute, checkEnvironment
+from ..modules.update import activateAutoUpdate, getNodeStatus
 from ...configuration import UserConfiguration, NodeConfiguration
 
 
 @click.command()
 @click.option("--image", type = str, help = "Docker image url")
-@utils.onBeforeCommandExecute(node_module.initializeNodeConfiguration)
+@onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def start(image: Optional[str]) -> None:
     if node_module.isRunning():
         if not ui.clickPrompt(
@@ -59,7 +61,7 @@ def start(image: Optional[str]) -> None:
 
     node_module.start(dockerImage, userConfig, nodeConfig)
     docker.removeDanglingImages(node_module.getRepoFromImageUrl(dockerImage), node_module.getTagFromImageUrl(dockerImage))
-    update_module.activateAutoUpdate()
+    activateAutoUpdate()
 
 
 @click.command()
@@ -74,7 +76,7 @@ def stop() -> None:
 @click.command()
 @click.option("-y", "autoAccept", is_flag = True, help = "Accepts all prompts.")
 @click.option("-n", "autoDecline", is_flag = True, help = "Declines all prompts.")
-@utils.onBeforeCommandExecute(node_module.initializeNodeConfiguration)
+@onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def update(autoAccept: bool, autoDecline: bool) -> None:
     if autoAccept and autoDecline:
         ui.errorEcho("Only one of the flags (\"-y\" or \"-n\") can be used at the same time.")
@@ -114,7 +116,7 @@ def update(autoAccept: bool, autoDecline: bool) -> None:
     ui.stdEcho("Updating node...")
     node_module.pull(nodeConfig.image)
 
-    if update_module.getNodeStatus() == update_module.NodeStatus.busy and not autoAccept:
+    if getNodeStatus() == NodeStatus.busy and not autoAccept:
         if autoDecline:
             return
 
@@ -135,8 +137,6 @@ def update(autoAccept: bool, autoDecline: bool) -> None:
         node_module.getRepoFromImageUrl(nodeConfig.image),
         node_module.getTagFromImageUrl(nodeConfig.image)
     )
-
-    update_module.activateAutoUpdate()
 
 
 @click.command()
@@ -171,14 +171,14 @@ def config(verbose: bool) -> None:
     ui.previewConfig(userConfig, nodeConfig)
 
     ui.successEcho("Node successfully configured.")
-    update_module.activateAutoUpdate()
+    activateAutoUpdate()
 
 
 @click.group()
-@utils.onBeforeCommandExecute(docker.isDockerAvailable)
-@utils.onBeforeCommandExecute(user.initializeUserSession)
-@utils.onBeforeCommandExecute(node_module.checkResourceLimitations)
-@utils.onBeforeCommandExecute(utils.checkEnvironment)
+@onBeforeCommandExecute(docker.isDockerAvailable)
+@onBeforeCommandExecute(initializeUserSession)
+@onBeforeCommandExecute(node_module.checkResourceLimitations)
+@onBeforeCommandExecute(checkEnvironment)
 def node() -> None:
     pass
 

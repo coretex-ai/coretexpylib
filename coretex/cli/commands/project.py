@@ -19,7 +19,9 @@ from typing import Optional
 
 import click
 
-from ..modules import ui, project_utils, utils, user
+from ..modules import ui, project_utils
+from ..modules.user import initializeUserSession
+from ..modules.utils import onBeforeCommandExecute
 from ...entities import Project, ProjectVisibility
 from ...networking import RequestFailedError
 from ...configuration import UserConfiguration
@@ -90,7 +92,7 @@ def select(name: str) -> None:
 
 
 @click.group()
-@utils.onBeforeCommandExecute(user.initializeUserSession)
+@onBeforeCommandExecute(initializeUserSession)
 def project() -> None:
     pass
 
