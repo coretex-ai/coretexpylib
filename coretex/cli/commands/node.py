@@ -19,13 +19,13 @@ from typing import Optional
 
 import click
 
-from ...utils import docker
 from ..modules import ui
 from ..modules import node as node_module
 from ..modules.node import NodeStatus
 from ..modules.user import initializeUserSession
 from ..modules.utils import onBeforeCommandExecute, checkEnvironment
 from ..modules.update import activateAutoUpdate, getNodeStatus
+from ...utils import docker
 from ...configuration import UserConfiguration, NodeConfiguration
 
 

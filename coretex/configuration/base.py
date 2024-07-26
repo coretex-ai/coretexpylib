@@ -22,6 +22,7 @@ from pathlib import Path
 import os
 import json
 
+
 T = TypeVar("T", int, float, str, bool)
 
 CONFIG_DIR = Path.home().joinpath(".config", "coretex")
@@ -32,6 +33,7 @@ class InvalidConfiguration(Exception):
     pass
 
 class BaseConfiguration:
+
     def __init__(self, path: Path) -> None:
         self._path = path
 
@@ -72,5 +74,6 @@ class BaseConfiguration:
     def save(self) -> None:
         if not self._path.parent.exists():
             self._path.parent.mkdir(parents = True, exist_ok = True)
+
         with self._path.open("w") as configFile:
             json.dump(self._raw, configFile, indent = 4)
