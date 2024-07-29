@@ -131,7 +131,7 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, Ta
         return folder_manager.datasetsFolder / str(self.id)
 
     @property
-    def entityTagType(self) -> int:
+    def entityTagType(self) -> EntityTagType:
         return EntityTagType.dataset
 
     # Codable overrides

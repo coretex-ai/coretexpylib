@@ -84,7 +84,7 @@ class Model(NetworkObject, Taggable):
         return self.path.with_suffix(".zip")
 
     @property
-    def entityTagType(self) -> int:
+    def entityTagType(self) -> EntityTagType:
         return EntityTagType.model
 
     @classmethod

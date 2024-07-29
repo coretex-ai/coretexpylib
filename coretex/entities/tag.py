@@ -39,7 +39,7 @@ class Taggable(ABC):
 
     @property
     @abstractmethod
-    def entityTagType(self) -> int:
+    def entityTagType(self) -> EntityTagType:
         pass
 
     def _getTagId(self, tagName: str) -> Optional[int]:
@@ -54,7 +54,7 @@ class Taggable(ABC):
             raise NetworkRequestError(response, "Failed to check existing tags")
 
         tags = response.getJson(dict).get("data")
-        if not isinstance(tags, dict):
+        if not isinstance(tags, list):
             raise NetworkRequestError(response, f"Field \"data\" from tag response must be dict, but got {type(tags)} instead")
 
         if len(tags) == 0:
