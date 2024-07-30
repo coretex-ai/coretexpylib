@@ -97,7 +97,7 @@ class Taggable(ABC):
         if color is None:
             color = f"#{random.randint(0, 0xFFFFFF):06x}"
         else:
-            if re.match(r'^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$', color) is None:
+            if re.match(r"^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$", color) is None:
                 raise ValueError(">> [Coretex] Tag color has to follow hexadecimal color code")
 
         tags: Dict[str, Any] = {}
