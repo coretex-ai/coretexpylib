@@ -248,8 +248,7 @@ class NetworkManagerBase(ABC):
                 auth = auth,
                 timeout = timeout,
                 files = files,
-                headers = headers,
-                stream = stream
+                headers = headers
             )
 
             response = NetworkResponse(rawResponse, endpoint)
