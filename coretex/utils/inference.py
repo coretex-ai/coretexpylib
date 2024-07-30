@@ -16,12 +16,16 @@ from .. import folder_manager
 async def genWitness(inputPath: Path, circuit: Path, witnessPath: Path) -> None:
     await ezkl.gen_witness(inputPath, circuit, witnessPath)
 
+async def getSrs(settings: Path) -> None:
+    await ezkl.get_srs(settings)
+
 
 def runOnnxInference(
     data: np.ndarray,
     onnxPath: Path,
     compiledModelPath: Optional[Path] = None,
-    proveKey: Optional[Path] = None
+    proveKey: Optional[Path] = None,
+    settingsPath: Optional[Path] = None,
 ) -> Union[np.ndarray, Tuple[np.ndarray, Path]]:
 
     """
@@ -36,6 +40,8 @@ def runOnnxInference(
             data which will be directly fed to the model
         onnxPath : Path
             path to the onnx model
+        settingsPath : Path
+            path to the settigs.json file
         compiledModelPath : Optional[Path]
             path to the compiled model
         proveKey : Optional[Path]
@@ -53,11 +59,11 @@ def runOnnxInference(
     inputName = session.get_inputs()[0].name
     result = np.array(session.run(None, {inputName: data}))
 
-    if compiledModelPath is None and proveKey is None:
+    if compiledModelPath is None and proveKey is None and settingsPath is None:
         return result
 
-    if compiledModelPath is None or proveKey is None:
-        raise ValueError(f">> [Coretex] Parameters compiledModelPath and proveKey have to either both be passed or None")
+    if compiledModelPath is None or proveKey is None or settingsPath is None:
+        raise ValueError(f">> [Coretex] Parameters compiledModelPath, proveKey and settingsPath have to either all be passed (for verified inference) or none of them (for regula inference)")
 
     inferenceDir = folder_manager.createTempFolder(inferenceId)
     witnessPath = inferenceDir / "witness.json"
@@ -70,6 +76,7 @@ def runOnnxInference(
         json.dump(inputData, file)
 
     asyncio.run(genWitness(inputPath, compiledModelPath, witnessPath))
+    asyncio.run(getSrs(settingsPath))
     ezkl.prove(
         witnessPath,
         compiledModelPath,

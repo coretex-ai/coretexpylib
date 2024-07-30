@@ -28,6 +28,7 @@ import logging
 
 from .dataset import Dataset
 from .state import DatasetState
+from ..tag import EntityTagType, Taggable
 from ..sample import NetworkSample
 from ..utils import isEntityNameValid
 from ... import folder_manager
@@ -91,7 +92,7 @@ def _encryptedSampleImport(sampleType: Type[SampleType], sampleName: str, sample
     raise RuntimeError("Unreachable statement was reached.")
 
 
-class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, ABC):
+class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, Taggable, ABC):
 
     """
         Represents the base class for all Dataset classes which are
@@ -128,6 +129,10 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
         """
 
         return folder_manager.datasetsFolder / str(self.id)
+
+    @property
+    def entityTagType(self) -> EntityTagType:
+        return EntityTagType.dataset
 
     # Codable overrides
 

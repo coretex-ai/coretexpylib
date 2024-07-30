@@ -24,13 +24,14 @@ from pathlib import Path
 import json
 import logging
 
+from ..tag import Taggable, EntityTagType
 from ..utils import isEntityNameValid
 from ... import folder_manager
 from ...networking import networkManager, NetworkObject, ChunkUploadSession, MAX_CHUNK_SIZE, NetworkRequestError
 from ...codable import KeyDescriptor
 
 
-class Model(NetworkObject):
+class Model(NetworkObject, Taggable):
 
     """
         Represents a machine learning model object on Coretex.ai
@@ -81,6 +82,10 @@ class Model(NetworkObject):
     @property
     def zipPath(self) -> Path:
         return self.path.with_suffix(".zip")
+
+    @property
+    def entityTagType(self) -> EntityTagType:
+        return EntityTagType.model
 
     @classmethod
     def modelDescriptorFileName(cls) -> str:
