@@ -45,7 +45,7 @@ class Taggable(ABC):
     def _getTagId(self, tagName: str) -> Optional[int]:
         parameters = {
             "name": tagName,
-            "type": int(self.entityTagType),
+            "type": self.entityTagType.value,
             "project_id": self.projectId
         }
 
@@ -113,7 +113,7 @@ class Taggable(ABC):
 
         parameters = {
             "entity_id": self.id,
-            "type": self.entityTagType,
+            "type": self.entityTagType.value,
             "tags": tags
         }
 
@@ -144,7 +144,7 @@ class Taggable(ABC):
         parameters = {
             "entity_id": self.id,
             "tag_id": tagId,
-            "type": self.entityTagType
+            "type": self.entityTagType.value
         }
 
         response = networkManager.post("tag/remove", parameters)
