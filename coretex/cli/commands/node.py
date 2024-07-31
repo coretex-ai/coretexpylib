@@ -30,6 +30,7 @@ from ...utils import docker
 
 @click.command()
 @click.option("--image", type = str, help = "Docker image url")
+@click.option("--verbose", "verbose", is_flag = True, help = "Shows detailed about of command execution.")
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def start(image: Optional[str]) -> None:
     if node_module.isRunning():
@@ -64,6 +65,7 @@ def start(image: Optional[str]) -> None:
 
 
 @click.command()
+@click.option("--verbose", "verbose", is_flag = True, help = "Shows detailed about of command execution.")
 def stop() -> None:
     if not node_module.isRunning():
         errorEcho("Node is already offline.")
@@ -75,6 +77,7 @@ def stop() -> None:
 @click.command()
 @click.option("-y", "autoAccept", is_flag = True, help = "Accepts all prompts.")
 @click.option("-n", "autoDecline", is_flag = True, help = "Declines all prompts.")
+@click.option("--verbose", "verbose", is_flag = True, help = "Shows detailed about of command execution.")
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def update(autoAccept: bool, autoDecline: bool) -> None:
     if autoAccept and autoDecline:
