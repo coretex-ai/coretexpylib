@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Final, List, Dict
+from typing import Final, List, Dict, Optional, Tuple
 from typing_extensions import Self
 
 from ....codable import Codable, KeyDescriptor
@@ -159,11 +159,13 @@ class BBox(Codable):
         """
             Calculate Intersection over Union (IoU) between two bounding boxes
 
-            Parameters:
+            Parameters
+            ----------
             other : BBox
                 bounding box for which the IoU will be calculated
 
             Returns
+            -------
             float -> IoU score
         """
 
@@ -176,3 +178,30 @@ class BBox(Codable):
 
         unionArea = self.area + other.area - intersectionArea
         return intersectionArea / unionArea if unionArea > 0 else 0.0
+
+
+    def inflate(self, percentage: int, imageSize: Optional[Tuple[int, int]] = None) -> None:
+        """
+            Increases the size of the bounding box by a percentage
+
+            Parameters
+            ----------
+            percentage : int
+                the percentage by which the bounding box will be inflated
+            imageSize : Optional[Tuple[int, int]]
+                bounding box will not be able to go beyond these dimensions (width, height)
+        """
+
+        if imageSize is None:
+            imageSize = (float("inf"), float("inf"))
+
+        imageWidth, imageHeight = imageSize
+
+        inflateFactor = percentage / 100.0
+        inflateWidth = self.width * inflateFactor / 2
+        inflateHeight = self.height * inflateFactor / 2
+
+        self.minX = max(0, self.minX - inflateWidth)
+        self.minY = max(0, self.minY - inflateHeight)
+        self.width = min(imageWidth, self.width + inflateWidth * 2)
+        self.height = min(imageHeight, self.height + inflateHeight * 2)
