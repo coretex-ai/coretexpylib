@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Final, List, Dict, Optional, Tuple
+from typing import List, Dict, Optional, Tuple, Union
 from typing_extensions import Self
 
 from ....codable import Codable, KeyDescriptor
@@ -39,11 +39,11 @@ class BBox(Codable):
     """
 
     def __init__(self, minX: int = 0, minY: int = 0, width: int = 0, height: int = 0) -> None:
-        self.minX: Final = minX
-        self.minY: Final = minY
+        self.minX: int = minX
+        self.minY: int = minY
 
-        self.width: Final = width
-        self.height: Final = height
+        self.width: int = width
+        self.height: int = height
 
     @property
     def maxX(self) -> int:
@@ -180,7 +180,7 @@ class BBox(Codable):
         return intersectionArea / unionArea if unionArea > 0 else 0.0
 
 
-    def inflate(self, percentage: int, imageSize: Optional[Tuple[int, int]] = None) -> None:
+    def inflate(self, percentage: int, imageSize: Optional[Tuple[Union[int, float], Union[int, float]]] = None) -> None:
         """
             Increases the size of the bounding box by a percentage
 
@@ -201,7 +201,7 @@ class BBox(Codable):
         inflateWidth = self.width * inflateFactor / 2
         inflateHeight = self.height * inflateFactor / 2
 
-        self.minX = max(0, self.minX - inflateWidth)
-        self.minY = max(0, self.minY - inflateHeight)
-        self.width = min(imageWidth, self.width + inflateWidth * 2)
-        self.height = min(imageHeight, self.height + inflateHeight * 2)
+        self.minX = int(max(0, self.minX - inflateWidth))
+        self.minY = int(max(0, self.minY - inflateHeight))
+        self.width = int(min(imageWidth, self.width + inflateWidth * 2))
+        self.height = int(min(imageHeight, self.height + inflateHeight * 2))
