@@ -39,11 +39,11 @@ class BBox(Codable):
     """
 
     def __init__(self, minX: int = 0, minY: int = 0, width: int = 0, height: int = 0) -> None:
-        self.minX: int = minX
-        self.minY: int = minY
+        self.minX = minX
+        self.minY = minY
 
-        self.width: int = width
-        self.height: int = height
+        self.width = width
+        self.height = height
 
     @property
     def maxX(self) -> int:
@@ -178,7 +178,6 @@ class BBox(Codable):
 
         unionArea = self.area + other.area - intersectionArea
         return intersectionArea / unionArea if unionArea > 0 else 0.0
-
 
     def inflate(self, percentage: int, imageSize: Optional[Tuple[Union[int, float], Union[int, float]]] = None) -> None:
         """
