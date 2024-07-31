@@ -32,14 +32,13 @@ class FolderManager:
 
         Contains
         --------
-        samplesFolder : str
+        samplesFolder : Path
             folder where samples are stored
-        modelsFolder : str
+        modelsFolder : Path
             folder where models are stored
-        temp : str
+        temp : Path
             folder where temp files and folders are stored,
             this is deleted when the run has finished executing
-
         datasetsFolder : Path
             folder where datasets are stored (samples are symlinked for datasets)
         cache : Path
