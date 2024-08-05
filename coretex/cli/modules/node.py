@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 from enum import Enum
 from pathlib import Path
 from base64 import b64encode
@@ -117,10 +117,21 @@ def clean() -> None:
         raise NodeException("Failed to clean inactive Coretex Node.")
 
 
-def stop() -> None:
+def deactivateNode(id: int) -> None:
+    params: Dict[str, Any] = {
+        "id": id,
+    }
+
+    response = networkManager.post("service/deactivate", params)
+    if response.hasFailed():
+        raise NetworkRequestError(response, "Failed to deactivate node.")
+
+
+def stop(nodeId: int) -> None:
     try:
         progressEcho("Stopping Coretex Node...")
         docker.stopContainer(config_defaults.DOCKER_CONTAINER_NAME)
+        deactivateNode(nodeId)
         clean()
         successEcho("Successfully stopped Coretex Node....")
     except BaseException as ex:
@@ -178,7 +189,7 @@ def registerNode(
     publicKey: Optional[bytes] = None,
     nearWalletId: Optional[str] = None,
     endpointInvocationPrice: Optional[float] = None
-) -> str:
+) -> Tuple[str, str]:
 
     params: Dict[str, Any] = {
         "machine_name": name,
@@ -200,11 +211,12 @@ def registerNode(
         raise NetworkRequestError(response, "Failed to configure node. Please try again...")
 
     accessToken = response.getJson(dict).get("access_token")
+    nodeId = response.getJson(dict).get("id")
 
     if not isinstance(accessToken, str):
         raise TypeError("Something went wrong. Please try again...")
 
-    return accessToken
+    return str(nodeId), str(accessToken)
 
 
 def selectImageType() -> ImageType:
@@ -348,7 +360,7 @@ def isConfigurationValid(config: Dict[str, Any]) -> bool:
         isValid = False
 
     if config["nodeSwap"] > swapLimit:
-        errorEcho(f"Configuration not valid. RAM limit in Docker Desktop ({swapLimit}GB) is lower than the configured value ({config['nodeSwap']}GB)")
+        errorEcho(f"Configuration not valid. SWAP memory limit in Docker Desktop ({swapLimit}GB) is lower than the configured value ({config['nodeSwap']}GB)")
         isValid = False
 
     if config["nodeRam"] < config_defaults.MINIMUM_RAM:
@@ -383,7 +395,7 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
 
     config["storagePath"] = config_defaults.DEFAULT_STORAGE_PATH
     config["nodeRam"] = int(min(max(config_defaults.MINIMUM_RAM, ramLimit), config_defaults.DEFAULT_RAM))
-    config["nodeSwap"] = config_defaults.DEFAULT_SWAP_MEMORY
+    config["nodeSwap"] = int(min(config_defaults.DEFAULT_SWAP_MEMORY, swapLimit))
     config["nodeSharedMemory"] = config_defaults.DEFAULT_SHARED_MEMORY
     config["cpuCount"] = int(min(cpuLimit, config_defaults.DEFAULT_CPU_COUNT))
     config["nodeMode"] = config_defaults.DEFAULT_NODE_MODE
@@ -434,7 +446,9 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     else:
         stdEcho("To configure node manually run coretex node config with --verbose flag.")
 
-    config["nodeAccessToken"] = registerNode(config["nodeName"], nodeMode, publicKey, nearWalletId, endpointInvocationPrice)
+    nodeId, nodeAccessToken = registerNode(config["nodeName"], nodeMode, publicKey, nearWalletId, endpointInvocationPrice)
+    config["nodeId"] = nodeId
+    config["nodeAccessToken"] = nodeAccessToken
     config["nodeMode"] = nodeMode
 
 
@@ -458,7 +472,7 @@ def initializeNodeConfiguration() -> None:
             errorEcho("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
             return
 
-        stop()
+        stop(config["nodeId"])
 
     configureNode(config, verbose = False)
     saveConfig(config)
