@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Final, List, Dict
+from typing import List, Dict, Optional, Tuple, Union
 from typing_extensions import Self
 
 from ....codable import Codable, KeyDescriptor
@@ -39,11 +39,11 @@ class BBox(Codable):
     """
 
     def __init__(self, minX: int = 0, minY: int = 0, width: int = 0, height: int = 0) -> None:
-        self.minX: Final = minX
-        self.minY: Final = minY
+        self.minX = minX
+        self.minY = minY
 
-        self.width: Final = width
-        self.height: Final = height
+        self.width = width
+        self.height = height
 
     @property
     def maxX(self) -> int:
@@ -159,11 +159,13 @@ class BBox(Codable):
         """
             Calculate Intersection over Union (IoU) between two bounding boxes
 
-            Parameters:
+            Parameters
+            ----------
             other : BBox
                 bounding box for which the IoU will be calculated
 
             Returns
+            -------
             float -> IoU score
         """
 
@@ -176,3 +178,29 @@ class BBox(Codable):
 
         unionArea = self.area + other.area - intersectionArea
         return intersectionArea / unionArea if unionArea > 0 else 0.0
+
+    def inflate(self, percentage: int, imageSize: Optional[Tuple[Union[int, float], Union[int, float]]] = None) -> None:
+        """
+            Increases the size of the bounding box by a percentage
+
+            Parameters
+            ----------
+            percentage : int
+                the percentage by which the bounding box will be inflated
+            imageSize : Optional[Tuple[int, int]]
+                bounding box will not be able to go beyond these dimensions (width, height)
+        """
+
+        if imageSize is None:
+            imageSize = (float("inf"), float("inf"))
+
+        imageWidth, imageHeight = imageSize
+
+        inflateFactor = percentage / 100.0
+        inflateWidth = self.width * inflateFactor / 2
+        inflateHeight = self.height * inflateFactor / 2
+
+        self.minX = int(max(0, self.minX - inflateWidth))
+        self.minY = int(max(0, self.minY - inflateHeight))
+        self.width = int(min(imageWidth, self.width + inflateWidth * 2))
+        self.height = int(min(imageHeight, self.height + inflateHeight * 2))
