@@ -26,7 +26,7 @@ import shutil
 
 from .sample import Sample
 from ..project import ProjectType
-from ... import folder_manager
+from ..._folder_manager import folder_manager
 from ...codable import KeyDescriptor
 from ...networking import NetworkObject, networkManager, NetworkRequestError, \
     fileChunkUpload, MAX_CHUNK_SIZE, FileData

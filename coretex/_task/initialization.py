@@ -22,7 +22,7 @@ import sys
 
 from .remote import processRemote
 from .current_task_run import setCurrentTaskRun
-from .. import folder_manager
+from .._folder_manager import folder_manager
 from ..entities import TaskRun, TaskRunStatus
 from ..logging import createFormatter, initializeLogger
 from ..logging.severity import LogSeverity

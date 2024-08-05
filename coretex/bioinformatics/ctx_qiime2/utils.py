@@ -23,7 +23,7 @@ import logging
 import shutil
 import gzip
 
-from ... import folder_manager
+from ..._folder_manager import folder_manager
 from ...entities import TaskRun, CustomSample, CustomDataset
 from ...networking import NetworkRequestError
 

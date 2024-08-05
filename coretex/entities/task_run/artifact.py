@@ -20,7 +20,7 @@ from typing_extensions import Self
 from enum import IntEnum
 from pathlib import Path
 
-from ... import folder_manager
+from ..._folder_manager import folder_manager
 from ...codable import Codable, KeyDescriptor
 from ...networking import networkManager, FileData
 from ...utils import guessMimeType

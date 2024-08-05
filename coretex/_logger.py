@@ -17,7 +17,7 @@
 
 from datetime import datetime
 
-from . import folder_manager
+from ._folder_manager import folder_manager
 from .logging import initializeLogger, LogSeverity
 from .configuration import CONFIG_DIR
 

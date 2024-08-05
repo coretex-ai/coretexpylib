@@ -34,3 +34,4 @@ else:
 # Use this only
 from .entities import *
 from ._task import currentTaskRun, initializeRTask, TaskRunWorker
+from ._folder_manager import folder_manager

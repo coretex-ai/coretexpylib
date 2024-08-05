@@ -10,7 +10,7 @@ from onnxruntime import InferenceSession
 import ezkl
 import numpy as np
 
-from .. import folder_manager
+from .._folder_manager import folder_manager
 
 
 async def genWitness(inputPath: Path, circuit: Path, witnessPath: Path) -> None:

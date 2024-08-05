@@ -23,7 +23,7 @@ import faulthandler
 import signal
 
 from .current_task_run import setCurrentTaskRun
-from .. import folder_manager
+from .._folder_manager import folder_manager
 from ..entities import TaskRun
 
 
