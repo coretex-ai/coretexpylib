@@ -34,11 +34,6 @@ from ...utils import docker
 def start(image: Optional[str]) -> None:
     config = loadConfig()
 
-    if config.get("nodeId") is None:
-        config["nodeId"] = node_module.fetchNodeId(config["nodeName"])
-
-    saveConfig(config)
-
     if node_module.isRunning():
         if not clickPrompt(
             "Node is already running. Do you wish to restart the Node? (Y/n)",
@@ -48,7 +43,7 @@ def start(image: Optional[str]) -> None:
         ):
             return
 
-        node_module.stop(config["nodeId"])
+        node_module.stop(config.get("nodeId", node_module.fetchNodeId(config["nodeName"])))
 
     if node_module.exists():
         node_module.clean()
@@ -76,11 +71,7 @@ def stop() -> None:
         errorEcho("Node is already offline.")
         return
 
-    if config.get("nodeId") is None:
-        config["nodeId"] = node_module.fetchNodeId(config["nodeName"])
-
-    saveConfig(config)
-    node_module.stop(config["nodeId"])
+    node_module.stop(config.get("nodeId", node_module.fetchNodeId(config["nodeName"])))
 
 
 @click.command()
@@ -93,11 +84,6 @@ def update(autoAccept: bool, autoDecline: bool) -> None:
         return
 
     config = loadConfig()
-
-    if config.get("nodeId") is None:
-        config["nodeId"] = node_module.fetchNodeId(config["nodeName"])
-
-    saveConfig(config)
     dockerImage = config["image"]
 
     nodeStatus = getNodeStatus()
@@ -122,7 +108,7 @@ def update(autoAccept: bool, autoDecline: bool) -> None:
         ):
             return
 
-        node_module.stop(config["nodeId"])
+        node_module.stop(config.get("nodeId", node_module.fetchNodeId(config["nodeName"])))
 
     if not node_module.shouldUpdate(dockerImage):
         successEcho("Node is already up to date.")
@@ -143,7 +129,7 @@ def update(autoAccept: bool, autoDecline: bool) -> None:
         ):
             return
 
-    node_module.stop(config["nodeId"])
+    node_module.stop(config.get("nodeId", node_module.fetchNodeId(config["nodeName"])))
 
     stdEcho("Updating node...")
     node_module.start(dockerImage, config)
@@ -167,7 +153,7 @@ def config(verbose: bool) -> None:
             errorEcho("If you wish to reconfigure your node, use coretex node stop commands first.")
             return
 
-        node_module.stop(config["nodeId"])
+        node_module.stop(config.get("nodeId", node_module.fetchNodeId(config["nodeName"])))
 
     if isNodeConfigured(config):
         if not clickPrompt(
