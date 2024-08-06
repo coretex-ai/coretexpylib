@@ -34,6 +34,11 @@ from ...utils import docker
 def start(image: Optional[str]) -> None:
     config = loadConfig()
 
+    if config.get("nodeId") is None:
+        config["nodeId"] = node_module.fetchNodeId(config["nodeName"])
+
+    saveConfig(config)
+
     if node_module.isRunning():
         if not clickPrompt(
             "Node is already running. Do you wish to restart the Node? (Y/n)",
@@ -71,6 +76,10 @@ def stop() -> None:
         errorEcho("Node is already offline.")
         return
 
+    if config.get("nodeId") is None:
+        config["nodeId"] = node_module.fetchNodeId(config["nodeName"])
+
+    saveConfig(config)
     node_module.stop(config["nodeId"])
 
 
@@ -84,6 +93,11 @@ def update(autoAccept: bool, autoDecline: bool) -> None:
         return
 
     config = loadConfig()
+
+    if config.get("nodeId") is None:
+        config["nodeId"] = node_module.fetchNodeId(config["nodeName"])
+
+    saveConfig(config)
     dockerImage = config["image"]
 
     nodeStatus = getNodeStatus()

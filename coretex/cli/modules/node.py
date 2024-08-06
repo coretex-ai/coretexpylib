@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, List
 from enum import Enum
 from pathlib import Path
 from base64 import b64encode
@@ -117,7 +117,36 @@ def clean() -> None:
         raise NodeException("Failed to clean inactive Coretex Node.")
 
 
-def deactivateNode(id: int) -> None:
+def fetchNodeId(name: str) -> int:
+    params = {
+        "machine_name": f"={name}"
+    }
+
+    response = networkManager.get("service", params)
+    if response.hasFailed():
+        raise NetworkRequestError(response, "Failed to fetch node id.")
+
+    responseJson = response.getJson(dict)
+    data = responseJson.get("data")
+
+    if not isinstance(data, list):
+        raise TypeError(f"Invalid \"data\" type {type(data)}. Expected: \"list\"")
+
+    if len(data) == 0:
+        raise ValueError(f"Node with name \"{name}\" not found.")
+
+    nodeJson = data[0]
+    if not isinstance(nodeJson, dict):
+        raise TypeError(f"Invalid \"nodeJson\" type {type(nodeJson)}. Expected: \"dict\"")
+
+    nodeId = nodeJson.get("id")
+    if not isinstance(nodeId, int):
+        raise TypeError(f"Invalid \"nodeId\" type {type(nodeId)}. Expected: \"int\"")
+
+    return nodeId
+
+
+def deactivateNode(id: Optional[int]) -> None:
     params = {
         "id": id
     }
