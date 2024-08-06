@@ -216,7 +216,7 @@ def registerNode(
     if not isinstance(accessToken, str) or not isinstance(nodeId, int):
         raise TypeError("Something went wrong. Please try again...")
 
-    return int(nodeId), str(accessToken)
+    return nodeId, accessToken
 
 
 def selectImageType() -> ImageType:
