@@ -52,10 +52,6 @@ class BaseConfiguration:
         pass
 
     @abstractmethod
-    def _isConfigured(self) -> bool:
-        pass
-
-    @abstractmethod
     def _isConfigValid(self) -> Tuple[bool, List[str]]:
         pass
 
@@ -71,10 +67,6 @@ class BaseConfiguration:
         config = cls(raw)
 
         isValid, errors = config._isConfigValid()
-
-        if not config._isConfigured():
-            raise ConfigurationNotFound("Configuration not found.")
-
         if not isValid:
             raise InvalidConfiguration("Invalid configuration found.", errors)
 

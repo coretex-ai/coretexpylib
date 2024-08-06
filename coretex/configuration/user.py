@@ -17,10 +17,7 @@
 
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
-from typing_extensions import Self
 from datetime import datetime, timezone
-
-import os
 
 from .base import BaseConfiguration, CONFIG_DIR
 from ..utils import decodeDate
@@ -33,9 +30,6 @@ class UserConfiguration(BaseConfiguration):
 
     def __init__(self, raw: Dict[str, Any]) -> None:
         super().__init__(raw)
-
-        if not "CTX_API_URL" in os.environ:
-            os.environ["CTX_API_URL"] = self.serverUrl
 
     @classmethod
     def getConfigPath(cls) -> Path:
@@ -105,20 +99,17 @@ class UserConfiguration(BaseConfiguration):
     def projectId(self, value: Optional[int]) -> None:
         self._raw["projectId"] = value
 
-    def _isConfigured(self) -> bool:
-        return self._raw.get("username") is not None and self._raw.get("password") is not None
-
     def _isConfigValid(self) -> Tuple[bool, List[str]]:
         isValid = True
         errorMessages = []
 
         if self._raw.get("username") is None or not isinstance(self._raw.get("username"), str):
-            errorMessages.append("Field \"username\" not found in configuration.")
             isValid = False
+            errorMessages.append("Missing required field \"username\" in user configuration.")
 
         if self._raw.get("password") is None or not isinstance(self._raw.get("password"), str):
-            errorMessages.append("Field \"password\" not found in configuration.")
             isValid = False
+            errorMessages.append("Missing required field \"password\" in user configuration.")
 
         return isValid, errorMessages
 

@@ -88,7 +88,20 @@ def initializeUserSession() -> None:
             authenticateWithRefreshToken(userConfig)
         else:
             authenticateUser(userConfig)
-    except (ConfigurationNotFound, InvalidConfiguration):
+    except ConfigurationNotFound:
+        ui.errorEcho("User configuration not found.")
+        if not ui.clickPrompt("Would you like to configure the user? (Y/n)", type = bool, default = True, show_default = False):
+            raise
+
+        userConfig = configUser()
+    except InvalidConfiguration as ex:
+        ui.errorEcho("Invalid user configuration found.")
+        for error in ex.errors:
+            ui.errorEcho(f"{error}")
+
+        if not ui.clickPrompt("Would you like to reconfigure the user? (Y/n)", type = bool, default = True, show_default = False):
+            raise
+
         userConfig = configUser()
 
     userConfig.save()

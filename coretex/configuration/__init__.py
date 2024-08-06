@@ -30,6 +30,7 @@ from ..utils import isCliRuntime
 def configMigration(configPath: Path) -> None:
     with configPath.open("r") as file:
         oldConfig = json.load(file)
+        logging.warning(f"[Coretex] >> WARNING: Old configuration:\n{oldConfig}")
 
     userRaw = {
         "username": oldConfig.get("username"),
@@ -66,7 +67,6 @@ def configMigration(configPath: Path) -> None:
 
 
 def _syncConfigWithEnv() -> None:
-    print("i am syncing")
     # If configuration doesn't exist default one will be created
     # Initialization of User and Node Configuration classes will do
     # the necessary sync between config properties and corresponding
@@ -75,6 +75,10 @@ def _syncConfigWithEnv() -> None:
     # old configuration exists, fill out new config files with old configuration
     oldConfigPath = CONFIG_DIR / "config.json"
     if oldConfigPath.exists():
+        logging.warning(
+            f"[Coretex] >> WARNING: Old configuration found at path: {oldConfigPath}. Migrating to new configuration."
+            f"\nFields with invalid values might be overrided in this process."
+        )
         configMigration(oldConfigPath)
 
     try:
@@ -84,7 +88,7 @@ def _syncConfigWithEnv() -> None:
     except (ConfigurationNotFound, InvalidConfiguration) as ex:
         if not isCliRuntime():
             logging.error(f">> [Coretex] Error loading configuration. Reason: {ex}")
-            logging.info("\tIf this message from Coretex Node you can safely ignore it.")
+            logging.info("\tIf this message came from Coretex Node you can safely ignore it.")
 
     try:
         nodeConfig = NodeConfiguration.load()
@@ -99,4 +103,4 @@ def _syncConfigWithEnv() -> None:
     except (ConfigurationNotFound, InvalidConfiguration) as ex:
         if not isCliRuntime():
             logging.error(f">> [Coretex] Error loading configuration. Reason: {ex}")
-            logging.info("\tIf this message from Coretex Node you can safely ignore it.")
+            logging.info("\tIf this message came from Coretex Node you can safely ignore it.")

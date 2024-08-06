@@ -33,6 +33,10 @@ def getEnvVar(key: str, default: str) -> str:
     return os.environ[key]
 
 
+class DockerConfigurationException(Exception):
+    pass
+
+
 class NodeConfiguration(BaseConfiguration):
 
     def __init__(self, raw: Dict[str, Any]) -> None:
@@ -87,7 +91,7 @@ class NodeConfiguration(BaseConfiguration):
         nodeRam = self.getOptValue("nodeRam", int)
 
         if nodeRam is None:
-            nodeRam = config_defaults.DEFAULT_RAM_MEMORY
+            nodeRam = config_defaults.DEFAULT_RAM
 
         return nodeRam
 
@@ -195,17 +199,88 @@ class NodeConfiguration(BaseConfiguration):
     def endpointInvocationPrice(self, value: Optional[float]) -> None:
         self._raw["endpointInvocationPrice"] = value
 
-    def _isConfigured(self) -> bool:
-        return (
-            isinstance(self._raw.get("nodeName"), str) and
-            isinstance(self._raw.get("image"), str) and
-            isinstance(self._raw.get("nodeAccessToken"), str) and
-            isinstance(self._raw.get("cpuCount"), int) and
-            isinstance(self._raw.get("nodeRam"), int) and
-            isinstance(self._raw.get("nodeSwap"), int) and
-            isinstance(self._raw.get("nodeSharedMemory"), int) and
-            isinstance(self._raw.get("nodeMode"), int)
-        )
+    def validateRamField(self, ramLimit: int) -> Tuple[bool, int, str]:
+        isValid = True
+        message = ""
+
+        if ramLimit < config_defaults.MINIMUM_RAM:
+            isValid = False
+            raise DockerConfigurationException(
+                f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB) "
+                f"is higher than your current Docker desktop RAM limit ({ramLimit}GB). "
+                "Please adjust resource limitations in Docker Desktop settings to match Node requirements."
+            )
+
+        defaultRamValue = int(min(max(config_defaults.MINIMUM_RAM, ramLimit), config_defaults.DEFAULT_RAM))
+
+        if not isinstance(self._raw.get("nodeRam"), int):
+            isValid = False
+            message = (
+                f"Invalid config \"nodeRam\" field type \"{type(self._raw.get('nodeRam'))}\". Expected: \"int\""
+                f"Using default value of {defaultRamValue} GB"
+            )
+
+        if self.nodeRam < config_defaults.MINIMUM_RAM:
+            isValid = False
+            message = (
+                f"WARNING: Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB) "
+                f"is higher than the configured value ({self._raw.get('nodeRam')}GB)"
+                f"Overriding \"nodeRam\" field to match node RAM requirements."
+            )
+
+        if self.nodeRam > ramLimit:
+            isValid = False
+            message = (
+                f"WARNING: RAM limit in Docker Desktop ({ramLimit}GB) "
+                f"is lower than the configured value ({self._raw.get('nodeRam')}GB)"
+                f"Overriding \"nodeRam\" field to limit in Docker Desktop."
+            )
+
+        return isValid, defaultRamValue, message
+
+    def validateCPUCount(self, cpuLimit: int) -> Tuple[bool, int, str]:
+        isValid = True
+        message = ""
+        defaultCPUCount = config_defaults.DEFAULT_CPU_COUNT if config_defaults.DEFAULT_CPU_COUNT <= cpuLimit else cpuLimit
+
+        if not isinstance(self._raw.get("cpuCount"), int):
+            isValid = False
+            message = (
+                f"Invalid config \"cpuCount\" field type \"{type(self._raw.get('cpuCount'))}\". Expected: \"int\""
+                f"Using default value of {defaultCPUCount} cores"
+            )
+
+        if self.cpuCount > cpuLimit:
+            isValid = False
+            message = (
+                f"WARNING: CPU limit in Docker Desktop ({cpuLimit}) "
+                f"is lower than the configured value ({self._raw.get('cpuCount')})"
+                f"Overriding \"cpuCount\" field to limit in Docker Desktop."
+            )
+
+        return isValid, cpuLimit, message
+
+    def validateSWAPMemory(self, swapLimit: int) -> Tuple[bool, int, str]:
+        isValid = True
+        message = ""
+        defaultSWAPMemory = config_defaults.DEFAULT_SWAP_MEMORY if config_defaults.DEFAULT_SWAP_MEMORY <= swapLimit else swapLimit
+
+        if not isinstance(self._raw.get("nodeSwap"), int):
+            isValid = False
+            message = (
+                f"Invalid config \"nodeSwap\" field type \"{type(self._raw.get('nodeSwap'))}\". Expected: \"int\""
+                f"Using default value of {defaultSWAPMemory} GB"
+            )
+
+        if self.nodeSwap > swapLimit:
+            isValid = False
+            message = (
+                f"WARNING: SWAP limit in Docker Desktop ({swapLimit}GB) "
+                f"is lower than the configured value ({self.nodeSwap}GB)"
+                f"Overriding \"nodeSwap\" field to limit in Docker Desktop."
+            )
+
+        return isValid, defaultSWAPMemory, message
 
     def _isConfigValid(self) -> Tuple[bool, List[str]]:
         isValid = True
@@ -213,59 +288,44 @@ class NodeConfiguration(BaseConfiguration):
         cpuLimit, ramLimit = docker.getResourceLimits()
         swapLimit = docker.getDockerSwapLimit()
 
-        if not isinstance(self._raw.get("nodeRam"), int):
-            errorMessages.append(
-                f"Invalid config \"nodeRam\" field type \"{type(self._raw.get('nodeRam'))}\". Expected: \"int\""
-            )
+        if not isinstance(self._raw.get("nodeName"), str):
+            isValid = False
+            errorMessages.append("Required field \"nodeName\" missing")
+
+        if not isinstance(self._raw.get("image"), str):
+            isValid = False
+            errorMessages.append("Required field \"image\" missing")
+
+        if not isinstance(self._raw.get("nodeAccessToken"), str):
+            isValid = False
+            errorMessages.append("Required field \"nodeAccessToken\" missing")
+
+        if not isinstance(self._raw.get("nodeName"), str):
+            errorMessages.append(f"Invalid configuration. Missing required field \"nodeName\".")
             isValid = False
 
-        if not isinstance(self._raw.get("cpuCount"), int):
-            errorMessages.append(
-                f"Invalid config \"cpuCount\" field type \"{type(self._raw.get('cpuCount'))}\". Expected: \"int\""
-            )
+        if not isinstance(self._raw.get("image"), str):
+            errorMessages.append(f"Invalid configuration. Missing required field \"image\".")
             isValid = False
 
-        if not isinstance(self._raw.get("nodeSwap"), int):
-            errorMessages.append(
-                f"Invalid config \"nodeSwap\" field type \"{type(self._raw.get('nodeSwap'))}\". Expected: \"int\""
-            )
+        if not isinstance(self._raw.get("nodeAccessToken"), str):
+            errorMessages.append(f"Invalid configuration. Missing required field \"nodeAccessToken\".")
             isValid = False
 
-        if self.cpuCount > cpuLimit:
-            errorMessages.append(
-                f"Configuration not valid. CPU limit in Docker Desktop ({cpuLimit}) "
-                "is lower than the configured value ({self._raw.get('cpuCount')})"
-            )
-            isValid = False
+        isRamValid, nodeRam, message = self.validateRamField(ramLimit)
+        if not isRamValid:
+            errorMessages.append(message)
+            self.nodeRam = nodeRam
 
-        if ramLimit < config_defaults.MINIMUM_RAM_MEMORY:
-            errorMessages.append(
-                f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) "
-                "is higher than your current Docker desktop RAM limit ({ramLimit}GB). "
-                "Please adjust resource limitations in Docker Desktop settings to match Node requirements."
-            )
-            isValid = False
+        isCPUCountValid, cpuCount, message = self.validateCPUCount(cpuLimit)
+        if not isCPUCountValid:
+            errorMessages.append(message)
+            self.cpuCount = cpuCount
 
-        if self.nodeRam > ramLimit:
-            errorMessages.append(
-                f"Configuration not valid. RAM limit in Docker Desktop ({ramLimit}GB) "
-                "is lower than the configured value ({self._raw.get('nodeRam')}GB)"
-            )
-            isValid = False
-
-        if self.nodeRam < config_defaults.MINIMUM_RAM_MEMORY:
-            errorMessages.append(
-                f"Configuration not valid. Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM_MEMORY}GB) "
-                "is higher than the configured value ({self._raw.get('nodeRam')}GB)"
-            )
-            isValid = False
-
-        if self.nodeSwap > swapLimit:
-            errorMessages.append(
-                f"Configuration not valid. SWAP limit in Docker Desktop ({swapLimit}GB) "
-                "is lower than the configured value ({self.nodeSwap}GB)"
-            )
-            isValid = False
+        isSWAPMemoryValid, nodeSwap, message = self.validateSWAPMemory(swapLimit)
+        if not isSWAPMemoryValid:
+            errorMessages.append(message)
+            self.nodeSwap = nodeSwap
 
         return isValid, errorMessages
 
