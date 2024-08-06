@@ -118,8 +118,8 @@ def clean() -> None:
 
 
 def deactivateNode(id: int) -> None:
-    params: Dict[str, Any] = {
-        "id": id,
+    params = {
+        "id": id
     }
 
     response = networkManager.post("service/deactivate", params)
@@ -189,7 +189,7 @@ def registerNode(
     publicKey: Optional[bytes] = None,
     nearWalletId: Optional[str] = None,
     endpointInvocationPrice: Optional[float] = None
-) -> Tuple[str, str]:
+) -> Tuple[int, str]:
 
     params: Dict[str, Any] = {
         "machine_name": name,
@@ -213,10 +213,10 @@ def registerNode(
     accessToken = response.getJson(dict).get("access_token")
     nodeId = response.getJson(dict).get("id")
 
-    if not isinstance(accessToken, str):
+    if not isinstance(accessToken, str) or not isinstance(nodeId, int):
         raise TypeError("Something went wrong. Please try again...")
 
-    return str(nodeId), str(accessToken)
+    return int(nodeId), str(accessToken)
 
 
 def selectImageType() -> ImageType:
