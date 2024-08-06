@@ -17,12 +17,14 @@
 
 from . import ui
 from ...networking import networkManager, NetworkRequestError
-from ...configuration import UserConfiguration
+from ...configuration import UserConfiguration, InvalidConfiguration, ConfigurationNotFound
 
 
-def configUser(userConfig: UserConfiguration, retryCount: int = 0) -> None:
+def configUser(retryCount: int = 0) -> UserConfiguration:
     if retryCount >= 3:
         raise RuntimeError("Failed to authenticate. Terminating...")
+
+    userConfig = UserConfiguration({})  # create new empty user config
 
     username = ui.clickPrompt("Email", type = str)
     password = ui.clickPrompt("Password", type = str, hide_input = True)
@@ -32,7 +34,7 @@ def configUser(userConfig: UserConfiguration, retryCount: int = 0) -> None:
 
     if response.hasFailed():
         ui.errorEcho("Failed to authenticate. Please try again...")
-        return configUser(userConfig, retryCount + 1)
+        return configUser(retryCount + 1)
 
     jsonResponse = response.getJson(dict)
     userConfig.username = username
@@ -42,6 +44,8 @@ def configUser(userConfig: UserConfiguration, retryCount: int = 0) -> None:
     userConfig.refreshToken = jsonResponse.get("refresh_token")
     userConfig.refreshTokenExpirationDate = jsonResponse.get("refresh_expires_on")
 
+    return userConfig
+
 
 def authenticateUser(userConfig: UserConfiguration) -> None:
     response = networkManager.authenticate(userConfig.username, userConfig.password)
@@ -49,7 +53,7 @@ def authenticateUser(userConfig: UserConfiguration) -> None:
     if response.statusCode >= 500:
         raise NetworkRequestError(response, "Something went wrong, please try again later.")
     elif response.statusCode >= 400:
-        configUser(userConfig)
+        userConfig.update(configUser())
     else:
         jsonResponse = response.getJson(dict)
         userConfig.token = jsonResponse["token"]
@@ -75,14 +79,16 @@ def authenticateWithRefreshToken(userConfig: UserConfiguration) -> None:
 
 
 def initializeUserSession() -> None:
-    userConfig = UserConfiguration()
+    try:
+        userConfig = UserConfiguration.load()
+        if userConfig.isTokenValid("token"):
+            return
 
-    if not userConfig.isUserConfigured():
-        ui.errorEcho("User configuration not found. Please authenticate with your credentials.")
-        configUser(userConfig)
-    elif not userConfig.isTokenValid("token") and userConfig.isTokenValid("refreshToken"):
-        authenticateWithRefreshToken(userConfig)
-    else:
-        authenticateUser(userConfig)
+        if not userConfig.isTokenValid("token") and userConfig.isTokenValid("refreshToken"):
+            authenticateWithRefreshToken(userConfig)
+        else:
+            authenticateUser(userConfig)
+    except (ConfigurationNotFound, InvalidConfiguration):
+        userConfig = configUser()
 
     userConfig.save()

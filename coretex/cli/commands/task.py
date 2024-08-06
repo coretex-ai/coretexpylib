@@ -41,7 +41,7 @@ class RunException(Exception):
 @click.option("--snapshot", type = bool, default = False)
 @click.option("--project", "-p", type = str)
 def run(path: str, name: Optional[str], description: Optional[str], snapshot: bool, project: Optional[str]) -> None:
-    userConfig = UserConfiguration()
+    userConfig = UserConfiguration.load()
 
     if userConfig.refreshToken is None:
         raise RunException(f"Failed to execute \"coretex run {path}\" command. Authenticate again using \"coretex login\" command and try again.")

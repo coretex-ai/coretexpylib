@@ -31,7 +31,7 @@ from ...cryptography import rsa
 from ...networking import networkManager, NetworkRequestError
 from ...utils import CommandException, docker
 from ...node import NodeMode, NodeStatus
-from ...configuration import UserConfiguration, NodeConfiguration
+from ...configuration import UserConfiguration, NodeConfiguration, InvalidConfiguration, ConfigurationNotFound
 
 
 class NodeException(Exception):
@@ -352,8 +352,9 @@ def checkResourceLimitations() -> None:
         )
 
 
-def configureNode(nodeConfig: NodeConfiguration, verbose: bool) -> None:
+def configureNode(verbose: bool) -> NodeConfiguration:
     ui.highlightEcho("[Node Configuration]")
+    nodeConfig = NodeConfiguration({})  # create new empty node config
 
     cpuLimit, ramLimit = docker.getResourceLimits()
     swapLimit = docker.getDockerSwapLimit()
@@ -446,25 +447,23 @@ def configureNode(nodeConfig: NodeConfiguration, verbose: bool) -> None:
     nodeConfig.nodeAccessToken = registerNode(nodeConfig.nodeName, nodeMode, publicKey, nearWalletId, endpointInvocationPrice)
     nodeConfig.nodeMode = nodeMode
 
+    return nodeConfig
+
 
 def initializeNodeConfiguration() -> None:
-    nodeConfig = NodeConfiguration()
-    isConfigured = nodeConfig.isNodeConfigured()
-    isConfigValid, errors = nodeConfig.isConfigurationValid()
-
-    if isConfigured:
-        if isConfigValid:
-            return
-
-        ui.errorEcho("Invalid node configuration found.")
-        for error in errors:
+    try:
+        nodeConfig = NodeConfiguration.load()
+        return
+    except ConfigurationNotFound:
+        ui.errorEcho("Node configuration not found.")
+        if not click.confirm("Would you like to configure the node?", default = True):
+            raise
+    except InvalidConfiguration as ex:
+        for error in ex.errors:
             ui.errorEcho(error)
 
         if not click.confirm("Would you like to update the configuration?", default = True):
-            raise RuntimeError("Invalid configuration. Please use \"coretex node config\" to update a Node configuration.")
-
-    if not isConfigured:
-        ui.errorEcho("Node configuration not found.")
+            raise
 
     if isRunning():
         if not click.confirm("Node is already running. Do you wish to stop the Node?", default = True):
@@ -473,5 +472,5 @@ def initializeNodeConfiguration() -> None:
 
         stop()
 
-    configureNode(nodeConfig, verbose = False)
+    nodeConfig = configureNode(verbose = False)
     nodeConfig.save()

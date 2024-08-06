@@ -16,7 +16,7 @@ from ...configuration import UserConfiguration
 @click.option("-p", "--project", type = str, required = False, default = None)
 @click.option("-a", "--accuracy", type = click.FloatRange(0, 1), required = False, default = 1)
 def create(name: str, path: str, project: Optional[str], accuracy: float) -> None:
-    userConfig = UserConfiguration()
+    userConfig = UserConfiguration.load()
 
     # If project was provided used that, otherwise get the one from config
     # If project that was provided does not exist prompt user to create a new

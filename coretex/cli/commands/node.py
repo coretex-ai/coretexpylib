@@ -26,7 +26,7 @@ from ..modules.user import initializeUserSession
 from ..modules.utils import onBeforeCommandExecute, checkEnvironment
 from ..modules.update import activateAutoUpdate, getNodeStatus
 from ...utils import docker
-from ...configuration import UserConfiguration, NodeConfiguration
+from ...configuration import UserConfiguration, NodeConfiguration, InvalidConfiguration, ConfigurationNotFound
 
 
 @click.command()
@@ -47,8 +47,8 @@ def start(image: Optional[str]) -> None:
     if node_module.exists():
         node_module.clean()
 
-    nodeConfig = NodeConfiguration()
-    userConfig = UserConfiguration()
+    nodeConfig = NodeConfiguration.load()
+    userConfig = UserConfiguration.load()
 
     if image is not None:
         nodeConfig.image = image  # store forced image (flagged) so we can run autoupdate afterwards
@@ -82,8 +82,8 @@ def update(autoAccept: bool, autoDecline: bool) -> None:
         ui.errorEcho("Only one of the flags (\"-y\" or \"-n\") can be used at the same time.")
         return
 
-    userConfig = UserConfiguration()
-    nodeConfig = NodeConfiguration()
+    userConfig = UserConfiguration.load()
+    nodeConfig = NodeConfiguration.load()
 
     nodeStatus = node_module.getNodeStatus()
 
@@ -154,10 +154,9 @@ def config(verbose: bool) -> None:
 
         node_module.stop()
 
-    userConfig = UserConfiguration()
-    nodeConfig = NodeConfiguration()
-
-    if nodeConfig.isNodeConfigured():
+    userConfig = UserConfiguration.load()
+    try:
+        nodeConfig = NodeConfiguration.load()
         if not ui.clickPrompt(
             "Node configuration already exists. Would you like to update? (Y/n)",
             type = bool,
@@ -165,8 +164,10 @@ def config(verbose: bool) -> None:
             show_default = False
         ):
             return
+    except (ConfigurationNotFound, InvalidConfiguration):
+        pass
 
-    node_module.configureNode(nodeConfig, verbose)
+    nodeConfig = node_module.configureNode(verbose)
     nodeConfig.save()
     ui.previewConfig(userConfig, nodeConfig)
 

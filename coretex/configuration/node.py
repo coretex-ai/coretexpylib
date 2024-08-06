@@ -22,7 +22,7 @@ import os
 
 from . import config_defaults
 from .base import BaseConfiguration, CONFIG_DIR
-from ..utils import docker, isCliRuntime
+from ..utils import docker
 from ..node import NodeMode
 
 
@@ -33,44 +33,14 @@ def getEnvVar(key: str, default: str) -> str:
     return os.environ[key]
 
 
-NODE_CONFIG_PATH = CONFIG_DIR / "node_config.json"
-NODE_DEFAULT_CONFIG = {
-    "nodeName": os.environ.get("CTX_NODE_NAME"),
-    "nodeAccessToken": None,
-    "storagePath": getEnvVar("CTX_STORAGE_PATH", "~/.coretex"),
-    "image": "coretexai/coretex-node:latest-cpu",
-    "allowGpu": False,
-    "nodeRam": None,
-    "nodeSharedMemory": None,
-    "cpuCount": None,
-    "nodeMode": None,
-    "allowDocker": False,
-    "nodeSecret": None,
-    "initScript": None,
-    "modelId": None,
-}
-
-
-class InvalidNodeConfiguration(Exception):
-    pass
-
-
 class NodeConfiguration(BaseConfiguration):
 
-    def __init__(self) -> None:
-        super().__init__(NODE_CONFIG_PATH)
-        nodeSecret = self.nodeSecret
-        if isinstance(nodeSecret, str) and nodeSecret != "":
-            os.environ["CTX_SECRETS_KEY"] = nodeSecret
-
-        if not isCliRuntime():
-            os.environ["CTX_STORAGE_PATH"] = self.storagePath
-        else:
-            os.environ["CTX_STORAGE_PATH"] = f"{CONFIG_DIR}/data"
+    def __init__(self, raw: Dict[str, Any]) -> None:
+        super().__init__(raw)
 
     @classmethod
-    def getDefaultConfig(cls) -> Dict[str, Any]:
-        return NODE_DEFAULT_CONFIG
+    def getConfigPath(cls) -> Path:
+        return CONFIG_DIR / "node_config.json"
 
     @property
     def nodeName(self) -> str:
@@ -169,7 +139,7 @@ class NodeConfiguration(BaseConfiguration):
         nodeMode = self.getOptValue("nodeMode", int)
 
         if nodeMode is None:
-            nodeMode = NodeMode.execution
+            nodeMode = NodeMode.any
 
         return nodeMode
 
@@ -225,7 +195,7 @@ class NodeConfiguration(BaseConfiguration):
     def endpointInvocationPrice(self, value: Optional[float]) -> None:
         self._raw["endpointInvocationPrice"] = value
 
-    def isNodeConfigured(self) -> bool:
+    def _isConfigured(self) -> bool:
         return (
             isinstance(self._raw.get("nodeName"), str) and
             isinstance(self._raw.get("image"), str) and
@@ -237,7 +207,7 @@ class NodeConfiguration(BaseConfiguration):
             isinstance(self._raw.get("nodeMode"), int)
         )
 
-    def isConfigurationValid(self) -> Tuple[bool, List[str]]:
+    def _isConfigValid(self) -> Tuple[bool, List[str]]:
         isValid = True
         errorMessages = []
         cpuLimit, ramLimit = docker.getResourceLimits()
@@ -298,7 +268,6 @@ class NodeConfiguration(BaseConfiguration):
             isValid = False
 
         return isValid, errorMessages
-
 
     def getInitScriptPath(self) -> Optional[Path]:
         value = self._raw.get("initScript")

@@ -11,7 +11,7 @@ from ...networking import NetworkRequestError
 
 
 def selectProject(projectId: int) -> None:
-    userConfiguration = UserConfiguration()
+    userConfiguration = UserConfiguration.load()
     userConfiguration.projectId = projectId
     userConfiguration.save()
 
@@ -128,7 +128,7 @@ def getProject(name: Optional[str], userConfig: UserConfiguration) -> Optional[P
 
 
 def isProjectSelected() -> bool:
-    userConfig = UserConfiguration()
+    userConfig = UserConfiguration.load()
 
     if userConfig.projectId is None:
         return False

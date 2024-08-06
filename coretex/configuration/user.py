@@ -15,7 +15,9 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Dict, Any, Optional
+from pathlib import Path
+from typing import Dict, Any, List, Optional, Tuple
+from typing_extensions import Self
 from datetime import datetime, timezone
 
 import os
@@ -25,28 +27,19 @@ from ..utils import decodeDate
 
 
 USER_CONFIG_PATH = CONFIG_DIR / "user_config.json"
-USER_DEFAULT_CONFIG = {
-    "username": os.environ.get("CTX_USERNAME"),
-    "password": os.environ.get("CTX_PASSWORD"),
-    "token": None,
-    "refreshToken": None,
-    "tokenExpirationDate": None,
-    "refreshTokenExpirationDate": None,
-    "serverUrl": os.environ.get("CTX_API_URL", "https://api.coretex.ai/"),
-    "projectId": os.environ.get("CTX_PROJECT_ID")
-}
 
 
 class UserConfiguration(BaseConfiguration):
 
-    def __init__(self) -> None:
-        super().__init__(USER_CONFIG_PATH)
+    def __init__(self, raw: Dict[str, Any]) -> None:
+        super().__init__(raw)
+
         if not "CTX_API_URL" in os.environ:
             os.environ["CTX_API_URL"] = self.serverUrl
 
     @classmethod
-    def getDefaultConfig(cls) -> Dict[str, Any]:
-        return USER_DEFAULT_CONFIG
+    def getConfigPath(cls) -> Path:
+        return CONFIG_DIR / "user_config.json"
 
     @property
     def username(self) -> str:
@@ -98,7 +91,7 @@ class UserConfiguration(BaseConfiguration):
 
     @property
     def serverUrl(self) -> str:
-        return self.getValue("serverUrl", str, "CTX_API_URL")
+        return self.getValue("serverUrl", str, "CTX_API_URL", "https://api.coretex.ai/")
 
     @serverUrl.setter
     def serverUrl(self, value: str) -> None:
@@ -112,18 +105,22 @@ class UserConfiguration(BaseConfiguration):
     def projectId(self, value: Optional[int]) -> None:
         self._raw["projectId"] = value
 
-    @property
-    def isValid(self) -> bool:
+    def _isConfigured(self) -> bool:
         return self._raw.get("username") is not None and self._raw.get("password") is not None
 
-    def isUserConfigured(self) -> bool:
+    def _isConfigValid(self) -> Tuple[bool, List[str]]:
+        isValid = True
+        errorMessages = []
+
         if self._raw.get("username") is None or not isinstance(self._raw.get("username"), str):
-            return False
+            errorMessages.append("Field \"username\" not found in configuration.")
+            isValid = False
 
         if self._raw.get("password") is None or not isinstance(self._raw.get("password"), str):
-            return False
+            errorMessages.append("Field \"password\" not found in configuration.")
+            isValid = False
 
-        return True
+        return isValid, errorMessages
 
     def isTokenValid(self, tokenName: str) -> bool:
         tokenValue = self._raw.get(tokenName)

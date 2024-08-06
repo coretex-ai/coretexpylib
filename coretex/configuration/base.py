@@ -15,7 +15,8 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Dict, Any, Optional, Type, TypeVar
+from typing import Dict, Any, Optional, Type, TypeVar, List, Tuple
+from typing_extensions import Self
 from abc import abstractmethod
 from pathlib import Path
 
@@ -30,24 +31,54 @@ DEFAULT_VENV_PATH = CONFIG_DIR / "venv"
 
 
 class InvalidConfiguration(Exception):
+
+    def __init__(self, message: str,errors: List[str]) -> None:
+        super().__init__(message)
+        self.errors = errors
+
+
+class ConfigurationNotFound(Exception):
     pass
+
 
 class BaseConfiguration:
 
-    def __init__(self, path: Path) -> None:
-        self._path = path
-
-        if not path.exists():
-            self._raw = self.getDefaultConfig()
-            self.save()
-        else:
-            with path.open("r") as file:
-                self._raw = json.load(file)
+    def __init__(self, raw: Dict[str, Any]) -> None:
+        self._raw = raw
 
     @classmethod
     @abstractmethod
-    def getDefaultConfig(cls) -> Dict[str, Any]:
+    def getConfigPath(cls) -> Path:
         pass
+
+    @abstractmethod
+    def _isConfigured(self) -> bool:
+        pass
+
+    @abstractmethod
+    def _isConfigValid(self) -> Tuple[bool, List[str]]:
+        pass
+
+    @classmethod
+    def load(cls) -> Self:
+        configPath = cls.getConfigPath()
+        if not configPath.exists():
+            raise ConfigurationNotFound(f"Configuration not found at path: {configPath}")
+
+        with configPath.open("r") as file:
+            raw = json.load(file)
+
+        config = cls(raw)
+
+        isValid, errors = config._isConfigValid()
+
+        if not config._isConfigured():
+            raise ConfigurationNotFound("Configuration not found.")
+
+        if not isValid:
+            raise InvalidConfiguration("Invalid configuration found.", errors)
+
+        return config
 
     def _value(self, configKey: str, valueType: Type[T], envKey: Optional[str] = None) -> Optional[T]:
         if envKey is not None and envKey in os.environ:
@@ -55,11 +86,14 @@ class BaseConfiguration:
 
         return self._raw.get(configKey)
 
-    def getValue(self, configKey: str, valueType: Type[T], envKey: Optional[str] = None) -> T:
+    def getValue(self, configKey: str, valueType: Type[T], envKey: Optional[str] = None, default: Optional[T] = None) -> T:
         value = self._value(configKey, valueType, envKey)
 
+        if value is None:
+            value = default
+
         if not isinstance(value, valueType):
-            raise InvalidConfiguration(f"Invalid {configKey} type \"{type(value)}\", expected: \"{valueType.__name__}\".")
+            raise TypeError(f"Invalid {configKey} type \"{type(value)}\", expected: \"{valueType.__name__}\".")
 
         return value
 
@@ -72,8 +106,13 @@ class BaseConfiguration:
         return value
 
     def save(self) -> None:
-        if not self._path.parent.exists():
-            self._path.parent.mkdir(parents = True, exist_ok = True)
+        configPath = self.getConfigPath()
 
-        with self._path.open("w") as configFile:
+        if not configPath.parent.exists():
+            configPath.parent.mkdir(parents = True, exist_ok = True)
+
+        with configPath.open("w") as configFile:
             json.dump(self._raw, configFile, indent = 4)
+
+    def update(self, config: Self) -> None:
+        self._raw = config._raw

@@ -45,7 +45,7 @@ def create(name: Optional[str], projectType: Optional[int], description: Optiona
 @click.option("--name", "-n", type = str, help = "New Project name")
 @click.option("--description", "-d", type = str, help = "New Project description")
 def edit(project: Optional[str], name: Optional[str], description: Optional[str]) -> None:
-    userConfiguration = UserConfiguration()
+    userConfiguration = UserConfiguration.load()
     defaultProjectId = userConfiguration.projectId
     if defaultProjectId is None and project is None:
         ui.errorEcho(f"To use edit command you need to specifiy project name using \"--project\" or \"-p\" flag, or you can select default project using \"coretex project select\" command.")
