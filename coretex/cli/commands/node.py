@@ -30,7 +30,7 @@ from ...utils import docker
 
 @click.command()
 @click.option("--image", type = str, help = "Docker image url")
-@click.option("--verbose", "verbose", is_flag = True, help = "Shows detailed about of command execution.")
+@click.option("--verbose", "verbose", is_flag = True, help = "Shows detailed output of command execution.")
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def start(image: Optional[str], verbose: bool = False) -> None:
     if node_module.isRunning(verbose):
@@ -69,7 +69,7 @@ def start(image: Optional[str], verbose: bool = False) -> None:
 
 
 @click.command()
-@click.option("--verbose", "verbose", is_flag = True, help = "Shows detailed about of command execution.")
+@click.option("--verbose", "verbose", is_flag = True, help = "Shows detailed output of command execution.")
 def stop(verbose: bool = False) -> None:
     if not node_module.isRunning(verbose):
         errorEcho("Node is already offline.")
@@ -81,7 +81,7 @@ def stop(verbose: bool = False) -> None:
 @click.command()
 @click.option("-y", "autoAccept", is_flag = True, help = "Accepts all prompts.")
 @click.option("-n", "autoDecline", is_flag = True, help = "Declines all prompts.")
-@click.option("--verbose", "verbose", is_flag = True, help = "Shows detailed about of command execution.")
+@click.option("--verbose", "verbose", is_flag = True, help = "Shows detailed output of command execution.")
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def update(autoAccept: bool, autoDecline: bool, verbose: bool = False) -> None:
     if autoAccept and autoDecline:
