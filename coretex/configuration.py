@@ -63,9 +63,7 @@ def loadConfig() -> Dict[str, Any]:
         content = configFile.read()
         try:
             config: Dict[str, Any] = json.loads(content)
-            print("ucitan kako treba")
         except json.JSONDecodeError as exc:
-            print(exc)
             logging.getLogger("cli").debug(
                 f"Failed to load corrupted config file. Content: {content}. Exception: {exc}", exc_info = exc
             )
