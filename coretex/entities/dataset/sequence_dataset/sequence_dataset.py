@@ -24,7 +24,7 @@ import logging
 from .base import BaseSequenceDataset
 from ..network_dataset import NetworkDataset, _chunkSampleImport, _encryptedSampleImport
 from ...sample import SequenceSample, CustomSample
-from .... import folder_manager
+from ...._folder_manager import folder_manager
 from ....codable import KeyDescriptor
 from ....cryptography import getProjectKey
 from ....utils import file as file_utils

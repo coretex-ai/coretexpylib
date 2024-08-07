@@ -26,7 +26,7 @@ import git
 from ..dataset import Dataset, LocalDataset, NetworkDataset, LocalCustomDataset, \
     CustomDataset, LocalImageDataset, ImageDataset
 from ..project import ProjectType
-from ... import folder_manager
+from ..._folder_manager import folder_manager
 
 
 def getDatasetType(type_: ProjectType, isLocal: bool) -> Type[Dataset]:

@@ -22,8 +22,10 @@ import click
 from ..modules.project_utils import getProject
 from ..modules.user import initializeUserSession
 from ..modules.utils import onBeforeCommandExecute
-from ... import folder_manager
-from ...configuration import UserConfiguration
+from ..modules.project_utils import getProject
+from ..._folder_manager import FolderManager
+from ..._task import TaskRunWorker, executeRunLocally, readTaskConfig, runLogger
+from ...configuration import UserConfiguration, NodeConfiguration
 from ...entities import TaskRun, TaskRunStatus
 from ...resources import PYTHON_ENTRY_POINT_PATH
 from ..._task import TaskRunWorker, executeRunLocally, readTaskConfig, runLogger
@@ -42,13 +44,16 @@ class RunException(Exception):
 @click.option("--project", "-p", type = str)
 def run(path: str, name: Optional[str], description: Optional[str], snapshot: bool, project: Optional[str]) -> None:
     userConfig = UserConfiguration.load()
+    nodeConfig = NodeConfiguration.load()
 
     if userConfig.refreshToken is None:
         raise RunException(f"Failed to execute \"coretex run {path}\" command. Authenticate again using \"coretex login\" command and try again.")
 
     parameters = readTaskConfig()
 
-    folder_manager.clearTempFiles()
+    # clearing temporary files in case that node was manually killed before
+    folderManager = FolderManager(nodeConfig.storagePath)
+    folderManager.clearTempFiles()
 
     selectedProject = getProject(project, userConfig)
     # clearing temporary files in case that node was manually killed before
@@ -92,4 +97,4 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
     else:
         taskRun.updateStatus(TaskRunStatus.completedWithSuccess)
 
-    folder_manager.clearTempFiles()
+    folderManager.clearTempFiles()

@@ -35,7 +35,7 @@ from .execution_type import ExecutionType
 from ..dataset import Dataset, LocalDataset, NetworkDataset
 from ..project import ProjectType
 from ..model import Model
-from ... import folder_manager
+from ..._folder_manager import folder_manager
 from ...codable import KeyDescriptor
 from ...networking import networkManager, NetworkObject, NetworkRequestError, FileData
 
