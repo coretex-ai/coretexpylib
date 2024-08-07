@@ -185,4 +185,4 @@ class FolderManager:
             path.unlink(missing_ok = True)
 
 
-folder_manager = FolderManager(os.environ["CTX_STORAGE_PATH"])
+folder_manager = FolderManager(os.environ.get("CTX_STORAGE_PATH", "~/.coretex"))
