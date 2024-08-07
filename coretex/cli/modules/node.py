@@ -120,10 +120,10 @@ def clean() -> None:
 def fetchNodeId(name: str) -> int:
     config = loadConfig()
     params = {
-        "machine_name": f"={name}"
+        "name": f"={name}"
     }
 
-    response = networkManager.get("service", params)
+    response = networkManager.get("service/directory", params)
     if response.hasFailed():
         raise NetworkRequestError(response, "Failed to fetch node id.")
 
@@ -149,7 +149,7 @@ def fetchNodeId(name: str) -> int:
     return nodeId
 
 
-def deactivateNode(id: Optional[int]) -> None:
+def deactivateNode(id: int) -> None:
     params = {
         "id": id
     }
