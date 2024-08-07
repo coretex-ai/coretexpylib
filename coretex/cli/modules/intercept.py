@@ -22,6 +22,7 @@ import logging
 import click
 
 from .ui import errorEcho
+from ...configuration import CONFIG_DIR
 
 
 class ClickExceptionInterceptor(click.Group):
@@ -39,5 +40,9 @@ class ClickExceptionInterceptor(click.Group):
             self.handleException(ctx, exc)
 
     def handleException(self, ctx: click.Context, exc: BaseException) -> None:
-        click.echo(click.style(str(exc), fg = "red"))
+        logPath = CONFIG_DIR / "logs"
+        logFiles = list(logPath.glob("*.log"))
+        latestLogFile = max(logFiles, key = lambda f: f.stat().st_mtime)
+
+        errorEcho(f"Exception: {str(exc)}.\nYou can see detailed logs here: {latestLogFile}")
         logging.getLogger("cli").debug(exc, exc_info = exc)

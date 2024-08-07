@@ -44,10 +44,10 @@ class ImageType(Enum):
     custom = "custom"
 
 
-def pull(image: str) -> None:
+def pull(image: str, verbose: Optional[bool] = False) -> None:
     try:
         progressEcho(f"Fetching image {image}...")
-        docker.imagePull(image)
+        docker.imagePull(image, verbose)
 
         successEcho(f"Image {image} successfully fetched.")
     except BaseException as ex:
@@ -55,18 +55,18 @@ def pull(image: str) -> None:
         raise NodeException("Failed to fetch latest node version.")
 
 
-def isRunning() -> bool:
-    return docker.containerRunning(config_defaults.DOCKER_CONTAINER_NAME)
+def isRunning(verbose: Optional[bool] = False) -> bool:
+    return docker.containerRunning(config_defaults.DOCKER_CONTAINER_NAME, verbose)
 
 
-def exists() -> bool:
-    return docker.containerExists(config_defaults.DOCKER_CONTAINER_NAME)
+def exists(verbose: Optional[bool] = False) -> bool:
+    return docker.containerExists(config_defaults.DOCKER_CONTAINER_NAME, verbose)
 
 
-def start(dockerImage: str, config: Dict[str, Any]) -> None:
+def start(dockerImage: str, config: Dict[str, Any], verbose: Optional[bool] = False) -> None:
     try:
         progressEcho("Starting Coretex Node...")
-        docker.createNetwork(config_defaults.DOCKER_CONTAINER_NETWORK)
+        docker.createNetwork(config_defaults.DOCKER_CONTAINER_NETWORK, verbose)
 
         environ = {
             "CTX_API_URL": config["serverUrl"],
@@ -99,7 +99,8 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
             config["nodeSharedMemory"],
             config["cpuCount"],
             environ,
-            volumes
+            volumes,
+            verbose
         )
 
         successEcho("Successfully started Coretex Node.")
@@ -108,19 +109,19 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
         raise NodeException("Failed to start Coretex Node.")
 
 
-def clean() -> None:
+def clean(verbose: Optional[bool] = False) -> None:
     try:
-        docker.removeContainer(config_defaults.DOCKER_CONTAINER_NAME)
-        docker.removeNetwork(config_defaults.DOCKER_CONTAINER_NETWORK)
+        docker.removeContainer(config_defaults.DOCKER_CONTAINER_NAME, verbose)
+        docker.removeNetwork(config_defaults.DOCKER_CONTAINER_NETWORK, verbose)
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to clean inactive Coretex Node.")
 
 
-def stop() -> None:
+def stop(verbose: Optional[bool] = False) -> None:
     try:
         progressEcho("Stopping Coretex Node...")
-        docker.stopContainer(config_defaults.DOCKER_CONTAINER_NAME)
+        docker.stopContainer(config_defaults.DOCKER_CONTAINER_NAME, verbose)
         clean()
         successEcho("Successfully stopped Coretex Node....")
     except BaseException as ex:
@@ -152,7 +153,7 @@ def getTagFromImageUrl(image: str) -> str:
         return "latest"
 
 
-def shouldUpdate(image: str) -> bool:
+def shouldUpdate(image: str, verbose: Optional[bool] = False) -> bool:
     repository = getRepoFromImageUrl(image)
     try:
         imageJson = docker.imageInspect(image)
