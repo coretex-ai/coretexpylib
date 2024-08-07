@@ -118,6 +118,7 @@ def clean() -> None:
 
 
 def fetchNodeId(name: str) -> int:
+    config = loadConfig()
     params = {
         "machine_name": f"={name}"
     }
@@ -143,6 +144,8 @@ def fetchNodeId(name: str) -> int:
     if not isinstance(nodeId, int):
         raise TypeError(f"Invalid \"nodeId\" type {type(nodeId)}. Expected: \"int\"")
 
+    config["nodeId"] = nodeId
+    saveConfig(config)
     return nodeId
 
 
