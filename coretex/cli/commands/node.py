@@ -32,6 +32,8 @@ from ...utils import docker
 @click.option("--image", type = str, help = "Docker image url")
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def start(image: Optional[str]) -> None:
+    config = loadConfig()
+
     if node_module.isRunning():
         if not clickPrompt(
             "Node is already running. Do you wish to restart the Node? (Y/n)",
@@ -41,12 +43,10 @@ def start(image: Optional[str]) -> None:
         ):
             return
 
-        node_module.stop()
+        node_module.stop(config.get("nodeId", node_module.fetchNodeId(config["nodeName"])))
 
     if node_module.exists():
         node_module.clean()
-
-    config = loadConfig()
 
     if image is not None:
         config["image"] = image  # store forced image (flagged) so we can run autoupdate afterwards
@@ -65,11 +65,13 @@ def start(image: Optional[str]) -> None:
 
 @click.command()
 def stop() -> None:
+    config = loadConfig()
+
     if not node_module.isRunning():
         errorEcho("Node is already offline.")
         return
 
-    node_module.stop()
+    node_module.stop(config.get("nodeId", node_module.fetchNodeId(config["nodeName"])))
 
 
 @click.command()
@@ -106,7 +108,7 @@ def update(autoAccept: bool, autoDecline: bool) -> None:
         ):
             return
 
-        node_module.stop()
+        node_module.stop(config.get("nodeId", node_module.fetchNodeId(config["nodeName"])))
 
     if not node_module.shouldUpdate(dockerImage):
         successEcho("Node is already up to date.")
@@ -127,7 +129,7 @@ def update(autoAccept: bool, autoDecline: bool) -> None:
         ):
             return
 
-    node_module.stop()
+    node_module.stop(config.get("nodeId", node_module.fetchNodeId(config["nodeName"])))
 
     stdEcho("Updating node...")
     node_module.start(dockerImage, config)
@@ -139,6 +141,8 @@ def update(autoAccept: bool, autoDecline: bool) -> None:
 @click.command()
 @click.option("--verbose", is_flag = True, help = "Configure node settings manually.")
 def config(verbose: bool) -> None:
+    config = loadConfig()
+
     if node_module.isRunning():
         if not clickPrompt(
             "Node is already running. Do you wish to stop the Node? (Y/n)",
@@ -149,9 +153,7 @@ def config(verbose: bool) -> None:
             errorEcho("If you wish to reconfigure your node, use coretex node stop commands first.")
             return
 
-        node_module.stop()
-
-    config = loadConfig()
+        node_module.stop(config.get("nodeId", node_module.fetchNodeId(config["nodeName"])))
 
     if isNodeConfigured(config):
         if not clickPrompt(
