@@ -24,6 +24,7 @@ from . import config_defaults
 from .base import BaseConfiguration, CONFIG_DIR
 from ..utils import docker
 from ..node import NodeMode
+from ..networking import networkManager, NetworkRequestError
 
 
 def getEnvVar(key: str, default: str) -> str:
@@ -150,6 +151,19 @@ class NodeConfiguration(BaseConfiguration):
     @nodeMode.setter
     def nodeMode(self, value: int) -> None:
         self._raw["nodeMode"] = value
+
+    @property
+    def nodeId(self) -> int:
+        nodeId = self.getOptValue("nodeId", int)
+
+        if nodeId is None:
+            nodeId = self.fetchNodeId()
+
+        return nodeId
+
+    @nodeId.setter
+    def nodeId(self, value: int) -> None:
+        self._raw["nodeId"] = value
 
     @property
     def allowDocker(self) -> bool:
@@ -290,27 +304,15 @@ class NodeConfiguration(BaseConfiguration):
 
         if not isinstance(self._raw.get("nodeName"), str):
             isValid = False
-            errorMessages.append("Required field \"nodeName\" missing")
+            errorMessages.append("Invalid configuration. Missing required field \"nodeName\".")
 
         if not isinstance(self._raw.get("image"), str):
             isValid = False
-            errorMessages.append("Required field \"image\" missing")
+            errorMessages.append("Invalid configuration. Missing required field \"image\".")
 
         if not isinstance(self._raw.get("nodeAccessToken"), str):
             isValid = False
-            errorMessages.append("Required field \"nodeAccessToken\" missing")
-
-        if not isinstance(self._raw.get("nodeName"), str):
-            errorMessages.append(f"Invalid configuration. Missing required field \"nodeName\".")
-            isValid = False
-
-        if not isinstance(self._raw.get("image"), str):
-            errorMessages.append(f"Invalid configuration. Missing required field \"image\".")
-            isValid = False
-
-        if not isinstance(self._raw.get("nodeAccessToken"), str):
-            errorMessages.append(f"Invalid configuration. Missing required field \"nodeAccessToken\".")
-            isValid = False
+            errorMessages.append("Invalid configuration. Missing required field \"nodeAccessToken\".")
 
         isRamValid, nodeRam, message = self.validateRamField(ramLimit)
         if not isRamValid:
@@ -343,3 +345,32 @@ class NodeConfiguration(BaseConfiguration):
             return None
 
         return path
+
+    def fetchNodeId(self) -> int:
+        params = {
+            "machine_name": f"={self.nodeName}"
+        }
+
+        response = networkManager.get("service", params)
+        if response.hasFailed():
+            raise NetworkRequestError(response, "Failed to fetch node id.")
+
+        responseJson = response.getJson(dict)
+        data = responseJson.get("data")
+
+        if not isinstance(data, list):
+            raise TypeError(f"Invalid \"data\" type {type(data)}. Expected: \"list\"")
+
+        if len(data) == 0:
+            raise ValueError(f"Node with name \"{self.nodeName}\" not found.")
+
+        nodeJson = data[0]
+        if not isinstance(nodeJson, dict):
+            raise TypeError(f"Invalid \"nodeJson\" type {type(nodeJson)}. Expected: \"dict\"")
+        nodeId = nodeJson.get("id")
+        if not isinstance(nodeId, str):
+            raise TypeError(f"Invalid \"nodeId\" type {type(nodeId)}. Expected: \"str\"")
+
+        self.nodeId = int(nodeId)
+        self.save()
+        return int(nodeId)

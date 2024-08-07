@@ -33,6 +33,9 @@ from ...configuration import UserConfiguration, NodeConfiguration, InvalidConfig
 @click.option("--image", type = str, help = "Docker image url")
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def start(image: Optional[str]) -> None:
+    nodeConfig = NodeConfiguration.load()
+    userConfig = UserConfiguration.load()
+
     if node_module.isRunning():
         if not ui.clickPrompt(
             "Node is already running. Do you wish to restart the Node? (Y/n)",
@@ -42,13 +45,11 @@ def start(image: Optional[str]) -> None:
         ):
             return
 
-        node_module.stop()
+        node_module.stop(nodeConfig.nodeId)
 
     if node_module.exists():
         node_module.clean()
 
-    nodeConfig = NodeConfiguration.load()
-    userConfig = UserConfiguration.load()
 
     if image is not None:
         nodeConfig.image = image  # store forced image (flagged) so we can run autoupdate afterwards
@@ -66,11 +67,13 @@ def start(image: Optional[str]) -> None:
 
 @click.command()
 def stop() -> None:
+    nodeConfig = NodeConfiguration.load()
+
     if not node_module.isRunning():
         ui.errorEcho("Node is already offline.")
         return
 
-    node_module.stop()
+    node_module.stop(nodeConfig.nodeId)
 
 
 @click.command()
@@ -107,7 +110,7 @@ def update(autoAccept: bool, autoDecline: bool) -> None:
         ):
             return
 
-        node_module.stop()
+        node_module.stop(nodeConfig.nodeId)
 
     if not node_module.shouldUpdate(nodeConfig.image):
         ui.successEcho("Node is already up to date.")
@@ -128,7 +131,7 @@ def update(autoAccept: bool, autoDecline: bool) -> None:
         ):
             return
 
-    node_module.stop()
+    node_module.stop(nodeConfig.nodeId)
 
     ui.stdEcho("Updating node...")
     node_module.start(nodeConfig.image, userConfig, nodeConfig)
@@ -152,7 +155,8 @@ def config(verbose: bool) -> None:
             ui.errorEcho("If you wish to reconfigure your node, use coretex node stop commands first.")
             return
 
-        node_module.stop()
+        nodeConfig = NodeConfiguration.load()
+        node_module.stop(nodeConfig.nodeId)
 
     userConfig = UserConfiguration.load()
     try:

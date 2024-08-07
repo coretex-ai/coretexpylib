@@ -51,12 +51,14 @@ def configMigration(configPath: Path) -> None:
         "allowGpu": oldConfig.get("allowGpu"),
         "nodeRam": oldConfig.get("nodeRam"),
         "nodeSharedMemory": oldConfig.get("nodeSharedMemory"),
+        "nodeSwap": oldConfig.get("nodeSwap"),
         "cpuCount": oldConfig.get("cpuCount"),
         "nodeMode": oldConfig.get("nodeMode"),
         "allowDocker": oldConfig.get("allowDocker"),
         "nodeSecret": oldConfig.get("nodeSecret"),
         "initScript": oldConfig.get("initScript"),
         "modelId": oldConfig.get("modelId"),
+        "nodeId": oldConfig.get("nodeId")
     }
 
     userConfig = UserConfiguration(userRaw)

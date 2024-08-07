@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple, List
 from enum import Enum
 from pathlib import Path
 from base64 import b64encode
@@ -119,10 +119,21 @@ def clean() -> None:
         raise NodeException("Failed to clean inactive Coretex Node.")
 
 
-def stop() -> None:
+def deactivateNode(id: Optional[int]) -> None:
+    params = {
+        "id": id
+    }
+
+    response = networkManager.post("service/deactivate", params)
+    if response.hasFailed():
+        raise NetworkRequestError(response, "Failed to deactivate node.")
+
+
+def stop(nodeId: int) -> None:
     try:
         ui.progressEcho("Stopping Coretex Node...")
         docker.stopContainer(config_defaults.DOCKER_CONTAINER_NAME)
+        deactivateNode(nodeId)
         clean()
         ui.successEcho("Successfully stopped Coretex Node....")
     except BaseException as ex:
@@ -189,7 +200,7 @@ def registerNode(
     publicKey: Optional[bytes] = None,
     nearWalletId: Optional[str] = None,
     endpointInvocationPrice: Optional[float] = None
-) -> str:
+) -> Tuple[int, str]:
 
     params: Dict[str, Any] = {
         "machine_name": name,
@@ -211,11 +222,13 @@ def registerNode(
         raise NetworkRequestError(response, "Failed to configure node. Please try again...")
 
     accessToken = response.getJson(dict).get("access_token")
+    nodeId = response.getJson(dict).get("id")
 
-    if not isinstance(accessToken, str):
+    if not isinstance(accessToken, str) or not isinstance(nodeId, int):
         raise TypeError("Something went wrong. Please try again...")
 
-    return accessToken
+    print(nodeId)
+    return nodeId, accessToken
 
 
 def selectImageType() -> ImageType:
@@ -352,7 +365,7 @@ def checkResourceLimitations() -> None:
         )
 
 
-def configureNode(verbose: bool) -> NodeConfiguration:
+def configureNode(advanced: bool) -> NodeConfiguration:
     ui.highlightEcho("[Node Configuration]")
     nodeConfig = NodeConfiguration({})  # create new empty node config
 
@@ -391,7 +404,7 @@ def configureNode(verbose: bool) -> NodeConfiguration:
     endpointInvocationPrice: Optional[float] = None
     nodeMode = NodeMode.any
 
-    if verbose:
+    if advanced:
         nodeMode = selectNodeMode()
         nodeConfig.storagePath = ui.clickPrompt("Storage path (press enter to use default)", config_defaults.DEFAULT_STORAGE_PATH, type = str)
 
@@ -444,7 +457,7 @@ def configureNode(verbose: bool) -> NodeConfiguration:
     else:
         ui.stdEcho("To configure node manually run coretex node config with --verbose flag.")
 
-    nodeConfig.nodeAccessToken = registerNode(nodeConfig.nodeName, nodeMode, publicKey, nearWalletId, endpointInvocationPrice)
+    nodeConfig.nodeId, nodeConfig.nodeAccessToken = registerNode(nodeConfig.nodeName, nodeMode, publicKey, nearWalletId, endpointInvocationPrice)
     nodeConfig.nodeMode = nodeMode
 
     return nodeConfig
@@ -470,7 +483,8 @@ def initializeNodeConfiguration() -> None:
             ui.errorEcho("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
             return
 
-        stop()
+        nodeConfig = NodeConfiguration.load()
+        stop(nodeConfig.nodeId)
 
-    nodeConfig = configureNode(verbose = False)
+    nodeConfig = configureNode(advanced = False)
     nodeConfig.save()

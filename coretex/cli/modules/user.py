@@ -25,7 +25,6 @@ def configUser(retryCount: int = 0) -> UserConfiguration:
         raise RuntimeError("Failed to authenticate. Terminating...")
 
     userConfig = UserConfiguration({})  # create new empty user config
-
     username = ui.clickPrompt("Email", type = str)
     password = ui.clickPrompt("Password", type = str, hide_input = True)
 
@@ -53,6 +52,10 @@ def authenticateUser(userConfig: UserConfiguration) -> None:
     if response.statusCode >= 500:
         raise NetworkRequestError(response, "Something went wrong, please try again later.")
     elif response.statusCode >= 400:
+        ui.errorEcho(f"Failed to authenticate with stored credentials (Server URL: {userConfig.serverUrl}).")
+        if not ui.clickPrompt("Would you like to reconfigure the user? (Y/n)", type = bool, default = True, show_default = False):
+            raise RuntimeError
+
         userConfig.update(configUser())
     else:
         jsonResponse = response.getJson(dict)
@@ -101,7 +104,6 @@ def initializeUserSession() -> None:
 
         if not ui.clickPrompt("Would you like to reconfigure the user? (Y/n)", type = bool, default = True, show_default = False):
             raise
-
         userConfig = configUser()
 
     userConfig.save()
