@@ -76,7 +76,7 @@ def checkEnvironment() -> None:
         return
 
     try:
-        command([str(venvCoretex), "version"], check = True)
+        command([str(venvCoretex), "version"], check = True, ignoreStderr = True, ignoreStdout = True)
     except Exception:
         createEnvironment(venvPython)
         return
