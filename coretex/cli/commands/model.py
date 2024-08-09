@@ -2,9 +2,12 @@ from typing import Optional
 
 import click
 
-from ..modules import project_utils, user, utils, ui
+from ..modules import ui
+from ..modules.project_utils import getProject
+from ..modules.user import initializeUserSession
+from ..modules.utils import onBeforeCommandExecute
 from ...entities import Model
-from ...configuration import loadConfig
+from ...configuration import UserConfiguration
 
 
 @click.command()
@@ -13,12 +16,12 @@ from ...configuration import loadConfig
 @click.option("-p", "--project", type = str, required = False, default = None)
 @click.option("-a", "--accuracy", type = click.FloatRange(0, 1), required = False, default = 1)
 def create(name: str, path: str, project: Optional[str], accuracy: float) -> None:
-    config = loadConfig()
+    userConfig = UserConfiguration.load()
 
     # If project was provided used that, otherwise get the one from config
     # If project that was provided does not exist prompt user to create a new
     # one with that name
-    ctxProject = project_utils.getProject(project, config)
+    ctxProject = getProject(project, userConfig)
     if ctxProject is None:
         return
 
@@ -32,7 +35,7 @@ def create(name: str, path: str, project: Optional[str], accuracy: float) -> Non
 
 
 @click.group()
-@utils.onBeforeCommandExecute(user.initializeUserSession)
+@onBeforeCommandExecute(initializeUserSession)
 def model() -> None:
     pass
 

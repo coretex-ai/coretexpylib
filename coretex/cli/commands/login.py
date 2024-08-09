@@ -17,25 +17,26 @@
 
 import click
 
-from ..modules.user import configUser
-from ..modules.ui import clickPrompt, stdEcho, successEcho
-from ...configuration import loadConfig, saveConfig, isUserConfigured
+from ..modules import user, ui
+from ...configuration import UserConfiguration, InvalidConfiguration, ConfigurationNotFound
 
 
 @click.command()
 def login() -> None:
-    config = loadConfig()
-    if isUserConfigured(config):
-        if not clickPrompt(
-            f"User already logged in with username {config['username']}.\nWould you like to log in with a different user (Y/n)?",
+    try:
+        userConfig = UserConfiguration.load()
+        if not ui.clickPrompt(
+            f"User already logged in with username {userConfig.username}.\nWould you like to log in with a different user (Y/n)?",
             type = bool,
             default = True,
             show_default = False
         ):
             return
 
-    stdEcho("Please enter your credentials:")
-    configUser(config)
-    saveConfig(config)
+    except (ConfigurationNotFound, InvalidConfiguration):
+        pass
 
-    successEcho(f"User {config['username']} successfully logged in.")
+    ui.stdEcho("Please enter your credentials:")
+    userConfig = user.configUser()
+    userConfig.save()
+    ui.successEcho(f"User {userConfig.username} successfully logged in.")

@@ -25,10 +25,8 @@ from .commands.node import node
 from .commands.task import run
 from .commands.project import project
 
-from .modules import ui
+from .modules import ui, utils
 from .modules.intercept import ClickExceptionInterceptor
-from .modules import utils
-
 from ..utils.process import CommandException
 
 

@@ -19,10 +19,12 @@ from typing import Optional
 
 import click
 
-from ..modules import ui, project_utils, utils, user
+from ..modules import ui, project_utils
+from ..modules.user import initializeUserSession
+from ..modules.utils import onBeforeCommandExecute
 from ...entities import Project, ProjectVisibility
 from ...networking import RequestFailedError
-from ...configuration import loadConfig
+from ...configuration import UserConfiguration
 
 
 @click.command()
@@ -31,10 +33,11 @@ from ...configuration import loadConfig
 @click.option("--description", "-d", type = str, help = "Project description")
 def create(name: Optional[str], projectType: Optional[int], description: Optional[str]) -> None:
     project = project_utils.createProject(name, projectType, description)
+    userConfig = UserConfiguration.load()
 
     selectNewProject = ui.clickPrompt("Do you want to select the new project as default? (Y/n)", type = bool, default = True)
     if selectNewProject:
-        project_utils.selectProject(project.id)
+        userConfig.selectProject(project.id)
         ui.successEcho(f"Project \"{project.name}\" successfully selected.")
 
 
@@ -43,8 +46,8 @@ def create(name: Optional[str], projectType: Optional[int], description: Optiona
 @click.option("--name", "-n", type = str, help = "New Project name")
 @click.option("--description", "-d", type = str, help = "New Project description")
 def edit(project: Optional[str], name: Optional[str], description: Optional[str]) -> None:
-    config = loadConfig()
-    defaultProjectId = config.get("projectId")
+    userConfiguration = UserConfiguration.load()
+    defaultProjectId = userConfiguration.projectId
     if defaultProjectId is None and project is None:
         ui.errorEcho(f"To use edit command you need to specifiy project name using \"--project\" or \"-p\" flag, or you can select default project using \"coretex project select\" command.")
         return
@@ -73,24 +76,25 @@ def edit(project: Optional[str], name: Optional[str], description: Optional[str]
 @click.argument("name", type = str)
 def select(name: str) -> None:
     project: Optional[Project] = None
+    userConfig = UserConfiguration.load()
 
     ui.progressEcho("Validating project...")
 
     try:
         project = Project.fetchOne(name = name)
         ui.successEcho(f"Project \"{name}\" selected successfully!")
-        project_utils.selectProject(project.id)
+        userConfig.selectProject(project.id)
     except ValueError:
         ui.errorEcho(f"Project \"{name}\" not found.")
         project = project_utils.promptProjectCreate("Do you want to create a project with that name?", name)
         if project is None:
             return
 
-        project_utils.selectProject(project.id)
+        userConfig.selectProject(project.id)
 
 
 @click.group()
-@utils.onBeforeCommandExecute(user.initializeUserSession)
+@onBeforeCommandExecute(initializeUserSession)
 def project() -> None:
     pass
 

@@ -8,6 +8,10 @@ from .process import command, CommandException
 from ..statistics import getTotalSwapMemory
 
 
+class DockerConfigurationException(Exception):
+    pass
+
+
 def isDockerAvailable() -> None:
     try:
         # Run the command to check if Docker exists and is available
