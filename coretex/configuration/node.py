@@ -26,10 +26,6 @@ from ..node import NodeMode
 from ..networking import networkManager, NetworkRequestError
 
 
-class DockerConfigurationException(Exception):
-    pass
-
-
 class NodeConfiguration(BaseConfiguration):
 
     @classmethod

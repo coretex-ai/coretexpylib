@@ -21,8 +21,6 @@ from datetime import datetime, timezone
 
 from .base import BaseConfiguration, CONFIG_DIR
 from ..utils import decodeDate
-from ..entities import Project
-from ..networking import NetworkRequestError
 
 
 class UserConfiguration(BaseConfiguration):
@@ -121,17 +119,6 @@ class UserConfiguration(BaseConfiguration):
         try:
             return datetime.now(timezone.utc) > decodeDate(tokenExpirationDate)
         except ValueError:
-            return False
-
-    @property
-    def isProjectSelected(self) -> bool:
-        if self.projectId is None:
-            return False
-
-        try:
-            Project.fetchById(self.projectId)
-            return True
-        except NetworkRequestError:
             return False
 
     def selectProject(self, id: int) -> None:
