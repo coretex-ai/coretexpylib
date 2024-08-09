@@ -120,7 +120,43 @@ def clean() -> None:
         raise NodeException("Failed to clean inactive Coretex Node.")
 
 
+<<<<<<< HEAD
 def deactivateNode(id: Optional[int]) -> None:
+=======
+def fetchNodeId(name: str) -> int:
+    config = loadConfig()
+    params = {
+        "name": f"={name}"
+    }
+
+    response = networkManager.get("service/directory", params)
+    if response.hasFailed():
+        raise NetworkRequestError(response, "Failed to fetch node id.")
+
+    responseJson = response.getJson(dict)
+    data = responseJson.get("data")
+
+    if not isinstance(data, list):
+        raise TypeError(f"Invalid \"data\" type {type(data)}. Expected: \"list\"")
+
+    if len(data) == 0:
+        raise ValueError(f"Node with name \"{name}\" not found.")
+
+    nodeJson = data[0]
+    if not isinstance(nodeJson, dict):
+        raise TypeError(f"Invalid \"nodeJson\" type {type(nodeJson)}. Expected: \"dict\"")
+
+    nodeId = nodeJson.get("id")
+    if not isinstance(nodeId, int):
+        raise TypeError(f"Invalid \"nodeId\" type {type(nodeId)}. Expected: \"int\"")
+
+    config["nodeId"] = nodeId
+    saveConfig(config)
+    return nodeId
+
+
+def deactivateNode(id: int) -> None:
+>>>>>>> develop
     params = {
         "id": id
     }

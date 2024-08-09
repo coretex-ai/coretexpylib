@@ -99,7 +99,7 @@ def getGpuMemoryUsage() -> float:
         logging.getLogger("coretexpylib").debug(">> [Coretex] Failed to extract gpu memory usage metric")
         return 0
 
-    return float(memory.used / memory.total)
+    return float(memory.used / memory.total * 100)
 
 
 def getGpuTemperature() -> float:

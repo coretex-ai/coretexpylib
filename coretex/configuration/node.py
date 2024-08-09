@@ -257,10 +257,10 @@ class NodeConfiguration(BaseConfiguration):
 
     def fetchNodeId(self) -> int:
         params = {
-            "machine_name": f"={self.name}"
+            "name": f"={self.name}"
         }
 
-        response = networkManager.get("service", params)
+        response = networkManager.get("service/directory", params)
         if response.hasFailed():
             raise NetworkRequestError(response, "Failed to fetch node id.")
 
@@ -276,9 +276,11 @@ class NodeConfiguration(BaseConfiguration):
         nodeJson = data[0]
         if not isinstance(nodeJson, dict):
             raise TypeError(f"Invalid \"nodeJson\" type {type(nodeJson)}. Expected: \"dict\"")
+
         id = nodeJson.get("id")
-        if not isinstance(id, str):
-            raise TypeError(f"Invalid \"id\" type {type(id)}. Expected: \"str\"")
+        if not isinstance(id, int):
+            raise TypeError(f"Invalid \"id\" type {type(id)}. Expected: \"int\"")
+
 
         self.id = int(id)
         self.save()
