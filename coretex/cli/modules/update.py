@@ -18,8 +18,6 @@
 from enum import IntEnum
 from pathlib import Path
 
-import logging
-
 import requests
 
 from .utils import getExecPath

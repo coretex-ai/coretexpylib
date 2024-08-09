@@ -104,6 +104,7 @@ def initializeUserSession() -> None:
 
         if not ui.clickPrompt("Would you like to reconfigure the user? (Y/n)", type = bool, default = True, show_default = False):
             raise
+
         userConfig = configUser()
 
     userConfig.save()

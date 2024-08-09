@@ -10,12 +10,6 @@ from ...entities import Project, ProjectType, ProjectVisibility
 from ...networking import NetworkRequestError
 
 
-def selectProject(projectId: int) -> None:
-    userConfiguration = UserConfiguration.load()
-    userConfiguration.projectId = projectId
-    userConfiguration.save()
-
-
 def selectProjectType() -> ProjectType:
     availableProjectTypes = {
         "Computer Vision": ProjectType.computerVision,
@@ -62,21 +56,21 @@ def promptProjectCreate(message: str, name: str) -> Optional[Project]:
         raise click.ClickException(f"Failed to create project \"{name}\".")
 
 
-def promptProjectSelect() -> Optional[Project]:
+def promptProjectSelect(userConfig: UserConfiguration) -> Optional[Project]:
     name = ui.clickPrompt("Specify project name that you wish to select")
 
     ui.progressEcho("Validating project...")
     try:
         project = Project.fetchOne(name = name)
         ui.successEcho(f"Project \"{name}\" selected successfully!")
-        selectProject(project.id)
+        userConfig.selectProject(project.id)
     except ValueError:
         ui.errorEcho(f"Project \"{name}\" not found.")
         newProject = promptProjectCreate("Do you want to create a project with that name?", name)
         if newProject is None:
             return None
 
-        selectProject(project.id)
+        userConfig.selectProject(project.id)
 
     return project
 
@@ -117,7 +111,7 @@ def getProject(name: Optional[str], userConfig: UserConfiguration) -> Optional[P
     if projectId is None:
         ui.stdEcho("To use this command you need to have a Project selected.")
         if click.confirm("Would you like to select an existing Project?", default = True):
-            return promptProjectSelect()
+            return promptProjectSelect(userConfig)
 
         if not click.confirm("Would you like to create a new Project?", default = True):
             return None
@@ -125,16 +119,3 @@ def getProject(name: Optional[str], userConfig: UserConfiguration) -> Optional[P
         return createProject(name)
 
     return Project.fetchById(projectId)
-
-
-def isProjectSelected() -> bool:
-    userConfig = UserConfiguration.load()
-
-    if userConfig.projectId is None:
-        return False
-
-    try:
-        Project.fetchById(userConfig.projectId)
-        return True
-    except NetworkRequestError:
-        return False

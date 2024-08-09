@@ -30,9 +30,8 @@ from ..utils import isCliRuntime
 def configMigration(configPath: Path) -> None:
     with configPath.open("r") as file:
         oldConfig = json.load(file)
-        logging.warning(f"[Coretex] >> WARNING: Old configuration:\n{oldConfig}")
 
-    userRaw = {
+    UserConfiguration({
         "username": oldConfig.get("username"),
         "password": oldConfig.get("password"),
         "token": oldConfig.get("token"),
@@ -41,30 +40,26 @@ def configMigration(configPath: Path) -> None:
         "refreshTokenExpirationDate": oldConfig.get("refreshTokenExpirationDate"),
         "serverUrl": oldConfig.get("serverUrl"),
         "projectId": oldConfig.get("projectId"),
-    }
+    }).save()
 
-    nodeRaw = {
-        "nodeName": oldConfig.get("nodeName"),
-        "nodeAccessToken": oldConfig.get("nodeAccessToken"),
+    NodeConfiguration({
+        "name": oldConfig.get("nodeName"),
+        "accessToken": oldConfig.get("nodeAccessToken"),
         "storagePath": oldConfig.get("storagePath"),
         "image": oldConfig.get("image"),
         "allowGpu": oldConfig.get("allowGpu"),
-        "nodeRam": oldConfig.get("nodeRam"),
-        "nodeSharedMemory": oldConfig.get("nodeSharedMemory"),
-        "nodeSwap": oldConfig.get("nodeSwap"),
+        "ram": oldConfig.get("nodeRam"),
+        "sharedMemory": oldConfig.get("nodeSharedMemory"),
+        "swap": oldConfig.get("nodeSwap"),
         "cpuCount": oldConfig.get("cpuCount"),
-        "nodeMode": oldConfig.get("nodeMode"),
+        "mode": oldConfig.get("nodeMode"),
         "allowDocker": oldConfig.get("allowDocker"),
-        "nodeSecret": oldConfig.get("nodeSecret"),
+        "secret": oldConfig.get("nodeSecret"),
         "initScript": oldConfig.get("initScript"),
         "modelId": oldConfig.get("modelId"),
-        "nodeId": oldConfig.get("nodeId")
-    }
+        "id": oldConfig.get("nodeId")
+    }).save()
 
-    userConfig = UserConfiguration(userRaw)
-    nodeConfig = NodeConfiguration(nodeRaw)
-    userConfig.save()
-    nodeConfig.save()
     configPath.unlink()
 
 
@@ -78,8 +73,7 @@ def _syncConfigWithEnv() -> None:
     oldConfigPath = CONFIG_DIR / "config.json"
     if oldConfigPath.exists():
         logging.warning(
-            f"[Coretex] >> WARNING: Old configuration found at path: {oldConfigPath}. Migrating to new configuration."
-            f"\nFields with invalid values might be overrided in this process."
+            f">> [Coretex] Old configuration found at path: {oldConfigPath}. Migrating to new configuration."
         )
         configMigration(oldConfigPath)
 
@@ -87,22 +81,9 @@ def _syncConfigWithEnv() -> None:
         userConfig = UserConfiguration.load()
         if not "CTX_API_URL" in os.environ:
             os.environ["CTX_API_URL"] = userConfig.serverUrl
-    except (ConfigurationNotFound, InvalidConfiguration) as ex:
-        if not isCliRuntime():
-            logging.error(f">> [Coretex] Error loading configuration. Reason: {ex}")
-            logging.info("\tIf this message came from Coretex Node you can safely ignore it.")
+    except (ConfigurationNotFound, InvalidConfiguration):
+        if not "CTX_API_URL" in os.environ:
+            os.environ["CTX_API_URL"] = "https://api.coretex.ai/"
 
-    try:
-        nodeConfig = NodeConfiguration.load()
-
-        if isinstance(nodeConfig.nodeSecret, str) and nodeConfig.nodeSecret != "":
-            os.environ["CTX_SECRETS_KEY"] = nodeConfig.nodeSecret
-
-        if not isCliRuntime():
-            os.environ["CTX_STORAGE_PATH"] = nodeConfig.storagePath
-        else:
-            os.environ["CTX_STORAGE_PATH"] = f"{CONFIG_DIR}/data"
-    except (ConfigurationNotFound, InvalidConfiguration) as ex:
-        if not isCliRuntime():
-            logging.error(f">> [Coretex] Error loading configuration. Reason: {ex}")
-            logging.info("\tIf this message came from Coretex Node you can safely ignore it.")
+    if not "CTX_STORAGE_PATH" in os.environ or isCliRuntime():
+        os.environ["CTX_STORAGE_PATH"] = f"{CONFIG_DIR}/data"

@@ -32,8 +32,9 @@ DEFAULT_VENV_PATH = CONFIG_DIR / "venv"
 
 class InvalidConfiguration(Exception):
 
-    def __init__(self, message: str,errors: List[str]) -> None:
+    def __init__(self, message: str, errors: List[str]) -> None:
         super().__init__(message)
+
         self.errors = errors
 
 

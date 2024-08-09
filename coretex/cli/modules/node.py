@@ -15,11 +15,12 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Any, Dict, Optional, Tuple, List
+from typing import Any, Dict, Optional, Tuple
 from enum import Enum
 from pathlib import Path
 from base64 import b64encode
 
+import os
 import logging
 import requests
 
@@ -31,7 +32,7 @@ from ...cryptography import rsa
 from ...networking import networkManager, NetworkRequestError
 from ...utils import CommandException, docker
 from ...node import NodeMode, NodeStatus
-from ...configuration import UserConfiguration, NodeConfiguration, InvalidConfiguration, ConfigurationNotFound
+from ...configuration import NodeConfiguration, InvalidConfiguration, ConfigurationNotFound
 
 
 class NodeException(Exception):
@@ -62,22 +63,22 @@ def exists() -> bool:
     return docker.containerExists(config_defaults.DOCKER_CONTAINER_NAME)
 
 
-def start(dockerImage: str, userConfig: UserConfiguration, nodeConfig: NodeConfiguration) -> None:
+def start(dockerImage: str, nodeConfig: NodeConfiguration) -> None:
     try:
         ui.progressEcho("Starting Coretex Node...")
         docker.createNetwork(config_defaults.DOCKER_CONTAINER_NETWORK)
 
         environ = {
-            "CTX_API_URL": userConfig.serverUrl,
+            "CTX_API_URL": os.environ["CTX_API_URL"],
             "CTX_STORAGE_PATH": "/root/.coretex",
-            "CTX_NODE_ACCESS_TOKEN": nodeConfig.nodeAccessToken,
-            "CTX_NODE_MODE": str(nodeConfig.nodeMode)
+            "CTX_NODE_ACCESS_TOKEN": nodeConfig.accessToken,
+            "CTX_NODE_MODE": str(nodeConfig.mode)
         }
 
         if isinstance(nodeConfig.modelId, int):
             environ["CTX_MODEL_ID"] = str(nodeConfig.modelId)
 
-        nodeSecret = nodeConfig.nodeSecret if nodeConfig.nodeSecret is not None else config_defaults.DEFAULT_NODE_SECRET  # change in configuration
+        nodeSecret = nodeConfig.secret if nodeConfig.secret is not None else config_defaults.DEFAULT_NODE_SECRET  # change in configuration
         if isinstance(nodeSecret, str) and nodeSecret != config_defaults.DEFAULT_NODE_SECRET:
             environ["CTX_NODE_SECRET"] = nodeSecret
 
@@ -96,9 +97,9 @@ def start(dockerImage: str, userConfig: UserConfiguration, nodeConfig: NodeConfi
             config_defaults.DOCKER_CONTAINER_NAME,
             dockerImage,
             nodeConfig.allowGpu,
-            nodeConfig.nodeRam,
-            nodeConfig.nodeSwap,
-            nodeConfig.nodeSharedMemory,
+            nodeConfig.ram,
+            nodeConfig.swap,
+            nodeConfig.sharedMemory,
             nodeConfig.cpuCount,
             environ,
             volumes
@@ -129,11 +130,13 @@ def deactivateNode(id: Optional[int]) -> None:
         raise NetworkRequestError(response, "Failed to deactivate node.")
 
 
-def stop(nodeId: int) -> None:
+def stop(nodeId: Optional[int] = None) -> None:
     try:
         ui.progressEcho("Stopping Coretex Node...")
         docker.stopContainer(config_defaults.DOCKER_CONTAINER_NAME)
-        deactivateNode(nodeId)
+
+        if nodeId is not None:
+            deactivateNode(nodeId)
         clean()
         ui.successEcho("Successfully stopped Coretex Node....")
     except BaseException as ex:
@@ -372,7 +375,7 @@ def configureNode(advanced: bool) -> NodeConfiguration:
     cpuLimit, ramLimit = docker.getResourceLimits()
     swapLimit = docker.getDockerSwapLimit()
 
-    nodeConfig.nodeName = ui.clickPrompt("Node name", type = str)
+    nodeConfig.name = ui.clickPrompt("Node name", type = str)
 
     imageType = selectImageType()
     if imageType == ImageType.custom:
@@ -390,13 +393,13 @@ def configureNode(advanced: bool) -> NodeConfiguration:
         nodeConfig.image += f":latest-{tag}"
 
     nodeConfig.storagePath = config_defaults.DEFAULT_STORAGE_PATH
-    nodeConfig.nodeRam = int(min(max(config_defaults.MINIMUM_RAM, ramLimit), config_defaults.DEFAULT_RAM))
-    nodeConfig.nodeSwap = min(swapLimit, int(max(config_defaults.DEFAULT_SWAP_MEMORY, swapLimit)))
-    nodeConfig.nodeSharedMemory = config_defaults.DEFAULT_SHARED_MEMORY
+    nodeConfig.ram = int(min(max(config_defaults.MINIMUM_RAM, ramLimit), config_defaults.DEFAULT_RAM))
+    nodeConfig.swap = min(swapLimit, int(max(config_defaults.DEFAULT_SWAP_MEMORY, swapLimit)))
+    nodeConfig.sharedMemory = config_defaults.DEFAULT_SHARED_MEMORY
     nodeConfig.cpuCount = int(min(cpuLimit, config_defaults.DEFAULT_CPU_COUNT))
-    nodeConfig.nodeMode = config_defaults.DEFAULT_NODE_MODE
+    nodeConfig.mode = config_defaults.DEFAULT_NODE_MODE
     nodeConfig.allowDocker = config_defaults.DEFAULT_ALLOW_DOCKER
-    nodeConfig.nodeSecret = config_defaults.DEFAULT_NODE_SECRET
+    nodeConfig.secret = config_defaults.DEFAULT_NODE_SECRET
     nodeConfig.initScript = config_defaults.DEFAULT_INIT_SCRIPT
 
     publicKey: Optional[bytes] = None
@@ -409,10 +412,10 @@ def configureNode(advanced: bool) -> NodeConfiguration:
         nodeConfig.storagePath = ui.clickPrompt("Storage path (press enter to use default)", config_defaults.DEFAULT_STORAGE_PATH, type = str)
 
         nodeConfig.cpuCount = promptCpu(cpuLimit)
-        nodeConfig.nodeRam = promptRam(ramLimit)
-        nodeConfig.nodeSwap = promptSwap(nodeConfig.nodeRam, swapLimit)
+        nodeConfig.ram = promptRam(ramLimit)
+        nodeConfig.swap = promptSwap(nodeConfig.ram, swapLimit)
 
-        nodeConfig.nodeSharedMemory = ui.clickPrompt(
+        nodeConfig.sharedMemory = ui.clickPrompt(
             "Node POSIX shared memory limit in GB (press enter to use default)",
             config_defaults.DEFAULT_SHARED_MEMORY,
             type = int
@@ -432,7 +435,7 @@ def configureNode(advanced: bool) -> NodeConfiguration:
             type = str,
             hide_input = True
         )
-        nodeConfig.nodeSecret = nodeSecret
+        nodeConfig.secret = nodeSecret
 
         if nodeSecret != config_defaults.DEFAULT_NODE_SECRET:
             ui.progressEcho("Generating RSA key-pair (2048 bits long) using provided node secret...")
@@ -457,15 +460,15 @@ def configureNode(advanced: bool) -> NodeConfiguration:
     else:
         ui.stdEcho("To configure node manually run coretex node config with --verbose flag.")
 
-    nodeConfig.nodeId, nodeConfig.nodeAccessToken = registerNode(nodeConfig.nodeName, nodeMode, publicKey, nearWalletId, endpointInvocationPrice)
-    nodeConfig.nodeMode = nodeMode
+    nodeConfig.id, nodeConfig.accessToken = registerNode(nodeConfig.name, nodeMode, publicKey, nearWalletId, endpointInvocationPrice)
+    nodeConfig.mode = nodeMode
 
     return nodeConfig
 
 
 def initializeNodeConfiguration() -> None:
     try:
-        nodeConfig = NodeConfiguration.load()
+        NodeConfiguration.load()
         return
     except ConfigurationNotFound:
         ui.errorEcho("Node configuration not found.")
@@ -484,7 +487,7 @@ def initializeNodeConfiguration() -> None:
             return
 
         nodeConfig = NodeConfiguration.load()
-        stop(nodeConfig.nodeId)
+        stop(nodeConfig.id)
 
     nodeConfig = configureNode(advanced = False)
     nodeConfig.save()

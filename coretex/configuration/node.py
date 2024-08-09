@@ -15,23 +15,15 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Dict, Any, List, Optional, Tuple
+from typing import List, Optional, Tuple
 from pathlib import Path
-
-import os
 
 from . import config_defaults
 from .base import BaseConfiguration, CONFIG_DIR
+from . import utils
 from ..utils import docker
 from ..node import NodeMode
 from ..networking import networkManager, NetworkRequestError
-
-
-def getEnvVar(key: str, default: str) -> str:
-    if os.environ.get(key) is None:
-        return default
-
-    return os.environ[key]
 
 
 class DockerConfigurationException(Exception):
@@ -40,28 +32,25 @@ class DockerConfigurationException(Exception):
 
 class NodeConfiguration(BaseConfiguration):
 
-    def __init__(self, raw: Dict[str, Any]) -> None:
-        super().__init__(raw)
-
     @classmethod
     def getConfigPath(cls) -> Path:
         return CONFIG_DIR / "node_config.json"
 
     @property
-    def nodeName(self) -> str:
-        return self.getValue("nodeName", str, "CTX_NODE_NAME")
+    def name(self) -> str:
+        return self.getValue("name", str, "CTX_NODE_NAME")
 
-    @nodeName.setter
-    def nodeName(self, value: str) -> None:
-        self._raw["nodeName"] = value
+    @name.setter
+    def name(self, value: str) -> None:
+        self._raw["name"] = value
 
     @property
-    def nodeAccessToken(self) -> str:
-        return self.getValue("nodeAccessToken", str)
+    def accessToken(self) -> str:
+        return self.getValue("accessToken", str)
 
-    @nodeAccessToken.setter
-    def nodeAccessToken(self, value: str) -> None:
-        self._raw["nodeAccessToken"] = value
+    @accessToken.setter
+    def accessToken(self, value: str) -> None:
+        self._raw["accessToken"] = value
 
     @property
     def storagePath(self) -> str:
@@ -88,43 +77,43 @@ class NodeConfiguration(BaseConfiguration):
         self._raw["allowGpu"] = value
 
     @property
-    def nodeRam(self) -> int:
-        nodeRam = self.getOptValue("nodeRam", int)
+    def ram(self) -> int:
+        ram = self.getOptValue("ram", int)
 
-        if nodeRam is None:
-            nodeRam = config_defaults.DEFAULT_RAM
+        if ram is None:
+            ram = config_defaults.DEFAULT_RAM
 
-        return nodeRam
+        return ram
 
-    @nodeRam.setter
-    def nodeRam(self, value: int) -> None:
-        self._raw["nodeRam"] = value
-
-    @property
-    def nodeSwap(self) -> int:
-        nodeSwap = self.getOptValue("nodeSwap", int)
-
-        if nodeSwap is None:
-            nodeSwap = config_defaults.DEFAULT_SWAP_MEMORY
-
-        return nodeSwap
-
-    @nodeSwap.setter
-    def nodeSwap(self, value: int) -> None:
-        self._raw["nodeSwap"] = value
+    @ram.setter
+    def ram(self, value: int) -> None:
+        self._raw["ram"] = value
 
     @property
-    def nodeSharedMemory(self) -> int:
-        nodeSharedMemory = self.getOptValue("nodeSharedMemory", int)
+    def swap(self) -> int:
+        swap = self.getOptValue("swap", int)
 
-        if nodeSharedMemory is None:
-            nodeSharedMemory = config_defaults.DEFAULT_SHARED_MEMORY
+        if swap is None:
+            swap = config_defaults.DEFAULT_SWAP_MEMORY
 
-        return nodeSharedMemory
+        return swap
 
-    @nodeSharedMemory.setter
-    def nodeSharedMemory(self, value: int) -> None:
-        self._raw["nodeSharedMemory"] = value
+    @swap.setter
+    def swap(self, value: int) -> None:
+        self._raw["swap"] = value
+
+    @property
+    def sharedMemory(self) -> int:
+        sharedMemory = self.getOptValue("sharedMemory", int)
+
+        if sharedMemory is None:
+            sharedMemory = config_defaults.DEFAULT_SHARED_MEMORY
+
+        return sharedMemory
+
+    @sharedMemory.setter
+    def sharedMemory(self, value: int) -> None:
+        self._raw["sharedMemory"] = value
 
     @property
     def cpuCount(self) -> int:
@@ -140,30 +129,30 @@ class NodeConfiguration(BaseConfiguration):
         self._raw["cpuCount"] = value
 
     @property
-    def nodeMode(self) -> int:
-        nodeMode = self.getOptValue("nodeMode", int)
+    def mode(self) -> int:
+        mode = self.getOptValue("mode", int)
 
-        if nodeMode is None:
-            nodeMode = NodeMode.any
+        if mode is None:
+            mode = NodeMode.any
 
-        return nodeMode
+        return mode
 
-    @nodeMode.setter
-    def nodeMode(self, value: int) -> None:
-        self._raw["nodeMode"] = value
+    @mode.setter
+    def mode(self, value: int) -> None:
+        self._raw["mode"] = value
 
     @property
-    def nodeId(self) -> int:
-        nodeId = self.getOptValue("nodeId", int)
+    def id(self) -> int:
+        id = self.getOptValue("id", int)
 
-        if nodeId is None:
-            nodeId = self.fetchNodeId()
+        if id is None:
+            id = self.fetchNodeId()
 
-        return nodeId
+        return id
 
-    @nodeId.setter
-    def nodeId(self, value: int) -> None:
-        self._raw["nodeId"] = value
+    @id.setter
+    def id(self, value: int) -> None:
+        self._raw["id"] = value
 
     @property
     def allowDocker(self) -> bool:
@@ -174,12 +163,12 @@ class NodeConfiguration(BaseConfiguration):
         self._raw["allowDocker"] = value
 
     @property
-    def nodeSecret(self) -> Optional[str]:
-        return self.getOptValue("nodeSecret", str)
+    def secret(self) -> Optional[str]:
+        return self.getOptValue("secret", str)
 
-    @nodeSecret.setter
-    def nodeSecret(self, value: Optional[str]) -> None:
-        self._raw["nodeSecret"] = value
+    @secret.setter
+    def secret(self, value: Optional[str]) -> None:
+        self._raw["secret"] = value
 
     @property
     def initScript(self) -> Optional[str]:
@@ -213,121 +202,41 @@ class NodeConfiguration(BaseConfiguration):
     def endpointInvocationPrice(self, value: Optional[float]) -> None:
         self._raw["endpointInvocationPrice"] = value
 
-    def validateRamField(self, ramLimit: int) -> Tuple[bool, int, str]:
-        isValid = True
-        message = ""
-
-        if ramLimit < config_defaults.MINIMUM_RAM:
-            isValid = False
-            raise DockerConfigurationException(
-                f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB) "
-                f"is higher than your current Docker desktop RAM limit ({ramLimit}GB). "
-                "Please adjust resource limitations in Docker Desktop settings to match Node requirements."
-            )
-
-        defaultRamValue = int(min(max(config_defaults.MINIMUM_RAM, ramLimit), config_defaults.DEFAULT_RAM))
-
-        if not isinstance(self._raw.get("nodeRam"), int):
-            isValid = False
-            message = (
-                f"Invalid config \"nodeRam\" field type \"{type(self._raw.get('nodeRam'))}\". Expected: \"int\""
-                f"Using default value of {defaultRamValue} GB"
-            )
-
-        if self.nodeRam < config_defaults.MINIMUM_RAM:
-            isValid = False
-            message = (
-                f"WARNING: Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB) "
-                f"is higher than the configured value ({self._raw.get('nodeRam')}GB)"
-                f"Overriding \"nodeRam\" field to match node RAM requirements."
-            )
-
-        if self.nodeRam > ramLimit:
-            isValid = False
-            message = (
-                f"WARNING: RAM limit in Docker Desktop ({ramLimit}GB) "
-                f"is lower than the configured value ({self._raw.get('nodeRam')}GB)"
-                f"Overriding \"nodeRam\" field to limit in Docker Desktop."
-            )
-
-        return isValid, defaultRamValue, message
-
-    def validateCPUCount(self, cpuLimit: int) -> Tuple[bool, int, str]:
-        isValid = True
-        message = ""
-        defaultCPUCount = config_defaults.DEFAULT_CPU_COUNT if config_defaults.DEFAULT_CPU_COUNT <= cpuLimit else cpuLimit
-
-        if not isinstance(self._raw.get("cpuCount"), int):
-            isValid = False
-            message = (
-                f"Invalid config \"cpuCount\" field type \"{type(self._raw.get('cpuCount'))}\". Expected: \"int\""
-                f"Using default value of {defaultCPUCount} cores"
-            )
-
-        if self.cpuCount > cpuLimit:
-            isValid = False
-            message = (
-                f"WARNING: CPU limit in Docker Desktop ({cpuLimit}) "
-                f"is lower than the configured value ({self._raw.get('cpuCount')})"
-                f"Overriding \"cpuCount\" field to limit in Docker Desktop."
-            )
-
-        return isValid, cpuLimit, message
-
-    def validateSWAPMemory(self, swapLimit: int) -> Tuple[bool, int, str]:
-        isValid = True
-        message = ""
-        defaultSWAPMemory = config_defaults.DEFAULT_SWAP_MEMORY if config_defaults.DEFAULT_SWAP_MEMORY <= swapLimit else swapLimit
-
-        if not isinstance(self._raw.get("nodeSwap"), int):
-            isValid = False
-            message = (
-                f"Invalid config \"nodeSwap\" field type \"{type(self._raw.get('nodeSwap'))}\". Expected: \"int\""
-                f"Using default value of {defaultSWAPMemory} GB"
-            )
-
-        if self.nodeSwap > swapLimit:
-            isValid = False
-            message = (
-                f"WARNING: SWAP limit in Docker Desktop ({swapLimit}GB) "
-                f"is lower than the configured value ({self.nodeSwap}GB)"
-                f"Overriding \"nodeSwap\" field to limit in Docker Desktop."
-            )
-
-        return isValid, defaultSWAPMemory, message
-
     def _isConfigValid(self) -> Tuple[bool, List[str]]:
         isValid = True
         errorMessages = []
         cpuLimit, ramLimit = docker.getResourceLimits()
         swapLimit = docker.getDockerSwapLimit()
 
-        if not isinstance(self._raw.get("nodeName"), str):
+        if not isinstance(self._raw.get("name"), str):
             isValid = False
-            errorMessages.append("Invalid configuration. Missing required field \"nodeName\".")
+            errorMessages.append("Invalid configuration. Missing required field \"name\".")
 
         if not isinstance(self._raw.get("image"), str):
             isValid = False
             errorMessages.append("Invalid configuration. Missing required field \"image\".")
 
-        if not isinstance(self._raw.get("nodeAccessToken"), str):
+        if not isinstance(self._raw.get("accessToken"), str):
             isValid = False
-            errorMessages.append("Invalid configuration. Missing required field \"nodeAccessToken\".")
+            errorMessages.append("Invalid configuration. Missing required field \"accessToken\".")
 
-        isRamValid, nodeRam, message = self.validateRamField(ramLimit)
-        if not isRamValid:
+        validateRamField = utils.validateRamField(self, ramLimit)
+        if isinstance(validateRamField, tuple):
+            ram, message = validateRamField
             errorMessages.append(message)
-            self.nodeRam = nodeRam
+            self.ram = ram
 
-        isCPUCountValid, cpuCount, message = self.validateCPUCount(cpuLimit)
-        if not isCPUCountValid:
+        validateCpuCount = utils.validateCpuCount(self, cpuLimit)
+        if isinstance(validateCpuCount, tuple):
+            cpuCount, message = validateCpuCount
             errorMessages.append(message)
             self.cpuCount = cpuCount
 
-        isSWAPMemoryValid, nodeSwap, message = self.validateSWAPMemory(swapLimit)
-        if not isSWAPMemoryValid:
+        validateSwapMemory = utils.validateSwapMemory(self, swapLimit)
+        if isinstance(validateSwapMemory, tuple):
+            swap, message = validateSwapMemory
             errorMessages.append(message)
-            self.nodeSwap = nodeSwap
+            self.swap = swap
 
         return isValid, errorMessages
 
@@ -348,7 +257,7 @@ class NodeConfiguration(BaseConfiguration):
 
     def fetchNodeId(self) -> int:
         params = {
-            "machine_name": f"={self.nodeName}"
+            "machine_name": f"={self.name}"
         }
 
         response = networkManager.get("service", params)
@@ -362,15 +271,16 @@ class NodeConfiguration(BaseConfiguration):
             raise TypeError(f"Invalid \"data\" type {type(data)}. Expected: \"list\"")
 
         if len(data) == 0:
-            raise ValueError(f"Node with name \"{self.nodeName}\" not found.")
+            raise ValueError(f"Node with name \"{self.name}\" not found.")
 
         nodeJson = data[0]
         if not isinstance(nodeJson, dict):
             raise TypeError(f"Invalid \"nodeJson\" type {type(nodeJson)}. Expected: \"dict\"")
-        nodeId = nodeJson.get("id")
-        if not isinstance(nodeId, str):
-            raise TypeError(f"Invalid \"nodeId\" type {type(nodeId)}. Expected: \"str\"")
+        id = nodeJson.get("id")
+        if not isinstance(id, str):
+            raise TypeError(f"Invalid \"id\" type {type(id)}. Expected: \"str\"")
 
-        self.nodeId = int(nodeId)
+        self.id = int(id)
         self.save()
-        return int(nodeId)
+
+        return int(id)

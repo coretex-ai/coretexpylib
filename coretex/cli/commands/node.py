@@ -34,7 +34,6 @@ from ...configuration import UserConfiguration, NodeConfiguration, InvalidConfig
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def start(image: Optional[str]) -> None:
     nodeConfig = NodeConfiguration.load()
-    userConfig = UserConfiguration.load()
 
     if node_module.isRunning():
         if not ui.clickPrompt(
@@ -45,7 +44,7 @@ def start(image: Optional[str]) -> None:
         ):
             return
 
-        node_module.stop(nodeConfig.nodeId)
+        node_module.stop(nodeConfig.id)
 
     if node_module.exists():
         node_module.clean()
@@ -60,7 +59,7 @@ def start(image: Optional[str]) -> None:
     if node_module.shouldUpdate(dockerImage):
         node_module.pull(dockerImage)
 
-    node_module.start(dockerImage, userConfig, nodeConfig)
+    node_module.start(dockerImage, nodeConfig)
     docker.removeDanglingImages(node_module.getRepoFromImageUrl(dockerImage), node_module.getTagFromImageUrl(dockerImage))
     activateAutoUpdate()
 
@@ -73,7 +72,7 @@ def stop() -> None:
         ui.errorEcho("Node is already offline.")
         return
 
-    node_module.stop(nodeConfig.nodeId)
+    node_module.stop(nodeConfig.id)
 
 
 @click.command()
@@ -85,9 +84,7 @@ def update(autoAccept: bool, autoDecline: bool) -> None:
         ui.errorEcho("Only one of the flags (\"-y\" or \"-n\") can be used at the same time.")
         return
 
-    userConfig = UserConfiguration.load()
     nodeConfig = NodeConfiguration.load()
-
     nodeStatus = node_module.getNodeStatus()
 
     if nodeStatus == NodeStatus.inactive:
@@ -110,13 +107,13 @@ def update(autoAccept: bool, autoDecline: bool) -> None:
         ):
             return
 
-        node_module.stop(nodeConfig.nodeId)
+        node_module.stop(nodeConfig.id)
 
     if not node_module.shouldUpdate(nodeConfig.image):
         ui.successEcho("Node is already up to date.")
         return
 
-    ui.stdEcho("Updating node...")
+    ui.stdEcho("Fetching latest node image...")
     node_module.pull(nodeConfig.image)
 
     if getNodeStatus() == NodeStatus.busy and not autoAccept:
@@ -131,15 +128,16 @@ def update(autoAccept: bool, autoDecline: bool) -> None:
         ):
             return
 
-    node_module.stop(nodeConfig.nodeId)
+    node_module.stop(nodeConfig.id)
 
     ui.stdEcho("Updating node...")
-    node_module.start(nodeConfig.image, userConfig, nodeConfig)
+    node_module.start(nodeConfig.image, nodeConfig)
 
     docker.removeDanglingImages(
         node_module.getRepoFromImageUrl(nodeConfig.image),
         node_module.getTagFromImageUrl(nodeConfig.image)
     )
+    activateAutoUpdate()
 
 
 @click.command()
@@ -155,10 +153,13 @@ def config(verbose: bool) -> None:
             ui.errorEcho("If you wish to reconfigure your node, use coretex node stop commands first.")
             return
 
-        nodeConfig = NodeConfiguration.load()
-        node_module.stop(nodeConfig.nodeId)
+        try:
+            nodeConfig = NodeConfiguration.load()
+            node_module.stop(nodeConfig.id)
+        except (ConfigurationNotFound, InvalidConfiguration):
+            node_module.stop()
 
-    userConfig = UserConfiguration.load()
+
     try:
         nodeConfig = NodeConfiguration.load()
         if not ui.clickPrompt(
@@ -173,7 +174,7 @@ def config(verbose: bool) -> None:
 
     nodeConfig = node_module.configureNode(verbose)
     nodeConfig.save()
-    ui.previewConfig(userConfig, nodeConfig)
+    ui.previewNodeConfig(nodeConfig)
 
     ui.successEcho("Node successfully configured.")
     activateAutoUpdate()

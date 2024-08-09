@@ -16,20 +16,16 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Tuple
+from typing import List, Optional, Tuple
 from datetime import datetime, timezone
 
 from .base import BaseConfiguration, CONFIG_DIR
 from ..utils import decodeDate
-
-
-USER_CONFIG_PATH = CONFIG_DIR / "user_config.json"
+from ..entities import Project
+from ..networking import NetworkRequestError
 
 
 class UserConfiguration(BaseConfiguration):
-
-    def __init__(self, raw: Dict[str, Any]) -> None:
-        super().__init__(raw)
 
     @classmethod
     def getConfigPath(cls) -> Path:
@@ -126,3 +122,18 @@ class UserConfiguration(BaseConfiguration):
             return datetime.now(timezone.utc) > decodeDate(tokenExpirationDate)
         except ValueError:
             return False
+
+    @property
+    def isProjectSelected(self) -> bool:
+        if self.projectId is None:
+            return False
+
+        try:
+            Project.fetchById(self.projectId)
+            return True
+        except NetworkRequestError:
+            return False
+
+    def selectProject(self, id: int) -> None:
+        self.projectId = id
+        self.save()

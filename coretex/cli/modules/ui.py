@@ -49,24 +49,23 @@ def arrowPrompt(choices: List[Any], message: str) -> Any:
     return answers["option"]
 
 
-def previewConfig(userConfig: UserConfiguration, nodeConfig: NodeConfiguration) -> None:
+def previewNodeConfig(nodeConfig: NodeConfiguration) -> None:
     allowDocker = "Yes" if nodeConfig.allowDocker else "No"
 
-    if nodeConfig.nodeSecret is None or nodeConfig.nodeSecret == "":
+    if nodeConfig.secret is None or nodeConfig.secret == "":
         nodeSecret = ""
     else:
         nodeSecret = "********"
 
     table = [
-        ["Node name",                   nodeConfig.nodeName],
-        ["Server URL",                  userConfig.serverUrl],
+        ["Node name",                   nodeConfig.name],
         ["Coretex Node type",           nodeConfig.image],
         ["Storage path",                nodeConfig.storagePath],
-        ["RAM",                         f"{nodeConfig.nodeRam}GB"],
-        ["SWAP memory",                 f"{nodeConfig.nodeSwap}GB"],
-        ["POSIX shared memory",         f"{nodeConfig.nodeSharedMemory}GB"],
+        ["RAM",                         f"{nodeConfig.ram}GB"],
+        ["SWAP memory",                 f"{nodeConfig.swap}GB"],
+        ["POSIX shared memory",         f"{nodeConfig.sharedMemory}GB"],
         ["CPU cores allocated",         f"{nodeConfig.cpuCount}"],
-        ["Coretex Node mode",           f"{NodeMode(nodeConfig.nodeMode).name}"],
+        ["Coretex Node mode",           f"{NodeMode(nodeConfig.mode).name}"],
         ["Docker access",               allowDocker],
         ["Coretex Node secret",         nodeSecret],
         ["Coretex Node init script",    nodeConfig.initScript if nodeConfig.initScript is not None else ""]
