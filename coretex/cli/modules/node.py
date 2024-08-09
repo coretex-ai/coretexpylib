@@ -26,13 +26,13 @@ import requests
 
 import click
 
-from . import ui, config_defaults
+from . import ui
 from .utils import isGPUAvailable
 from ...cryptography import rsa
 from ...networking import networkManager, NetworkRequestError
 from ...utils import CommandException, docker
 from ...node import NodeMode, NodeStatus
-from ...configuration import NodeConfiguration, InvalidConfiguration, ConfigurationNotFound
+from ...configuration import config_defaults, NodeConfiguration, InvalidConfiguration, ConfigurationNotFound
 
 
 class NodeException(Exception):
@@ -75,7 +75,7 @@ def start(dockerImage: str, nodeConfig: NodeConfiguration) -> None:
             "CTX_NODE_MODE": str(nodeConfig.mode)
         }
 
-        if isinstance(nodeConfig.modelId, int):
+        if nodeConfig.modelId is not None:
             environ["CTX_MODEL_ID"] = str(nodeConfig.modelId)
 
         nodeSecret = nodeConfig.secret if nodeConfig.secret is not None else config_defaults.DEFAULT_NODE_SECRET  # change in configuration
@@ -137,6 +137,7 @@ def stop(nodeId: Optional[int] = None) -> None:
 
         if nodeId is not None:
             deactivateNode(nodeId)
+
         clean()
         ui.successEcho("Successfully stopped Coretex Node....")
     except BaseException as ex:
@@ -146,7 +147,7 @@ def stop(nodeId: Optional[int] = None) -> None:
 
 def getNodeStatus() -> NodeStatus:
     try:
-        response = requests.get(f"http://localhost:21000/status", timeout = 1)
+        response = requests.get("http://localhost:21000/status", timeout = 1)
         status = response.json()["status"]
         return NodeStatus(status)
     except:
@@ -230,7 +231,6 @@ def registerNode(
     if not isinstance(accessToken, str) or not isinstance(nodeId, int):
         raise TypeError("Something went wrong. Please try again...")
 
-    print(nodeId)
     return nodeId, accessToken
 
 
@@ -402,11 +402,6 @@ def configureNode(advanced: bool) -> NodeConfiguration:
     nodeConfig.secret = config_defaults.DEFAULT_NODE_SECRET
     nodeConfig.initScript = config_defaults.DEFAULT_INIT_SCRIPT
 
-    publicKey: Optional[bytes] = None
-    nearWalletId: Optional[str] = None
-    endpointInvocationPrice: Optional[float] = None
-    nodeMode = NodeMode.any
-
     if advanced:
         nodeMode = selectNodeMode()
         nodeConfig.storagePath = ui.clickPrompt("Storage path (press enter to use default)", config_defaults.DEFAULT_STORAGE_PATH, type = str)
@@ -437,30 +432,32 @@ def configureNode(advanced: bool) -> NodeConfiguration:
         )
         nodeConfig.secret = nodeSecret
 
-        if nodeSecret != config_defaults.DEFAULT_NODE_SECRET:
-            ui.progressEcho("Generating RSA key-pair (2048 bits long) using provided node secret...")
-            rsaKey = rsa.generateKey(2048, nodeSecret.encode("utf-8"))
-            publicKey = rsa.getPublicKeyBytes(rsaKey.public_key())
+
 
         if nodeMode in [NodeMode.endpointReserved, NodeMode.endpointShared]:
-            nearWalletId = ui.clickPrompt(
+            nodeConfig.nearWalletId = ui.clickPrompt(
                 "Enter a NEAR wallet id to which the funds will be transfered when executing endpoints",
                 config_defaults.DEFAULT_NEAR_WALLET_ID,
                 type = str
             )
 
-            if nearWalletId != config_defaults.DEFAULT_NEAR_WALLET_ID:
-                nodeConfig.nearWalletId = nearWalletId
-                endpointInvocationPrice = promptInvocationPrice()
-            else:
-                nodeConfig.nearWalletId = None
-                nodeConfig.endpointInvocationPrice = None
-                nearWalletId = None
-                endpointInvocationPrice = None
+            nodeConfig.endpointInvocationPrice = promptInvocationPrice()
     else:
         ui.stdEcho("To configure node manually run coretex node config with --verbose flag.")
 
-    nodeConfig.id, nodeConfig.accessToken = registerNode(nodeConfig.name, nodeMode, publicKey, nearWalletId, endpointInvocationPrice)
+    publicKey: Optional[bytes] = None
+    if nodeSecret != config_defaults.DEFAULT_NODE_SECRET:
+        ui.progressEcho("Generating RSA key-pair (2048 bits long) using provided node secret...")
+        rsaKey = rsa.generateKey(2048, nodeSecret.encode("utf-8"))
+        publicKey = rsa.getPublicKeyBytes(rsaKey.public_key())
+
+    nodeConfig.id, nodeConfig.accessToken = registerNode(
+        nodeConfig.name,
+        nodeMode,
+        publicKey,
+        nodeConfig.nearWalletId,
+        nodeConfig.endpointInvocationPrice
+    )
     nodeConfig.mode = nodeMode
 
     return nodeConfig

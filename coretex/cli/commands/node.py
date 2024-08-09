@@ -159,7 +159,6 @@ def config(verbose: bool) -> None:
         except (ConfigurationNotFound, InvalidConfiguration):
             node_module.stop()
 
-
     try:
         nodeConfig = NodeConfiguration.load()
         if not ui.clickPrompt(
