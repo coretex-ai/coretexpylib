@@ -18,9 +18,8 @@
 from typing import List, Optional, Tuple
 from pathlib import Path
 
-from . import config_defaults
+from . import utils, config_defaults
 from .base import BaseConfiguration, CONFIG_DIR
-from . import utils
 from ..utils import docker
 from ..node import NodeMode
 from ..networking import networkManager, NetworkRequestError
@@ -276,7 +275,6 @@ class NodeConfiguration(BaseConfiguration):
         id = nodeJson.get("id")
         if not isinstance(id, int):
             raise TypeError(f"Invalid \"id\" type {type(id)}. Expected: \"int\"")
-
 
         self.id = int(id)
         self.save()

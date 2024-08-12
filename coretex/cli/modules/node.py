@@ -403,7 +403,7 @@ def configureNode(advanced: bool) -> NodeConfiguration:
     nodeConfig.initScript = config_defaults.DEFAULT_INIT_SCRIPT
 
     if advanced:
-        nodeMode = selectNodeMode()
+        nodeConfig.mode = selectNodeMode()
         nodeConfig.storagePath = ui.clickPrompt("Storage path (press enter to use default)", config_defaults.DEFAULT_STORAGE_PATH, type = str)
 
         nodeConfig.cpuCount = promptCpu(cpuLimit)
@@ -424,15 +424,14 @@ def configureNode(advanced: bool) -> NodeConfiguration:
 
         nodeConfig.initScript = _configureInitScript()
 
-        nodeSecret: str = ui.clickPrompt(
+        nodeConfig.secret = ui.clickPrompt(
             "Enter a secret which will be used to generate RSA key-pair for Node",
             config_defaults.DEFAULT_NODE_SECRET,
             type = str,
             hide_input = True
         )
-        nodeConfig.secret = nodeSecret
 
-        if nodeMode in [NodeMode.endpointReserved, NodeMode.endpointShared]:
+        if nodeConfig.mode in [NodeMode.endpointReserved, NodeMode.endpointShared]:
             nodeConfig.nearWalletId = ui.clickPrompt(
                 "Enter a NEAR wallet id to which the funds will be transfered when executing endpoints",
                 config_defaults.DEFAULT_NEAR_WALLET_ID,
@@ -444,19 +443,18 @@ def configureNode(advanced: bool) -> NodeConfiguration:
         ui.stdEcho("To configure node manually run coretex node config with --verbose flag.")
 
     publicKey: Optional[bytes] = None
-    if nodeSecret != config_defaults.DEFAULT_NODE_SECRET:
+    if isinstance(nodeConfig.secret, str) and nodeConfig.secret != config_defaults.DEFAULT_NODE_SECRET:
         ui.progressEcho("Generating RSA key-pair (2048 bits long) using provided node secret...")
-        rsaKey = rsa.generateKey(2048, nodeSecret.encode("utf-8"))
+        rsaKey = rsa.generateKey(2048, nodeConfig.secret.encode("utf-8"))
         publicKey = rsa.getPublicKeyBytes(rsaKey.public_key())
 
     nodeConfig.id, nodeConfig.accessToken = registerNode(
         nodeConfig.name,
-        nodeMode,
+        nodeConfig.mode,
         publicKey,
         nodeConfig.nearWalletId,
         nodeConfig.endpointInvocationPrice
     )
-    nodeConfig.mode = nodeMode
 
     return nodeConfig
 

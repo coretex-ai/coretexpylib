@@ -19,6 +19,7 @@ from pathlib import Path
 
 import os
 import json
+import shutil
 import logging
 
 from .user import UserConfiguration
@@ -61,6 +62,7 @@ def configMigration(configPath: Path) -> None:
     }).save()
 
     configPath.unlink()
+    shutil.rmtree(DEFAULT_VENV_PATH)
 
 
 def _syncConfigWithEnv() -> None:

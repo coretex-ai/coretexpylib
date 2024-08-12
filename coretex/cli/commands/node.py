@@ -141,8 +141,8 @@ def update(autoAccept: bool, autoDecline: bool) -> None:
 
 
 @click.command()
-@click.option("--verbose", is_flag = True, help = "Configure node settings manually.")
-def config(verbose: bool) -> None:
+@click.option("--advanced", is_flag = True, help = "Configure node settings manually.")
+def config(advanced: bool) -> None:
     if node_module.isRunning():
         if not ui.clickPrompt(
             "Node is already running. Do you wish to stop the Node? (Y/n)",
@@ -171,7 +171,7 @@ def config(verbose: bool) -> None:
     except (ConfigurationNotFound, InvalidConfiguration):
         pass
 
-    nodeConfig = node_module.configureNode(verbose)
+    nodeConfig = node_module.configureNode(advanced)
     nodeConfig.save()
     ui.previewNodeConfig(nodeConfig)
 
