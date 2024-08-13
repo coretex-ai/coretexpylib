@@ -62,7 +62,8 @@ def configMigration(configPath: Path) -> None:
     }).save()
 
     configPath.unlink()
-    shutil.rmtree(DEFAULT_VENV_PATH)
+    if DEFAULT_VENV_PATH.exists():
+        shutil.rmtree(DEFAULT_VENV_PATH)
 
 
 def _syncConfigWithEnv() -> None:
