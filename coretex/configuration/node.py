@@ -33,7 +33,7 @@ class NodeConfiguration(BaseConfiguration):
 
     @property
     def name(self) -> str:
-        return self.getValue("name", str, "CTX_NODE_NAME")
+        return self.getValue("name", str)
 
     @name.setter
     def name(self, value: str) -> None:
@@ -49,7 +49,7 @@ class NodeConfiguration(BaseConfiguration):
 
     @property
     def storagePath(self) -> str:
-        return self.getValue("storagePath", str, "CTX_STORAGE_PATH")
+        return self.getValue("storagePath", str)
 
     @storagePath.setter
     def storagePath(self, value: Optional[str]) -> None:
