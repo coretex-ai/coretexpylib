@@ -17,17 +17,18 @@
 
 from importlib.metadata import version as getLibraryVersion
 
+import sys
 import click
 
-from .commands.login import login
-from .commands.model import model
-from .commands.node import node
-from .commands.task import run
-from .commands.project import project
+from coretex.cli.commands.login import login
+from coretex.cli.commands.model import model
+from coretex.cli.commands.node import node
+from coretex.cli.commands.task import run
+from coretex.cli.commands.project import project
 
-from .modules import ui, utils
-from .modules.intercept import ClickExceptionInterceptor
-from ..utils.process import CommandException
+from coretex.cli.modules import ui, utils
+from coretex.cli.modules.intercept import ClickExceptionInterceptor
+from coretex.utils.process import CommandException
 
 
 @click.command()
@@ -58,7 +59,8 @@ def update() -> None:
         ui.stdEcho("Coretex version is up to date.")
 
 
-@click.group(cls = ClickExceptionInterceptor)
+@click.group()
+# @click.group(cls = ClickExceptionInterceptor)
 @utils.onBeforeCommandExecute(utils.checkLibVersion, excludeSubcommands = ["update"])
 def cli() -> None:
     pass
@@ -70,3 +72,6 @@ cli.add_command(node)
 cli.add_command(run)
 cli.add_command(version)
 cli.add_command(update)
+
+if getattr(sys, 'frozen', False):
+    cli(sys.argv[1:])
