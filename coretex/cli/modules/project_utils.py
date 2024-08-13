@@ -1,19 +1,13 @@
-from typing import Optional, Dict, Any
+from typing import Optional
 
 import logging
 
 import click
 
 from . import ui
+from ...configuration import UserConfiguration
 from ...entities import Project, ProjectType, ProjectVisibility
 from ...networking import NetworkRequestError
-from ...configuration import loadConfig, saveConfig
-
-
-def selectProject(projectId: int) -> None:
-    config = loadConfig()
-    config["projectId"] = projectId
-    saveConfig(config)
 
 
 def selectProjectType() -> ProjectType:
@@ -62,21 +56,21 @@ def promptProjectCreate(message: str, name: str) -> Optional[Project]:
         raise click.ClickException(f"Failed to create project \"{name}\".")
 
 
-def promptProjectSelect() -> Optional[Project]:
+def promptProjectSelect(userConfig: UserConfiguration) -> Optional[Project]:
     name = ui.clickPrompt("Specify project name that you wish to select")
 
     ui.progressEcho("Validating project...")
     try:
         project = Project.fetchOne(name = name)
-        ui.successEcho(f"Project \"{project}\" selected successfully!")
-        selectProject(project.id)
+        ui.successEcho(f"Project \"{name}\" selected successfully!")
+        userConfig.selectProject(project.id)
     except ValueError:
         ui.errorEcho(f"Project \"{name}\" not found.")
         newProject = promptProjectCreate("Do you want to create a project with that name?", name)
         if newProject is None:
             return None
 
-        selectProject(project.id)
+        userConfig.selectProject(project.id)
 
     return project
 
@@ -103,8 +97,8 @@ def createProject(name: Optional[str] = None, projectType: Optional[int] = None,
         raise click.ClickException(f"Failed to create project \"{name}\".")
 
 
-def getProject(name: Optional[str], config: Dict[str, Any]) -> Optional[Project]:
-    projectId = config.get("projectId")
+def getProject(name: Optional[str], userConfig: UserConfiguration) -> Optional[Project]:
+    projectId = userConfig.projectId
     if name is not None:
         try:
             return Project.fetchOne(name = name)
@@ -117,7 +111,7 @@ def getProject(name: Optional[str], config: Dict[str, Any]) -> Optional[Project]
     if projectId is None:
         ui.stdEcho("To use this command you need to have a Project selected.")
         if click.confirm("Would you like to select an existing Project?", default = True):
-            return promptProjectSelect()
+            return promptProjectSelect(userConfig)
 
         if not click.confirm("Would you like to create a new Project?", default = True):
             return None
@@ -125,16 +119,3 @@ def getProject(name: Optional[str], config: Dict[str, Any]) -> Optional[Project]
         return createProject(name)
 
     return Project.fetchById(projectId)
-
-
-def isProjectSelected() -> bool:
-    config = loadConfig()
-
-    if config.get("projectId") is None:
-        return False
-
-    try:
-        Project.fetchById(config["projectId"])
-        return True
-    except NetworkRequestError:
-        return False

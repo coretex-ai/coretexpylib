@@ -22,5 +22,5 @@ from .hash import hashCacheName
 from .image import resizeWithPadding, cropToWidth
 from .process import logProcessOutput, command, CommandException
 from .logs import createFileHandler
-from .inference import runOnnxInference
+from .misc import isCliRuntime
 from .error_handling import Throws
