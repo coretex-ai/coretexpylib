@@ -26,7 +26,7 @@ from ..modules.user import initializeUserSession
 from ..modules.utils import onBeforeCommandExecute, checkEnvironment
 from ..modules.update import activateAutoUpdate, getNodeStatus
 from ...utils import docker
-from ...configuration import UserConfiguration, NodeConfiguration, InvalidConfiguration, ConfigurationNotFound
+from ...configuration import NodeConfiguration, InvalidConfiguration, ConfigurationNotFound
 
 
 @click.command()

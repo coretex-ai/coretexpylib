@@ -33,6 +33,7 @@ import requests
 
 from . import ui
 from ...configuration import DEFAULT_VENV_PATH
+from ...utils import isCompiled
 from ...utils.process import command
 
 
@@ -66,6 +67,9 @@ def createEnvironment(venvPython: Path) -> None:
 
 
 def checkEnvironment() -> None:
+    if isCompiled():
+        return
+
     venvPython = DEFAULT_VENV_PATH / "bin" / "python"
     venvActivate = DEFAULT_VENV_PATH / "bin" / "activate"
     venvCoretex =  DEFAULT_VENV_PATH / "bin" / "coretex"

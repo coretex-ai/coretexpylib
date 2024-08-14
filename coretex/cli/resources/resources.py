@@ -15,7 +15,19 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from typing import Optional
 from pathlib import Path
 
+import sys
 
-RESOURCES_DIR = Path(__file__).resolve().parent
+from ...utils import isCompiled
+
+
+def getResourcePath() -> Path:
+    if not isCompiled():
+        return Path(__file__).resolve().parent
+
+    return Path(sys._MEIPASS).joinpath("cli", "resources")
+
+
+RESOURCES_DIR = getResourcePath()

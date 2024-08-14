@@ -25,3 +25,10 @@ def isCliRuntime() -> bool:
         executablePath.endswith("/bin/coretex") and
         os.access(executablePath, os.X_OK)
     )
+
+
+def isCompiled():
+    # Check if the script is running in a PyInstaller bundle
+    if getattr(sys, 'frozen', False):
+        return True
+    return False

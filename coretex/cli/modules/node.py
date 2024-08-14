@@ -296,7 +296,7 @@ def promptRam(ramLimit: int) -> int:
     if nodeRam < config_defaults.MINIMUM_RAM:
         ui.errorEcho(
             f"ERROR: Configured RAM ({nodeRam}GB) is lower than "
-            "the minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB)."
+            f"the minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB)."
         )
         return promptRam(ramLimit)
 
