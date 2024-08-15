@@ -51,15 +51,9 @@ dependencies = [
 "Python API" = "https://coretexpylib.coretex.ai/"
 "Source" = "https://github.com/coretex-ai/coretexpylib"
 
-[tool.setuptools]
-package-dir = {"" = "."}
-
 [tool.setuptools.packages.find]
-include = ["coretex*", "cli_entrypoint.py"]
+include = ["coretex*"]
 exclude = ["tests*", "docs_images*", "doxygen-awesome-css*"]
 
 [tool.setuptools.package-data]
 "*" = ["py.typed", "resources/*"]
-
-[project.scripts]
-coretex = "cli_entrypoint:cli"

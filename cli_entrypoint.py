@@ -28,8 +28,6 @@ from coretex.cli.commands.project import project
 
 from coretex.cli.modules import ui, utils
 from coretex.cli.modules.intercept import ClickExceptionInterceptor
-from coretex.utils import isCompiled
-from coretex.utils.process import CommandException
 
 
 @click.command()
@@ -40,27 +38,10 @@ def version() -> None:
 
 @click.command()
 def update() -> None:
-    if isCompiled():
-        ui.stdEcho("This command isn't implemented yet for compiled version but will be available soon. Thanks for your patience!")
-
-    currentVersion = utils.fetchCurrentVersion()
-    latestVersion = utils.fetchLatestVersion()
-
-    if currentVersion is None or latestVersion is None:
-        return
-
-    if latestVersion > currentVersion:
-        try:
-            ui.progressEcho("Updating coretex...")
-            utils.updateLib()
-            ui.successEcho(
-                f"Coretex successfully updated from {utils.formatCliVersion(currentVersion)} "
-                f"to {utils.formatCliVersion(latestVersion)}!"
-            )
-        except CommandException:
-            ui.errorEcho("Failed to update coretex.")
-    else:
-        ui.stdEcho("Coretex version is up to date.")
+    ui.stdEcho(
+        "This command isn't implemented yet for compiled version but will be available soon."
+        "Thanks for your patience!"
+    )
 
 
 @click.group(cls = ClickExceptionInterceptor)

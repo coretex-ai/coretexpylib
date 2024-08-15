@@ -16,15 +16,10 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import List, Any, Tuple, Optional, Callable
-from pathlib import Path
 from functools import wraps
 from importlib.metadata import version as getLibraryVersion
 
-import sys
-import venv
-import shutil
 import logging
-import platform
 
 from py3nvml import py3nvml
 
@@ -32,61 +27,11 @@ import click
 import requests
 
 from . import ui
-from ...configuration import DEFAULT_VENV_PATH
-from ...utils import isCompiled
 from ...utils.process import command
 
 
 def formatCliVersion(version: Tuple[int, int, int]) -> str:
     return ".".join(map(str, version))
-
-
-def fetchCtxSource() -> Optional[str]:
-    _, output, _ = command([sys.executable, "-m", "pip", "freeze"], ignoreStdout = True, ignoreStderr = True)
-    packages = output.splitlines()
-
-    for package in packages:
-        if "coretex" in package:
-            return package.replace(" ", "")
-
-    return None
-
-
-def createEnvironment(venvPython: Path) -> None:
-    if DEFAULT_VENV_PATH.exists():
-        shutil.rmtree(DEFAULT_VENV_PATH)
-
-    venv.create(DEFAULT_VENV_PATH, with_pip = True)
-
-    if platform.system() == "Windows":
-        venvPython = DEFAULT_VENV_PATH / "Scripts" / "python.exe"
-
-    ctxSource = fetchCtxSource()
-    if ctxSource is not None:
-        command([str(venvPython), "-m", "pip", "install", ctxSource], ignoreStdout = True, ignoreStderr = True)
-
-
-def checkEnvironment() -> None:
-    if isCompiled():
-        return
-
-    venvPython = DEFAULT_VENV_PATH / "bin" / "python"
-    venvActivate = DEFAULT_VENV_PATH / "bin" / "activate"
-    venvCoretex =  DEFAULT_VENV_PATH / "bin" / "coretex"
-
-    if not venvActivate.exists() or not venvPython.exists():
-        createEnvironment(venvPython)
-        return
-
-    try:
-        command([str(venvCoretex), "version"], check = True, ignoreStderr = True, ignoreStdout = True)
-    except Exception:
-        createEnvironment(venvPython)
-        return
-
-
-def updateLib() -> None:
-    command([sys.executable, "-m", "pip", "install", "--no-cache-dir", "--upgrade", "coretex"], ignoreStdout = True, ignoreStderr = True)
 
 
 def parseLibraryVersion(version: str) -> Optional[Tuple[int, int, int]]:

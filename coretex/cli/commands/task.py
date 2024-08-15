@@ -25,7 +25,7 @@ from ..modules.utils import onBeforeCommandExecute
 from ..modules.project_utils import getProject
 from ..._folder_manager import folder_manager
 from ..._task import TaskRunWorker, executeRunLocally, readTaskConfig, runLogger
-from ...configuration import UserConfiguration, NodeConfiguration
+from ...configuration import UserConfiguration
 from ...entities import TaskRun, TaskRunStatus
 from ...resources import PYTHON_ENTRY_POINT_PATH
 from ..._task import TaskRunWorker, executeRunLocally, readTaskConfig, runLogger
