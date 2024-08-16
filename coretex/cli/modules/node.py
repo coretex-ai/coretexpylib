@@ -28,6 +28,7 @@ from . import config_defaults
 from .utils import isGPUAvailable
 from .ui import clickPrompt, arrowPrompt, highlightEcho, errorEcho, progressEcho, successEcho, stdEcho
 from .node_mode import NodeMode
+from ..settings import CLISettings
 from ...cryptography import rsa
 from ...networking import networkManager, NetworkRequestError
 from ...configuration import loadConfig, saveConfig, isNodeConfigured, getInitScript
@@ -44,10 +45,10 @@ class ImageType(Enum):
     custom = "custom"
 
 
-def pull(image: str, verbose: Optional[bool] = False) -> None:
+def pull(image: str) -> None:
     try:
         progressEcho(f"Fetching image {image}...")
-        docker.imagePull(image, verbose)
+        docker.imagePull(image, CLISettings.verbose)
 
         successEcho(f"Image {image} successfully fetched.")
     except BaseException as ex:
@@ -55,18 +56,18 @@ def pull(image: str, verbose: Optional[bool] = False) -> None:
         raise NodeException("Failed to fetch latest node version.")
 
 
-def isRunning(verbose: Optional[bool] = False) -> bool:
-    return docker.containerRunning(config_defaults.DOCKER_CONTAINER_NAME, verbose)
+def isRunning() -> bool:
+    return docker.containerRunning(config_defaults.DOCKER_CONTAINER_NAME, CLISettings.verbose)
 
 
-def exists(verbose: Optional[bool] = False) -> bool:
-    return docker.containerExists(config_defaults.DOCKER_CONTAINER_NAME, verbose)
+def exists() -> bool:
+    return docker.containerExists(config_defaults.DOCKER_CONTAINER_NAME, CLISettings.verbose)
 
 
-def start(dockerImage: str, config: Dict[str, Any], verbose: Optional[bool] = False) -> None:
+def start(dockerImage: str, config: Dict[str, Any], ) -> None:
     try:
         progressEcho("Starting Coretex Node...")
-        docker.createNetwork(config_defaults.DOCKER_CONTAINER_NETWORK, verbose)
+        docker.createNetwork(config_defaults.DOCKER_CONTAINER_NETWORK, CLISettings.verbose)
 
         environ = {
             "CTX_API_URL": config["serverUrl"],
@@ -100,7 +101,7 @@ def start(dockerImage: str, config: Dict[str, Any], verbose: Optional[bool] = Fa
             config["cpuCount"],
             environ,
             volumes,
-            verbose
+            CLISettings.verbose
         )
 
         successEcho("Successfully started Coretex Node.")
@@ -109,19 +110,19 @@ def start(dockerImage: str, config: Dict[str, Any], verbose: Optional[bool] = Fa
         raise NodeException("Failed to start Coretex Node.")
 
 
-def clean(verbose: Optional[bool] = False) -> None:
+def clean() -> None:
     try:
-        docker.removeContainer(config_defaults.DOCKER_CONTAINER_NAME, verbose)
-        docker.removeNetwork(config_defaults.DOCKER_CONTAINER_NETWORK, verbose)
+        docker.removeContainer(config_defaults.DOCKER_CONTAINER_NAME, CLISettings.verbose)
+        docker.removeNetwork(config_defaults.DOCKER_CONTAINER_NETWORK, CLISettings.verbose)
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to clean inactive Coretex Node.")
 
 
-def stop(verbose: Optional[bool] = False) -> None:
+def stop() -> None:
     try:
         progressEcho("Stopping Coretex Node...")
-        docker.stopContainer(config_defaults.DOCKER_CONTAINER_NAME, verbose)
+        docker.stopContainer(config_defaults.DOCKER_CONTAINER_NAME, CLISettings.verbose)
         clean()
         successEcho("Successfully stopped Coretex Node....")
     except BaseException as ex:
@@ -153,16 +154,16 @@ def getTagFromImageUrl(image: str) -> str:
         return "latest"
 
 
-def shouldUpdate(image: str, verbose: Optional[bool] = False) -> bool:
+def shouldUpdate(image: str, ) -> bool:
     repository = getRepoFromImageUrl(image)
     try:
-        imageJson = docker.imageInspect(image)
+        imageJson = docker.imageInspect(image, CLISettings.verbose)
     except CommandException:
         # imageInspect() will raise an error if image doesn't exist locally
         return True
 
     try:
-        manifestJson = docker.manifestInspect(image)
+        manifestJson = docker.manifestInspect(image, CLISettings.verbose)
     except CommandException:
         return False
 
@@ -317,7 +318,7 @@ def _configureInitScript() -> str:
 
 
 def checkResourceLimitations() -> None:
-    _, ramLimit = docker.getResourceLimits()
+    _, ramLimit = docker.getResourceLimits(CLISettings.verbose)
 
     if ramLimit < config_defaults.MINIMUM_RAM:
         raise RuntimeError(f"Minimum Node RAM requirement ({config_defaults.MINIMUM_RAM}GB) is higher than your current Docker desktop RAM limit ({ramLimit}GB). Please adjust resource limitations in Docker Desktop settings to match Node requirements.")
@@ -325,7 +326,7 @@ def checkResourceLimitations() -> None:
 
 def isConfigurationValid(config: Dict[str, Any]) -> bool:
     isValid = True
-    cpuLimit, ramLimit = docker.getResourceLimits()
+    cpuLimit, ramLimit = docker.getResourceLimits(CLISettings.verbose)
     swapLimit = docker.getDockerSwapLimit()
 
     if not isinstance(config["nodeRam"], int):
@@ -362,7 +363,7 @@ def isConfigurationValid(config: Dict[str, Any]) -> bool:
 def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     highlightEcho("[Node Configuration]")
 
-    cpuLimit, ramLimit = docker.getResourceLimits()
+    cpuLimit, ramLimit = docker.getResourceLimits(CLISettings.verbose)
     swapLimit = docker.getDockerSwapLimit()
 
     config["nodeName"] = clickPrompt("Node name", type = str)

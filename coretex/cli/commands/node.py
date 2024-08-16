@@ -19,6 +19,7 @@ from typing import Optional
 
 import click
 
+from ..settings import CLISettings
 from ..modules import node as node_module
 from ..modules.ui import clickPrompt, stdEcho, successEcho, errorEcho, previewConfig
 from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate
@@ -33,7 +34,7 @@ from ...utils import docker
 @click.option("--verbose", "verbose", is_flag = True, help = "Shows detailed output of command execution.")
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def start(image: Optional[str], verbose: bool = False) -> None:
-    if node_module.isRunning(verbose):
+    if node_module.isRunning():
         if not clickPrompt(
             "Node is already running. Do you wish to restart the Node? (Y/n)",
             type = bool,
@@ -42,10 +43,10 @@ def start(image: Optional[str], verbose: bool = False) -> None:
         ):
             return
 
-        node_module.stop(verbose)
+        node_module.stop()
 
-    if node_module.exists(verbose):
-        node_module.clean(verbose)
+    if node_module.exists():
+        node_module.clean()
 
     config = loadConfig()
 
@@ -55,14 +56,14 @@ def start(image: Optional[str], verbose: bool = False) -> None:
 
     dockerImage = config["image"]
 
-    if node_module.shouldUpdate(dockerImage, verbose):
-        node_module.pull(dockerImage, verbose)
+    if node_module.shouldUpdate(dockerImage):
+        node_module.pull(dockerImage)
 
-    node_module.start(dockerImage, config, verbose)
+    node_module.start(dockerImage, config)
     docker.removeDanglingImages(
         node_module.getRepoFromImageUrl(dockerImage),
         node_module.getTagFromImageUrl(dockerImage),
-        verbose
+        CLISettings.verbose
     )
 
     activateAutoUpdate()
@@ -71,11 +72,11 @@ def start(image: Optional[str], verbose: bool = False) -> None:
 @click.command()
 @click.option("--verbose", "verbose", is_flag = True, help = "Shows detailed output of command execution.")
 def stop(verbose: bool = False) -> None:
-    if not node_module.isRunning(verbose):
+    if not node_module.isRunning():
         errorEcho("Node is already offline.")
         return
 
-    node_module.stop(verbose)
+    node_module.stop()
 
 
 @click.command()
@@ -113,14 +114,14 @@ def update(autoAccept: bool, autoDecline: bool, verbose: bool = False) -> None:
         ):
             return
 
-        node_module.stop(verbose)
+        node_module.stop()
 
-    if not node_module.shouldUpdate(dockerImage, verbose):
+    if not node_module.shouldUpdate(dockerImage):
         successEcho("Node is already up to date.")
         return
 
     stdEcho("Updating node...")
-    node_module.pull(dockerImage, verbose)
+    node_module.pull(dockerImage)
 
     if getNodeStatus() == NodeStatus.busy and not autoAccept:
         if autoDecline:
@@ -134,14 +135,14 @@ def update(autoAccept: bool, autoDecline: bool, verbose: bool = False) -> None:
         ):
             return
 
-    node_module.stop(verbose)
+    node_module.stop()
 
     stdEcho("Updating node...")
-    node_module.start(dockerImage, config, verbose)
+    node_module.start(dockerImage, config)
     docker.removeDanglingImages(
         node_module.getRepoFromImageUrl(dockerImage),
         node_module.getTagFromImageUrl(dockerImage),
-        verbose
+        CLISettings.verbose
     )
 
     activateAutoUpdate()

@@ -33,6 +33,7 @@ import requests
 from . import ui
 import platform
 
+from ..settings import CLISettings
 from ...configuration import DEFAULT_VENV_PATH
 from ...utils.process import command
 
@@ -182,6 +183,18 @@ def onBeforeCommandExecute(
     def decorator(f: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(f)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
+            ctxInfoDict = click.get_current_context().to_info_dict()
+            try:
+                params = ctxInfoDict["command"]["commands"][click.get_current_context().invoked_subcommand]["params"]
+                for param in params:
+                    if param["name"] == "verbose" and param["flag_value"] == True:
+                        CLISettings.verbose = True
+            except:
+                pass
+
+            # if ctx.params.get('verbose'):
+                # VERBOSE = True
+
             if click.get_current_context().invoked_subcommand in excludeSubcommands:
                 return f(*args, **kwargs)
 
