@@ -18,6 +18,8 @@
 from importlib.metadata import version as getLibraryVersion
 
 import sys
+import multiprocessing
+
 import click
 
 from coretex.cli.commands.login import login
@@ -57,5 +59,9 @@ cli.add_command(run)
 cli.add_command(version)
 cli.add_command(update)
 
-if getattr(sys, 'frozen', False):
-    cli(sys.argv[1:])
+
+if __name__ == "__main__":
+    multiprocessing.freeze_support()
+
+    if getattr(sys, 'frozen', False):
+        cli(sys.argv[1:])
