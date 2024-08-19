@@ -15,12 +15,13 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from .number import mathematicalRound, formatBytes
-from .file import guessMimeType, InvalidFileExtension
-from .date import DATE_FORMAT, TIME_ZONE, decodeDate
-from .hash import hashCacheName
-from .image import resizeWithPadding, cropToWidth
-from .process import logProcessOutput, command, CommandException
-from .logs import createFileHandler
-from .misc import isCliRuntime
-from .error_handling import Throws
+from enum import IntEnum
+
+
+class NodeStatus(IntEnum):
+
+    inactive     = 1
+    active       = 2
+    busy         = 3
+    deleted      = 4
+    reconnecting = 5

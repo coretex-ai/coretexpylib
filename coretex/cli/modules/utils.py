@@ -24,6 +24,7 @@ import sys
 import venv
 import shutil
 import logging
+import platform
 
 from py3nvml import py3nvml
 
@@ -64,7 +65,7 @@ def createEnvironment(venvPython: Path) -> None:
 
     ctxSource = fetchCtxSource()
     if ctxSource is not None:
-        command([str(venvPython), "-m", "pip", "install", ctxSource], ignoreStdout = True)
+        command([str(venvPython), "-m", "pip", "install", ctxSource], ignoreStdout = True, ignoreStderr = True)
 
 
 def checkEnvironment() -> None:
@@ -77,7 +78,7 @@ def checkEnvironment() -> None:
         return
 
     try:
-        command([str(venvCoretex), "version"], check = True)
+        command([str(venvCoretex), "version"], check = True, ignoreStderr = True, ignoreStdout = True)
     except Exception:
         createEnvironment(venvPython)
         return

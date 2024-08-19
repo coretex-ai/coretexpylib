@@ -28,9 +28,10 @@ import logging
 
 from .dataset import Dataset
 from .state import DatasetState
+from ..tag import EntityTagType, Taggable
 from ..sample import NetworkSample
 from ..utils import isEntityNameValid
-from ... import folder_manager
+from ..._folder_manager import folder_manager
 from ...codable import KeyDescriptor
 from ...networking import NetworkObject, \
     fileChunkUpload, networkManager, NetworkRequestError
@@ -91,7 +92,7 @@ def _encryptedSampleImport(sampleType: Type[SampleType], sampleName: str, sample
     raise RuntimeError("Unreachable statement was reached.")
 
 
-class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, ABC):
+class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, Taggable, ABC):
 
     """
         Represents the base class for all Dataset classes which are
@@ -128,6 +129,10 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
         """
 
         return folder_manager.datasetsFolder / str(self.id)
+
+    @property
+    def entityTagType(self) -> EntityTagType:
+        return EntityTagType.dataset
 
     # Codable overrides
 
@@ -271,6 +276,21 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, AB
                 parameters which affect the contents of the cache
             projectId : int
                 project for which the dataset will be created
+
+            Returns
+            -------
+            The created dataset object
+
+            Raises
+            ------
+            ValueError -> If prefix of the name is invalid or if failed to create cache dataset
+
+            Example
+            -------
+            >>> from coretex import NetworkDataset
+            \b
+            >>> dependencies = [str(projectId), str(index), str(parameter)]
+            >>> dummyDataset = NetworkDataset.createCacheDataset("dummyDataset", dependencies, 123)
         """
 
         if not isEntityNameValid(prefix):

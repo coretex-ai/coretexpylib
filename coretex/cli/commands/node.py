@@ -19,14 +19,14 @@ from typing import Optional
 
 import click
 
-from ..settings import CLISettings
+from ..modules import ui
 from ..modules import node as node_module
-from ..modules.ui import clickPrompt, stdEcho, successEcho, errorEcho, previewConfig
-from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate
-from ..modules.utils import onBeforeCommandExecute, checkEnvironment
+from ..modules.node import NodeStatus
 from ..modules.user import initializeUserSession
-from ...configuration import loadConfig, saveConfig, isNodeConfigured
+from ..modules.utils import onBeforeCommandExecute, checkEnvironment
+from ..modules.update import activateAutoUpdate, getNodeStatus
 from ...utils import docker
+from ...configuration import NodeConfiguration, InvalidConfiguration, ConfigurationNotFound
 
 
 @click.command()
@@ -34,8 +34,10 @@ from ...utils import docker
 @click.option("--verbose", "verbose", is_flag = True, help = "Shows detailed output of command execution.")
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def start(image: Optional[str], verbose: bool = False) -> None:
+    nodeConfig = NodeConfiguration.load()
+
     if node_module.isRunning():
-        if not clickPrompt(
+        if not ui.clickPrompt(
             "Node is already running. Do you wish to restart the Node? (Y/n)",
             type = bool,
             default = True,
@@ -43,40 +45,36 @@ def start(image: Optional[str], verbose: bool = False) -> None:
         ):
             return
 
-        node_module.stop()
+        node_module.stop(nodeConfig.id)
 
     if node_module.exists():
         node_module.clean()
 
-    config = loadConfig()
 
     if image is not None:
-        config["image"] = image  # store forced image (flagged) so we can run autoupdate afterwards
-        saveConfig(config)
+        nodeConfig.image = image  # store forced image (flagged) so we can run autoupdate afterwards
+        nodeConfig.save()
 
-    dockerImage = config["image"]
+    dockerImage = nodeConfig.image
 
     if node_module.shouldUpdate(dockerImage):
         node_module.pull(dockerImage)
 
-    node_module.start(dockerImage, config)
-    docker.removeDanglingImages(
-        node_module.getRepoFromImageUrl(dockerImage),
-        node_module.getTagFromImageUrl(dockerImage),
-        CLISettings.verbose
-    )
-
+    node_module.start(dockerImage, nodeConfig)
+    docker.removeDanglingImages(node_module.getRepoFromImageUrl(dockerImage), node_module.getTagFromImageUrl(dockerImage))
     activateAutoUpdate()
 
 
 @click.command()
 @click.option("--verbose", "verbose", is_flag = True, help = "Shows detailed output of command execution.")
 def stop(verbose: bool = False) -> None:
+    nodeConfig = NodeConfiguration.load()
+
     if not node_module.isRunning():
-        errorEcho("Node is already offline.")
+        ui.errorEcho("Node is already offline.")
         return
 
-    node_module.stop()
+    node_module.stop(nodeConfig.id)
 
 
 @click.command()
@@ -86,27 +84,25 @@ def stop(verbose: bool = False) -> None:
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def update(autoAccept: bool, autoDecline: bool, verbose: bool = False) -> None:
     if autoAccept and autoDecline:
-        errorEcho("Only one of the flags (\"-y\" or \"-n\") can be used at the same time.")
+        ui.errorEcho("Only one of the flags (\"-y\" or \"-n\") can be used at the same time.")
         return
 
-    config = loadConfig()
-    dockerImage = config["image"]
-
-    nodeStatus = getNodeStatus()
+    nodeConfig = NodeConfiguration.load()
+    nodeStatus = node_module.getNodeStatus()
 
     if nodeStatus == NodeStatus.inactive:
-        errorEcho("Node is not running. To update Node you need to start it first.")
+        ui.errorEcho("Node is not running. To update Node you need to start it first.")
         return
 
     if nodeStatus == NodeStatus.reconnecting:
-        errorEcho("Node is reconnecting. Cannot update now.")
+        ui.errorEcho("Node is reconnecting. Cannot update now.")
         return
 
     if nodeStatus == NodeStatus.busy and not autoAccept:
         if autoDecline:
             return
 
-        if not clickPrompt(
+        if not ui.clickPrompt(
             "Node is busy, do you wish to terminate the current execution to perform the update? (Y/n)",
             type = bool,
             default = True,
@@ -114,20 +110,20 @@ def update(autoAccept: bool, autoDecline: bool, verbose: bool = False) -> None:
         ):
             return
 
-        node_module.stop()
+        node_module.stop(nodeConfig.id)
 
-    if not node_module.shouldUpdate(dockerImage):
-        successEcho("Node is already up to date.")
+    if not node_module.shouldUpdate(nodeConfig.image):
+        ui.successEcho("Node is already up to date.")
         return
 
-    stdEcho("Updating node...")
-    node_module.pull(dockerImage)
+    ui.stdEcho("Fetching latest node image...")
+    node_module.pull(nodeConfig.image)
 
     if getNodeStatus() == NodeStatus.busy and not autoAccept:
         if autoDecline:
             return
 
-        if not clickPrompt(
+        if not ui.clickPrompt(
             "Node is busy, do you wish to terminate the current execution to perform the update? (Y/n)",
             type = bool,
             default = True,
@@ -135,50 +131,54 @@ def update(autoAccept: bool, autoDecline: bool, verbose: bool = False) -> None:
         ):
             return
 
-    node_module.stop()
+    node_module.stop(nodeConfig.id)
 
-    stdEcho("Updating node...")
-    node_module.start(dockerImage, config)
+    ui.stdEcho("Updating node...")
+    node_module.start(nodeConfig.image, nodeConfig)
+
     docker.removeDanglingImages(
-        node_module.getRepoFromImageUrl(dockerImage),
-        node_module.getTagFromImageUrl(dockerImage),
-        CLISettings.verbose
+        node_module.getRepoFromImageUrl(nodeConfig.image),
+        node_module.getTagFromImageUrl(nodeConfig.image)
     )
-
     activateAutoUpdate()
 
 
 @click.command()
-@click.option("--verbose", is_flag = True, help = "Configure node settings manually.")
-def config(verbose: bool) -> None:
+@click.option("--advanced", is_flag = True, help = "Configure node settings manually.")
+def config(advanced: bool) -> None:
     if node_module.isRunning():
-        if not clickPrompt(
+        if not ui.clickPrompt(
             "Node is already running. Do you wish to stop the Node? (Y/n)",
             type = bool,
             default = True,
             show_default = False
         ):
-            errorEcho("If you wish to reconfigure your node, use coretex node stop commands first.")
+            ui.errorEcho("If you wish to reconfigure your node, use coretex node stop commands first.")
             return
 
-        node_module.stop()
+        try:
+            nodeConfig = NodeConfiguration.load()
+            node_module.stop(nodeConfig.id)
+        except (ConfigurationNotFound, InvalidConfiguration):
+            node_module.stop()
 
-    config = loadConfig()
-
-    if isNodeConfigured(config):
-        if not clickPrompt(
+    try:
+        nodeConfig = NodeConfiguration.load()
+        if not ui.clickPrompt(
             "Node configuration already exists. Would you like to update? (Y/n)",
             type = bool,
             default = True,
             show_default = False
         ):
             return
+    except (ConfigurationNotFound, InvalidConfiguration):
+        pass
 
-    node_module.configureNode(config, verbose)
-    saveConfig(config)
-    previewConfig(config)
+    nodeConfig = node_module.configureNode(advanced)
+    nodeConfig.save()
+    ui.previewNodeConfig(nodeConfig)
 
-    successEcho("Node successfully configured.")
+    ui.successEcho("Node successfully configured.")
     activateAutoUpdate()
 
 
