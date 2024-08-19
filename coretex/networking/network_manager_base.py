@@ -428,7 +428,10 @@ class NetworkManagerBase(ABC):
                 if response.hasFailed():
                     raise NetworkRequestError(response, "Could not establish a connection with the server")
 
-                timeout = None
+                if timeout is None:
+                    # 1800 seconds upload timeout supports upload speeds as low as 72 KB/s for 128 MB
+                    # which is the limit for upload of a single file chunk on Coretex.
+                    timeout = (5, 1800)
 
             return self.request(endpoint, RequestType.post, headers, body = params, files = filesData, timeout = timeout)
 
