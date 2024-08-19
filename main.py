@@ -61,7 +61,11 @@ cli.add_command(update)
 
 
 if __name__ == "__main__":
+    # Ensures compatibility with the multiprocessing module when running as a compiled executable.
+    # PyInstaller creates a 'frozen' executable, which might not handle multiprocessing properly without this.
     multiprocessing.freeze_support()
 
+    # If the script is running as a PyInstaller compiled executable ('frozen' state),
+    # invoke the command-line interface (CLI) with the provided arguments.
     if getattr(sys, 'frozen', False):
         cli(sys.argv[1:])
