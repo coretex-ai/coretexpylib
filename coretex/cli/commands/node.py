@@ -183,10 +183,10 @@ def config(advanced: bool) -> None:
 def status() -> None:
     nodeStatus = getNodeStatus()
     statusColors = {
-        'inactive': 'red',
-        'active': 'green',
-        'busy': 'cyan',
-        'reconnecting': 'yellow'
+        "inactive": "red",
+        "active": 'green',
+        "busy": "cyan",
+        "reconnecting": "yellow"
     }
 
     statusEcho = click.style(nodeStatus.name, fg = statusColors[nodeStatus.name])
