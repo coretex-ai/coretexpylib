@@ -181,9 +181,7 @@ def config(advanced: bool) -> None:
 
 @click.command()
 def status() -> None:
-    status = getNodeStatus()
-
-    ui.stdEcho(f"Current status of Node is {status.name}.")
+    ui.stdEcho(f"Current status of Node is {getNodeStatus().name}.")
 
 
 @click.group()
