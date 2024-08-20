@@ -186,7 +186,7 @@ def getDockerSwapLimit() -> int:
     return int(swapLimit / 1024)
 
 
-def getLogs(name: str, tail: Optional[int], follow: bool, timestamps: bool, verbose: bool) -> None:
+def getLogs(name: str, tail: Optional[int], follow: bool, timestamps: bool) -> None:
     runCommand = ["docker", "logs", name]
     if isinstance(tail, int):
         runCommand.extend(["--tail", str(tail)])
@@ -197,4 +197,4 @@ def getLogs(name: str, tail: Optional[int], follow: bool, timestamps: bool, verb
     if follow:
         runCommand.append("-f")
 
-    command(runCommand, ignoreStderr = verbose, ignoreStdout = verbose)
+    command(runCommand)

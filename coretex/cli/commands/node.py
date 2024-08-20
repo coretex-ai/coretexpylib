@@ -16,6 +16,7 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import Optional
+from pathlib import Path
 
 import click
 
@@ -183,12 +184,17 @@ def config(advanced: bool) -> None:
 @click.option("--tail", "-n", type = int, help = "Shows N last logs.")
 @click.option("--follow", "-f", is_flag = True, help = "Displays logs realtime.")
 @click.option("--timestamps", "-t", is_flag = True, help = "Displays timestamps for logs.")
-@click.option("--verbose", is_flag = True, help = "Displays debug logs.")
+@click.option("--verbose", "-v", is_flag = True, help = "Displays debug logs.")
 def logs(tail: Optional[int], follow: bool, timestamps: bool, verbose: bool) -> None:
+    nodeConfig = NodeConfiguration.load()
     if getNodeStatus() in [NodeStatus.inactive, NodeStatus.deleted]:
         ui.errorEcho("There is no currently running Node on the machine.")
 
-    node_module.showLogs(tail, follow, timestamps, verbose)
+    if not verbose:
+        node_module.showLogs(tail, follow, timestamps)
+        return
+
+    node_module.showDebugLogs(Path(nodeConfig.storagePath).joinpath("logs", "node"))
 
 
 @click.group()
