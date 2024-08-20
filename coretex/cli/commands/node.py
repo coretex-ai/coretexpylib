@@ -185,7 +185,7 @@ def status() -> None:
     statusColors = {
         'inactive': ui.errorEcho,
         'active': ui.successEcho,
-        'busy': ui.progressEcho,
+        'busy': ui.stdEcho,
         'reconnecting': ui.progressEcho
     }
 
