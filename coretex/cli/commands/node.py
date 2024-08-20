@@ -184,17 +184,12 @@ def config(advanced: bool) -> None:
 @click.option("--tail", "-n", type = int, help = "Shows N last logs.")
 @click.option("--follow", "-f", is_flag = True, help = "Displays logs realtime.")
 @click.option("--timestamps", "-t", is_flag = True, help = "Displays timestamps for logs.")
-@click.option("--verbose", "-v", is_flag = True, help = "Displays debug logs.")
-def logs(tail: Optional[int], follow: bool, timestamps: bool, verbose: bool) -> None:
-    nodeConfig = NodeConfiguration.load()
+def logs(tail: Optional[int], follow: bool, timestamps: bool) -> None:
     if getNodeStatus() in [NodeStatus.inactive, NodeStatus.deleted]:
         ui.errorEcho("There is no currently running Node on the machine.")
-
-    if not verbose:
-        node_module.showLogs(tail, follow, timestamps)
         return
 
-    node_module.showDebugLogs(Path(nodeConfig.storagePath).joinpath("logs", "node"))
+    node_module.showLogs(tail, follow, timestamps)
 
 
 @click.group()

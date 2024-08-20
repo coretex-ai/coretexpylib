@@ -202,19 +202,6 @@ def showLogs(tail: Optional[int], follow: bool, timestamps: bool) -> None:
     docker.getLogs(config_defaults.DOCKER_CONTAINER_NAME, tail, follow, timestamps)
 
 
-def showDebugLogs(nodeLogsPath: Path) -> None:
-    logFiles = list(nodeLogsPath.glob('*'))
-
-    if not logFiles:
-        ui.errorEcho("No log files found in the directory.")
-        return
-
-    latestLogFile = max(logFiles, key = lambda file: file.stat().st_ctime)
-
-    with latestLogFile.open("r") as nodeLogsFile:
-        ui.stdEcho(nodeLogsFile.read())
-
-
 def registerNode(
     name: str,
     nodeMode: NodeMode,
