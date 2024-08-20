@@ -19,7 +19,7 @@ from typing import Optional
 
 from .network_response import NetworkResponse
 from .network_manager_base import NetworkManagerBase
-from .user_data import UserData
+from ..configuration import UserConfiguration
 
 
 class NetworkManager(NetworkManagerBase):
@@ -33,27 +33,39 @@ class NetworkManager(NetworkManagerBase):
     def __init__(self) -> None:
         super().__init__()
 
-        self.__userData = UserData()
+        self._userApiToken: Optional[str] = None
+        self._userRefreshToken: Optional[str] = None
+        self._username: Optional[str] = None
+        self._password: Optional[str] = None
+
+        try:
+            userConfig = UserConfiguration.load()
+            self._userApiToken = userConfig.token
+            self._userRefreshToken = userConfig.refreshToken
+            self._username = userConfig.username
+            self._password = userConfig.password
+        except:
+            pass
 
     @property
     def _apiToken(self) -> Optional[str]:
-        return self.__userData.apiToken
+        return self._userApiToken
 
     @_apiToken.setter
     def _apiToken(self, value: Optional[str]) -> None:
-        self.__userData.apiToken = value
+        self._userApiToken = value
 
     @property
     def _refreshToken(self) -> Optional[str]:
-        return self.__userData.refreshToken
+        return self._userRefreshToken
 
     @_refreshToken.setter
     def _refreshToken(self, value: Optional[str]) -> None:
-        self.__userData.refreshToken = value
+        self._userRefreshToken = value
 
     @property
     def hasStoredCredentials(self) -> bool:
-        return self.__userData.hasStoredCredentials
+        return self._username is not None and self._password is not None
 
     def authenticate(self, username: str, password: str, storeCredentials: bool = True) -> NetworkResponse:
         """
@@ -82,8 +94,8 @@ class NetworkManager(NetworkManagerBase):
         """
 
         if storeCredentials:
-            self.__userData.username = username
-            self.__userData.password = password
+            self._username = username
+            self._password = password
 
         # authenticate using credentials stored in requests.Session.auth
         return super().authenticate(username, password, storeCredentials)
@@ -101,10 +113,10 @@ class NetworkManager(NetworkManagerBase):
             ValueError -> if credentials are not found
         """
 
-        if self.__userData.username is None or self.__userData.password is None:
+        if self._username is None or self._password is None:
             raise ValueError(">> [Coretex] Credentials not stored")
 
-        return self.authenticate(self.__userData.username, self.__userData.password)
+        return self.authenticate(self._username, self._password)
 
 
 networkManager: NetworkManagerBase = NetworkManager()
