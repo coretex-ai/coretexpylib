@@ -179,6 +179,13 @@ def config(advanced: bool) -> None:
     activateAutoUpdate()
 
 
+@click.command()
+def status() -> None:
+    status = getNodeStatus()
+
+    ui.stdEcho(f"Current status of Node is {status.name}.")
+
+
 @click.group()
 @onBeforeCommandExecute(docker.isDockerAvailable)
 @onBeforeCommandExecute(initializeUserSession)
@@ -192,3 +199,4 @@ node.add_command(start, "start")
 node.add_command(stop, "stop")
 node.add_command(update, "update")
 node.add_command(config, "config")
+node.add_command(status, "status")
