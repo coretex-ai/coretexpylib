@@ -181,7 +181,16 @@ def config(advanced: bool) -> None:
 
 @click.command()
 def status() -> None:
-    ui.stdEcho(f"Current status of Node is {getNodeStatus().name}.")
+    nodeStatus = getNodeStatus()
+    statusColors = {
+        'inactive': ui.errorEcho,
+        'active': ui.successEcho,
+        'busy': ui.progressEcho,
+        'reconnecting': ui.progressEcho
+    }
+
+    echo = statusColors.get(nodeStatus.name, ui.stdEcho)
+    echo(f"Current status of Node is {nodeStatus.name}.")
 
 
 @click.group()
