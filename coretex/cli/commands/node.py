@@ -26,7 +26,7 @@ from ..modules.user import initializeUserSession
 from ..modules.utils import onBeforeCommandExecute, checkEnvironment
 from ..modules.update import activateAutoUpdate, getNodeStatus
 from ...utils import docker
-from ...configuration import UserConfiguration, NodeConfiguration, InvalidConfiguration, ConfigurationNotFound
+from ...configuration import NodeConfiguration, InvalidConfiguration, ConfigurationNotFound
 
 
 @click.command()
@@ -179,6 +179,18 @@ def config(advanced: bool) -> None:
     activateAutoUpdate()
 
 
+@click.command()
+@click.option("--tail", "-n", type = int, help = "Shows N last logs.")
+@click.option("--follow", "-f", is_flag = True, help = "Displays logs realtime.")
+@click.option("--timestamps", "-t", is_flag = True, help = "Displays timestamps for logs.")
+@click.option("--verbose", is_flag = True, help = "Displays debug logs.")
+def logs(tail: Optional[int], follow: bool, timestamps: bool, verbose: bool) -> None:
+    if getNodeStatus() in [NodeStatus.inactive, NodeStatus.deleted]:
+        ui.errorEcho("There is no currently running Node on the machine.")
+
+    node_module.showLogs(tail, follow, timestamps, verbose)
+
+
 @click.group()
 @onBeforeCommandExecute(docker.isDockerAvailable)
 @onBeforeCommandExecute(initializeUserSession)
@@ -192,3 +204,4 @@ node.add_command(start, "start")
 node.add_command(stop, "stop")
 node.add_command(update, "update")
 node.add_command(config, "config")
+node.add_command(logs, "logs")

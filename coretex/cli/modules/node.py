@@ -198,6 +198,10 @@ def shouldUpdate(image: str) -> bool:
     return True
 
 
+def showLogs(tail: Optional[int], follow: bool, timestamps: bool, verbose: bool) -> None:
+    docker.getLogs(config_defaults.DOCKER_CONTAINER_NAME, tail, follow, timestamps, verbose)
+
+
 def registerNode(
     name: str,
     nodeMode: NodeMode,
