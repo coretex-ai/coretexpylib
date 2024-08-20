@@ -157,29 +157,31 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
         if self.downloadPath.exists() and self.modifiedSinceLastDownload():
             ignoreCache = True
 
-        if ignoreCache and self.downloadPath.exists():
-            self.downloadPath.unlink()
-            if self.path.exists():
-                shutil.rmtree(self.path)
+        if ignoreCache:
+            # Delete downloadPath file
+            self.downloadPath.unlink(missing_ok = True)
 
-            if self.zipPath.exists() and self.isEncrypted:
-                self.zipPath.unlink()
-
-        if not ignoreCache and self.downloadPath.exists():
+        # If the downloadPath exists at this point do not redownload
+        if self.downloadPath.exists():
             return
 
         params = {
             "id": self.id
         }
 
-        response = networkManager.streamDownload(
-            f"{self._endpoint()}/export",
-            self.downloadPath,
-            params
-        )
-
+        response = networkManager.download(f"{self._endpoint()}/export", self.downloadPath, params)
         if response.hasFailed():
             raise NetworkRequestError(response, f"Failed to download Sample \"{self.name}\"")
+
+        if not response.isHead():
+            if self.isEncrypted:
+                # Delete the zipPath file, if Sample is encrypted
+                # downloadPath != zipPath, otherwise they point to same file
+                self.zipPath.unlink(missing_ok = True)
+
+            if self.path.exists():
+                # Delete the unzipped folder
+                shutil.rmtree(self.path)
 
     @override
     def download(self, decrypt: bool = True, ignoreCache: bool = False) -> None:
@@ -252,6 +254,6 @@ class NetworkSample(Generic[SampleDataType], Sample[SampleDataType], NetworkObje
             else:
                 files.append(FileData.createFromPath("file", encryptedPath))
 
-            response = networkManager.formData(f"{self._endpoint()}/upload", params, files, timeout = (5, 300))
+            response = networkManager.formData(f"{self._endpoint()}/upload", params, files)
             if response.hasFailed():
                 raise NetworkRequestError(response, f"Failed to overwrite Sample \"{self.name}\"")

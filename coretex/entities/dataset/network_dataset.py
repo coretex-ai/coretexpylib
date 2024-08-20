@@ -65,7 +65,7 @@ def _chunkSampleImport(sampleType: Type[SampleType], sampleName: str, samplePath
         "file_id": fileChunkUpload(samplePath)
     }
 
-    response = networkManager.formData("session/import", parameters, timeout = (5, 300))
+    response = networkManager.formData("session/import", parameters)
     if response.hasFailed():
         raise NetworkRequestError(response, f"Failed to create sample from \"{samplePath}\"")
 
