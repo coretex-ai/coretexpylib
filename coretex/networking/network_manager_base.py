@@ -207,6 +207,8 @@ class NetworkManagerBase(ABC):
                 defines if request body will be downloaded as a stream or not
             timeout : Tuple[int, int]
                 timeout for the request, default <connection: 5s>, <read: 10s>
+            maxTimeout : Tuple[int, int]
+                timeout for the request, default <connection: 60s>, <read: 180s>
             retryCount : int
                 retry number of request - only for internal use
 
@@ -233,6 +235,8 @@ class NetworkManagerBase(ABC):
         logger.debug(f"\tFiles: {logFilesData(files)}")
         logger.debug(f"\tAuth: {auth}")
         logger.debug(f"\tStream: {stream}")
+        logger.debug(f"\tTimeout: {timeout}")
+        logger.debug(f"\tMax timeout: {maxTimeout}")
         logger.debug(f"\tRetry count: {retryCount}")
 
         # If Content-Type is application/json make sure that body is converted to json
@@ -292,7 +296,7 @@ class NetworkManagerBase(ABC):
         self,
         endpoint: str,
         params: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, Any]] = None
+        headers: Optional[Dict[str, str]] = None
     ) -> NetworkResponse:
 
         """
@@ -304,6 +308,8 @@ class NetworkManagerBase(ABC):
                 endpoint to which the request is sent
             params : Optional[RequestBodyType]
                 query parameters of the request
+            headers : Optional[Dict[str, str]]
+                additional headers of the request
 
             Returns
             -------
@@ -551,7 +557,7 @@ class NetworkManagerBase(ABC):
         endpoint: str,
         destination: Union[Path, str],
         params: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, Any]] = None
+        headers: Optional[Dict[str, str]] = None
     ) -> NetworkResponse:
 
         """
@@ -563,6 +569,10 @@ class NetworkManagerBase(ABC):
                 endpoint to which the request is sent
             destination : Union[Path, str]
                 path to save file
+            params : Optional[Dict[str, Any]]
+                query parameters of the request
+            headers : Optional[Dict[str, str]]
+                additional headers of the request
 
             Returns
             -------
