@@ -38,17 +38,15 @@ from .file_data import FileData
 
 logger = logging.getLogger("coretexpylib")
 
-REQUEST_TIMEOUT     = (5, 10)    # Connection = 5 seconds, Read = 10 seconds
-MAX_REQUEST_TIMEOUT = (60, 180)  # Connection = 60 seconds, Read = 3 minutes
+REQUEST_TIMEOUT      = (5, 10)     # Connection = 5 seconds, Read = 10 seconds
+MAX_REQUEST_TIMEOUT  = (60, 180)   # Connection = 60 seconds, Read = 3 minutes
+DOWNLOAD_TIMEOUT     = (5, 60)     # Connection = 5 seconds, Read = 1 minute
+MAX_DOWNLOAD_TIMEOUT = (60, 180)   # Connection = 1 minute, Read = 3 minutes
+UPLOAD_TIMEOUT       = (5, 60)     # Connection = 5 seconds, Read = 1 minute
+MAX_UPLOAD_TIMEOUT   = (60, 1800)  # Connection = 1 minute, Read = 30 minutes
 
-DOWNLOAD_TIMEOUT     = (5, 60)    # Connection = 5 seconds, Read = 1 minute
-MAX_DOWNLOAD_TIMEOUT = (60, 180)  # Connection = 1 minute, Read = 3 minutes
-
-UPLOAD_TIMEOUT     = (5, 60)    # Connection = 5 seconds, Read = 1 minute
-MAX_UPLOAD_TIMEOUT = (60, 1800)  # Connection = 1 minute, Read = 30 minutes
-
-MAX_RETRY_COUNT          = 5        # Request will be retried 5 times before raising an error
-MAX_DELAY_BEFORE_RETRY   = 180      # 3 minute
+MAX_RETRY_COUNT        = 5        # Request will be retried 5 times before raising an error
+MAX_DELAY_BEFORE_RETRY = 180      # 3 minute
 
 LOGIN_ENDPOINT    = "user/login"
 REFRESH_ENDPOINT  = "user/refresh"
@@ -274,7 +272,7 @@ class NetworkManagerBase(ABC):
 
             if self.shouldRetry(retryCount, None):
                 # If an exception happened during the request add a delay before retrying
-                # sleepBeforeRetry(retryCount, endpoint)
+                sleepBeforeRetry(retryCount, endpoint)
 
                 if isinstance(ex, requests.exceptions.Timeout):
                     # If request failed due to timeout recalculate (increase) the timeout
