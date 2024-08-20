@@ -24,7 +24,7 @@ classifiers = [
 dependencies = [
   "requests",
   "inflection",
-  "pillow==10.2.0",
+  "pillow",
   "numpy<2",
   "scikit-image",
   "shapely",
