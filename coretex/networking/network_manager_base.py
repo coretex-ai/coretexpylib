@@ -278,7 +278,7 @@ class NetworkManagerBase(ABC):
                 # If an exception happened during the request add a delay before retrying
                 sleepBeforeRetry(retryCount, endpoint)
 
-                if isinstance(ex, requests.exceptions.Timeout):
+                if isinstance(ex, requests.exceptions.ConnectionError) and "timeout" in str(ex):
                     # If request failed due to timeout recalculate (increase) the timeout
                     oldTimeout = timeout
                     timeout = getTimeoutForRetry(retryCount + 1, timeout, maxTimeout)
