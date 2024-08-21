@@ -179,6 +179,20 @@ def config(advanced: bool) -> None:
     activateAutoUpdate()
 
 
+@click.command()
+def status() -> None:
+    nodeStatus = getNodeStatus()
+    statusColors = {
+        "inactive": "red",
+        "active": 'green',
+        "busy": "cyan",
+        "reconnecting": "yellow"
+    }
+
+    statusEcho = click.style(nodeStatus.name, fg = statusColors[nodeStatus.name])
+    ui.stdEcho(f"Current status of node is {statusEcho}.")
+
+
 @click.group()
 @onBeforeCommandExecute(docker.isDockerAvailable)
 @onBeforeCommandExecute(initializeUserSession)
@@ -192,3 +206,4 @@ node.add_command(start, "start")
 node.add_command(stop, "stop")
 node.add_command(update, "update")
 node.add_command(config, "config")
+node.add_command(status, "status")
