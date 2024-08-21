@@ -181,6 +181,20 @@ def config(advanced: bool) -> None:
 
 
 @click.command()
+def status() -> None:
+    nodeStatus = getNodeStatus()
+    statusColors = {
+        "inactive": "red",
+        "active": 'green',
+        "busy": "cyan",
+        "reconnecting": "yellow"
+    }
+
+    statusEcho = click.style(nodeStatus.name, fg = statusColors[nodeStatus.name])
+    ui.stdEcho(f"Current status of node is {statusEcho}.")
+
+
+@click.command()
 @click.option("--tail", "-n", type = int, help = "Shows N last logs.")
 @click.option("--follow", "-f", is_flag = True, help = "Displays logs realtime.")
 @click.option("--timestamps", "-t", is_flag = True, help = "Displays timestamps for logs.")
@@ -205,4 +219,5 @@ node.add_command(start, "start")
 node.add_command(stop, "stop")
 node.add_command(update, "update")
 node.add_command(config, "config")
+node.add_command(status, "status")
 node.add_command(logs, "logs")
