@@ -89,7 +89,7 @@ def isOverlapping(
     return False
 
 
-def generateSegmentedImage(image: np.ndarray, segmentationMask: np.ndarray) -> Image:
+def generateSegmentedImage(image: np.ndarray, segmentationMask: np.ndarray) -> PILImage:
     rgbaImage = Image.fromarray(image).convert("RGBA")
 
     segmentedImage = np.asarray(rgbaImage) * segmentationMask
@@ -98,6 +98,9 @@ def generateSegmentedImage(image: np.ndarray, segmentationMask: np.ndarray) -> I
     alpha = segmentedImage.getchannel("A")
     bbox = alpha.getbbox()
     croppedImage = segmentedImage.crop(bbox)
+
+    if not isinstance(croppedImage, PILImage):
+        raise TypeError(f"Expected \"PIL.Image.Image\" recieved \"{type(croppedImage)}\"")
 
     return croppedImage
 
@@ -185,7 +188,7 @@ def processSample(
     backgroundSample: ImageSample,
     angle: int,
     scale: float
-) -> Tuple[ndarray, CoretexImageAnnotation]:
+) -> Tuple[PILImage, CoretexImageAnnotation]:
 
     backgroundSampleData = backgroundSample.load()
 

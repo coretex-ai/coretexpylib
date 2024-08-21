@@ -21,6 +21,7 @@ import os
 import xml.etree.ElementTree as ET
 
 from PIL import Image
+from PIL.Image import Image as PILImage
 from skimage import measure
 from shapely.geometry import Polygon
 
@@ -66,7 +67,7 @@ class InstanceExtractor:
     def __init__(self, dataset: ImageDataset) -> None:
         self.__dataset = dataset
 
-    def createSubmasks(self, maskImage: Image) -> Dict[str, Any]:
+    def createSubmasks(self, maskImage: PILImage) -> Dict[str, Any]:
         """
             Creates submasks for each segmentation mask
 
@@ -87,10 +88,16 @@ class InstanceExtractor:
         for x in range(width):
             for y in range(height):
                 # Get the RGB values of the pixel
-                pixel = maskImage.getpixel((x, y))[:3]
+                pixel = maskImage.getpixel((x, y))
 
-                if pixel == (0, 0, 0):
-                    continue
+                # Ensure pixel is a tuple and has at least 3 elements (RGB)
+                if not isinstance(pixel, tuple):
+                    raise TypeError(f"Expected \"tuple\" recieved \"{type(pixel)}\"")
+
+                if not len(pixel) >= 3:
+                    raise ValueError(f"Expected pixel to has at least 3 channels (RGB).")
+
+                pixel = pixel[:3]
 
                 pixelStr = str(pixel)
                 subMask = subMasks.get(pixelStr)
@@ -227,7 +234,7 @@ class InstanceExtractor:
 
         return contourCandidates[contourIndex].contours
 
-    def extractSubmaskContours(self, subMask: Image) -> ContourPoints:
+    def extractSubmaskContours(self, subMask: PILImage) -> ContourPoints:
         """
             Extracts contours from submask image
 
@@ -317,13 +324,11 @@ class InstanceExtractor:
         objectCandidates: List[ObjectCandidate]
     ) -> List[CoretexSegmentationInstance]:
 
-        maskImage = Image.open(os.path.join(segmentationPath, filename))
-        if maskImage is None:
-            return []
+        imageFile = Image.open(os.path.join(segmentationPath, filename))
 
         contourCandidates: List[ContourCandidate] = []
 
-        maskImage = maskImage.convert("RGB")
+        maskImage = imageFile.convert("RGB")
         subMasks = self.createSubmasks(maskImage)
 
         for color, subMask in subMasks.items():
