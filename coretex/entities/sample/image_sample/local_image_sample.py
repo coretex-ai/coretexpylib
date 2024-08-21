@@ -82,7 +82,7 @@ class LocalImageSample(LocalSample[AnnotatedImageSampleData]):
         if not self.metadataPath.exists():
             raise FileNotFoundError(f"Metadata file \"{self.metadataPath}\" not found")
 
-        with self.metadataPath.open("r") as metadataFile:
+        with self.metadataPath.open("r", encoding = "utf-8") as metadataFile:
             metadata = json.load(metadataFile)
             if not isinstance(metadata, dict):
                 raise ValueError(f"Metatada for sample \"{self.name}\" is a list. Expected dictionary")

@@ -16,6 +16,7 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import Optional
+from pathlib import Path
 
 import click
 
@@ -26,7 +27,7 @@ from ..modules.user import initializeUserSession
 from ..modules.utils import onBeforeCommandExecute, checkEnvironment
 from ..modules.update import activateAutoUpdate, getNodeStatus
 from ...utils import docker
-from ...configuration import UserConfiguration, NodeConfiguration, InvalidConfiguration, ConfigurationNotFound
+from ...configuration import NodeConfiguration, InvalidConfiguration, ConfigurationNotFound
 
 
 @click.command()
@@ -179,6 +180,32 @@ def config(advanced: bool) -> None:
     activateAutoUpdate()
 
 
+@click.command()
+def status() -> None:
+    nodeStatus = getNodeStatus()
+    statusColors = {
+        "inactive": "red",
+        "active": 'green',
+        "busy": "cyan",
+        "reconnecting": "yellow"
+    }
+
+    statusEcho = click.style(nodeStatus.name, fg = statusColors[nodeStatus.name])
+    ui.stdEcho(f"Current status of node is {statusEcho}.")
+
+
+@click.command()
+@click.option("--tail", "-n", type = int, help = "Shows N last logs.")
+@click.option("--follow", "-f", is_flag = True, help = "Displays logs realtime.")
+@click.option("--timestamps", "-t", is_flag = True, help = "Displays timestamps for logs.")
+def logs(tail: Optional[int], follow: bool, timestamps: bool) -> None:
+    if not node_module.isRunning():
+        ui.errorEcho("There is no currently running Node on the machine.")
+        return
+
+    node_module.showLogs(tail, follow, timestamps)
+
+
 @click.group()
 @onBeforeCommandExecute(docker.isDockerAvailable)
 @onBeforeCommandExecute(initializeUserSession)
@@ -193,3 +220,5 @@ node.add_command(start, "start")
 node.add_command(stop, "stop")
 node.add_command(update, "update")
 node.add_command(config, "config")
+node.add_command(status, "status")
+node.add_command(logs, "logs")
