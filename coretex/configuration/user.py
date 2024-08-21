@@ -117,7 +117,7 @@ class UserConfiguration(BaseConfiguration):
             return False
 
         try:
-            return datetime.now(timezone.utc) > decodeDate(tokenExpirationDate)
+            return datetime.now(timezone.utc) < decodeDate(tokenExpirationDate)
         except ValueError:
             return False
 
