@@ -199,7 +199,7 @@ def status() -> None:
 @click.option("--follow", "-f", is_flag = True, help = "Displays logs realtime.")
 @click.option("--timestamps", "-t", is_flag = True, help = "Displays timestamps for logs.")
 def logs(tail: Optional[int], follow: bool, timestamps: bool) -> None:
-    if getNodeStatus() in [NodeStatus.inactive, NodeStatus.deleted]:
+    if not node_module.isRunning() or getNodeStatus() in [NodeStatus.inactive, NodeStatus.deleted]:
         ui.errorEcho("There is no currently running Node on the machine.")
         return
 
