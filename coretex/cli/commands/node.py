@@ -157,7 +157,7 @@ def config(advanced: bool) -> None:
             nodeConfig = NodeConfiguration.load()
             node_module.stop(nodeConfig.id)
         except (ConfigurationNotFound, InvalidConfiguration):
-            node_module.stop()
+            node_module.stop(nodeConfig.id)
 
     try:
         nodeConfig = NodeConfiguration.load()
@@ -184,6 +184,7 @@ def config(advanced: bool) -> None:
 @onBeforeCommandExecute(initializeUserSession)
 @onBeforeCommandExecute(node_module.checkResourceLimitations)
 @onBeforeCommandExecute(checkEnvironment)
+@click.version_option(node_module.getNodeVersion(), "--version", "-v", message = "Coretex Node version %(version)s")
 def node() -> None:
     pass
 
