@@ -16,3 +16,4 @@ pyinstaller ../main.py --onedir --name coretex --copy-metadata readchar --copy-m
 # Deactivate and remove the virtual environment
 deactivate
 rm -rf compile_env
+rm -rf coretex.spec
