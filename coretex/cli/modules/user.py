@@ -46,6 +46,7 @@ def configureServerUrl() -> str:
 
     return "https://api.coretex.ai/"
 
+
 def configUser(retryCount: int = 0) -> UserConfiguration:
     if retryCount >= 3:
         raise RuntimeError("Failed to authenticate. Terminating...")
