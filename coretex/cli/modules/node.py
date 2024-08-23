@@ -23,6 +23,7 @@ from base64 import b64encode
 import os
 import logging
 import requests
+import platform
 
 import click
 
@@ -392,6 +393,36 @@ def configureNode(advanced: bool) -> NodeConfiguration:
         nodeConfig.allowGpu = ui.clickPrompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
     else:
         nodeConfig.allowGpu = False
+
+    if nodeConfig.allowGpu and platform.system().lower() == "linux":
+        shouldUpdateDaemon = not docker.isDaemonFileUpdated()
+
+        if shouldUpdateDaemon:
+            userApproval = ui.clickPrompt(
+                "Node container could randomly lose access to GPU. "
+                "The daemon.json file does not contain the necessary cgroup fix "
+                "(https://github.com/NVIDIA/nvidia-container-toolkit/issues/48). "
+                "Do you want to update the file to include the cgroup fix? (Y/n)",
+                type = bool,
+                default = True
+            )
+
+            if userApproval:
+                docker.updateDaemonFile()
+                restartPrompt = ui.clickPrompt("Do you want to restart Docker to apply the changes? (Y/n)", type = bool, default = True)
+
+                if restartPrompt:
+                    docker.restartDocker()
+                else:
+                    ui.warningEcho(
+                        "Warning: The changes will not take effect until Docker is restarted. "
+                        "(https://github.com/NVIDIA/nvidia-container-toolkit/issues/48)"
+                    )
+            else:
+                ui.warningEcho(
+                    "Warning: Not updating the daemon.json file may lead to GPU access issues in Docker "
+                    "containers. (https://github.com/NVIDIA/nvidia-container-toolkit/issues/48)"
+                )
 
     if imageType == ImageType.official:
         tag = "gpu" if nodeConfig.allowGpu else "cpu"

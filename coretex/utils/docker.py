@@ -1,6 +1,7 @@
 from typing import Dict, Any, List, Tuple, Optional
 from pathlib import Path
 
+import os
 import json
 import platform
 
@@ -22,7 +23,7 @@ def isDockerAvailable() -> None:
 
 def networkExists(name: str) -> bool:
     # This function inspects the specified Docker network using the
-    # 'docker network inspect' command. If the command exits with a return code
+    # "docker network inspect" command. If the command exits with a return code
     # of 0, indicating success, the function returns True, meaning the network exists.
     # If the command exits with a non-zero return code, indicating failure,
     # the function returns False, meaning the network doesn't exist.
@@ -98,7 +99,7 @@ def start(
 
     runCommand = [
         "docker", "run", "-d",
-        "--restart", 'always',
+        "--restart", "always",
         "-p", "21000:21000",
         "--cap-add", "SYS_PTRACE",
         "--network", name,
@@ -198,3 +199,42 @@ def getLogs(name: str, tail: Optional[int], follow: bool, timestamps: bool) -> N
         runCommand.append("-f")
 
     command(runCommand)
+
+
+def isDaemonFileUpdated() -> bool:
+    daemonFile = "/etc/docker/daemon.json"
+    cGroupFix = "native.cgroupdriver=cgroupfs"
+
+    if os.path.exists(daemonFile):
+        with open(daemonFile, "r") as file:
+            try:
+                config = json.load(file)
+                execOpts = config.get("exec-opts", [])
+                return cGroupFix in execOpts
+            except json.JSONDecodeError:
+                return False
+    return False
+
+
+def updateDaemonFile() -> None:
+    daemonFile = "/etc/docker/daemon.json"
+    cGroupFix = "native.cgroupdriver=cgroupfs"
+    config = {}
+
+    if os.path.exists(daemonFile):
+        with open(daemonFile, "r") as file:
+            try:
+                config = json.load(file)
+            except json.JSONDecodeError:
+                config = {}
+
+    execOpts: List[str] = config.get("exec-opts", [])
+    execOpts.append(cGroupFix)
+    config["exec-opts"] = execOpts
+    with open(daemonFile, "w") as file:
+        json.dump(config, file, indent = 4)
+
+
+def restartDocker() -> None:
+    command(["sudo", "systemctl", "restart", "docker"], ignoreStderr = True, ignoreStdout = True)
+    print("Docker restarted successfully.")
