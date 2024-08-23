@@ -20,6 +20,8 @@ from typing import Optional, Any, Dict, List, Union, Tuple, BinaryIO
 import io
 import logging
 
+from urllib.parse import urlsplit, urlunsplit, SplitResult
+
 from .network_response import NetworkResponse
 
 
@@ -66,3 +68,10 @@ def logRequestFailure(endpoint: str, response: NetworkResponse) -> None:
             logging.getLogger("coretexpylib").debug(f"\tResponse: {responseJson}")
     except (ValueError, TypeError):
         logging.getLogger("coretexpylib").debug(f"\tResponse: {response.getContent()!r}")
+
+
+def baseUrl(url: str) -> str:
+    result = urlsplit(url)
+    parsed = SplitResult(result.scheme, result.netloc, "", "", "")
+
+    return urlunsplit(parsed)

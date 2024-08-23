@@ -15,16 +15,43 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import requests
+
 from . import ui
-from ...networking import networkManager, NetworkRequestError
+from ...networking import networkManager, NetworkRequestError, baseUrl
 from ...configuration import UserConfiguration, InvalidConfiguration, ConfigurationNotFound
 
+
+def validateServerUrl(serverUrl: str) -> bool:
+    try:
+        endpoint = baseUrl(serverUrl) + "/info.json"
+        response = requests.get(endpoint, timeout = 5)
+        return response.ok
+    except BaseException as ex:
+        return False
+
+
+def configureServerUrl() -> str:
+    availableChoices = ["Official Coretex Server URL", "Custom Server URL"]
+    selectedChoice = ui.arrowPrompt(availableChoices, "Please select server url that you want to use (use arrow keys to select an option):")
+
+    if not "Official" in selectedChoice:
+        serverUrl: str = ui.clickPrompt("Enter server url that you wish to use", type = str)
+
+        if not validateServerUrl(serverUrl):
+            ui.warningEcho("You've entered invalid server url. Please try again.")
+            serverUrl = configureServerUrl()
+
+        return serverUrl
+
+    return "https://api.coretex.ai/"
 
 def configUser(retryCount: int = 0) -> UserConfiguration:
     if retryCount >= 3:
         raise RuntimeError("Failed to authenticate. Terminating...")
 
     userConfig = UserConfiguration({})  # create new empty user config
+    userConfig.serverUrl = configureServerUrl()
     username = ui.clickPrompt("Email", type = str)
     password = ui.clickPrompt("Password", type = str, hide_input = True)
 
