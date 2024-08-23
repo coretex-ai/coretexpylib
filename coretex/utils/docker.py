@@ -1,9 +1,9 @@
 from typing import Dict, Any, List, Tuple, Optional
 from pathlib import Path
 
-import os
 import json
 import platform
+import tempfile
 
 from .process import command, CommandException
 from ..statistics import getTotalSwapMemory
@@ -205,36 +205,43 @@ def isDaemonFileUpdated() -> bool:
     daemonFile = "/etc/docker/daemon.json"
     cGroupFix = "native.cgroupdriver=cgroupfs"
 
-    if os.path.exists(daemonFile):
-        with open(daemonFile, "r") as file:
-            try:
-                config = json.load(file)
-                execOpts = config.get("exec-opts", [])
-                return cGroupFix in execOpts
-            except json.JSONDecodeError:
-                return False
-    return False
+    if not Path(daemonFile).exists():
+        return False
+
+    with open(daemonFile, "r") as file:
+        try:
+            config = json.load(file)
+            execOpts = config.get("exec-opts", [])
+            return cGroupFix in execOpts
+        except json.JSONDecodeError:
+            return False
 
 
 def updateDaemonFile() -> None:
     daemonFile = "/etc/docker/daemon.json"
     cGroupFix = "native.cgroupdriver=cgroupfs"
-    config = {}
+    config: Dict[str, Any] = {}
 
-    if os.path.exists(daemonFile):
-        with open(daemonFile, "r") as file:
-            try:
-                config = json.load(file)
-            except json.JSONDecodeError:
-                config = {}
+    if not Path(daemonFile).exists():
+        config = {}
+
+    with open(daemonFile, "r") as file:
+        try:
+            config = json.load(file)
+        except json.JSONDecodeError:
+            config = {}
 
     execOpts: List[str] = config.get("exec-opts", [])
     execOpts.append(cGroupFix)
     config["exec-opts"] = execOpts
-    with open(daemonFile, "w") as file:
-        json.dump(config, file, indent = 4)
+
+    with tempfile.NamedTemporaryFile("w", delete = False) as tempFile:
+        json.dump(config, tempFile, indent = 4)
+        tempFilePath = tempFile.name
+
+    # Use sudo to move the temporary file to the protected location
+    command(["sudo", "mv", tempFilePath, daemonFile], ignoreStderr = True, ignoreStdout = True)
 
 
 def restartDocker() -> None:
     command(["sudo", "systemctl", "restart", "docker"], ignoreStderr = True, ignoreStdout = True)
-    print("Docker restarted successfully.")
