@@ -197,6 +197,14 @@ class NodeConfiguration(BaseConfiguration):
     def endpointInvocationPrice(self, value: Optional[float]) -> None:
         self._raw["endpointInvocationPrice"] = value
 
+    @property
+    def heartbeatInterval(self) -> int:
+        return self.getValue("heartbeatInterval", int, default = config_defaults.HEARTBEAT_INTERVAL)
+
+    @heartbeatInterval.setter
+    def heartbeatInterval(self, value: int) -> None:
+        self._raw["heartbeatInterval"] = value
+
     def _isConfigValid(self) -> Tuple[bool, List[str]]:
         isValid = True
         errorMessages = []

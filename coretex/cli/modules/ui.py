@@ -58,17 +58,18 @@ def previewNodeConfig(nodeConfig: NodeConfiguration) -> None:
         nodeSecret = "********"
 
     table = [
-        ["Node name",                   nodeConfig.name],
-        ["Coretex Node type",           nodeConfig.image],
-        ["Storage path",                nodeConfig.storagePath],
-        ["RAM",                         f"{nodeConfig.ram}GB"],
-        ["SWAP memory",                 f"{nodeConfig.swap}GB"],
-        ["POSIX shared memory",         f"{nodeConfig.sharedMemory}GB"],
-        ["CPU cores allocated",         f"{nodeConfig.cpuCount}"],
-        ["Coretex Node mode",           f"{NodeMode(nodeConfig.mode).name}"],
-        ["Docker access",               allowDocker],
-        ["Coretex Node secret",         nodeSecret],
-        ["Coretex Node init script",    nodeConfig.initScript if nodeConfig.initScript is not None else ""]
+        ["Node name",               nodeConfig.name],
+        ["Node image",              nodeConfig.image],
+        ["Storage path",            nodeConfig.storagePath],
+        ["RAM",                     f"{nodeConfig.ram}GB"],
+        ["SWAP memory",             f"{nodeConfig.swap}GB"],
+        ["POSIX shared memory",     f"{nodeConfig.sharedMemory}GB"],
+        ["CPU cores allocated",     f"{nodeConfig.cpuCount}"],
+        ["Node mode",               f"{NodeMode(nodeConfig.mode).name}"],
+        ["Docker access",           allowDocker],
+        ["Node secret",             nodeSecret],
+        ["Node init script",        nodeConfig.initScript if nodeConfig.initScript is not None else ""],
+        ["Node heartbeat interval", f"{nodeConfig.heartbeatInterval // 1000}s"]
     ]
     if nodeConfig.modelId is not None:
         table.append(["Coretex Model ID", f"{nodeConfig.modelId}"])
