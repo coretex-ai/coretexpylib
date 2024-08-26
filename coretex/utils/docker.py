@@ -201,6 +201,14 @@ def getLogs(name: str, tail: Optional[int], follow: bool, timestamps: bool) -> N
     command(runCommand)
 
 
+def isDockerDesktop() -> bool:
+    try:
+        _, output, _ = command(["docker", "context", "show"], ignoreStdout = True, ignoreStderr = True)
+        return output.strip() == "desktop-linux"
+    except:
+        return False
+
+
 def isDaemonFileUpdated() -> bool:
     daemonFile = "/etc/docker/daemon.json"
     cGroupFix = "native.cgroupdriver=cgroupfs"

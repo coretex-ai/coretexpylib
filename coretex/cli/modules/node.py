@@ -389,7 +389,7 @@ def configureNode(advanced: bool) -> NodeConfiguration:
     else:
         nodeConfig.image = "coretexai/coretex-node"
 
-    if isGPUAvailable():
+    if isGPUAvailable() and not docker.isDockerDesktop():
         nodeConfig.allowGpu = ui.clickPrompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
     else:
         nodeConfig.allowGpu = False
@@ -399,10 +399,10 @@ def configureNode(advanced: bool) -> NodeConfiguration:
 
         if shouldUpdateDaemon:
             userApproval = ui.clickPrompt(
-                "Node container could randomly lose access to GPU. "
-                "The daemon.json file does not contain the necessary cgroup fix "
+                "NVIDIA has a bug where a docker container running Coretex Node can lose access to GPU "
                 "(https://github.com/NVIDIA/nvidia-container-toolkit/issues/48). "
-                "Do you want to update the file to include the cgroup fix? (Y/n)",
+                "\nDo you want Coretex CLI to apply a workaround for this bug "
+                "(NOTE: This requires docker daemon restart)? (Y/n)",
                 type = bool,
                 default = True
             )
