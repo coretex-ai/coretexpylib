@@ -19,6 +19,7 @@ from typing import Optional
 
 import click
 
+from ..modules import ui
 from ..modules.project_utils import getProject
 from ..modules.user import initializeUserSession
 from ..modules.utils import onBeforeCommandExecute
@@ -36,7 +37,6 @@ class RunException(Exception):
 
 
 @click.command()
-@onBeforeCommandExecute(initializeUserSession)
 @click.argument("path", type = click.Path(exists = True, dir_okay = False))
 @click.option("--name", type = str, default = None)
 @click.option("--description", type = str, default = None)
@@ -57,6 +57,14 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
 
     if selectedProject is None:
         return
+
+    ui.stdEcho(
+        "Project info: "
+        f"\tName: {selectedProject.name}"
+        f"\tName: {selectedProject.projectType.name}"
+        f"\tName: {selectedProject.description}"
+        f"\tName: {selectedProject.createdOn}"
+    )
 
     taskRun: TaskRun = TaskRun.runLocal(
         selectedProject.id,
@@ -95,3 +103,12 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
         taskRun.updateStatus(TaskRunStatus.completedWithSuccess)
 
     folder_manager.clearTempFiles()
+
+
+@click.group()
+@onBeforeCommandExecute(initializeUserSession)
+def task() -> None:
+    pass
+
+
+task.add_command(run, "run")
