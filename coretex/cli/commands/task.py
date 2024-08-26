@@ -75,6 +75,8 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
         entryPoint = path
     )
 
+    ui.stdEcho(f"Task Run successfully started. You can open it by clicking on this URL {ui.outputUrl(taskRun.entityUrl())}.")
+
     taskRun.updateStatus(TaskRunStatus.preparingToStart)
 
     with TaskRunWorker(userConfig.refreshToken, taskRun.id):
