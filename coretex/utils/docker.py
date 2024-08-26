@@ -203,20 +203,34 @@ def getLogs(name: str, tail: Optional[int], follow: bool, timestamps: bool) -> N
 
 def isDockerDesktop() -> bool:
     try:
-        _, output, _ = command(["docker", "context", "show"], ignoreStdout = True, ignoreStderr = True)
-        return output.strip() == "desktop-linux"
+        _, output, _ = command(["docker", "info", "--format", "{{json .}}"], ignoreStdout = True, ignoreStderr = True)
+        jsonOutput = json.loads(output)
+
+        clientInfo = jsonOutput.get("ClientInfo")
+        if not isinstance(clientInfo, dict):
+            return False
+
+        pluginsInfo = clientInfo.get("Plugins")
+        if not isinstance(pluginsInfo, dict):
+            return False
+
+        versionInfo = pluginsInfo.get("Version")
+        if not isinstance(versionInfo, str):
+            return False
+
+        return "desktop" in versionInfo
     except:
         return False
 
 
 def isDaemonFileUpdated() -> bool:
-    daemonFile = "/etc/docker/daemon.json"
+    daemonFile = Path("/etc/docker/daemon.json")
     cGroupFix = "native.cgroupdriver=cgroupfs"
 
-    if not Path(daemonFile).exists():
+    if not daemonFile.exists():
         return False
 
-    with open(daemonFile, "r") as file:
+    with daemonFile.open("r") as file:
         try:
             config = json.load(file)
             execOpts = config.get("exec-opts", [])
@@ -226,14 +240,14 @@ def isDaemonFileUpdated() -> bool:
 
 
 def updateDaemonFile() -> None:
-    daemonFile = "/etc/docker/daemon.json"
+    daemonFile = Path("/etc/docker/daemon.json")
     cGroupFix = "native.cgroupdriver=cgroupfs"
     config: Dict[str, Any] = {}
 
-    if not Path(daemonFile).exists():
+    if not daemonFile.exists():
         config = {}
 
-    with open(daemonFile, "r") as file:
+    with daemonFile.open("r") as file:
         try:
             config = json.load(file)
         except json.JSONDecodeError:
@@ -243,12 +257,12 @@ def updateDaemonFile() -> None:
     execOpts.append(cGroupFix)
     config["exec-opts"] = execOpts
 
-    with tempfile.NamedTemporaryFile("w", delete = False) as tempFile:
+    with tempfile.NamedTemporaryFile("w", delete = True) as tempFile:
         json.dump(config, tempFile, indent = 4)
         tempFilePath = tempFile.name
 
-    # Use sudo to move the temporary file to the protected location
-    command(["sudo", "mv", tempFilePath, daemonFile], ignoreStderr = True, ignoreStdout = True)
+        # Use sudo to move the temporary file to the protected location
+        command(["sudo", "mv", tempFilePath, str(daemonFile)], ignoreStderr = True, ignoreStdout = True)
 
 
 def restartDocker() -> None:

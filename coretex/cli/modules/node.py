@@ -377,6 +377,7 @@ def checkResourceLimitations() -> None:
 def configureNode(advanced: bool) -> NodeConfiguration:
     ui.highlightEcho("[Node Configuration]")
     nodeConfig = NodeConfiguration({})  # create new empty node config
+    currentOS = platform.system().lower()
 
     cpuLimit, ramLimit = docker.getResourceLimits()
     swapLimit = docker.getDockerSwapLimit()
@@ -389,16 +390,14 @@ def configureNode(advanced: bool) -> NodeConfiguration:
     else:
         nodeConfig.image = "coretexai/coretex-node"
 
-    if isGPUAvailable() and not docker.isDockerDesktop():
+    if isGPUAvailable() and (currentOS != "linux" or not docker.isDockerDesktop()):
         nodeConfig.allowGpu = ui.clickPrompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
     else:
         nodeConfig.allowGpu = False
 
     if nodeConfig.allowGpu and platform.system().lower() == "linux":
-        shouldUpdateDaemon = not docker.isDaemonFileUpdated()
-
-        if shouldUpdateDaemon:
-            userApproval = ui.clickPrompt(
+        if not docker.isDaemonFileUpdated():
+            shouldUpdateDockerConfig = ui.clickPrompt(
                 "NVIDIA has a bug where a docker container running Coretex Node can lose access to GPU "
                 "(https://github.com/NVIDIA/nvidia-container-toolkit/issues/48). "
                 "\nDo you want Coretex CLI to apply a workaround for this bug "
@@ -407,7 +406,7 @@ def configureNode(advanced: bool) -> NodeConfiguration:
                 default = True
             )
 
-            if userApproval:
+            if shouldUpdateDockerConfig:
                 docker.updateDaemonFile()
                 restartPrompt = ui.clickPrompt("Do you want to restart Docker to apply the changes? (Y/n)", type = bool, default = True)
 
