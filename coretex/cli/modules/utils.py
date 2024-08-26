@@ -191,10 +191,7 @@ def onBeforeCommandExecute(
                     if param["name"] == "verbose" and param["flag_value"] == True:
                         CLISettings.verbose = True
             except:
-                pass
-
-            # if ctx.params.get('verbose'):
-                # VERBOSE = True
+                CLISettings.verbose = False
 
             if click.get_current_context().invoked_subcommand in excludeSubcommands:
                 return f(*args, **kwargs)

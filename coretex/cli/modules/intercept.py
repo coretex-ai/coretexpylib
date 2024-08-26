@@ -44,5 +44,5 @@ class ClickExceptionInterceptor(click.Group):
         logFiles = list(logPath.glob("*.log"))
         latestLogFile = max(logFiles, key = lambda f: f.stat().st_mtime)
 
-        errorEcho(f"Exception: {str(exc)}.\nYou can see detailed logs here: {latestLogFile}")
+        errorEcho(f"An error occured. You can see the detailed logs at {latestLogFile}")
         logging.getLogger("cli").debug(exc, exc_info = exc)

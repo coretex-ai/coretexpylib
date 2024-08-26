@@ -183,7 +183,7 @@ def getTagFromImageUrl(image: str) -> str:
         return "latest"
 
 
-def shouldUpdate(image: str, ) -> bool:
+def shouldUpdate(image: str) -> bool:
     repository = getRepoFromImageUrl(image)
     try:
         imageJson = docker.imageInspect(image, CLISettings.verbose)
