@@ -497,17 +497,23 @@ def getNodeVersion() -> Optional[str]:
         if isRunning():
             imageName = docker.getContainerImageName(config_defaults.DOCKER_CONTAINER_NAME)
 
-        image_info = docker.imageInspect(imageName)
-        repo_digests = image_info.get("RepoDigests", [])
-        if not isinstance(repo_digests, list):
-            return 'Unknown version'
+        imageInfo = docker.imageInspect(imageName)
+        repoDigests = imageInfo.get("RepoDigests", [])
+        if not isinstance(repoDigests, list) and len(repoDigests) > 0:
+            return "Unknown version"
 
-        digest = repo_digests[0]
+        digest = repoDigests[0]
         if not isinstance(digest, str):
             # Assuming the format is "image_name@sha256:<digest>"
             return "Unknown version"
         else:
-            return digest.split("@")[1].split(":")[1][:12] if "@" in repo_digests[0] else "Unknown version"
+            return digest.split("@")[1].split(":")[1][:12] if "@" in repoDigests[0] else "Unknown version"
 
-    except Exception as ex:
-        return f"Unable to retrieve version of Node. Reason: {ex}."
+    except ConfigurationNotFound:
+        ui.errorEcho("Node configuration not found.")
+
+    except InvalidConfiguration as ex:
+        for error in ex.errors:
+            ui.errorEcho(error)
+
+    return f"Unable to retrieve version of Node"

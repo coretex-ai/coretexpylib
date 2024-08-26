@@ -158,7 +158,7 @@ def config(advanced: bool) -> None:
             nodeConfig = NodeConfiguration.load()
             node_module.stop(nodeConfig.id)
         except (ConfigurationNotFound, InvalidConfiguration):
-            node_module.stop(nodeConfig.id)
+            node_module.stop()
 
     try:
         nodeConfig = NodeConfiguration.load()
