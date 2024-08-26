@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, Tuple, Any
+from typing import Optional, Tuple, Any, Dict
 
 from . import config_defaults
 from ..networking import networkManager, NetworkRequestError
@@ -132,3 +132,12 @@ def fetchNodeId(name: str) -> int:
         raise TypeError(f"Invalid \"id\" type {type(id)}. Expected: \"int\"")
 
     return id
+
+
+def fetchInitialData() -> Dict[str, Any]:
+    response = networkManager.get("user/initial-data")
+
+    if response.hasFailed():
+        raise NetworkRequestError(response, "Failed to fetch user's initial data.")
+
+    return response.getJson(dict)

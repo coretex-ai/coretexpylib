@@ -18,6 +18,7 @@
 from typing import Optional
 
 import click
+import webbrowser
 
 from ..modules import ui
 from ..modules.project_utils import getProject
@@ -26,7 +27,7 @@ from ..modules.utils import onBeforeCommandExecute
 from ..modules.project_utils import getProject
 from ..._folder_manager import folder_manager
 from ..._task import TaskRunWorker, executeRunLocally, readTaskConfig, runLogger
-from ...configuration import UserConfiguration, NodeConfiguration
+from ...configuration import UserConfiguration
 from ...entities import TaskRun, TaskRunStatus
 from ...resources import PYTHON_ENTRY_POINT_PATH
 from ..._task import TaskRunWorker, executeRunLocally, readTaskConfig, runLogger
@@ -60,10 +61,10 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
 
     ui.stdEcho(
         "Project info: "
-        f"\tName: {selectedProject.name}"
-        f"\tName: {selectedProject.projectType.name}"
-        f"\tName: {selectedProject.description}"
-        f"\tName: {selectedProject.createdOn}"
+        f"\n\tName: {selectedProject.name}"
+        f"\n\tProject type: {selectedProject.projectType.name}"
+        f"\n\tDescription: {selectedProject.description}"
+        f"\n\tCreated on: {selectedProject.createdOn}"
     )
 
     taskRun: TaskRun = TaskRun.runLocal(
@@ -75,7 +76,11 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
         entryPoint = path
     )
 
-    ui.stdEcho(f"Task Run successfully started. You can open it by clicking on this URL {ui.outputUrl(taskRun.entityUrl())}.")
+    ui.stdEcho(
+        "Task Run successfully started. "
+        f"You can open it by clicking on this URL {ui.outputUrl(userConfig.frontendUrl, taskRun.entityUrl())}."
+    )
+    webbrowser.open(f"{userConfig.frontendUrl}/{taskRun.entityUrl()}")
 
     taskRun.updateStatus(TaskRunStatus.preparingToStart)
 

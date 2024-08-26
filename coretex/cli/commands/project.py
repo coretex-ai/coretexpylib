@@ -32,8 +32,8 @@ from ...configuration import UserConfiguration
 @click.option("--type", "-t", "projectType", type = int, help = "Project type")
 @click.option("--description", "-d", type = str, help = "Project description")
 def create(name: Optional[str], projectType: Optional[int], description: Optional[str]) -> None:
-    project = project_utils.createProject(name, projectType, description)
     userConfig = UserConfiguration.load()
+    project = project_utils.createProject(userConfig.frontendUrl, name, projectType, description)
 
     selectNewProject = ui.clickPrompt("Do you want to select the new project as default? (Y/n)", type = bool, default = True)
     if selectNewProject:
@@ -86,7 +86,11 @@ def select(name: str) -> None:
         userConfig.selectProject(project.id)
     except ValueError:
         ui.errorEcho(f"Project \"{name}\" not found.")
-        project = project_utils.promptProjectCreate("Do you want to create a project with that name?", name)
+        project = project_utils.promptProjectCreate(
+            "Do you want to create a project with that name?",
+            name,
+            userConfig.frontendUrl
+        )
         if project is None:
             return
 
