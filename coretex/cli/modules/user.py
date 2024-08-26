@@ -39,8 +39,7 @@ def configureServerUrl() -> str:
         serverUrl: str = ui.clickPrompt("Enter server url that you wish to use", type = str)
 
         if not validateServerUrl(serverUrl):
-            ui.warningEcho("You've entered invalid server url. Please try again.")
-            serverUrl = configureServerUrl()
+            serverUrl = ui.clickPrompt("You've entered invalid server url. Please try again.", type = str)
 
         return serverUrl
 
