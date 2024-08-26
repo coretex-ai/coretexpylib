@@ -8,7 +8,7 @@ python -m venv compile_env
 source compile_env/bin/activate
 
 # Install the current package and pyinstaller
-pip install .. toml pyinstaller
+pip install .. pyinstaller
 
 # Run PyInstaller with the specified options
 pyinstaller ../main.py --onedir --name coretex --copy-metadata readchar --copy-metadata coretex --add-data "../coretex/resources/_coretex.py:coretex/resources" --workpath coretex --noconfirm

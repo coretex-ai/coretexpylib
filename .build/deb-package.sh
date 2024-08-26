@@ -22,6 +22,7 @@ pip install toml
 
 # Move the entire dist/main directory contents directly to /usr/local/bin
 mv dist/coretex/* "${BIN_DIR}/"
+rm -rf dist/
 
 # Generate the control file using Python (assuming you have the Python script ready)
 python generate_control.py
@@ -34,5 +35,4 @@ rm -rf compile_env
 dpkg-deb --build "${PACKAGE_DIR}"
 
 # Remove unnecessary dir's
-rm -rf $DEBIAN_DIR
-rm -rf "${PACKAGE_DIR}/usr"
+rm -rf "${PACKAGE_DIR}"
