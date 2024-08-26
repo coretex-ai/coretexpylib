@@ -95,3 +95,12 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
         taskRun.updateStatus(TaskRunStatus.completedWithSuccess)
 
     folder_manager.clearTempFiles()
+
+
+@click.group()
+@onBeforeCommandExecute(initializeUserSession)
+def task() -> None:
+    pass
+
+
+task.add_command(run, "run")
