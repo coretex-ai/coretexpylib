@@ -15,6 +15,8 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from requests.exceptions import RequestException
+
 import requests
 
 from . import ui
@@ -27,7 +29,7 @@ def validateServerUrl(serverUrl: str) -> bool:
         endpoint = baseUrl(serverUrl) + "/info.json"
         response = requests.get(endpoint, timeout = 5)
         return response.ok
-    except BaseException as ex:
+    except RequestException:
         return False
 
 
@@ -38,7 +40,7 @@ def configureServerUrl() -> str:
     if not "Official" in selectedChoice:
         serverUrl: str = ui.clickPrompt("Enter server url that you wish to use", type = str)
 
-        if not validateServerUrl(serverUrl):
+        while not validateServerUrl(serverUrl):
             serverUrl = ui.clickPrompt("You've entered invalid server url. Please try again.", type = str)
 
         return serverUrl

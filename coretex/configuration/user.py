@@ -96,6 +96,14 @@ class UserConfiguration(BaseConfiguration):
     def projectId(self, value: Optional[int]) -> None:
         self._raw["projectId"] = value
 
+    @property
+    def frontendUrl(self) -> str:
+        return self.getValue("frontendUrl", str, default = "app.coretex.ai")
+
+    @frontendUrl.setter
+    def frontendUrl(self, value: Optional[str]) -> None:
+        self._raw["frontendUrl"] = value
+
     def _isConfigValid(self) -> Tuple[bool, List[str]]:
         isValid = True
         errorMessages = []

@@ -40,7 +40,7 @@ def selectProjectVisibility() -> ProjectVisibility:
     return selectedProjectVisibility
 
 
-def promptProjectCreate(message: str, name: str) -> Optional[Project]:
+def promptProjectCreate(message: str, name: str, frontendUrl: str) -> Optional[Project]:
     if not click.confirm(message, default = True):
         return None
 
@@ -49,7 +49,10 @@ def promptProjectCreate(message: str, name: str) -> Optional[Project]:
     try:
         project = Project.createProject(name, selectedProjectType)
         ui.successEcho(f"Project \"{name}\" created successfully.")
-        ui.stdEcho(f"A new Project has been created. You can open it by clicking on this URL {ui.outputUrl(project.entityUrl())}.")
+        ui.stdEcho(
+            "A new Project has been created. "
+            f"You can open it by clicking on this URL {ui.outputUrl(frontendUrl, project.entityUrl())}."
+        )
         return project
     except NetworkRequestError as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
@@ -66,7 +69,11 @@ def promptProjectSelect(userConfig: UserConfiguration) -> Optional[Project]:
         userConfig.selectProject(project.id)
     except ValueError:
         ui.errorEcho(f"Project \"{name}\" not found.")
-        newProject = promptProjectCreate("Do you want to create a project with that name?", name)
+        newProject = promptProjectCreate(
+            "Do you want to create a project with that name?",
+            name,
+            userConfig.frontendUrl
+        )
         if newProject is None:
             return None
 
@@ -75,7 +82,7 @@ def promptProjectSelect(userConfig: UserConfiguration) -> Optional[Project]:
     return project
 
 
-def createProject(name: Optional[str] = None, projectType: Optional[int] = None, description: Optional[str] = None) -> Project:
+def createProject(frontendUrl: str, name: Optional[str] = None, projectType: Optional[int] = None, description: Optional[str] = None) -> Project:
     if name is None:
         name = ui.clickPrompt("Please enter name of the project you want to create", type = str)
 
@@ -90,7 +97,10 @@ def createProject(name: Optional[str] = None, projectType: Optional[int] = None,
     try:
         project = Project.createProject(name, projectType, description = description)
         ui.successEcho(f"Project \"{name}\" created successfully.")
-        ui.stdEcho(f"A new Project has been created. You can open it by clicking on this URL {ui.outputUrl(project.entityUrl())}.")
+        ui.stdEcho(
+            "A new Project has been created. "
+            f"You can open it by clicking on this URL {ui.outputUrl(frontendUrl, project.entityUrl())}."
+        )
         return project
     except NetworkRequestError as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
@@ -104,7 +114,11 @@ def getProject(name: Optional[str], userConfig: UserConfiguration) -> Optional[P
             return Project.fetchOne(name = name)
         except:
             if projectId is None:
-                return promptProjectCreate("Project not found. Do you want to create a new Project with that name?", name)
+                return promptProjectCreate(
+                    "Project not found. Do you want to create a new Project with that name?",
+                    name,
+                    userConfig.frontendUrl
+                )
 
             return Project.fetchById(projectId)
 
@@ -116,6 +130,6 @@ def getProject(name: Optional[str], userConfig: UserConfiguration) -> Optional[P
         if not click.confirm("Would you like to create a new Project?", default = True):
             return None
 
-        return createProject(name)
+        return createProject(userConfig.frontendUrl, name)
 
     return Project.fetchById(projectId)

@@ -22,7 +22,7 @@ import click
 from .commands.login import login
 from .commands.model import model
 from .commands.node import node
-from .commands.task import run
+from .commands.task import task
 from .commands.project import project
 
 from .modules import ui, utils
@@ -67,6 +67,6 @@ cli.add_command(login)
 cli.add_command(model)
 cli.add_command(project)
 cli.add_command(node)
-cli.add_command(run)
+cli.add_command(task)
 cli.add_command(version)
 cli.add_command(update)

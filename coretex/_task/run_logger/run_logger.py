@@ -39,12 +39,7 @@ def uploadTaskRunLogs(taskRunId: int, logs: List[Log]) -> bool:
             "logs": [log.encode() for log in logs]
         }
 
-        response = networkManager.post(
-            "model-queue/add-console-log",
-            params,
-            timeout = (5, 600)  # connection timeout 5 seconds, log upload timeout 600 seconds
-        )
-
+        response = networkManager.post("model-queue/add-console-log", params)
         return not response.hasFailed()
     except RequestFailedError as ex:
         logging.getLogger("coretexpylib").error(f">> Failed to upload console logs to Coretex. Reason: {ex}")

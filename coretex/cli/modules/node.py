@@ -72,7 +72,8 @@ def start(dockerImage: str, nodeConfig: NodeConfiguration) -> None:
             "CTX_API_URL": os.environ["CTX_API_URL"],
             "CTX_STORAGE_PATH": "/root/.coretex",
             "CTX_NODE_ACCESS_TOKEN": nodeConfig.accessToken,
-            "CTX_NODE_MODE": str(nodeConfig.mode)
+            "CTX_NODE_MODE": str(nodeConfig.mode),
+            "CTX_HEARTBEAT_INTERVAL": str(nodeConfig.heartbeatInterval)
         }
 
         if nodeConfig.modelId is not None:
@@ -443,11 +444,17 @@ def configureNode(advanced: bool) -> NodeConfiguration:
             )
 
             nodeConfig.endpointInvocationPrice = promptInvocationPrice()
+
+        nodeConfig.heartbeatInterval = ui.clickPrompt(
+            "Enter interval (seconds) at which the Node will send heartbeat to Coretex Server",
+            config_defaults.HEARTBEAT_INTERVAL // 1000,
+            type = int
+        ) * 1000  # Node expects the value in ms
     else:
-        ui.stdEcho("To configure node manually run coretex node config with --verbose flag.")
+        ui.stdEcho("To configure node manually run coretex node config with --advanced flag.")
 
     publicKey: Optional[bytes] = None
-    if isinstance(nodeConfig.secret, str) and nodeConfig.secret != config_defaults.DEFAULT_NODE_SECRET:
+    if nodeConfig.secret is not None and nodeConfig.secret != config_defaults.DEFAULT_NODE_SECRET:
         ui.progressEcho("Generating RSA key-pair (2048 bits long) using provided node secret...")
         rsaKey = rsa.generateKey(2048, nodeConfig.secret.encode("utf-8"))
         publicKey = rsa.getPublicKeyBytes(rsaKey.public_key())
