@@ -211,7 +211,6 @@ def logs(tail: Optional[int], follow: bool, timestamps: bool) -> None:
 @onBeforeCommandExecute(initializeUserSession)
 @onBeforeCommandExecute(node_module.checkResourceLimitations)
 @onBeforeCommandExecute(checkEnvironment)
-@click.version_option(node_module.getNodeVersion(), "--version", "-v", message = "Coretex Node version %(version)s")
 def node() -> None:
     pass
 

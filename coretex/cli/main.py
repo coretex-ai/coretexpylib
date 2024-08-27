@@ -31,6 +31,12 @@ from ..utils.process import CommandException
 
 
 @click.command()
+def version() -> None:
+    version = getLibraryVersion("coretex")
+    ui.stdEcho(f"Coretex {version}")
+
+
+@click.command()
 def update() -> None:
     currentVersion = utils.fetchCurrentVersion()
     latestVersion = utils.fetchLatestVersion()
@@ -63,4 +69,5 @@ cli.add_command(model)
 cli.add_command(project)
 cli.add_command(node)
 cli.add_command(run)
+cli.add_command(version)
 cli.add_command(update)
