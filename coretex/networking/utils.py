@@ -72,7 +72,7 @@ def logRequestFailure(endpoint: str, response: NetworkResponse) -> None:
         else:
             logger.debug(f"\tResponse: {responseJson}")
     except (ValueError, TypeError):
-        logging.getLogger("coretexpylib").debug(f"\tResponse: {response.getContent()!r}")
+        logger.debug(f"\tResponse: {response.getContent()!r}")
 
 
 def baseUrl(url: str) -> str:
