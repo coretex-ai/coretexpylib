@@ -67,12 +67,3 @@ def activateAutoUpdate() -> None:
 
     if not jobExists(str(updateScriptPath)):
         scheduleJob(UPDATE_SCRIPT_NAME)
-
-
-def getNodeStatus() -> NodeStatus:
-    try:
-        response = requests.get(f"http://localhost:21000/status", timeout = 1)
-        status = response.json()["status"]
-        return NodeStatus(status)
-    except:
-        return NodeStatus.inactive

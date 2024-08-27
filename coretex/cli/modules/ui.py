@@ -23,7 +23,7 @@ import click
 import inquirer
 
 from ...node import NodeMode
-from ...configuration import UserConfiguration, NodeConfiguration
+from ...configuration import NodeConfiguration
 
 
 def clickPrompt(
