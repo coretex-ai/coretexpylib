@@ -189,9 +189,8 @@ def status() -> None:
         "busy": "cyan",
         "reconnecting": "yellow"
     }
-
     statusEcho = click.style(nodeStatus.name, fg = statusColors[nodeStatus.name])
-    ui.stdEcho(f"Current status of node is {statusEcho}.")
+    click.echo(f"Node is {statusEcho}.")
 
 
 @click.command()
@@ -207,9 +206,9 @@ def logs(tail: Optional[int], follow: bool, timestamps: bool) -> None:
 
 
 @click.group()
-@onBeforeCommandExecute(docker.isDockerAvailable)
+@onBeforeCommandExecute(docker.isDockerAvailable, excludeSubcommands = ["status"])
 @onBeforeCommandExecute(initializeUserSession)
-@onBeforeCommandExecute(node_module.checkResourceLimitations)
+@onBeforeCommandExecute(node_module.checkResourceLimitations, excludeSubcommands = ["status"])
 @onBeforeCommandExecute(checkEnvironment)
 def node() -> None:
     pass
