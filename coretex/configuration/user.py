@@ -19,6 +19,8 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 from datetime import datetime, timezone
 
+import os
+
 from .base import BaseConfiguration, CONFIG_DIR
 from ..utils import decodeDate
 
@@ -83,6 +85,7 @@ class UserConfiguration(BaseConfiguration):
 
     @serverUrl.setter
     def serverUrl(self, value: str) -> None:
+        os.environ["CTX_API_URL"] = value
         self._raw["serverUrl"] = value
 
     @property
