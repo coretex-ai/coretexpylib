@@ -390,7 +390,11 @@ def configureNode(advanced: bool) -> NodeConfiguration:
     else:
         nodeConfig.image = "coretexai/coretex-node"
 
-    if isGPUAvailable() and (currentOS != "linux" or not docker.isDockerDesktop()):
+    # NOTE: If node OS is linux and Docker Desktop is being used CLI won't prompt for GPU access
+    # Reason is that we cannot solve the NVIDIA bug without additionals changes to daemon.json file
+    # which doesn't exist when using Docker Desktop
+
+    if isGPUAvailable() and not (docker.isDockerDesktop() and currentOS != "windows"):
         nodeConfig.allowGpu = ui.clickPrompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
     else:
         nodeConfig.allowGpu = False
