@@ -60,6 +60,7 @@ def update() -> None:
 
 @click.group(cls = ClickExceptionInterceptor)
 @utils.onBeforeCommandExecute(utils.checkLibVersion, excludeSubcommands = ["update"])
+@click.version_option(getLibraryVersion("coretex"), "--version", "-v", message = "Coretex %(version)s")
 def cli() -> None:
     pass
 

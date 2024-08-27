@@ -186,6 +186,11 @@ def getDockerSwapLimit() -> int:
     return int(swapLimit / 1024)
 
 
+def getContainerImageName(containerName: str) -> str:
+    _, output, _ = command(["docker", "inspect", "--format", "{{.Config.Image}}", containerName], ignoreStdout = True, ignoreStderr = True)
+    return output.strip()
+
+
 def getLogs(name: str, tail: Optional[int], follow: bool, timestamps: bool) -> None:
     runCommand = ["docker", "logs", name]
     if isinstance(tail, int):
