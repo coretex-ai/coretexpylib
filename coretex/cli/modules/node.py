@@ -23,6 +23,7 @@ from base64 import b64encode
 import os
 import logging
 import requests
+import platform
 
 import click
 
@@ -376,6 +377,7 @@ def checkResourceLimitations() -> None:
 def configureNode(advanced: bool) -> NodeConfiguration:
     ui.highlightEcho("[Node Configuration]")
     nodeConfig = NodeConfiguration({})  # create new empty node config
+    currentOS = platform.system().lower()
 
     cpuLimit, ramLimit = docker.getResourceLimits()
     swapLimit = docker.getDockerSwapLimit()
@@ -388,10 +390,41 @@ def configureNode(advanced: bool) -> NodeConfiguration:
     else:
         nodeConfig.image = "coretexai/coretex-node"
 
-    if isGPUAvailable():
+    # GPU Access is supported for:
+    # - Linux (Docker Engine)
+    # - Windows (Docker Desktop)
+
+    if isGPUAvailable() and not (docker.isDockerDesktop() and currentOS != "windows"):
         nodeConfig.allowGpu = ui.clickPrompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
     else:
         nodeConfig.allowGpu = False
+
+    if nodeConfig.allowGpu and platform.system().lower() == "linux" and not docker.isDaemonFileUpdated():
+        shouldUpdateDockerConfig = ui.clickPrompt(
+            "NVIDIA has a bug where a docker container running Coretex Node can lose access to GPU "
+            "(https://github.com/NVIDIA/nvidia-container-toolkit/issues/48). "
+            "\nDo you want Coretex CLI to apply a workaround for this bug "
+            "(NOTE: This requires docker daemon restart)? (Y/n)",
+            type = bool,
+            default = True
+        )
+
+        if shouldUpdateDockerConfig:
+            docker.updateDaemonFile()
+            shouldRestartDocker = ui.clickPrompt("Do you want to restart Docker to apply the changes? (Y/n)", type = bool, default = True)
+
+            if shouldRestartDocker:
+                docker.restartDocker()
+            else:
+                ui.warningEcho(
+                    "Warning: The changes will not take effect until Docker is restarted. "
+                    "(https://github.com/NVIDIA/nvidia-container-toolkit/issues/48)"
+                )
+        else:
+            ui.warningEcho(
+                "Warning: Not updating the daemon.json file may lead to GPU access issues in Docker "
+                "containers. (https://github.com/NVIDIA/nvidia-container-toolkit/issues/48)"
+            )
 
     if imageType == ImageType.official:
         tag = "gpu" if nodeConfig.allowGpu else "cpu"
