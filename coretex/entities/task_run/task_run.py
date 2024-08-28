@@ -89,6 +89,7 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
     useCachedEnv: bool
     executionType: ExecutionType
     metrics: List[Metric]
+    workflowRunId: int
 
     def __init__(self) -> None:
         super(TaskRun, self).__init__()
@@ -164,6 +165,7 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
         descriptors["taskId"] = KeyDescriptor("sub_project_id")
         descriptors["taskName"] = KeyDescriptor("sub_project_name")
         descriptors["executionType"] = KeyDescriptor("execution_type", ExecutionType)
+        descriptors["workflowRunId"] = KeyDescriptor("pipeline_run_id")
 
         # private properties of the object should not be encoded
         descriptors["__parameters"] = KeyDescriptor(isEncodable = False)
@@ -177,7 +179,7 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
 
     @override
     def entityUrl(self) -> str:
-        return f"run?id={self.id}"
+        return f"workflow-run?id={self.workflowRunId}"
 
     def onDecode(self) -> None:
         super().onDecode()

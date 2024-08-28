@@ -23,7 +23,7 @@ import click
 import inquirer
 
 from ...node import NodeMode
-from ...configuration import UserConfiguration, NodeConfiguration
+from ...configuration import NodeConfiguration
 
 
 def clickPrompt(
@@ -83,8 +83,8 @@ def previewNodeConfig(nodeConfig: NodeConfiguration) -> None:
     stdEcho(tabulate(table))
 
 
-def outputUrl(entityUrl: str) -> str:
-    return ("\033[4m" + f"https://app.coretex.ai/{entityUrl}" + "\033[0m")
+def outputUrl(baseUrl: str, entityUrl: str) -> str:
+    return ("\033[4m" + f"{baseUrl}/{entityUrl}" + "\033[0m")
 
 
 def stdEcho(text: str) -> None:

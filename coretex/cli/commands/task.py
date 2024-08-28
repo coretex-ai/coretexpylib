@@ -18,14 +18,16 @@
 from typing import Optional
 
 import click
+import webbrowser
 
+from ..modules import ui
 from ..modules.project_utils import getProject
 from ..modules.user import initializeUserSession
 from ..modules.utils import onBeforeCommandExecute
 from ..modules.project_utils import getProject
 from ..._folder_manager import folder_manager
 from ..._task import TaskRunWorker, executeRunLocally, readTaskConfig, runLogger
-from ...configuration import UserConfiguration, NodeConfiguration
+from ...configuration import UserConfiguration
 from ...entities import TaskRun, TaskRunStatus
 from ...resources import PYTHON_ENTRY_POINT_PATH
 from ..._task import TaskRunWorker, executeRunLocally, readTaskConfig, runLogger
@@ -36,7 +38,6 @@ class RunException(Exception):
 
 
 @click.command()
-@onBeforeCommandExecute(initializeUserSession)
 @click.argument("path", type = click.Path(exists = True, dir_okay = False))
 @click.option("--name", type = str, default = None)
 @click.option("--description", type = str, default = None)
@@ -58,6 +59,14 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
     if selectedProject is None:
         return
 
+    ui.stdEcho(
+        "Project info: "
+        f"\n\tName: {selectedProject.name}"
+        f"\n\tProject type: {selectedProject.projectType.name}"
+        f"\n\tDescription: {selectedProject.description}"
+        f"\n\tCreated on: {selectedProject.createdOn}"
+    )
+
     taskRun: TaskRun = TaskRun.runLocal(
         selectedProject.id,
         snapshot,
@@ -66,6 +75,12 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
         [parameter.encode() for parameter in parameters],
         entryPoint = path
     )
+
+    ui.stdEcho(
+        "Task Run successfully started. "
+        f"You can open it by clicking on this URL {ui.outputUrl(userConfig.frontendUrl, taskRun.entityUrl())}."
+    )
+    webbrowser.open(f"{userConfig.frontendUrl}/{taskRun.entityUrl()}")
 
     taskRun.updateStatus(TaskRunStatus.preparingToStart)
 

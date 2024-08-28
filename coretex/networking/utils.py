@@ -22,6 +22,8 @@ import time
 import random
 import logging
 
+from urllib.parse import urlsplit, urlunsplit, SplitResult
+
 from .network_response import NetworkResponse
 
 
@@ -71,6 +73,13 @@ def logRequestFailure(endpoint: str, response: NetworkResponse) -> None:
             logger.debug(f"\tResponse: {responseJson}")
     except (ValueError, TypeError):
         logger.debug(f"\tResponse: {response.getContent()!r}")
+
+
+def baseUrl(url: str) -> str:
+    result = urlsplit(url)
+    parsed = SplitResult(result.scheme, result.netloc, "", "", "")
+
+    return urlunsplit(parsed)
 
 
 def getDelayBeforeRetry(retry: int) -> int:

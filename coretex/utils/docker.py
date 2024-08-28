@@ -3,6 +3,7 @@ from pathlib import Path
 
 import json
 import platform
+import tempfile
 
 from .process import command, CommandException
 from ..statistics import getTotalSwapMemory
@@ -22,7 +23,7 @@ def isDockerAvailable() -> None:
 
 def networkExists(name: str) -> bool:
     # This function inspects the specified Docker network using the
-    # 'docker network inspect' command. If the command exits with a return code
+    # "docker network inspect" command. If the command exits with a return code
     # of 0, indicating success, the function returns True, meaning the network exists.
     # If the command exits with a non-zero return code, indicating failure,
     # the function returns False, meaning the network doesn't exist.
@@ -98,7 +99,7 @@ def start(
 
     runCommand = [
         "docker", "run", "-d",
-        "--restart", 'always',
+        "--restart", "always",
         "-p", "21000:21000",
         "--cap-add", "SYS_PTRACE",
         "--network", name,
@@ -186,6 +187,11 @@ def getDockerSwapLimit() -> int:
     return int(swapLimit / 1024)
 
 
+def getContainerImageName(containerName: str) -> str:
+    _, output, _ = command(["docker", "inspect", "--format", "{{.Config.Image}}", containerName], ignoreStdout = True, ignoreStderr = True)
+    return output.strip()
+
+
 def getLogs(name: str, tail: Optional[int], follow: bool, timestamps: bool) -> None:
     runCommand = ["docker", "logs", name]
     if isinstance(tail, int):
@@ -198,3 +204,71 @@ def getLogs(name: str, tail: Optional[int], follow: bool, timestamps: bool) -> N
         runCommand.append("-f")
 
     command(runCommand)
+
+
+def isDockerDesktop() -> bool:
+    try:
+        _, output, _ = command(["docker", "info", "--format", "{{json .}}"], ignoreStdout = True, ignoreStderr = True)
+        jsonOutput = json.loads(output)
+
+        clientInfo = jsonOutput.get("ClientInfo")
+        if not isinstance(clientInfo, dict):
+            return False
+
+        pluginsInfo = clientInfo.get("Plugins")
+        if not isinstance(pluginsInfo, dict):
+            return False
+
+        versionInfo = pluginsInfo.get("Version")
+        if not isinstance(versionInfo, str):
+            return False
+
+        return "desktop" in versionInfo
+    except:
+        return False
+
+
+def isDaemonFileUpdated() -> bool:
+    daemonFile = Path("/etc/docker/daemon.json")
+    cGroupFix = "native.cgroupdriver=cgroupfs"
+
+    if not daemonFile.exists():
+        return False
+
+    with daemonFile.open("r") as file:
+        try:
+            config = json.load(file)
+            execOpts = config.get("exec-opts", [])
+            return cGroupFix in execOpts
+        except json.JSONDecodeError:
+            return False
+
+
+def updateDaemonFile() -> None:
+    daemonFile = Path("/etc/docker/daemon.json")
+    cGroupFix = "native.cgroupdriver=cgroupfs"
+    config: Dict[str, Any] = {}
+
+    if not daemonFile.exists():
+        config = {}
+
+    with daemonFile.open("r") as file:
+        try:
+            config = json.load(file)
+        except json.JSONDecodeError:
+            config = {}
+
+    execOpts: List[str] = config.get("exec-opts", [])
+    execOpts.append(cGroupFix)
+    config["exec-opts"] = execOpts
+
+    with tempfile.NamedTemporaryFile("w", delete = True) as tempFile:
+        json.dump(config, tempFile, indent = 4)
+        tempFilePath = tempFile.name
+
+        # Use sudo to move the temporary file to the protected location
+        command(["sudo", "mv", tempFilePath, str(daemonFile)], ignoreStderr = True, ignoreStdout = True)
+
+
+def restartDocker() -> None:
+    command(["sudo", "systemctl", "restart", "docker"], ignoreStderr = True, ignoreStdout = True)

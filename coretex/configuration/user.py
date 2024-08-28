@@ -19,6 +19,8 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 from datetime import datetime, timezone
 
+import os
+
 from .base import BaseConfiguration, CONFIG_DIR
 from ..utils import decodeDate
 
@@ -83,6 +85,7 @@ class UserConfiguration(BaseConfiguration):
 
     @serverUrl.setter
     def serverUrl(self, value: str) -> None:
+        os.environ["CTX_API_URL"] = value
         self._raw["serverUrl"] = value
 
     @property
@@ -92,6 +95,14 @@ class UserConfiguration(BaseConfiguration):
     @projectId.setter
     def projectId(self, value: Optional[int]) -> None:
         self._raw["projectId"] = value
+
+    @property
+    def frontendUrl(self) -> str:
+        return self.getValue("frontendUrl", str, default = "app.coretex.ai")
+
+    @frontendUrl.setter
+    def frontendUrl(self, value: Optional[str]) -> None:
+        self._raw["frontendUrl"] = value
 
     def _isConfigValid(self) -> Tuple[bool, List[str]]:
         isValid = True
