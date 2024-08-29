@@ -21,6 +21,7 @@ import click
 import webbrowser
 
 from ..modules import ui
+from ..modules import task as task_utils
 from ..modules.project_utils import getProject
 from ..modules.user import initializeUserSession
 from ..modules.utils import onBeforeCommandExecute
@@ -112,6 +113,14 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
     folder_manager.clearTempFiles()
 
 
+@click.command()
+@click.argument("id", type = int, default = None)
+def pull(id: int) -> None:
+    taskRun: TaskRun = TaskRun.fetchById(id)
+    taskRun.pull()
+    task_utils.createMetadata(id)
+
+
 @click.group()
 @onBeforeCommandExecute(initializeUserSession)
 def task() -> None:
@@ -119,3 +128,4 @@ def task() -> None:
 
 
 task.add_command(run, "run")
+task.add_command(pull, "pull")

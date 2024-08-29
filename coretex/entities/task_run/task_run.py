@@ -666,3 +666,23 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
 
         name = f"{self.id}-{self.name}"
         return name[:50]
+
+    def pull(self) -> bool:
+        params = {
+            "sub_project_id": self.id
+        }
+
+        zipFilePath = f"{self.id}.zip"
+        response = networkManager.download(f"workspace/download", zipFilePath, params)
+
+        if response.hasFailed():
+            logging.getLogger("coretexpylib").error(">> [Coretex] Task download has failed")
+            return False
+
+        with ZipFile(zipFilePath) as zipFile:
+            zipFile.extractall(str(self.id))
+
+        # remove zip file after extract
+        os.unlink(zipFilePath)
+
+        return not response.hasFailed()
