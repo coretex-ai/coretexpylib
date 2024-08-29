@@ -151,7 +151,7 @@ def removeContainer(name: str, verbose: Optional[bool] = False) -> None:
 
 
 def manifestInspect(image: str, verbose: Optional[bool] = False) -> Dict[str, Any]:
-    _, output, _ = command(["docker", "manifest", "inspect", image, "--verbose"], ignoreStdout = not verbose)
+    _, output, _ = command(["docker", "manifest", "inspect", image, "--verbose"], ignoreStdout = True)
     jsonOutput = json.loads(output)
     if not isinstance(jsonOutput, dict):
         raise TypeError(f"Invalid function result type \"{type(jsonOutput)}\". Expected: \"dict\"")
@@ -160,7 +160,7 @@ def manifestInspect(image: str, verbose: Optional[bool] = False) -> Dict[str, An
 
 
 def imageInspect(image: str, verbose: Optional[bool] = False) -> Dict[str, Any]:
-    _, output, _ = command(["docker", "image", "inspect", image], ignoreStdout = not verbose, ignoreStderr = True)
+    _, output, _ = command(["docker", "image", "inspect", image], ignoreStdout = True, ignoreStderr = True)
     jsonOutput = json.loads(output)
     if not isinstance(jsonOutput, list):
         raise TypeError(f"Invalid json.loads() result type \"{type(jsonOutput)}\". Expected: \"list\"")
