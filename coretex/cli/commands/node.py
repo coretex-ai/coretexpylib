@@ -19,6 +19,7 @@ from typing import Optional
 
 import click
 
+from .base_command import base_command
 from ..modules import ui
 from ..modules import node as node_module
 from ..modules.node import NodeStatus
@@ -29,11 +30,10 @@ from ...utils import docker
 from ...configuration import NodeConfiguration, InvalidConfiguration, ConfigurationNotFound
 
 
-@click.command()
+@base_command()
 @click.option("--image", type = str, help = "Docker image url")
-@click.option("--verbose", "verbose", is_flag = True, help = "Shows detailed output of command execution.")
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
-def start(image: Optional[str], verbose: bool = False) -> None:
+def start(image: Optional[str]) -> None:
     nodeConfig = NodeConfiguration.load()
 
     if node_module.isRunning():
@@ -66,8 +66,7 @@ def start(image: Optional[str], verbose: bool = False) -> None:
 
 
 @click.command()
-@click.option("--verbose", "verbose", is_flag = True, help = "Shows detailed output of command execution.")
-def stop(verbose: bool = False) -> None:
+def stop() -> None:
     nodeConfig = NodeConfiguration.load()
 
     if not node_module.isRunning():
@@ -80,9 +79,8 @@ def stop(verbose: bool = False) -> None:
 @click.command()
 @click.option("-y", "autoAccept", is_flag = True, help = "Accepts all prompts.")
 @click.option("-n", "autoDecline", is_flag = True, help = "Declines all prompts.")
-@click.option("--verbose", "verbose", is_flag = True, help = "Shows detailed output of command execution.")
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
-def update(autoAccept: bool, autoDecline: bool, verbose: bool = False) -> None:
+def update(autoAccept: bool, autoDecline: bool) -> None:
     if autoAccept and autoDecline:
         ui.errorEcho("Only one of the flags (\"-y\" or \"-n\") can be used at the same time.")
         return

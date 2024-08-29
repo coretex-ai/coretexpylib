@@ -15,6 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from typing import Optional
 from importlib.metadata import version as getLibraryVersion
 
 import click
@@ -58,7 +59,8 @@ def update() -> None:
         ui.stdEcho("Coretex version is up to date.")
 
 
-@click.group(cls = ClickExceptionInterceptor)
+# @click.group(cls = ClickExceptionInterceptor)
+@click.group()
 @utils.onBeforeCommandExecute(utils.checkLibVersion, excludeSubcommands = ["update"])
 def cli() -> None:
     pass

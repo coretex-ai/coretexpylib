@@ -445,7 +445,7 @@ def configureNode(advanced: bool) -> NodeConfiguration:
 
             nodeConfig.endpointInvocationPrice = promptInvocationPrice()
     else:
-        ui.stdEcho("To configure node manually run coretex node config with --verbose flag.")
+        ui.stdEcho("To configure node manually run coretex node config with --advanced flag.")
 
     publicKey: Optional[bytes] = None
     if isinstance(nodeConfig.secret, str) and nodeConfig.secret != config_defaults.DEFAULT_NODE_SECRET:
