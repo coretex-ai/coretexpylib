@@ -23,7 +23,7 @@ import click
 from .commands.login import login
 from .commands.model import model
 from .commands.node import node
-from .commands.task import run
+from .commands.task import task
 from .commands.project import project
 
 from .modules import ui, utils
@@ -62,6 +62,7 @@ def update() -> None:
 # @click.group(cls = ClickExceptionInterceptor)
 @click.group()
 @utils.onBeforeCommandExecute(utils.checkLibVersion, excludeSubcommands = ["update"])
+@click.version_option(getLibraryVersion("coretex"), "--version", "-v", message = "Coretex %(version)s")
 def cli() -> None:
     pass
 
@@ -69,6 +70,6 @@ cli.add_command(login)
 cli.add_command(model)
 cli.add_command(project)
 cli.add_command(node)
-cli.add_command(run)
+cli.add_command(task)
 cli.add_command(version)
 cli.add_command(update)

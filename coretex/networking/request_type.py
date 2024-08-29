@@ -24,8 +24,9 @@ class RequestType(Enum):
         Represents request types supported by NetworkManager
     """
 
-    get = "GET"
-    post = "POST"
-    put = "PUT"
-    delete = "DELETE"
+    get     = "GET"
+    post    = "POST"
+    put     = "PUT"
+    delete  = "DELETE"
     options = "OPTIONS"
+    head    = "HEAD"

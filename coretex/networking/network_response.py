@@ -21,6 +21,8 @@ from http import HTTPStatus
 from requests import Response
 from requests.structures import CaseInsensitiveDict
 
+from .request_type import RequestType
+
 
 JsonType = TypeVar("JsonType", bound = Union[list, dict])
 
@@ -79,6 +81,14 @@ class NetworkResponse:
         """
 
         return self.statusCode == HTTPStatus.UNAUTHORIZED and self.hasFailed()
+
+    def isHead(self) -> bool:
+        """
+            Returns
+            bool -> True if the request method which created this reponse is HEAD, False if not
+        """
+
+        return self._raw.request.method == RequestType.head.value
 
     def getJson(self, type_: Type[JsonType]) -> JsonType:
         """

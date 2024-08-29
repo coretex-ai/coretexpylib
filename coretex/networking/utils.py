@@ -18,9 +18,16 @@
 from typing import Optional, Any, Dict, List, Union, Tuple, BinaryIO
 
 import io
+import time
+import random
 import logging
 
+from urllib.parse import urlsplit, urlunsplit, SplitResult
+
 from .network_response import NetworkResponse
+
+
+logger = logging.getLogger("coretexpylib")
 
 
 RequestBodyType = Dict[str, Any]
@@ -54,15 +61,49 @@ def logRequestFailure(endpoint: str, response: NetworkResponse) -> None:
     if not response.hasFailed():
         raise ValueError(f">> [Coretex] Invalid response status code: \"{response.statusCode}\"")
 
-    logging.getLogger("coretexpylib").debug(f">> [Coretex] Request to \"{endpoint}\" failed with status code: {response.statusCode}")
+    logger.debug(f">> [Coretex] Request to \"{endpoint}\" failed with status code: {response.statusCode}")
 
     try:
         responseJson = response.getJson(dict)
 
         message = responseJson.get("message")
         if message is not None:
-            logging.getLogger("coretexpylib").debug(f"\tResponse: {message}")
+            logger.debug(f"\tResponse: {message}")
         else:
-            logging.getLogger("coretexpylib").debug(f"\tResponse: {responseJson}")
+            logger.debug(f"\tResponse: {responseJson}")
     except (ValueError, TypeError):
-        logging.getLogger("coretexpylib").debug(f"\tResponse: {response.getContent()!r}")
+        logger.debug(f"\tResponse: {response.getContent()!r}")
+
+
+def baseUrl(url: str) -> str:
+    result = urlsplit(url)
+    parsed = SplitResult(result.scheme, result.netloc, "", "", "")
+
+    return urlunsplit(parsed)
+
+
+def getDelayBeforeRetry(retry: int) -> int:
+    # retry starts from 0 so we add +1/+2 to start/end
+    # to make it have proper delay
+
+    start = (retry + 1) ** 2
+    end   = (retry + 2) ** 2
+
+    return random.randint(start, end)
+
+
+def sleepBeforeRetry(retry: int, endpoint: str) -> None:
+    delay = getDelayBeforeRetry(retry)
+    logger.debug(f">> [Coretex] Waiting for {delay} seconds before retrying failed \"{endpoint}\" request")
+
+    time.sleep(delay)
+
+
+def getTimeoutForRetry(retry: int, timeout: Tuple[int, int], maxTimeout: Tuple[int, int]) -> Tuple[int, int]:
+    connectTimeout, readTimeout = timeout
+    maxConnectTimeout, maxReadTimeout = maxTimeout
+
+    return (
+        min(connectTimeout * retry, maxConnectTimeout),
+        min(readTimeout * retry, maxReadTimeout)
+    )
