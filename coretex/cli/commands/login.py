@@ -18,7 +18,7 @@
 import click
 
 from ..modules import user, ui
-from ...configuration import UserConfiguration, InvalidConfiguration, ConfigurationNotFound
+from ...configuration import UserConfiguration, InvalidConfiguration, ConfigurationNotFound, utils
 
 
 @click.command()
@@ -38,5 +38,9 @@ def login() -> None:
 
     ui.stdEcho("Please enter your credentials:")
     userConfig = user.configUser()
+
+    initialData = utils.fetchInitialData()
+    userConfig.frontendUrl = initialData.get("frontend_url", "app.coretex.ai/")
+
     userConfig.save()
     ui.successEcho(f"User {userConfig.username} successfully logged in.")

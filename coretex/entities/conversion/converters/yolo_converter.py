@@ -110,6 +110,9 @@ class YoloConverter(BaseConverter):
         with open(yoloFilePath, 'r') as file:
             allLines = file.readlines()
 
+            if imagePath is None:
+                raise RuntimeError(f"Image at path {imagePath} doesn't exist.")
+
             image = Image.open(imagePath)
             coretexAnnotation = CoretexImageAnnotation.create(imageName, image.width, image.height, [])
 

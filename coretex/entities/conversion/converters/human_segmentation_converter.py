@@ -66,11 +66,9 @@ class HumanSegmentationConverter(BaseConverter):
         return set(["background", "human"])
 
     def __extractPolygons(self, annotationPath: str, imageWidth: int, imageHeight: int) -> List[List[int]]:
-        maskImage = Image.open(annotationPath)
-        if maskImage is None:
-            return []
+        imageFile = Image.open(annotationPath)
 
-        maskImage = maskImage.resize((imageWidth, imageHeight), Image.Resampling.LANCZOS)
+        maskImage = imageFile.resize((imageWidth, imageHeight), Image.Resampling.LANCZOS)
         subMaskArray = np.asarray(maskImage, dtype = np.uint8)
 
         # prevent segmented objects from being equal to image width/height

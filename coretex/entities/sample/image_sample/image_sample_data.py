@@ -21,6 +21,7 @@ from pathlib import Path
 import json
 
 from PIL import Image, ImageOps
+from PIL.Image import Image as PILImage
 
 import numpy as np
 
@@ -41,6 +42,9 @@ def _findImage(path: Path) -> Path:
 
 def _readImageData(path: Path) -> np.ndarray:
     image = ImageOps.exif_transpose(Image.open(path))
+    if not isinstance(image, PILImage):
+        raise TypeError(f"Expected \"PIL.Image.Image\" recieved \"{type(image)}\"")
+
     if image.mode != "RGB":
         image = image.convert("RGB")
 

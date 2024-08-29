@@ -16,15 +16,16 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import Optional
+from pathlib import Path
 
 import click
 
 from ..modules import ui
 from ..modules import node as node_module
-from ..modules.node import NodeStatus
+from ..modules.node import NodeStatus, getNodeStatus
 from ..modules.user import initializeUserSession
-from ..modules.utils import onBeforeCommandExecute
 from ..modules.update import activateAutoUpdate, getNodeStatus
+from ..modules.utils import onBeforeCommandExecute
 from ...utils import docker
 from ...configuration import NodeConfiguration, InvalidConfiguration, ConfigurationNotFound
 
@@ -179,10 +180,40 @@ def config(advanced: bool) -> None:
     activateAutoUpdate()
 
 
+@click.command()
+def status() -> None:
+    nodeStatus = getNodeStatus()
+    statusColors = {
+        "inactive": "red",
+        "active": 'green',
+        "busy": "cyan",
+        "reconnecting": "yellow"
+    }
+    statusEcho = click.style(nodeStatus.name, fg = statusColors[nodeStatus.name])
+    click.echo(f"Node is {statusEcho}.")
+
+
+@click.command()
+@click.option("--tail", "-n", type = int, help = "Shows N last logs.")
+@click.option("--follow", "-f", is_flag = True, help = "Displays logs realtime.")
+@click.option("--timestamps", "-t", is_flag = True, help = "Displays timestamps for logs.")
+def logs(tail: Optional[int], follow: bool, timestamps: bool) -> None:
+    if not node_module.isRunning():
+        ui.errorEcho("There is no currently running Node on the machine.")
+        return
+
+    node_module.showLogs(tail, follow, timestamps)
+
+
 @click.group()
-@onBeforeCommandExecute(docker.isDockerAvailable)
+@onBeforeCommandExecute(docker.isDockerAvailable, excludeSubcommands = ["status"])
 @onBeforeCommandExecute(initializeUserSession)
+<<<<<<< HEAD
 @onBeforeCommandExecute(node_module.checkResourceLimitations)
+=======
+@onBeforeCommandExecute(node_module.checkResourceLimitations, excludeSubcommands = ["status"])
+@onBeforeCommandExecute(checkEnvironment)
+>>>>>>> develop
 def node() -> None:
     pass
 
@@ -191,3 +222,5 @@ node.add_command(start, "start")
 node.add_command(stop, "stop")
 node.add_command(update, "update")
 node.add_command(config, "config")
+node.add_command(status, "status")
+node.add_command(logs, "logs")

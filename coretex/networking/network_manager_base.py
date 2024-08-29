@@ -26,24 +26,32 @@ import os
 import json
 import logging
 import platform
-import random
-import time
 
 import requests
 import requests.adapters
 
-from .utils import RequestBodyType, RequestFormType, logFilesData, logRequestFailure
+from .utils import RequestBodyType, RequestFormType, logFilesData, logRequestFailure, sleepBeforeRetry, getTimeoutForRetry
 from .request_type import RequestType
 from .network_response import NetworkResponse, NetworkRequestError
 from .file_data import FileData
 
 
-REQUEST_TIMEOUT = 5
-MAX_RETRY_COUNT = 5
-LOGIN_ENDPOINT = "user/login"
-REFRESH_ENDPOINT = "user/refresh"
-API_TOKEN_HEADER = "api-token"
-API_TOKEN_KEY = "token"
+logger = logging.getLogger("coretexpylib")
+
+REQUEST_TIMEOUT      = (5, 10)     # Connection = 5 seconds, Read = 10 seconds
+MAX_REQUEST_TIMEOUT  = (60, 180)   # Connection = 60 seconds, Read = 3 minutes
+DOWNLOAD_TIMEOUT     = (5, 60)     # Connection = 5 seconds, Read = 1 minute
+MAX_DOWNLOAD_TIMEOUT = (60, 180)   # Connection = 1 minute, Read = 3 minutes
+UPLOAD_TIMEOUT       = (5, 60)     # Connection = 5 seconds, Read = 1 minute
+MAX_UPLOAD_TIMEOUT   = (60, 1800)  # Connection = 1 minute, Read = 30 minutes
+
+MAX_RETRY_COUNT        = 5        # Request will be retried 5 times before raising an error
+MAX_DELAY_BEFORE_RETRY = 180      # 3 minute
+
+LOGIN_ENDPOINT    = "user/login"
+REFRESH_ENDPOINT  = "user/refresh"
+API_TOKEN_HEADER  = "api-token"
+API_TOKEN_KEY     = "token"
 REFRESH_TOKEN_KEY = "refresh_token"
 
 RETRY_STATUS_CODES = [
@@ -52,17 +60,7 @@ RETRY_STATUS_CODES = [
     HTTPStatus.SERVICE_UNAVAILABLE
 ]
 
-TimeoutType = Optional[Union[int, Tuple[int, int]]]
-
-
-def getDelayBeforeRetry(retryCount: int) -> int:
-    # retryCount starts from 0 so we add +1/+2 to start/end
-    # to make it have proper delay
-
-    start = (retryCount + 1) ** 2
-    end   = (retryCount + 2) ** 2
-
-    return random.randint(start, end)
+DOWNLOAD_CHUNK_SIZE = 8 * 1024 * 1024  # 8 MB
 
 
 class RequestFailedError(Exception):
@@ -179,7 +177,8 @@ class NetworkManagerBase(ABC):
         body: Optional[RequestBodyType] = None,
         files: Optional[RequestFormType] = None,
         auth: Optional[Tuple[str, str]] = None,
-        timeout: Optional[TimeoutType] = REQUEST_TIMEOUT,
+        timeout: Tuple[int, int] = REQUEST_TIMEOUT,
+        maxTimeout: Tuple[int, int] = MAX_REQUEST_TIMEOUT,
         stream: bool = False,
         retryCount: int = 0
     ) -> NetworkResponse:
@@ -206,6 +205,10 @@ class NetworkManagerBase(ABC):
                 credentials which will be send as basic auth header
             stream : bool
                 defines if request body will be downloaded as a stream or not
+            timeout : Tuple[int, int]
+                timeout for the request, default <connection: 5s>, <read: 10s>
+            maxTimeout : Tuple[int, int]
+                timeout for the request, default <connection: 60s>, <read: 180s>
             retryCount : int
                 retry number of request - only for internal use
 
@@ -224,15 +227,17 @@ class NetworkManagerBase(ABC):
         url = self.serverUrl + endpoint
 
         # Log request debug data
-        logging.getLogger("coretexpylib").debug(f">> [Coretex] Sending request to \"{url}\"")
-        logging.getLogger("coretexpylib").debug(f"\tType: {requestType}")
-        logging.getLogger("coretexpylib").debug(f"\tHeaders: {headers}")
-        logging.getLogger("coretexpylib").debug(f"\tQuery: {query}")
-        logging.getLogger("coretexpylib").debug(f"\tBody: {body}")
-        logging.getLogger("coretexpylib").debug(f"\tFiles: {logFilesData(files)}")
-        logging.getLogger("coretexpylib").debug(f"\tAuth: {auth}")
-        logging.getLogger("coretexpylib").debug(f"\tStream: {stream}")
-        logging.getLogger("coretexpylib").debug(f"\tRetry count: {retryCount}")
+        logger.debug(f">> [Coretex] Sending request to \"{url}\"")
+        logger.debug(f"\tType: {requestType}")
+        logger.debug(f"\tHeaders: {headers}")
+        logger.debug(f"\tQuery: {query}")
+        logger.debug(f"\tBody: {body}")
+        logger.debug(f"\tFiles: {logFilesData(files)}")
+        logger.debug(f"\tAuth: {auth}")
+        logger.debug(f"\tStream: {stream}")
+        logger.debug(f"\tTimeout: {timeout}")
+        logger.debug(f"\tMax timeout: {maxTimeout}")
+        logger.debug(f"\tRetry count: {retryCount}")
 
         # If Content-Type is application/json make sure that body is converted to json
         data: Optional[Any] = body
@@ -259,34 +264,68 @@ class NetworkManagerBase(ABC):
                 if self._apiToken is not None:
                     headers[API_TOKEN_HEADER] = self._apiToken
 
-                # If we hit rate limiter sleep before retrying the request
                 if response.statusCode == HTTPStatus.TOO_MANY_REQUESTS:
-                    delay = getDelayBeforeRetry(retryCount)
-                    logging.getLogger("coretexpylib").debug(f">> [Coretex] Waiting for {delay} seconds before retrying failed \"{endpoint}\" request")
+                    # If the rate limiter is hit sleep before retrying the request
+                    sleepBeforeRetry(retryCount, endpoint)
 
-                    time.sleep(delay)
-
-                return self.request(endpoint, requestType, headers, query, body, files, auth, timeout, stream, retryCount + 1)
+                return self.request(endpoint, requestType, headers, query, body, files, auth, timeout, maxTimeout, stream, retryCount + 1)
 
             return response
-        except BaseException as exception:
-            logging.getLogger("coretexpylib").debug(f">> [Coretex] Request failed. Reason \"{exception}\"", exc_info = exception)
+        except requests.exceptions.RequestException as ex:
+            logger.debug(f">> [Coretex] Request failed. Reason \"{ex}\"", exc_info = ex)
 
             if self.shouldRetry(retryCount, None):
+                # If an exception happened during the request add a delay before retrying
+                sleepBeforeRetry(retryCount, endpoint)
+
+                if isinstance(ex, requests.exceptions.ConnectionError) and "timeout" in str(ex):
+                    # If request failed due to timeout recalculate (increase) the timeout
+                    oldTimeout = timeout
+                    timeout = getTimeoutForRetry(retryCount + 1, timeout, maxTimeout)
+
+                    logger.debug(f">> [Coretex] \"{endpoint}\" failed failed due to timeout. Increasing the timeout from {oldTimeout} to {timeout}")
+
                 if self._apiToken is not None:
                     headers[API_TOKEN_HEADER] = self._apiToken
 
-                return self.request(endpoint, requestType, headers, query, body, files, auth, timeout, stream, retryCount + 1)
+                return self.request(endpoint, requestType, headers, query, body, files, auth, timeout, maxTimeout, stream, retryCount + 1)
 
             raise RequestFailedError(endpoint, requestType)
 
-    def post(
+    def head(
         self,
         endpoint: str,
-        params: Optional[RequestBodyType] = None,
-        timeout: TimeoutType = REQUEST_TIMEOUT
+        params: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None
     ) -> NetworkResponse:
 
+        """
+            Sends head HTTP request
+
+            Parameters
+            ----------
+            endpoint : str
+                endpoint to which the request is sent
+            params : Optional[RequestBodyType]
+                query parameters of the request
+            headers : Optional[Dict[str, str]]
+                additional headers of the request
+
+            Returns
+            -------
+            NetworkResponse -> object containing the request response
+
+            Raises
+            ------
+            RequestFailedError -> if request failed due to connection/timeout issues
+        """
+
+        if headers is not None:
+            headers = {**self._headers(), **headers}
+
+        return self.request(endpoint, RequestType.head, headers, query = params)
+
+    def post(self, endpoint: str, params: Optional[RequestBodyType] = None) -> NetworkResponse:
         """
             Sends post HTTP request
 
@@ -296,8 +335,6 @@ class NetworkManagerBase(ABC):
                 endpoint to which the request is sent
             params : Optional[RequestBodyType]
                 body of the request
-            timeout : TimeoutType
-                timeout for the request
 
             Returns
             -------
@@ -308,7 +345,7 @@ class NetworkManagerBase(ABC):
             RequestFailedError -> if request failed due to connection issues
         """
 
-        return self.request(endpoint, RequestType.post, body = params, timeout = timeout)
+        return self.request(endpoint, RequestType.post, body = params)
 
     def get(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> NetworkResponse:
         """
@@ -378,8 +415,7 @@ class NetworkManagerBase(ABC):
         self,
         endpoint: str,
         params: Optional[Dict[str, Any]] = None,
-        files: Optional[List[FileData]] = None,
-        timeout: TimeoutType = REQUEST_TIMEOUT
+        files: Optional[List[FileData]] = None
     ) -> NetworkResponse:
 
         """
@@ -393,8 +429,6 @@ class NetworkManagerBase(ABC):
                 form data parameters
             files : Optional[List[FileData]]
                 form data files
-            timeout : Optional[Union[int, Tuple[int, int]]]
-                timeout for the request
 
             Returns
             -------
@@ -424,13 +458,27 @@ class NetworkManagerBase(ABC):
             del headers["Content-Type"]
 
             if len(files) > 0:
-                response = self.request(endpoint, RequestType.options, timeout = REQUEST_TIMEOUT)
+                response = self.request(endpoint, RequestType.options)
                 if response.hasFailed():
                     raise NetworkRequestError(response, "Could not establish a connection with the server")
 
-                timeout = None
+                # If files are being uploaded bigger timeout is required
+                timeout = UPLOAD_TIMEOUT
+                maxTimeout = MAX_UPLOAD_TIMEOUT
+            else:
+                # If there are no files there is no need for big timeouts
+                timeout = REQUEST_TIMEOUT
+                maxTimeout = MAX_REQUEST_TIMEOUT
 
-            return self.request(endpoint, RequestType.post, headers, body = params, files = filesData, timeout = timeout)
+            return self.request(
+                endpoint,
+                RequestType.post,
+                headers,
+                body = params,
+                files = filesData,
+                timeout = timeout,
+                maxTimeout = maxTimeout
+            )
 
         # mypy is complaining about missing return statement but this code is unreachable
         # see: https://github.com/python/mypy/issues/7726
@@ -508,7 +556,8 @@ class NetworkManagerBase(ABC):
         self,
         endpoint: str,
         destination: Union[Path, str],
-        params: Optional[Dict[str, Any]] = None
+        params: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None
     ) -> NetworkResponse:
 
         """
@@ -520,6 +569,10 @@ class NetworkManagerBase(ABC):
                 endpoint to which the request is sent
             destination : Union[Path, str]
                 path to save file
+            params : Optional[Dict[str, Any]]
+                query parameters of the request
+            headers : Optional[Dict[str, str]]
+                additional headers of the request
 
             Returns
             -------
@@ -540,67 +593,42 @@ class NetworkManagerBase(ABC):
         if isinstance(destination, str):
             destination = Path(destination)
 
-        response = self.get(endpoint, params)
-        if response.hasFailed():
-            return response
-
-        with destination.open("wb") as downloadedFile:
-            downloadedFile.write(response.getContent())
-
-        return response
-
-    def streamDownload(
-        self,
-        endpoint: str,
-        destination: Union[Path, str],
-        params: Optional[Dict[str, Any]] = None
-    ) -> NetworkResponse:
-
-        """
-            Downloads file to the given destination
-
-            Parameters
-            ----------
-            endpoint : str
-                endpoint to which the request is sent
-            destination : Union[Path, str]
-                path to save file
-            retryCount : int
-                number of function calls if request has failed, used
-                for internal retry mechanism
-
-            Returns
-            -------
-            NetworkResponse -> object containing the request response
-
-            Example
-            -------
-            >>> from coretex import networkManager
-            \b
-            >>> response = networkManager.streamDownload(
-                    endpoint = "dummyObject/download",
-                    destination = "path/to/destination/folder"
-                )
-            >>> if response.hasFailed():
-                    print("Failed to download the file")
-        """
-
-        if isinstance(destination, str):
-            destination = Path(destination)
-
-        response = self.request(endpoint, RequestType.get, query = params, stream = True, timeout = (5, 60))
-        if response.hasFailed():
-            return response
-
-        if destination.exists() and "Content-Length" in response.headers:
-            contentLength = int(response.headers["Content-Length"])
-            if contentLength == destination.stat().st_size:
+        # If the destination exists check if it's corrupted
+        if destination.exists():
+            response = self.head(endpoint, params, headers)
+            if response.hasFailed():
                 return response
 
-            destination.unlink()
+            # If the Content-Length returned by the head request is not equal to destination's
+            # file size force the file to be re-downloaded
+            try:
+                contentLength = int(response.headers["Content-Length"])
+                if destination.stat().st_size == contentLength:
+                    return response
+            except (ValueError, KeyError):
+                # KeyError - Content-Length is not present in headers
+                # ValueError - Content-Length cannot be converted to int
+                pass
+
+        if headers is not None:
+            headers = {**self._headers(), **headers}
+
+        # Timeout for download applies per chunk, not for the full file download
+        response = self.request(
+            endpoint,
+            RequestType.get,
+            headers,
+            query = params,
+            stream = True,
+            timeout = DOWNLOAD_TIMEOUT,
+            maxTimeout = MAX_DOWNLOAD_TIMEOUT
+        )
+
+        if response.hasFailed():
+            return response
 
         with destination.open("wb") as file:
-            for chunk in response.stream():
+            for chunk in response.stream(chunkSize = DOWNLOAD_CHUNK_SIZE):
                 file.write(chunk)
 
         return response

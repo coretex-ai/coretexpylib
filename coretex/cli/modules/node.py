@@ -23,6 +23,7 @@ from base64 import b64encode
 import os
 import logging
 import requests
+import platform
 
 import click
 
@@ -72,7 +73,8 @@ def start(dockerImage: str, nodeConfig: NodeConfiguration) -> None:
             "CTX_API_URL": os.environ["CTX_API_URL"],
             "CTX_STORAGE_PATH": "/root/.coretex",
             "CTX_NODE_ACCESS_TOKEN": nodeConfig.accessToken,
-            "CTX_NODE_MODE": str(nodeConfig.mode)
+            "CTX_NODE_MODE": str(nodeConfig.mode),
+            "CTX_HEARTBEAT_INTERVAL": str(nodeConfig.heartbeatInterval)
         }
 
         if nodeConfig.modelId is not None:
@@ -196,6 +198,10 @@ def shouldUpdate(image: str) -> bool:
             return False
 
     return True
+
+
+def showLogs(tail: Optional[int], follow: bool, timestamps: bool) -> None:
+    docker.getLogs(config_defaults.DOCKER_CONTAINER_NAME, tail, follow, timestamps)
 
 
 def registerNode(
@@ -371,6 +377,7 @@ def checkResourceLimitations() -> None:
 def configureNode(advanced: bool) -> NodeConfiguration:
     ui.highlightEcho("[Node Configuration]")
     nodeConfig = NodeConfiguration({})  # create new empty node config
+    currentOS = platform.system().lower()
 
     cpuLimit, ramLimit = docker.getResourceLimits()
     swapLimit = docker.getDockerSwapLimit()
@@ -383,10 +390,41 @@ def configureNode(advanced: bool) -> NodeConfiguration:
     else:
         nodeConfig.image = "coretexai/coretex-node"
 
-    if isGPUAvailable():
+    # GPU Access is supported for:
+    # - Linux (Docker Engine)
+    # - Windows (Docker Desktop)
+
+    if isGPUAvailable() and not (docker.isDockerDesktop() and currentOS != "windows"):
         nodeConfig.allowGpu = ui.clickPrompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
     else:
         nodeConfig.allowGpu = False
+
+    if nodeConfig.allowGpu and platform.system().lower() == "linux" and not docker.isDaemonFileUpdated():
+        shouldUpdateDockerConfig = ui.clickPrompt(
+            "NVIDIA has a bug where a docker container running Coretex Node can lose access to GPU "
+            "(https://github.com/NVIDIA/nvidia-container-toolkit/issues/48). "
+            "\nDo you want Coretex CLI to apply a workaround for this bug "
+            "(NOTE: This requires docker daemon restart)? (Y/n)",
+            type = bool,
+            default = True
+        )
+
+        if shouldUpdateDockerConfig:
+            docker.updateDaemonFile()
+            shouldRestartDocker = ui.clickPrompt("Do you want to restart Docker to apply the changes? (Y/n)", type = bool, default = True)
+
+            if shouldRestartDocker:
+                docker.restartDocker()
+            else:
+                ui.warningEcho(
+                    "Warning: The changes will not take effect until Docker is restarted. "
+                    "(https://github.com/NVIDIA/nvidia-container-toolkit/issues/48)"
+                )
+        else:
+            ui.warningEcho(
+                "Warning: Not updating the daemon.json file may lead to GPU access issues in Docker "
+                "containers. (https://github.com/NVIDIA/nvidia-container-toolkit/issues/48)"
+            )
 
     if imageType == ImageType.official:
         tag = "gpu" if nodeConfig.allowGpu else "cpu"
@@ -439,11 +477,17 @@ def configureNode(advanced: bool) -> NodeConfiguration:
             )
 
             nodeConfig.endpointInvocationPrice = promptInvocationPrice()
+
+        nodeConfig.heartbeatInterval = ui.clickPrompt(
+            "Enter interval (seconds) at which the Node will send heartbeat to Coretex Server",
+            config_defaults.HEARTBEAT_INTERVAL // 1000,
+            type = int
+        ) * 1000  # Node expects the value in ms
     else:
-        ui.stdEcho("To configure node manually run coretex node config with --verbose flag.")
+        ui.stdEcho("To configure node manually run coretex node config with --advanced flag.")
 
     publicKey: Optional[bytes] = None
-    if isinstance(nodeConfig.secret, str) and nodeConfig.secret != config_defaults.DEFAULT_NODE_SECRET:
+    if nodeConfig.secret is not None and nodeConfig.secret != config_defaults.DEFAULT_NODE_SECRET:
         ui.progressEcho("Generating RSA key-pair (2048 bits long) using provided node secret...")
         rsaKey = rsa.generateKey(2048, nodeConfig.secret.encode("utf-8"))
         publicKey = rsa.getPublicKeyBytes(rsaKey.public_key())
