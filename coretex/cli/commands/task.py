@@ -16,6 +16,7 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import Optional
+from pathlib import Path
 
 import click
 import webbrowser
@@ -25,13 +26,11 @@ from ..modules import task as task_utils
 from ..modules.project_utils import getProject
 from ..modules.user import initializeUserSession
 from ..modules.utils import onBeforeCommandExecute
-from ..modules.project_utils import getProject
 from ..._folder_manager import folder_manager
 from ..._task import TaskRunWorker, executeRunLocally, readTaskConfig, runLogger
 from ...configuration import UserConfiguration
-from ...entities import TaskRun, TaskRunStatus
+from ...entities import Task, TaskRun, TaskRunStatus
 from ...resources import PYTHON_ENTRY_POINT_PATH
-from ..._task import TaskRunWorker, executeRunLocally, readTaskConfig, runLogger
 
 
 class RunException(Exception):
@@ -116,9 +115,13 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
 @click.command()
 @click.argument("id", type = int, default = None)
 def pull(id: int) -> None:
-    taskRun: TaskRun = TaskRun.fetchById(id)
-    taskRun.pull()
-    task_utils.createMetadata(id)
+    initialMetadataPath = Path(f"{id}/.metadata.json")
+    coretexMetadataPath = Path(f"{id}/.coretex.json")
+
+    task = Task.fetchById(id)
+    task.pull()
+    task_utils.createMetadata(initialMetadataPath, coretexMetadataPath)
+    task_utils.fillTaskMetadata(task, initialMetadataPath, coretexMetadataPath)
 
 
 @click.group()

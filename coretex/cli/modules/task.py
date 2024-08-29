@@ -15,12 +15,14 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from typing import Dict, Any
+from pathlib import Path
 from zipfile import ZipFile
 
 import os
 import json
 
-from ...entities import TaskRun
+from ...entities import Task
 from ...networking import networkManager, NetworkRequestError
 
 
@@ -42,9 +44,27 @@ def pull(id: int) -> None:
     os.unlink(zipFilePath)
 
 
-def createMetadata(id: int) -> None:
-    with open(f"{id}/.metadata.json", "r") as initialMetadataFile:
+def createMetadata(initialMetadataPath: Path, coretexMetadataPath: Path) -> None:
+    with open(initialMetadataPath, "r") as initialMetadataFile:
         initialMetadata = json.load(initialMetadataFile)
 
-    with open(f"{id}/.coretex.json", "w") as metadataFile:
-        json.dump(initialMetadata, metadataFile, indent = 4)
+    newMetadata = {
+        "checksums": initialMetadata
+    }
+
+    with open(coretexMetadataPath, "w") as coretexMetadataFile:
+        json.dump(newMetadata, coretexMetadataFile, indent=4)
+
+
+def fillTaskMetadata(task: Task, initialMetadataPath: Path, coretexMetadataPath: Path) -> None:
+    metadata = task.encode()
+
+    with coretexMetadataPath.open("r") as coretexMetadataFile:
+        existing_metadata = json.load(coretexMetadataFile)
+
+    existing_metadata.update(metadata)
+
+    with coretexMetadataPath.open("w") as coretexMetadataFile:
+        json.dump(existing_metadata, coretexMetadataFile, indent=4)
+
+    initialMetadataPath.unlink()

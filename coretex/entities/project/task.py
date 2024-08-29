@@ -17,10 +17,15 @@
 
 from typing import Optional, Dict
 from typing_extensions import Self
+from zipfile import ZipFile
+
+import os
+import logging
 
 from .base import BaseObject
 from ..utils import isEntityNameValid
 from ...codable import KeyDescriptor
+from ...networking import networkManager
 
 
 class Task(BaseObject):
@@ -80,3 +85,24 @@ class Task(BaseObject):
             parent_id = projectId,
             description = description
         )
+
+
+    def pull(self) -> bool:
+        params = {
+            "sub_project_id": self.id
+        }
+
+        zipFilePath = f"{self.id}.zip"
+        response = networkManager.download(f"workspace/download", zipFilePath, params)
+
+        if response.hasFailed():
+            logging.getLogger("coretexpylib").error(">> [Coretex] Task download has failed")
+            return False
+
+        with ZipFile(zipFilePath) as zipFile:
+            zipFile.extractall(str(self.id))
+
+        # remove zip file after extract
+        os.unlink(zipFilePath)
+
+        return not response.hasFailed()
