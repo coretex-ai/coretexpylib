@@ -16,24 +16,22 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import Optional
-from pathlib import Path
 
 import click
 
-from .base_command import base_command
+from .base import base_group, base_command
 from ..modules import ui
 from ..modules import node as node_module
 from ..modules.node import NodeStatus, getNodeStatus
 from ..modules.user import initializeUserSession
-from ..modules.utils import onBeforeCommandExecute, checkEnvironment
+from ..modules.utils import checkEnvironment
 from ..modules.update import activateAutoUpdate
 from ...utils import docker
 from ...configuration import NodeConfiguration, InvalidConfiguration, ConfigurationNotFound
 
 
-@base_command()
+@base_command(initFuncs = [node_module.initializeNodeConfiguration])
 @click.option("--image", type = str, help = "Docker image url")
-@onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def start(image: Optional[str]) -> None:
     nodeConfig = NodeConfiguration.load()
 
@@ -66,7 +64,7 @@ def start(image: Optional[str]) -> None:
     activateAutoUpdate()
 
 
-@click.command()
+@base_command()
 def stop() -> None:
     nodeConfig = NodeConfiguration.load()
 
@@ -77,10 +75,9 @@ def stop() -> None:
     node_module.stop(nodeConfig.id)
 
 
-@click.command()
+@base_command(initFuncs = [node_module.initializeNodeConfiguration])
 @click.option("-y", "autoAccept", is_flag = True, help = "Accepts all prompts.")
 @click.option("-n", "autoDecline", is_flag = True, help = "Declines all prompts.")
-@onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def update(autoAccept: bool, autoDecline: bool) -> None:
     if autoAccept and autoDecline:
         ui.errorEcho("Only one of the flags (\"-y\" or \"-n\") can be used at the same time.")
@@ -142,7 +139,7 @@ def update(autoAccept: bool, autoDecline: bool) -> None:
     activateAutoUpdate()
 
 
-@click.command()
+@base_command()
 @click.option("--advanced", is_flag = True, help = "Configure node settings manually.")
 def config(advanced: bool) -> None:
     if node_module.isRunning():
@@ -181,7 +178,7 @@ def config(advanced: bool) -> None:
     activateAutoUpdate()
 
 
-@click.command()
+@base_command()
 def status() -> None:
     nodeStatus = getNodeStatus()
     statusColors = {
@@ -194,7 +191,7 @@ def status() -> None:
     click.echo(f"Node is {statusEcho}.")
 
 
-@click.command()
+@base_command()
 @click.option("--tail", "-n", type = int, help = "Shows N last logs.")
 @click.option("--follow", "-f", is_flag = True, help = "Displays logs realtime.")
 @click.option("--timestamps", "-t", is_flag = True, help = "Displays timestamps for logs.")
@@ -206,11 +203,14 @@ def logs(tail: Optional[int], follow: bool, timestamps: bool) -> None:
     node_module.showLogs(tail, follow, timestamps)
 
 
-@click.group()
-@onBeforeCommandExecute(docker.isDockerAvailable, excludeSubcommands = ["status"])
-@onBeforeCommandExecute(initializeUserSession)
-@onBeforeCommandExecute(node_module.checkResourceLimitations, excludeSubcommands = ["status"])
-@onBeforeCommandExecute(checkEnvironment)
+@base_group(
+    initFuncs = [
+        (docker.isDockerAvailable, ["status"]),
+        (initializeUserSession, []),
+        (node_module.checkResourceLimitations, ["status"]),
+        (checkEnvironment, [])
+    ]
+)
 def node() -> None:
     pass
 

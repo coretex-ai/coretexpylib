@@ -19,15 +19,15 @@ from typing import Optional
 
 import click
 
+from .base import base_group, base_command
 from ..modules import ui, project_utils
 from ..modules.user import initializeUserSession
-from ..modules.utils import onBeforeCommandExecute
 from ...entities import Project, ProjectVisibility
 from ...networking import RequestFailedError
 from ...configuration import UserConfiguration
 
 
-@click.command()
+@base_command()
 @click.option("--name", "-n", type = str, help = "Project name")
 @click.option("--type", "-t", "projectType", type = int, help = "Project type")
 @click.option("--description", "-d", type = str, help = "Project description")
@@ -41,7 +41,7 @@ def create(name: Optional[str], projectType: Optional[int], description: Optiona
         ui.successEcho(f"Project \"{project.name}\" successfully selected.")
 
 
-@click.command()
+@base_command()
 @click.option("--project", "-p", type = str, help = "Project name")
 @click.option("--name", "-n", type = str, help = "New Project name")
 @click.option("--description", "-d", type = str, help = "New Project description")
@@ -72,7 +72,7 @@ def edit(project: Optional[str], name: Optional[str], description: Optional[str]
         raise click.ClickException(f"Failed to edit project \"{selectedProject.name}\".")
 
 
-@click.command()
+@base_command()
 @click.argument("name", type = str)
 def select(name: str) -> None:
     project: Optional[Project] = None
@@ -97,8 +97,7 @@ def select(name: str) -> None:
         userConfig.selectProject(project.id)
 
 
-@click.group()
-@onBeforeCommandExecute(initializeUserSession)
+@base_group(initFuncs = [(initializeUserSession, [])])
 def project() -> None:
     pass
 

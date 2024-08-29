@@ -29,8 +29,6 @@ import click
 
 from . import ui
 from .utils import isGPUAvailable
-from .ui import progressEcho, successEcho
-from ...node import NodeMode
 from ..settings import CLISettings
 from ...cryptography import rsa
 from ...networking import networkManager, NetworkRequestError
@@ -51,10 +49,10 @@ class ImageType(Enum):
 
 def pull(image: str) -> None:
     try:
-        progressEcho(f"Fetching image {image}...")
+        ui.progressEcho(f"Fetching image {image}...")
         docker.imagePull(image, CLISettings.verbose)
 
-        successEcho(f"Image {image} successfully fetched.")
+        ui.successEcho(f"Image {image} successfully fetched.")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to fetch latest node version.")

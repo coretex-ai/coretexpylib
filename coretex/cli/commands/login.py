@@ -15,13 +15,12 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import click
-
+from .base import base_command
 from ..modules import user, ui
 from ...configuration import UserConfiguration, InvalidConfiguration, ConfigurationNotFound, utils
 
 
-@click.command()
+@base_command()
 def login() -> None:
     try:
         userConfig = UserConfiguration.load()
