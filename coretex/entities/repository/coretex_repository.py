@@ -15,27 +15,26 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from pathlib import Path
-
-import os
-import sys
-import hashlib
+from enum import IntEnum
+from abc import abstractmethod, ABC
 
 
-def isCliRuntime() -> bool:
-    executablePath = sys.argv[0]
-    return (
-        executablePath.endswith("/bin/coretex") and
-        os.access(executablePath, os.X_OK)
-    )
+class EntityCoretexRepositoryType(IntEnum):
+
+    task   = 1
 
 
-def generateSha256Checksum(path: Path) -> str:
-    sha256 = hashlib.sha256()
-    chunkSize = 64 * 1024  # 65536 bytes
+class CoretexRepository(ABC):
 
-    with path.open("rb") as file:
-        while chunk := file.read(chunkSize):
-            sha256.update(chunk)
+    id: int
+    projectId: int
 
-    return sha256.hexdigest()
+
+    @property
+    @abstractmethod
+    def entityTagType(self) -> EntityCoretexRepositoryType:
+        pass
+
+
+    def pull(self):
+        pass

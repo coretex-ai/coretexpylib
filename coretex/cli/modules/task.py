@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Dict, Any
+from typing import Dict, Any, Tuple, List
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -24,6 +24,7 @@ import json
 
 from ...entities import Task
 from ...networking import networkManager, NetworkRequestError
+from ...utils.misc import generateSha256Checksum
 
 
 def pull(id: int) -> None:
@@ -48,12 +49,19 @@ def createMetadata(initialMetadataPath: Path, coretexMetadataPath: Path) -> None
     with open(initialMetadataPath, "r") as initialMetadataFile:
         initialMetadata = json.load(initialMetadataFile)
 
+        # if backend returns null for checksum of file, generate checksum
+        for file in initialMetadata:
+            if file["checksum"] is None:
+                filePath = initialMetadataPath.parent.joinpath(file["path"])
+                if filePath.exists():
+                    file["checksum"] = generateSha256Checksum(filePath)
+
     newMetadata = {
         "checksums": initialMetadata
     }
 
     with open(coretexMetadataPath, "w") as coretexMetadataFile:
-        json.dump(newMetadata, coretexMetadataFile, indent=4)
+        json.dump(newMetadata, coretexMetadataFile, indent = 4)
 
 
 def fillTaskMetadata(task: Task, initialMetadataPath: Path, coretexMetadataPath: Path) -> None:
@@ -68,3 +76,27 @@ def fillTaskMetadata(task: Task, initialMetadataPath: Path, coretexMetadataPath:
         json.dump(existing_metadata, coretexMetadataFile, indent=4)
 
     initialMetadataPath.unlink()
+
+
+def checkMetadataDifference(remoteMetadata: list, coretexMetadataPath: Path) -> List[Dict[str, Any]]:
+    with coretexMetadataPath.open("r") as localMetadataFile:
+        localMetadata = json.load(localMetadataFile)
+
+    localChecksums = {file['path']: file['checksum'] for file in localMetadata['checksums']}
+
+    differences = []
+
+    for remoteFile in remoteMetadata:
+        remotePath = remoteFile['path']
+        remoteChecksum = remoteFile['checksum']
+
+        localChecksum = localChecksums.get(remotePath)
+
+        if localChecksum != remoteChecksum:
+            differences.append({
+                'path': remotePath,
+                'local_checksum': localChecksum,
+                'remote_checksum': remoteChecksum
+            })
+
+    return differences

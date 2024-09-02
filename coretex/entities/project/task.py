@@ -25,7 +25,7 @@ import logging
 from .base import BaseObject
 from ..utils import isEntityNameValid
 from ...codable import KeyDescriptor
-from ...networking import networkManager
+from ...networking import networkManager, NetworkResponse
 
 
 class Task(BaseObject):
@@ -86,6 +86,18 @@ class Task(BaseObject):
             description = description
         )
 
+    def getMetadata(self) -> Optional[list]:
+        params = {
+            "sub_project_id": self.id
+        }
+
+        response = networkManager.get("workspace/metadata", params)
+
+        if response.hasFailed():
+            logging.getLogger("coretexpylib").error(">> [Coretex] Failed to fetch task metadata")
+            return None
+
+        return response.getJson(list, force = True)
 
     def pull(self) -> bool:
         params = {
