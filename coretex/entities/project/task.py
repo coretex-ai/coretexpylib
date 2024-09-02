@@ -17,18 +17,14 @@
 
 from typing import Optional, Dict
 from typing_extensions import Self
-from zipfile import ZipFile
-
-import os
-import logging
 
 from .base import BaseObject
 from ..utils import isEntityNameValid
+from ..repository import CoretexRepository, EntityCoretexRepositoryType
 from ...codable import KeyDescriptor
-from ...networking import networkManager, NetworkResponse
 
 
-class Task(BaseObject):
+class Task(BaseObject, CoretexRepository):
 
     """
         Represents the task entity from Coretex.ai\n
@@ -37,6 +33,18 @@ class Task(BaseObject):
 
     isDefault: bool
     taskId: int
+
+    @property
+    def entityCoretexRepositoryType(self) -> EntityCoretexRepositoryType:
+        return EntityCoretexRepositoryType.task
+
+    @property
+    def paramKey(self) -> str:
+        return "sub_project_id"
+
+    @property
+    def endpoint(self) -> str:
+        return "workspace"
 
     @classmethod
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
@@ -85,36 +93,3 @@ class Task(BaseObject):
             parent_id = projectId,
             description = description
         )
-
-    def getMetadata(self) -> Optional[list]:
-        params = {
-            "sub_project_id": self.id
-        }
-
-        response = networkManager.get("workspace/metadata", params)
-
-        if response.hasFailed():
-            logging.getLogger("coretexpylib").error(">> [Coretex] Failed to fetch task metadata")
-            return None
-
-        return response.getJson(list, force = True)
-
-    def pull(self) -> bool:
-        params = {
-            "sub_project_id": self.id
-        }
-
-        zipFilePath = f"{self.id}.zip"
-        response = networkManager.download(f"workspace/download", zipFilePath, params)
-
-        if response.hasFailed():
-            logging.getLogger("coretexpylib").error(">> [Coretex] Task download has failed")
-            return False
-
-        with ZipFile(zipFilePath) as zipFile:
-            zipFile.extractall(str(self.id))
-
-        # remove zip file after extract
-        os.unlink(zipFilePath)
-
-        return not response.hasFailed()
