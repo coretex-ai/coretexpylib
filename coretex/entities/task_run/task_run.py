@@ -179,7 +179,7 @@ class TaskRun(NetworkObject, Generic[DatasetType]):
 
     @override
     def entityUrl(self) -> str:
-        return f"workflow-run?id={self.workflowRunId}"
+        return f"workflow-run?id={self.workflowRunId}&taskRunId={self.id}"
 
     def onDecode(self) -> None:
         super().onDecode()

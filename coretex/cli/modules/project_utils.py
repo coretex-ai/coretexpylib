@@ -77,6 +77,7 @@ def promptProjectSelect(userConfig: UserConfiguration) -> Optional[Project]:
         if newProject is None:
             return None
 
+        project = newProject
         userConfig.selectProject(project.id)
 
     return project
