@@ -87,7 +87,7 @@ class CoretexRepository(ABC, Codable):
 
         response = networkManager.get(f"{self.endpoint}/metadata", params)
         if response.hasFailed():
-            return NetworkRequestError(response, "Failed to fetch task metadata.")
+            raise NetworkRequestError(response, "Failed to fetch task metadata.")
 
         return response.getJson(list, force = True)
 
@@ -123,7 +123,7 @@ class CoretexRepository(ABC, Codable):
 
         INITIAL_METADATA_PATH.unlink()
 
-    def checkDiff(self) ->  List[Dict[str, Any]]:
+    def getDiff(self) ->  List[Dict[str, Any]]:
         with CORETEX_METADATA_PATH.open("r") as localMetadataFile:
             localMetadata = json.load(localMetadataFile)
 
@@ -146,3 +146,6 @@ class CoretexRepository(ABC, Codable):
                 })
 
         return differences
+
+    # def updateRepository(self, differences: List[Dict[str, Any]]) -> None:
+    #     pass
