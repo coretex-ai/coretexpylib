@@ -23,6 +23,10 @@ import click
 from ..settings import CLISettings
 
 
+# initFuncs -> functions that will be executed before commands in the group,
+# if we want to exclude execution of function for specific command,
+# command name need to be specified in a list in tuple with function
+# e.g. initFuncs = [(fun, ["excludedCommand1", "excludedCommand2"...])]
 def base_group(
     name: Optional[str] = None,
     initFuncs: Optional[List[Tuple[Callable[[], None], List[str]]]] = None,
