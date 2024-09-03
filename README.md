@@ -1,40 +1,38 @@
 ![](./docs_images/logo-classic.png)
 
 ---
-
 <div align="center">
 
 [Coretex AI](https://www.coretex.ai) - Manage the complete lifecycle of your experiments and complex workloads, from project inception to production deployment and monitoring.
 <br />
 
 [![Linter code check](https://github.com/coretex-ai/coretexpylib/actions/workflows/linter-code-check.yml/badge.svg?branch=develop)](https://github.com/coretex-ai/coretexpylib/actions/workflows/linter-code-check.yml)
-
 </div>
+
 
 ## What is Coretex?
 
 Coretex is a powerful MLOps platform designed to make AI experimentation fast and efficient. It contains multiple key features to help with that:
-
 - [MLOps Workflow Management]() - Use powerful yet simple tools to optimize, build and run your ML Workflows
 - [Model Deployment](https://docs.coretex.ai/v1/getting-started/learn-basics/deployment) - Deploy your Model to production efforlessly with full tracking capabilities
 - [Task Library](https://github.com/coretex-ai/coretex-jobs) - Out-of-the-box support for common ML Tasks:
-  - LLM (Llama3)
-  - RAG
-  - Text-to-image (Stable Diffusion)
-  - Object Detection (YOLOv10)
-  - BioInformatics (Qiime2)
-  - and many others...
+    - LLM (Llama3)
+    - RAG
+    - Text-to-image (Stable Diffusion)
+    - Object Detection (YOLOv10)
+    - BioInformatics (Qiime2)
+    - and many others...
 - [Multi-language Support]() - You are not limited to just Python, with Coretex we support all of these:
-  - Python (including Notebooks)
-  - R
-  - Bash
-  - Docker - Define a custom Dockerfile which should be executed
+    - Python (including Notebooks)
+    - R
+    - Bash
+    - Docker - Define a custom Dockerfile which should be executed
 - [Parameter Optimization](https://docs.coretex.ai/v1/getting-started/learn-basics/project-and-task#parameter-optimization) - Define multiple values for parameters and Coretex will magically take care of performing grid search using those parameters
 - [Team Collaboration](https://docs.coretex.ai/v1/getting-started/learn-basics/organizations#collaboration-and-sharing) - Invite other people to collaborate with you on a Project by using a role-based access control (RBAC) for your Project
 - [Dataset Management](https://docs.coretex.ai/v1/getting-started/learn-basics/dataset) - Manage your Datasets by using multitude of features provided by Coretex such as:
-  - Support for annotatin images and IMU data directly on the platform
-  - Combine and duplicate functionality for re-using or merging existing Datasets
-  - Automatic Dataset lineage tracking which offers insight into how the Dataset was created
+    - Support for annotatin images and IMU data directly on the platform
+    - Combine and duplicate functionality for re-using or merging existing Datasets
+    - Automatic Dataset lineage tracking which offers insight into how the Dataset was created
 - [Real-time Experiment Tracking](#coretex-experiment-tracking) - Real-time tracking of Run metrics, Artifacts, stdout and stderr, etc...
 - [Infrastructure Setup](#infrastructure-setup) - Connect your own on-premise machines, or use dynamically scalable cloud machines
 
@@ -49,7 +47,6 @@ Coretex helps you iterate faster and with more confidence. You get reproducibili
 ```bash
 $ pip3 install coretex
 ```
-
 ```bash
 $ pip install coretex
 ```
@@ -63,7 +60,6 @@ $ coretex run main.py
 ## Infrastructure Setup
 
 Connecting your own on-premise machines or your cloud machines to an MLOps platform has never been easier. This can be achieved by running one simple command:
-
 ```bash
 $ coretex node start
 ```
@@ -71,7 +67,6 @@ $ coretex node start
 ## Coretex Experiment Tracking
 
 Coretex will automatically track:
-
 - Source code and parameters
 - Artifacts - files which are generated as a result of execution
 - Console output - stdout and stderr
