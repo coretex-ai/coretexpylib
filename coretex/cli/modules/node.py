@@ -200,8 +200,8 @@ def shouldUpdate(image: str) -> bool:
     return True
 
 
-def getNodeVersion(image: Optional[str] = None) -> str:
-    if image is None:
+def getNodeVersion() -> str:
+    if not isRunning():
         try:
             nodeConfig = NodeConfiguration.load()
             image = nodeConfig.image
@@ -212,6 +212,8 @@ def getNodeVersion(image: Optional[str] = None) -> str:
             for error in ex.errors:
                 ui.errorEcho(error)
             raise
+    else:
+        image = docker.getContainerImageName(config_defaults.DOCKER_CONTAINER_NAME)
 
     try:
         imageJson = docker.imageInspect(image)
