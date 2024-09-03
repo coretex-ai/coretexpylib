@@ -150,7 +150,7 @@ def removeContainer(name: str, verbose: Optional[bool] = False) -> None:
     command(["docker", "rm", name], ignoreStdout = not verbose, ignoreStderr = True)
 
 
-def manifestInspect(image: str, verbose: Optional[bool] = False) -> Dict[str, Any]:
+def manifestInspect(image: str) -> Dict[str, Any]:
     _, output, _ = command(["docker", "manifest", "inspect", image, "--verbose"], ignoreStdout = True)
     jsonOutput = json.loads(output)
     if not isinstance(jsonOutput, dict):
@@ -159,7 +159,7 @@ def manifestInspect(image: str, verbose: Optional[bool] = False) -> Dict[str, An
     return jsonOutput
 
 
-def imageInspect(image: str, verbose: Optional[bool] = False) -> Dict[str, Any]:
+def imageInspect(image: str) -> Dict[str, Any]:
     _, output, _ = command(["docker", "image", "inspect", image], ignoreStdout = True, ignoreStderr = True)
     jsonOutput = json.loads(output)
     if not isinstance(jsonOutput, list):

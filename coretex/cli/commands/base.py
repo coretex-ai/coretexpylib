@@ -71,6 +71,6 @@ def base_command(
             # Call the main command function
             return f(*args, **kwargs)
 
-        return click.command(name = name, cls=cls, **attrs)(wrapper)  # type: ignore
+        return click.command(name = name, cls = cls, **attrs)(wrapper)  # type: ignore
 
     return decorator

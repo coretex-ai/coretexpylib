@@ -186,13 +186,13 @@ def getTagFromImageUrl(image: str) -> str:
 def shouldUpdate(image: str) -> bool:
     repository = getRepoFromImageUrl(image)
     try:
-        imageJson = docker.imageInspect(image, CLISettings.verbose)
+        imageJson = docker.imageInspect(image)
     except CommandException:
         # imageInspect() will raise an error if image doesn't exist locally
         return True
 
     try:
-        manifestJson = docker.manifestInspect(image, CLISettings.verbose)
+        manifestJson = docker.manifestInspect(image)
     except CommandException:
         return False
 
