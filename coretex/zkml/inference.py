@@ -81,7 +81,7 @@ def runOnnxInference(
         return result
 
     if compiledModelPath is None or proveKey is None or settingsPath is None:
-        raise ValueError(f">> [Coretex] Parameters compiledModelPath, proveKey and settingsPath have to either all be passed (for verified inference) or none of them (for regula inference)")
+        raise ValueError(f">> [Coretex] Parameters compiledModelPath, proveKey and settingsPath have to either all be passed (for verified inference) or none of them (for regular inference)")
 
     inferenceDir = folder_manager.createTempFolder(inferenceId)
     witnessPath = inferenceDir / "witness.json"
