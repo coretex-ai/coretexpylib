@@ -36,9 +36,9 @@ def jobExists(script: str) -> bool:
     return any(script in line for line in existingLines)
 
 
-def scheduleJob(scriptName: str) -> None:
+def scheduleJob(commandName: str) -> None:
     existingLines = getExisting()
-    cronJob = f"*/30 * * * * {CONFIG_DIR / scriptName} >> {CONFIG_DIR}/logs/ctx_autoupdate.log 2>&1\n"
+    cronJob = f"*/30 * * * * {commandName} >> {CONFIG_DIR}/logs/ctx_autoupdate.log 2>&1\n"
     existingLines.append(cronJob)
 
     tempCronFilePath = CONFIG_DIR / "temp.cron"

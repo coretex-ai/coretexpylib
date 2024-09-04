@@ -56,6 +56,3 @@ exclude = ["tests*", "docs_images*", "doxygen-awesome-css*"]
 
 [tool.setuptools.package-data]
 "*" = ["py.typed", "resources/*"]
-
-[project.scripts]
-coretex = "coretex.cli.main:cli"

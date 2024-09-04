@@ -24,8 +24,8 @@ from ..modules import ui
 from ..modules import node as node_module
 from ..modules.node import NodeStatus, getNodeStatus
 from ..modules.user import initializeUserSession
-from ..modules.utils import onBeforeCommandExecute, checkEnvironment
-from ..modules.update import activateAutoUpdate
+from ..modules.update import activateAutoUpdate, getNodeStatus
+from ..modules.utils import onBeforeCommandExecute
 from ...utils import docker
 from ...configuration import NodeConfiguration, InvalidConfiguration, ConfigurationNotFound
 
@@ -208,8 +208,12 @@ def logs(tail: Optional[int], follow: bool, timestamps: bool) -> None:
 @click.group()
 @onBeforeCommandExecute(docker.isDockerAvailable, excludeSubcommands = ["status"])
 @onBeforeCommandExecute(initializeUserSession)
+<<<<<<< HEAD
+@onBeforeCommandExecute(node_module.checkResourceLimitations)
+=======
 @onBeforeCommandExecute(node_module.checkResourceLimitations, excludeSubcommands = ["status"])
 @onBeforeCommandExecute(checkEnvironment)
+>>>>>>> develop
 def node() -> None:
     pass
 

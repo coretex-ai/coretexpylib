@@ -16,15 +16,10 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from enum import IntEnum
-from pathlib import Path
 
 import requests
 
-from .utils import getExecPath
 from .cron import jobExists, scheduleJob
-from ..resources import RESOURCES_DIR
-from ...utils import command
-from ...configuration import DEFAULT_VENV_PATH
 
 
 UPDATE_SCRIPT_NAME = "update_node.sh"
@@ -39,31 +34,17 @@ class NodeStatus(IntEnum):
     reconnecting = 5
 
 
-def generateUpdateScript() -> str:
-    dockerExecPath = getExecPath("docker")
-    gitExecPath = getExecPath("git")
-    bashScriptTemplatePath = RESOURCES_DIR / "update_script_template.sh"
-
-    with bashScriptTemplatePath.open("r") as scriptFile:
-        bashScriptTemplate = scriptFile.read()
-
-    return bashScriptTemplate.format(
-        dockerPath = dockerExecPath,
-        gitPath = gitExecPath,
-        venvPath = DEFAULT_VENV_PATH
-    )
-
-
-def dumpScript(updateScriptPath: Path) -> None:
-    with updateScriptPath.open("w") as scriptFile:
-        scriptFile.write(generateUpdateScript())
-
-    command(["chmod", "+x", str(updateScriptPath)], ignoreStdout = True)
-
-
 def activateAutoUpdate() -> None:
-    updateScriptPath = DEFAULT_VENV_PATH.parent / UPDATE_SCRIPT_NAME
-    dumpScript(updateScriptPath)
+    commandName = "coretex node update -n"
 
-    if not jobExists(str(updateScriptPath)):
-        scheduleJob(UPDATE_SCRIPT_NAME)
+    if not jobExists(str(commandName)):
+        scheduleJob(commandName)
+
+
+def getNodeStatus() -> NodeStatus:
+    try:
+        response = requests.get(f"http://localhost:21000/status", timeout = 1)
+        status = response.json()["status"]
+        return NodeStatus(status)
+    except:
+        return NodeStatus.inactive
