@@ -1,4 +1,4 @@
-![](./docs_images/logo-dark.png)
+![](./docs_images/logo-classic.png)
 
 ---
 <div align="center">
