@@ -1,1 +1,1 @@
-from .coretex_repository import CoretexRepository, EntityCoretexRepositoryType, CORETEX_METADATA_PATH
+from .coretex_repository import CoretexRepository, EntityCoretexRepositoryType, checkIfCoretexRepoExists

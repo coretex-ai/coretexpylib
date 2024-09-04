@@ -15,7 +15,7 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, List, Dict, Any
+from typing import List, Dict, Any
 from enum import IntEnum
 from abc import abstractmethod, ABC
 from pathlib import Path
@@ -30,8 +30,9 @@ from ...utils import generateSha256Checksum
 from ...networking import networkManager, NetworkRequestError
 
 
-INITIAL_METADATA_PATH = Path(f"{id}/.metadata.json")
-CORETEX_METADATA_PATH = Path(f"{id}/.coretex.json")
+def checkIfCoretexRepoExists() -> bool:
+    print(Path.cwd().joinpath(".coretex"))
+    return Path.cwd().joinpath(".coretex").exists()
 
 
 class EntityCoretexRepositoryType(IntEnum):
@@ -44,6 +45,13 @@ class CoretexRepository(ABC, Codable):
     id: int
     projectId: int
 
+    @property
+    def __initialMetadataPath(self) -> Path:
+        return Path(f"{self.id}/.metadata.json")
+
+    @property
+    def coretexMetadataPath(self) -> Path:
+        return Path(f"{self.id}/.coretex.json")
 
     @property
     @abstractmethod
@@ -75,12 +83,14 @@ class CoretexRepository(ABC, Codable):
         with ZipFile(zipFilePath) as zipFile:
             zipFile.extractall(str(self.id))
 
-        # remove zip file after extract
         os.unlink(zipFilePath)
 
         return not response.hasFailed()
 
     def getRemoteMetadata(self) -> List:
+        # getRemoteMetadata downloads only .metadata file, this was needed so we can
+        # synchronize changes if multiple people work on the same Entity at the same time
+
         params = {
             self.paramKey: self.id
         }
@@ -92,13 +102,19 @@ class CoretexRepository(ABC, Codable):
         return response.getJson(list, force = True)
 
     def createMetadata(self) -> None:
-        with open(INITIAL_METADATA_PATH, "r") as initialMetadataFile:
+        # createMetadata() function will store metadata of files that backend returns
+        # currently all files on backend (that weren't uploaded after checksum calculation change
+        # for files that is implemented recently on backend) return null/None for their checksum
+        # if backend returns None for checksum of some file we need to calculate initial checksum of
+        # the file so we can track changes
+
+        with self.__initialMetadataPath.open("r") as initialMetadataFile:
             initialMetadata = json.load(initialMetadataFile)
 
             # if backend returns null for checksum of file, generate checksum
             for file in initialMetadata:
                 if file["checksum"] is None:
-                    filePath = INITIAL_METADATA_PATH.parent.joinpath(file["path"])
+                    filePath = self.__initialMetadataPath.parent.joinpath(file["path"])
                     if filePath.exists():
                         file["checksum"] = generateSha256Checksum(filePath)
 
@@ -106,25 +122,31 @@ class CoretexRepository(ABC, Codable):
             "checksums": initialMetadata
         }
 
-        with open(CORETEX_METADATA_PATH, "w") as coretexMetadataFile:
+        with self.coretexMetadataPath.open("w") as coretexMetadataFile:
             json.dump(newMetadata, coretexMetadataFile, indent = 4)
 
     def fillMetadata(self) -> None:
+        # fillMetadata() function will update initial metadata returned from backend
+        # (file paths and their checksums) with other important Entity info (e.g. name, id, description...)
+
         localMetadata: Dict[str, Any] = {}
         metadata = self.encode()
 
-        with CORETEX_METADATA_PATH.open("r") as coretexMetadataFile:
+        with self.coretexMetadataPath.open("r") as coretexMetadataFile:
             localMetadata = json.load(coretexMetadataFile)
 
         localMetadata.update(metadata)
 
-        with CORETEX_METADATA_PATH.open("w") as coretexMetadataFile:
+        with self.coretexMetadataPath.open("w") as coretexMetadataFile:
             json.dump(localMetadata, coretexMetadataFile, indent = 4)
 
-        INITIAL_METADATA_PATH.unlink()
+        self.__initialMetadataPath.unlink()
 
     def getDiff(self) ->  List[Dict[str, Any]]:
-        with CORETEX_METADATA_PATH.open("r") as localMetadataFile:
+        # getDiff() checks initial checksums of files stored in .coretex file
+        # and compares them with their current checksums, based on that we know what files have changes
+
+        with self.coretexMetadataPath.open("r") as localMetadataFile:
             localMetadata = json.load(localMetadataFile)
 
         localChecksums = {file["path"]: file["checksum"] for file in localMetadata["checksums"]}

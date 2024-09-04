@@ -30,7 +30,7 @@ from ..._folder_manager import folder_manager
 from ..._task import TaskRunWorker, executeRunLocally, readTaskConfig, runLogger
 from ...configuration import UserConfiguration
 from ...entities import Task, TaskRun, TaskRunStatus
-from ...entities.repository import CORETEX_METADATA_PATH
+from ...entities.repository import checkIfCoretexRepoExists
 from ...resources import PYTHON_ENTRY_POINT_PATH
 
 
@@ -116,7 +116,7 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
 @click.command()
 @click.argument("id", type = int, default = None, required = False)
 def pull(id: Optional[int]) -> None:
-    if id is None and not CORETEX_METADATA_PATH.exists():
+    if id is None and not checkIfCoretexRepoExists():
         id = ui.clickPrompt(f"There is no existing Task repository. Please specify id of Task you want to pull:", type = int)
 
     if id is not None:
@@ -126,7 +126,7 @@ def pull(id: Optional[int]) -> None:
             ui.errorEcho(f"Failed to fetch Task id {id}. Reason: {ex.response}")
             return
 
-    if not CORETEX_METADATA_PATH.exists():
+    if not task.coretexMetadataPath.exists():
         task.pull()
         task.createMetadata()
         task.fillMetadata()
@@ -150,7 +150,6 @@ def pull(id: Optional[int]) -> None:
         task.createMetadata()
         task.fillMetadata()
         ui.stdEcho("Repository updated successfully.")
-
 
 
 @click.group()
