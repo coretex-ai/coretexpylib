@@ -200,6 +200,37 @@ def shouldUpdate(image: str) -> bool:
     return True
 
 
+def getNodeVersion() -> str:
+    if not isRunning():
+        try:
+            nodeConfig = NodeConfiguration.load()
+            image = nodeConfig.image
+        except ConfigurationNotFound:
+            ui.errorEcho("Node configuration not found.")
+            raise
+        except InvalidConfiguration as ex:
+            for error in ex.errors:
+                ui.errorEcho(error)
+            raise
+    else:
+        image = docker.getContainerImageName(config_defaults.DOCKER_CONTAINER_NAME)
+
+    try:
+        imageJson = docker.imageInspect(image)
+    except CommandException:
+        return "Unknown"
+
+    imageConfig = imageJson.get("Config")
+    if not isinstance(imageConfig, dict):
+        return "Unknown"
+
+    labels = imageConfig.get("Labels")
+    if not isinstance(labels, dict):
+        return "Unknown"
+
+    return str(labels.get("version", "Unknown"))
+
+
 def showLogs(tail: Optional[int], follow: bool, timestamps: bool) -> None:
     docker.getLogs(config_defaults.DOCKER_CONTAINER_NAME, tail, follow, timestamps)
 
