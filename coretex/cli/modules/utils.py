@@ -15,9 +15,8 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import List, Any, Tuple, Optional, Callable
+from typing import Tuple, Optional
 from pathlib import Path
-from functools import wraps
 from importlib.metadata import version as getLibraryVersion
 
 import sys
@@ -28,7 +27,6 @@ import platform
 
 from py3nvml import py3nvml
 
-import click
 import requests
 
 from . import ui
@@ -164,31 +162,3 @@ def isGPUAvailable() -> bool:
         return True
     except:
         return False
-
-
-def onBeforeCommandExecute(
-    fun: Callable[..., Any],
-    excludeOptions: Optional[List[str]] = None,
-    excludeSubcommands: Optional[List[str]] = None
-) -> Any:
-
-    if excludeOptions is None:
-        excludeOptions = []
-
-    if excludeSubcommands is None:
-        excludeSubcommands = []
-
-    def decorator(f: Callable[..., Any]) -> Callable[..., Any]:
-        @wraps(f)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            if click.get_current_context().invoked_subcommand in excludeSubcommands:
-                return f(*args, **kwargs)
-
-            for key, value in click.get_current_context().params.items():
-                if key in excludeOptions and value:
-                    return f(*args, **kwargs)
-
-            fun()
-            return f(*args, **kwargs)
-        return wrapper
-    return decorator

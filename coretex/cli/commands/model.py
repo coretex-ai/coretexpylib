@@ -2,15 +2,15 @@ from typing import Optional
 
 import click
 
+from .base import base_group, base_command
 from ..modules import ui
 from ..modules.project_utils import getProject
 from ..modules.user import initializeUserSession
-from ..modules.utils import onBeforeCommandExecute
 from ...entities import Model
 from ...configuration import UserConfiguration
 
 
-@click.command()
+@base_command()
 @click.argument("path", type = click.Path(exists = True, file_okay = False, dir_okay = True))
 @click.option("-n", "--name", type = str, required = True)
 @click.option("-p", "--project", type = str, required = False, default = None)
@@ -34,8 +34,7 @@ def create(name: str, path: str, project: Optional[str], accuracy: float) -> Non
     ui.stdEcho(f"A new model has been created. You can open it by clicking on this URL {ui.outputUrl(userConfig.frontendUrl, model.entityUrl())}.")
 
 
-@click.group()
-@onBeforeCommandExecute(initializeUserSession)
+@base_group(initFuncs = [(initializeUserSession, [])])
 def model() -> None:
     pass
 

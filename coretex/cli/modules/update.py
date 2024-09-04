@@ -18,8 +18,6 @@
 from enum import IntEnum
 from pathlib import Path
 
-import requests
-
 from .utils import getExecPath
 from .cron import jobExists, scheduleJob
 from ..resources import RESOURCES_DIR

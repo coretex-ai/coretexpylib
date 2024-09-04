@@ -20,13 +20,11 @@ from typing import Optional
 import click
 import webbrowser
 
+from .base import base_group, base_command
 from ..modules import ui
-from ..modules.project_utils import getProject
 from ..modules.user import initializeUserSession
-from ..modules.utils import onBeforeCommandExecute
 from ..modules.project_utils import getProject
 from ..._folder_manager import folder_manager
-from ..._task import TaskRunWorker, executeRunLocally, readTaskConfig, runLogger
 from ...configuration import UserConfiguration
 from ...entities import TaskRun, TaskRunStatus
 from ...resources import PYTHON_ENTRY_POINT_PATH
@@ -37,7 +35,7 @@ class RunException(Exception):
     pass
 
 
-@click.command()
+@base_command()
 @click.argument("path", type = click.Path(exists = True, dir_okay = False))
 @click.option("--name", type = str, default = None)
 @click.option("--description", type = str, default = None)
@@ -112,8 +110,7 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
     folder_manager.clearTempFiles()
 
 
-@click.group()
-@onBeforeCommandExecute(initializeUserSession)
+@base_group(initFuncs = [(initializeUserSession, [])])
 def task() -> None:
     pass
 

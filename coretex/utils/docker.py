@@ -1,3 +1,20 @@
+#     Copyright (C) 2023  Coretex LLC
+
+#     This file is part of Coretex.ai
+
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU Affero General Public License as
+#     published by the Free Software Foundation, either version 3 of the
+#     License, or (at your option) any later version.
+
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU Affero General Public License for more details.
+
+#     You should have received a copy of the GNU Affero General Public License
+#     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from typing import Dict, Any, List, Tuple, Optional
 from pathlib import Path
 
@@ -13,60 +30,60 @@ class DockerConfigurationException(Exception):
     pass
 
 
-def isDockerAvailable() -> None:
+def isDockerAvailable(verbose: Optional[bool] = False) -> None:
     try:
         # Run the command to check if Docker exists and is available
-        command(["docker", "ps"], ignoreStdout = True, ignoreStderr = True)
+        command(["docker", "ps"], ignoreStdout = not verbose, ignoreStderr = True)
     except CommandException:
         raise RuntimeError("Docker not available. Please check that it is properly installed and running on your system.")
 
 
-def networkExists(name: str) -> bool:
+def networkExists(name: str, verbose: Optional[bool] = False) -> bool:
     # This function inspects the specified Docker network using the
     # "docker network inspect" command. If the command exits with a return code
     # of 0, indicating success, the function returns True, meaning the network exists.
     # If the command exits with a non-zero return code, indicating failure,
     # the function returns False, meaning the network doesn't exist.
     try:
-        command(["docker", "network", "inspect", name], ignoreStdout = True, ignoreStderr = True)
+        command(["docker", "network", "inspect", name], ignoreStdout = not verbose, ignoreStderr = True)
         return True
     except:
         return False
 
 
-def containerRunning(name: str) -> bool:
+def containerRunning(name: str, verbose: Optional[bool] = False) -> bool:
     try:
-        _, output, _ = command(["docker", "ps", "--format", "{{.Names}}"], ignoreStderr = True, ignoreStdout = True)
+        _, output, _ = command(["docker", "ps", "--format", "{{.Names}}"], ignoreStdout = not verbose, ignoreStderr = True)
         return name in output.splitlines()
     except:
         return False
 
 
-def containerExists(name: str) -> bool:
+def containerExists(name: str, verbose: Optional[bool] = False) -> bool:
     try:
-        _, output, _ = command(["docker", "ps", "-a", "--format", "{{.Names}}"], ignoreStderr = True, ignoreStdout = True)
+        _, output, _ = command(["docker", "ps", "-a", "--format", "{{.Names}}"], ignoreStdout = not verbose, ignoreStderr = True)
         return name in output.splitlines()
     except:
         return False
 
 
-def createNetwork(name: str) -> None:
+def createNetwork(name: str, verbose: Optional[bool] = False) -> None:
     if networkExists(name):
         removeNetwork(name)
 
-    command(["docker", "network", "create", "--driver", "bridge", name], ignoreStdout = True)
+    command(["docker", "network", "create", "--driver", "bridge", name], ignoreStdout = not verbose)
 
 
-def removeNetwork(name: str) -> None:
-    command(["docker", "network", "rm", name], ignoreStdout = True, ignoreStderr = True)
+def removeNetwork(name: str, verbose: Optional[bool] = False) -> None:
+    command(["docker", "network", "rm", name], ignoreStdout = not verbose, ignoreStderr = True)
 
 
-def removeImage(image: str) -> None:
-    command(["docker", "image", "rm", image], ignoreStdout = True, ignoreStderr = True)
+def removeImage(image: str, verbose: Optional[bool] = False) -> None:
+    command(["docker", "image", "rm", image], ignoreStdout = not verbose, ignoreStderr = True)
 
 
-def removeDanglingImages(repository: str, tag: str) -> None:
-    _, output, _ = command(["docker", "image", "ls", repository, "--format", "json"], ignoreStdout = True, ignoreStderr = True)
+def removeDanglingImages(repository: str, tag: str, verbose: Optional[bool] = False) -> None:
+    _, output, _ = command(["docker", "image", "ls", repository, "--format", "json"], ignoreStdout = not verbose, ignoreStderr = True)
     images = output.strip().split("\n")
 
     for image in images:
@@ -78,8 +95,8 @@ def removeDanglingImages(repository: str, tag: str) -> None:
             removeImage(jsonImg["ID"])
 
 
-def imagePull(image: str) -> None:
-    command(["docker", "image", "pull", image])
+def imagePull(image: str, verbose: Optional[bool] = False) -> None:
+    command(["docker", "image", "pull", image], ignoreStdout = not verbose)
 
 
 def start(
@@ -91,7 +108,8 @@ def start(
     shm: int,
     cpuCount: int,
     environ: Dict[str, str],
-    volumes: List[Tuple[str, str]]
+    volumes: List[Tuple[str, str]],
+    verbose: Optional[bool] = False
 ) -> None:
 
     # https://github.com/moby/moby/issues/14215#issuecomment-115959661
@@ -121,15 +139,15 @@ def start(
 
     # Docker image must always be the last parameter of docker run command
     runCommand.append(image)
-    command(runCommand, ignoreStdout = True, ignoreStderr = True)
+    command(runCommand, ignoreStdout = not verbose, ignoreStderr = True)
 
 
-def stopContainer(name: str) -> None:
-    command(["docker", "stop", name], ignoreStdout = True, ignoreStderr = True)
+def stopContainer(name: str, verbose: Optional[bool] = False) -> None:
+    command(["docker", "stop", name], ignoreStdout = not verbose, ignoreStderr = True)
 
 
-def removeContainer(name: str) -> None:
-    command(["docker", "rm", name], ignoreStdout = True, ignoreStderr = True)
+def removeContainer(name: str, verbose: Optional[bool] = False) -> None:
+    command(["docker", "rm", name], ignoreStdout = not verbose, ignoreStderr = True)
 
 
 def manifestInspect(image: str) -> Dict[str, Any]:
@@ -153,8 +171,8 @@ def imageInspect(image: str) -> Dict[str, Any]:
     return jsonOutput[0]
 
 
-def getResourceLimits() -> Tuple[int, int]:
-    _, output, _ = command(["docker", "info", "--format", "{{json .}}"], ignoreStdout = True, ignoreStderr = True)
+def getResourceLimits(verbose: Optional[bool] = False) -> Tuple[int, int]:
+    _, output, _ = command(["docker", "info", "--format", "{{json .}}"], ignoreStdout = not verbose, ignoreStderr = True)
     jsonOutput = json.loads(output)
 
     return jsonOutput["NCPU"], round(jsonOutput["MemTotal"] / (1024 ** 3))

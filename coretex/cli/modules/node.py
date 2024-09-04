@@ -29,6 +29,7 @@ import click
 
 from . import ui
 from .utils import isGPUAvailable
+from ..settings import CLISettings
 from ...cryptography import rsa
 from ...networking import networkManager, NetworkRequestError
 from ...utils import CommandException, docker
@@ -49,7 +50,8 @@ class ImageType(Enum):
 def pull(image: str) -> None:
     try:
         ui.progressEcho(f"Fetching image {image}...")
-        docker.imagePull(image)
+        docker.imagePull(image, CLISettings.verbose)
+
         ui.successEcho(f"Image {image} successfully fetched.")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
@@ -57,17 +59,17 @@ def pull(image: str) -> None:
 
 
 def isRunning() -> bool:
-    return docker.containerRunning(config_defaults.DOCKER_CONTAINER_NAME)
+    return docker.containerRunning(config_defaults.DOCKER_CONTAINER_NAME, CLISettings.verbose)
 
 
 def exists() -> bool:
-    return docker.containerExists(config_defaults.DOCKER_CONTAINER_NAME)
+    return docker.containerExists(config_defaults.DOCKER_CONTAINER_NAME, CLISettings.verbose)
 
 
 def start(dockerImage: str, nodeConfig: NodeConfiguration) -> None:
     try:
         ui.progressEcho("Starting Coretex Node...")
-        docker.createNetwork(config_defaults.DOCKER_CONTAINER_NETWORK)
+        docker.createNetwork(config_defaults.DOCKER_CONTAINER_NETWORK, CLISettings.verbose)
 
         environ = {
             "CTX_API_URL": os.environ["CTX_API_URL"],
@@ -104,7 +106,8 @@ def start(dockerImage: str, nodeConfig: NodeConfiguration) -> None:
             nodeConfig.sharedMemory,
             nodeConfig.cpuCount,
             environ,
-            volumes
+            volumes,
+            CLISettings.verbose
         )
 
         ui.successEcho("Successfully started Coretex Node.")
@@ -115,8 +118,8 @@ def start(dockerImage: str, nodeConfig: NodeConfiguration) -> None:
 
 def clean() -> None:
     try:
-        docker.removeContainer(config_defaults.DOCKER_CONTAINER_NAME)
-        docker.removeNetwork(config_defaults.DOCKER_CONTAINER_NETWORK)
+        docker.removeContainer(config_defaults.DOCKER_CONTAINER_NAME, CLISettings.verbose)
+        docker.removeNetwork(config_defaults.DOCKER_CONTAINER_NETWORK, CLISettings.verbose)
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to clean inactive Coretex Node.")
@@ -135,7 +138,7 @@ def deactivateNode(id: Optional[int]) -> None:
 def stop(nodeId: Optional[int] = None) -> None:
     try:
         ui.progressEcho("Stopping Coretex Node...")
-        docker.stopContainer(config_defaults.DOCKER_CONTAINER_NAME)
+        docker.stopContainer(config_defaults.DOCKER_CONTAINER_NAME, CLISettings.verbose)
 
         if nodeId is not None:
             deactivateNode(nodeId)
@@ -364,7 +367,7 @@ def _configureInitScript() -> str:
 
 
 def checkResourceLimitations() -> None:
-    _, ramLimit = docker.getResourceLimits()
+    _, ramLimit = docker.getResourceLimits(CLISettings.verbose)
 
     if ramLimit < config_defaults.MINIMUM_RAM:
         raise RuntimeError(
@@ -379,7 +382,7 @@ def configureNode(advanced: bool) -> NodeConfiguration:
     nodeConfig = NodeConfiguration({})  # create new empty node config
     currentOS = platform.system().lower()
 
-    cpuLimit, ramLimit = docker.getResourceLimits()
+    cpuLimit, ramLimit = docker.getResourceLimits(CLISettings.verbose)
     swapLimit = docker.getDockerSwapLimit()
 
     nodeConfig.name = ui.clickPrompt("Node name", type = str)
