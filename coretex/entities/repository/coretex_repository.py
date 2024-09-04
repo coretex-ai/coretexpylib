@@ -146,6 +146,3 @@ class CoretexRepository(ABC, Codable):
                 })
 
         return differences
-
-    # def updateRepository(self, differences: List[Dict[str, Any]]) -> None:
-    #     pass
