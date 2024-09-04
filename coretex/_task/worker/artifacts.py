@@ -50,8 +50,15 @@ class FileEventHandler(FileSystemEventHandler):
         if filePath.name in IGNORED_FILES:
             return
 
-        logging.getLogger("coretex").debug(f">> [Coretex] File created at path \"{filePath}\", adding to artifacts list")
+        logging.getLogger("coretexpylib").debug(f">> [Coretex] File created at path \"{filePath}\", adding to artifacts list")
         self.artifactPaths.append(filePath)
+
+    def on_deleted(self, event: FileSystemEvent) -> None:
+        filePath = Path(event.src_path)
+
+        if filePath in self.artifactPaths:
+            logging.getLogger("coretexpylib").debug(f">> [Coretex] Deleted file at path \"{filePath}\", removing from artifacts list")
+            self.artifactPaths.remove(filePath)
 
 
 @contextmanager
