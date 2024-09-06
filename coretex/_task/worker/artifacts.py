@@ -83,6 +83,10 @@ def track(taskRun: TaskRun) -> Iterator[FileEventHandler]:
         observer.stop()  # type: ignore[no-untyped-call]
         observer.join()
 
+        logging.getLogger("coretexpylib").debug(">> [Coretex] Heartbeat")
+        taskRun.updateStatus()  # updateStatus without params is considered heartbeat
+        lastTimeHeartbeat = timeit.default_timer()
+
         for index, artifactPath in enumerate(eventHandler.artifactPaths):
             logging.getLogger("coretexpylib").debug(f">> [Coretex] Uploading {index + 1}/{len(eventHandler.artifactPaths)} - \"{artifactPath}\"")
 
@@ -95,3 +99,8 @@ def track(taskRun: TaskRun) -> Iterator[FileEventHandler]:
             except Exception as e:
                 logging.getLogger("coretexpylib").error(f"\tError while creating artifact: {e}")
                 logging.getLogger("coretexpylib").debug(f"\tError while creating artifact: {e}", exc_info = e)
+
+            if timeit.default_timer() - lastTimeHeartbeat > 5:
+                logging.getLogger("coretexpylib").debug(">> [Coretex] Heartbeat")
+                taskRun.updateStatus()  # updateStatus without params is considered heartbeat
+                lastTimeHeartbeat = timeit.default_timer()
