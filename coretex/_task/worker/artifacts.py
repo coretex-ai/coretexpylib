@@ -21,6 +21,7 @@ from pathlib import Path
 from contextlib import contextmanager
 
 import logging
+import timeit
 
 from watchdog.events import FileSystemEventHandler, FileSystemEvent
 from watchdog.observers import Observer
