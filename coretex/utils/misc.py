@@ -15,8 +15,11 @@
 #     You should have received a copy of the GNU Affero General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from pathlib import Path
+
 import os
 import sys
+import hashlib
 
 
 def isCliRuntime() -> bool:
@@ -25,3 +28,14 @@ def isCliRuntime() -> bool:
         executablePath.endswith("/bin/coretex") and
         os.access(executablePath, os.X_OK)
     )
+
+
+def generateSha256Checksum(path: Path) -> str:
+    sha256 = hashlib.sha256()
+    chunkSize = 64 * 1024  # 65536 bytes
+
+    with path.open("rb") as file:
+        while chunk := file.read(chunkSize):
+            sha256.update(chunk)
+
+    return sha256.hexdigest()

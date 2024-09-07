@@ -17,7 +17,7 @@
 
 from typing import Optional, Any, List, Dict, Union, Tuple, TypeVar, Generic, Type
 from typing_extensions import Self, override
-from zipfile import ZipFile, ZIP_DEFLATED
+from zipfile import ZipFile
 from pathlib import Path
 
 import os

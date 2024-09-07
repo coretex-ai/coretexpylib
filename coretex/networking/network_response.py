@@ -90,7 +90,7 @@ class NetworkResponse:
 
         return self._raw.request.method == RequestType.head.value
 
-    def getJson(self, type_: Type[JsonType]) -> JsonType:
+    def getJson(self, type_: Type[JsonType], force: bool = False) -> JsonType:
         """
             Converts HTTP response body to json
 
@@ -109,7 +109,7 @@ class NetworkResponse:
             TypeError -> If it was not possible to convert body to type of passed "type_" parameter
         """
 
-        if not "application/json" in self.headers.get("Content-Type", ""):
+        if not force and not "application/json" in self.headers.get("Content-Type", ""):
             raise ValueError(f">> [Coretex] Trying to convert request response to json but response \"Content-Type\" was \"{self.headers.get('Content-Type')}\"")
 
         value = self._raw.json()

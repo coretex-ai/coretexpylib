@@ -16,6 +16,7 @@
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import Optional
+from pathlib import Path
 
 import click
 import webbrowser
@@ -24,13 +25,13 @@ from ..modules import ui
 from ..modules.project_utils import getProject
 from ..modules.user import initializeUserSession
 from ..modules.utils import onBeforeCommandExecute
-from ..modules.project_utils import getProject
+from ...networking import NetworkRequestError
 from ..._folder_manager import folder_manager
 from ..._task import TaskRunWorker, executeRunLocally, readTaskConfig, runLogger
 from ...configuration import UserConfiguration
-from ...entities import TaskRun, TaskRunStatus
+from ...entities import Task, TaskRun, TaskRunStatus
+from ...entities.repository import checkIfCoretexRepoExists
 from ...resources import PYTHON_ENTRY_POINT_PATH
-from ..._task import TaskRunWorker, executeRunLocally, readTaskConfig, runLogger
 
 
 class RunException(Exception):
@@ -112,6 +113,45 @@ def run(path: str, name: Optional[str], description: Optional[str], snapshot: bo
     folder_manager.clearTempFiles()
 
 
+@click.command()
+@click.argument("id", type = int, default = None, required = False)
+def pull(id: Optional[int]) -> None:
+    if id is None and not checkIfCoretexRepoExists():
+        id = ui.clickPrompt(f"There is no existing Task repository. Please specify id of Task you want to pull:", type = int)
+
+    if id is not None:
+        try:
+            task = Task.fetchById(id)
+        except NetworkRequestError as ex:
+            ui.errorEcho(f"Failed to fetch Task id {id}. Reason: {ex.response}")
+            return
+
+    if not task.coretexMetadataPath.exists():
+        task.pull()
+        task.createMetadata()
+        task.fillMetadata()
+    else:
+        differences = task.getDiff()
+        if len(differences) == 0:
+            ui.stdEcho("Your repository is already updated.")
+            return
+
+        ui.stdEcho("There are conflicts between your and remote repository.")
+        for diff in differences:
+            ui.stdEcho(f"File: {diff['path']} differs")
+            ui.stdEcho(f"\tLocal checksum:  {diff['local_checksum']}")
+            ui.stdEcho(f"\tRemote checksum: {diff['remote_checksum']}")
+
+        if not ui.clickPrompt("Do you want to pull the changes and update your local repository? (Y/n):", type = bool, default = True):
+            ui.stdEcho("No changes were made to your local repository.")
+            return
+
+        task.pull()
+        task.createMetadata()
+        task.fillMetadata()
+        ui.stdEcho("Repository updated successfully.")
+
+
 @click.group()
 @onBeforeCommandExecute(initializeUserSession)
 def task() -> None:
@@ -119,3 +159,4 @@ def task() -> None:
 
 
 task.add_command(run, "run")
+task.add_command(pull, "pull")

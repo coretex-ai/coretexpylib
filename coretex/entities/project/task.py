@@ -20,10 +20,11 @@ from typing_extensions import Self
 
 from .base import BaseObject
 from ..utils import isEntityNameValid
+from ..repository import CoretexRepository, EntityCoretexRepositoryType
 from ...codable import KeyDescriptor
 
 
-class Task(BaseObject):
+class Task(BaseObject, CoretexRepository):
 
     """
         Represents the task entity from Coretex.ai\n
@@ -32,6 +33,18 @@ class Task(BaseObject):
 
     isDefault: bool
     taskId: int
+
+    @property
+    def entityCoretexRepositoryType(self) -> EntityCoretexRepositoryType:
+        return EntityCoretexRepositoryType.task
+
+    @property
+    def paramKey(self) -> str:
+        return "sub_project_id"
+
+    @property
+    def endpoint(self) -> str:
+        return "workspace"
 
     @classmethod
     def _keyDescriptors(cls) -> Dict[str, KeyDescriptor]:
