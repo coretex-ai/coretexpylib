@@ -145,25 +145,41 @@ class NetworkDataset(Generic[SampleType], Dataset[SampleType], NetworkObject, Ta
 
         return descriptors
 
+    @classmethod
+    def decode(cls, encodedObject: Dict[str, Any]) -> Self:
+        obj = super().decode(encodedObject)
+
+        page = 1
+        hasMorePages = True
+        samples: List[SampleType] = []
+
+        while hasMorePages:
+            params = {
+                "dataset_id": obj.id,
+                "page": page
+            }
+            response = networkManager.get(f"{cls._endpoint()}/sessions", params)
+
+            if response.hasFailed():
+                raise NetworkRequestError(response, "Failed to fetch Dataset Samples")
+
+            responseJson = response.getJson(dict)
+            samples.extend([obj._sampleType.decode(sample) for sample in responseJson["data"]])
+
+            metadata = responseJson.get("metadata", {})
+            if page == metadata["total_pages"]:
+                hasMorePages = False
+
+            page += 1
+
+        obj.samples = samples
+        return obj
+
     # NetworkObject overrides
 
     @classmethod
     def _endpoint(cls) -> str:
         return "dataset"
-
-    @classmethod
-    def fetchById(cls, objectId: int, **kwargs: Any) -> Self:
-        if "include_sessions" not in kwargs:
-            kwargs["include_sessions"] = 1
-
-        return super().fetchById(objectId, **kwargs)
-
-    @classmethod
-    def fetchAll(cls, **kwargs: Any) -> List[Self]:
-        if "include_sessions" not in kwargs:
-            kwargs["include_sessions"] = 1
-
-        return super().fetchAll(**kwargs)
 
     @classmethod
     def fetchCachedDataset(cls, dependencies: List[str]) -> Self:
